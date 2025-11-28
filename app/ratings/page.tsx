@@ -7,10 +7,16 @@ import { useGuestStore } from '../../stores/guestStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useToast } from '../../hooks/useToast'
 import { GenrePreference, VotedContent, SkippedContent } from '../../types/shared'
-import SubPageLayout from '../../components/layout/SubPageLayout'
 import ContentCard from '../../components/common/ContentCard'
 import ContentGridSpacer from '../../components/common/ContentGridSpacer'
-import { TrashIcon, MagnifyingGlassIcon, SwatchIcon, FilmIcon } from '@heroicons/react/24/solid'
+import {
+    TrashIcon,
+    MagnifyingGlassIcon,
+    SwatchIcon,
+    FilmIcon,
+    HandThumbUpIcon,
+    HandThumbDownIcon,
+} from '@heroicons/react/24/solid'
 import { XMarkIcon, StarIcon } from '@heroicons/react/24/outline'
 import NetflixLoader from '../../components/common/NetflixLoader'
 import GenrePreferenceModal from '../../components/recommendations/GenrePreferenceModal'
@@ -24,16 +30,15 @@ export default function RatingsPage() {
     return (
         <Suspense
             fallback={
-                <SubPageLayout
-                    title="My Ratings"
-                    icon={<StarIcon />}
-                    iconColor="text-purple-400"
-                    description="View and manage your content ratings. These ratings help personalize your recommendations."
-                >
-                    <div className="flex items-center justify-center py-32">
+                <div className="relative -mt-20 -mx-6 sm:-mx-8 lg:-mx-12 min-h-screen">
+                    <div className="fixed inset-0 pointer-events-none">
+                        <div className="absolute inset-0 bg-black" />
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-purple-900/20 via-transparent to-transparent opacity-50" />
+                    </div>
+                    <div className="relative z-10 flex items-center justify-center py-32">
                         <NetflixLoader />
                     </div>
-                </SubPageLayout>
+                </div>
             }
         >
             <RatingsPageContent />
@@ -168,17 +173,6 @@ function RatingsPageContent() {
         }
     }, [myRatings])
 
-    const titleActions =
-        ratingStats.total > 0 ? (
-            <button
-                onClick={() => setShowResetConfirm(true)}
-                className="flex items-center gap-2 px-3 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-colors text-sm"
-            >
-                <TrashIcon className="w-4 h-4" />
-                <span className="hidden sm:inline">Reset All</span>
-            </button>
-        ) : undefined
-
     const handleSaveGenrePreferences = async (preferences: GenrePreference[]) => {
         if (isGuest) {
             guestUpdatePreferences({ genrePreferences: preferences })
@@ -206,118 +200,250 @@ function RatingsPageContent() {
         }
     }
 
-    const headerActions = (
-        <div className="space-y-4">
-            {/* Filter buttons with quiz buttons on the right */}
-            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
-                {/* Filter buttons */}
-                <div className="flex gap-3 flex-wrap">
-                    {(['like', 'dislike'] as FilterValue[]).map((f) => (
-                        <button
-                            key={f}
-                            onClick={() => handleFilterChange(f)}
-                            className={`px-5 py-2.5 rounded-lg text-base font-medium transition-colors ${
-                                filter === f
-                                    ? 'bg-purple-600 text-white'
-                                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                            }`}
-                        >
-                            {f === 'like' ? 'Liked' : 'Disliked'} (
-                            {f === 'like' ? ratingStats.liked : ratingStats.disliked})
-                        </button>
-                    ))}
-                </div>
-
-                {/* Quiz buttons */}
-                <div className="flex gap-2">
-                    {/* Genre Quiz */}
-                    <button
-                        onClick={() => setShowGenreModal(true)}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-purple-600/20 border border-purple-500/50 hover:bg-purple-600/30 hover:border-purple-500 transition-all duration-200"
-                        title="Rate Genres"
-                    >
-                        <SwatchIcon className="w-5 h-5 text-purple-400" />
-                        <span className="hidden sm:inline text-sm font-medium text-purple-300">
-                            Rate Genres
-                        </span>
-                    </button>
-
-                    {/* Title Quiz */}
-                    <button
-                        onClick={() => setShowTitleModal(true)}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-pink-600/20 border border-pink-500/50 hover:bg-pink-600/30 hover:border-pink-500 transition-all duration-200"
-                        title="Rate Titles"
-                    >
-                        <FilmIcon className="w-5 h-5 text-pink-400" />
-                        <span className="hidden sm:inline text-sm font-medium text-pink-300">
-                            Rate Titles
-                        </span>
-                    </button>
-                </div>
+    return (
+        <div className="relative -mt-20 -mx-6 sm:-mx-8 lg:-mx-12">
+            {/* Atmospheric Background */}
+            <div className="fixed inset-0 pointer-events-none">
+                <div className="absolute inset-0 bg-black" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-purple-900/20 via-transparent to-transparent opacity-50" />
+                <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black opacity-60" />
             </div>
 
-            {/* Search */}
-            <div className="relative max-w-2xl">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                <input
-                    type="text"
-                    placeholder="Search your ratings..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-[#0a0a0a] border border-gray-700/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50"
-                />
-                {searchQuery && (
+            {/* Content Container */}
+            <div className="relative z-10">
+                {/* Cinematic Hero Header */}
+                <div className="relative overflow-hidden pt-4">
+                    {/* Animated Background Gradients */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900/80 to-black" />
+                    <div
+                        className="absolute inset-0 bg-gradient-to-t from-purple-900/20 via-violet-900/10 to-black/50 animate-pulse"
+                        style={{ animationDuration: '4s' }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-radial from-purple-500/10 via-purple-900/5 to-transparent" />
+
+                    {/* Soft edge vignetting for subtle blending */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/80" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60" />
+
+                    {/* Hero Content */}
+                    <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-6">
+                        {/* Star Icon with glow */}
+                        <div className="relative mb-4">
+                            <div className="absolute inset-0 bg-purple-500/30 blur-2xl scale-150" />
+                            <StarIcon className="relative w-16 h-16 text-purple-400 drop-shadow-[0_0_20px_rgba(168,85,247,0.5)]" />
+                        </div>
+
+                        {/* Title */}
+                        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-2 text-center tracking-tight">
+                            <span className="bg-gradient-to-r from-purple-200 via-violet-100 to-purple-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
+                                My Ratings
+                            </span>
+                        </h1>
+
+                        {/* Subtitle */}
+                        <p className="text-base sm:text-lg text-gray-300 mb-6 text-center max-w-2xl">
+                            View and manage your content ratings. These ratings help personalize
+                            your recommendations.
+                        </p>
+
+                        {/* Category Pills - Liked/Disliked */}
+                        <div className="flex flex-wrap gap-2 items-center justify-center mb-5 overflow-visible pb-2 px-4 min-h-[44px]">
+                            {[
+                                {
+                                    value: 'like',
+                                    label: 'Liked',
+                                    icon: HandThumbUpIcon,
+                                    count: ratingStats.liked,
+                                },
+                                {
+                                    value: 'dislike',
+                                    label: 'Disliked',
+                                    icon: HandThumbDownIcon,
+                                    count: ratingStats.disliked,
+                                },
+                            ].map((option) => {
+                                const Icon = option.icon
+                                const isSelected = filter === option.value
+
+                                return (
+                                    <button
+                                        key={option.value}
+                                        onClick={() =>
+                                            handleFilterChange(option.value as FilterValue)
+                                        }
+                                        className={`group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 ${
+                                            isSelected
+                                                ? 'bg-purple-500/90 text-white border-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.3)] scale-105'
+                                                : 'bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105 hover:shadow-[0_0_8px_rgba(255,255,255,0.08)]'
+                                        }`}
+                                    >
+                                        <Icon
+                                            className={`w-4 h-4 ${isSelected ? 'text-white' : ''}`}
+                                        />
+                                        <span className="relative z-10">
+                                            {option.label} ({option.count})
+                                        </span>
+                                        {isSelected && (
+                                            <div className="absolute inset-0 rounded-full bg-purple-500 blur-md opacity-15 animate-pulse" />
+                                        )}
+                                    </button>
+                                )
+                            })}
+                        </div>
+
+                        {/* Quiz Buttons */}
+                        <div className="flex gap-3 mb-5">
+                            {/* Genre Quiz */}
+                            <button
+                                onClick={() => setShowGenreModal(true)}
+                                className="group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-purple-600/30 hover:border-purple-500 hover:scale-105 hover:shadow-[0_0_10px_rgba(168,85,247,0.2)]"
+                                title="Rate Genres"
+                            >
+                                <SwatchIcon className="w-4 h-4 text-purple-400" />
+                                <span>Rate Genres</span>
+                            </button>
+
+                            {/* Title Quiz */}
+                            <button
+                                onClick={() => setShowTitleModal(true)}
+                                className="group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-pink-600/30 hover:border-pink-500 hover:scale-105 hover:shadow-[0_0_10px_rgba(236,72,153,0.2)]"
+                                title="Rate Titles"
+                            >
+                                <FilmIcon className="w-4 h-4 text-pink-400" />
+                                <span>Rate Titles</span>
+                            </button>
+                        </div>
+
+                        {/* Enhanced Search Bar */}
+                        <div className="w-full max-w-3xl relative">
+                            <div className="relative group">
+                                <MagnifyingGlassIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 z-10 transition-colors group-focus-within:text-purple-400" />
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="Search your ratings..."
+                                    className="w-full pl-14 pr-14 py-4 bg-zinc-900/40 backdrop-blur-lg border border-zinc-800/50 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:shadow-[0_0_25px_rgba(168,85,247,0.3)] transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700"
+                                />
+                                {searchQuery && (
+                                    <button
+                                        onClick={() => setSearchQuery('')}
+                                        className="absolute right-5 top-1/2 -translate-y-1/2 z-10 text-gray-400 hover:text-white transition-colors"
+                                    >
+                                        <XMarkIcon className="w-6 h-6" />
+                                    </button>
+                                )}
+
+                                {/* Glowing border effect on focus */}
+                                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500 to-violet-500 opacity-0 group-focus-within:opacity-20 blur-xl transition-opacity duration-300 -z-10" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Main Content Area */}
+                <div className="px-6 sm:px-8 lg:px-12 py-8 space-y-6">
+                    {/* Loading state */}
+                    {isLoadingRatings && (
+                        <div className="py-16">
+                            <NetflixLoader inline={true} message="Loading ratings..." />
+                        </div>
+                    )}
+
+                    {/* Empty state */}
+                    {!isLoadingRatings && filteredRatings.length === 0 && (
+                        <div className="flex flex-col items-center justify-center py-20 text-center">
+                            <div className="relative mb-6">
+                                <div className="absolute inset-0 bg-purple-500/20 blur-2xl scale-150" />
+                                <div className="relative w-24 h-24 rounded-full bg-zinc-900/60 backdrop-blur-lg flex items-center justify-center border-2 border-zinc-800/50">
+                                    <StarIcon className="w-12 h-12 text-purple-500" />
+                                </div>
+                            </div>
+                            <h3 className="text-2xl font-bold text-white mb-3">
+                                {searchQuery
+                                    ? 'No ratings match your search'
+                                    : `No ${filter === 'like' ? 'liked' : 'disliked'} titles`}
+                            </h3>
+                            <p className="text-gray-400 mb-8 max-w-md text-lg">
+                                {searchQuery
+                                    ? 'Try a different search term'
+                                    : filter === 'like'
+                                      ? 'Like titles from the content cards to add them here'
+                                      : 'Disliked titles will appear here'}
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Content Grid */}
+                    {!isLoadingRatings && filteredRatings.length > 0 && (
+                        <div className="flex flex-wrap justify-between gap-x-6 sm:gap-x-8 md:gap-x-10 lg:gap-x-12 gap-y-3 sm:gap-y-4 md:gap-y-5 [&>*]:flex-none">
+                            {filteredRatings.map((rating, index) => (
+                                <div
+                                    key={rating.content.id}
+                                    className="overflow-visible animate-fadeInUp"
+                                    style={{
+                                        animationDelay: `${Math.min(index * 50, 500)}ms`,
+                                        animationFillMode: 'both',
+                                    }}
+                                >
+                                    <ContentCard content={rating.content} />
+                                </div>
+                            ))}
+                            <ContentGridSpacer />
+                        </div>
+                    )}
+                </div>
+
+                {/* Floating Reset Button */}
+                {ratingStats.total > 0 && (
                     <button
-                        onClick={() => setSearchQuery('')}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
+                        onClick={() => setShowResetConfirm(true)}
+                        className="fixed bottom-8 right-20 z-50 group"
+                        style={{
+                            animation: 'bob 5s ease-in-out infinite',
+                        }}
                     >
-                        <XMarkIcon className="w-5 h-5" />
+                        <div className="relative">
+                            {/* Glowing background */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-rose-500 rounded-full blur-lg opacity-30 group-hover:opacity-40 transition-opacity" />
+
+                            {/* Button */}
+                            <div className="relative flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-red-600 via-rose-500 to-red-600 rounded-full text-white font-bold text-sm shadow-[0_0_20px_rgba(239,68,68,0.3)] group-hover:shadow-[0_0_30px_rgba(239,68,68,0.4)] group-hover:scale-105 transition-all duration-300">
+                                <TrashIcon className="w-5 h-5" />
+                                <span className="hidden sm:inline">Reset All</span>
+                            </div>
+                        </div>
                     </button>
                 )}
             </div>
-        </div>
-    )
 
-    return (
-        <SubPageLayout
-            title="My Ratings"
-            icon={<StarIcon />}
-            iconColor="text-purple-400"
-            description="View and manage your content ratings. These ratings help personalize your recommendations."
-            titleActions={titleActions}
-            headerActions={headerActions}
-        >
-            {/* Content */}
-            {isLoadingRatings ? (
-                <div className="flex items-center justify-center py-32">
-                    <NetflixLoader />
-                </div>
-            ) : filteredRatings.length === 0 ? (
-                <div className="text-center py-16 bg-[#0a0a0a] rounded-lg border border-gray-700/50">
-                    <StarIcon className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-                    <p className="text-gray-400 mb-2">
-                        {searchQuery
-                            ? 'No ratings match your search'
-                            : `No ${filter === 'like' ? 'liked' : 'disliked'} titles`}
-                    </p>
-                    <p className="text-gray-500 text-sm">
-                        {searchQuery
-                            ? 'Try a different search term'
-                            : filter === 'like'
-                              ? 'Like titles to add them here'
-                              : 'Disliked titles will appear here'}
-                    </p>
-                </div>
-            ) : (
-                <div className="flex flex-wrap justify-between gap-x-6 sm:gap-x-8 md:gap-x-10 lg:gap-x-12 gap-y-3 sm:gap-y-4 md:gap-y-5 [&>*]:flex-none">
-                    {filteredRatings.map((rating) => (
-                        <div key={rating.content.id} className="overflow-visible">
-                            <ContentCard content={rating.content} />
-                        </div>
-                    ))}
-                    <ContentGridSpacer />
-                </div>
-            )}
+            {/* Add keyframe animation for bobbing and fade-in */}
+            <style jsx>{`
+                @keyframes bob {
+                    0%,
+                    100% {
+                        transform: translateY(0);
+                    }
+                    50% {
+                        transform: translateY(-4px);
+                    }
+                }
+
+                @keyframes fadeInUp {
+                    from {
+                        opacity: 0;
+                        transform: translateY(20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+
+                :global(.animate-fadeInUp) {
+                    animation: fadeInUp 0.5s ease-out;
+                }
+            `}</style>
 
             {/* Reset Confirmation Modal */}
             {showResetConfirm && (
@@ -368,6 +494,6 @@ function RatingsPageContent() {
                 skippedContent={stableSkippedContent}
                 onSkip={handleSkipContent}
             />
-        </SubPageLayout>
+        </div>
     )
 }
