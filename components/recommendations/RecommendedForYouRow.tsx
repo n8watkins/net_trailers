@@ -32,6 +32,7 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
     const [showInsightsModal, setShowInsightsModal] = useState(false)
     const [showGenreModal, setShowGenreModal] = useState(false)
     const [showTitleModal, setShowTitleModal] = useState(false)
+    const [hasHydrated, setHasHydrated] = useState(false)
 
     // Prefetched content for title quiz
     const [prefetchedTitleContent, setPrefetchedTitleContent] = useState<
@@ -250,6 +251,20 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
         return map
     }, [sessionData.likedMovies, sessionData.defaultWatchlist, collectionItems])
 
+    // Track when Firebase hydration completes for authenticated users
+    useEffect(() => {
+        // For guest users, mark as hydrated immediately
+        if (sessionType !== 'authenticated') {
+            setHasHydrated(true)
+            return
+        }
+
+        // For authenticated users, check if data has finished syncing
+        if (isInitialized && syncStatus === 'synced') {
+            setHasHydrated(true)
+        }
+    }, [sessionType, isInitialized, syncStatus])
+
     // Fetch personalized recommendations
     useEffect(() => {
         const fetchRecommendations = async () => {
@@ -331,15 +346,23 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
         }
 
         fetchRecommendations()
-        // Note: We intentionally exclude likedIdsSignature, watchlistIdsSignature,
-        // hiddenIdsSignature, and collectionIdsSignature from dependencies.
-        // This prevents the row from refetching when users interact with content
-        // within the recommendations (like, add to watchlist, etc.), which would
-        // cause a jarring re-render. Recommendations only refresh on:
-        // - Page reload
-        // - Session changes
-        // - Explicit preference changes (genre quiz, title quiz)
-    }, [userId, sessionType, prefsSignature, showRecommendations])
+        // Note: We use hasHydrated flag to trigger initial fetch after Firebase sync
+        // completes, and track myRatings.length to refetch when ratings data loads.
+        // This ensures recommendations load with complete user data while avoiding
+        // jarring re-renders from individual likes/watchlist changes during usage.
+        // Recommendations refresh on:
+        // - Initial Firebase hydration completion (hasHydrated becomes true)
+        // - myRatings data becomes available (length changes from undefined/0 to N)
+        // - Session changes (userId, sessionType)
+        // - Explicit preference changes (genre quiz, title quiz via prefsSignature)
+    }, [
+        userId,
+        sessionType,
+        hasHydrated,
+        prefsSignature,
+        showRecommendations,
+        sessionData.myRatings?.length,
+    ])
 
     // Handle genre preference save
     const handleGenreSave = useCallback(

@@ -25,6 +25,7 @@ import { Content, getTitle } from '@/typings'
 import { withAuth } from '@/lib/auth-middleware'
 import { apiError } from '@/utils/debugLogger'
 import { VotedContent, RatedContent } from '@/types/shared'
+import { getAdminDb } from '@/lib/firebase-admin'
 
 async function handlePersonalizedRecommendations(
     request: NextRequest,
@@ -231,12 +232,7 @@ async function handlePersonalizedRecommendationsGet(
 
         // For GET requests (pagination), we need to fetch user data from Firestore
         // This is acceptable because pagination is infrequent (only when scrolling to end)
-        const admin = await import('firebase-admin')
-        if (!admin.apps.length) {
-            admin.initializeApp()
-        }
-
-        const db = admin.firestore()
+        const db = getAdminDb()
         const userDoc = await db.collection('users').doc(userId).get()
 
         if (!userDoc.exists) {
