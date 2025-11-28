@@ -65,20 +65,20 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
             onClick={handleCardClick}
             className="group relative cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1"
         >
-            {/* Ambient glow behind card - subtle yellow */}
-            <div className="absolute -inset-1 bg-gradient-to-br from-yellow-500/10 via-amber-500/8 to-yellow-500/10 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            {/* Ambient glow behind card - yellow by default, stronger on hover */}
+            <div className="absolute -inset-1 bg-gradient-to-br from-yellow-500/8 via-amber-500/6 to-yellow-500/8 rounded-2xl blur-xl opacity-60 group-hover:opacity-100 group-hover:from-yellow-500/15 group-hover:via-amber-500/12 group-hover:to-yellow-500/15 transition-all duration-300" />
 
-            {/* Main card container */}
-            <div className="relative bg-zinc-900/70 group-hover:bg-yellow-950/30 backdrop-blur-lg rounded-xl overflow-hidden border border-zinc-800/50 group-hover:border-yellow-500/25 transition-all duration-300 shadow-lg group-hover:shadow-[0_0_20px_rgba(234,179,8,0.1)]">
+            {/* Main card container - yellow tinted by default */}
+            <div className="relative bg-gradient-to-br from-yellow-950/20 via-zinc-900/80 to-yellow-950/20 group-hover:from-yellow-950/35 group-hover:via-zinc-900/70 group-hover:to-yellow-950/35 backdrop-blur-lg rounded-xl overflow-hidden border border-yellow-500/10 group-hover:border-yellow-500/30 transition-all duration-300 shadow-lg group-hover:shadow-[0_0_25px_rgba(234,179,8,0.15)]">
                 {/* Header with top 3 posters - Larger images */}
                 {topItems.length > 0 && (
                     <div className="relative h-48 overflow-hidden">
-                        {/* Background gradient */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-zinc-800/60 via-zinc-900/80 to-black" />
+                        {/* Background gradient - yellow tinted */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-yellow-950/30 via-zinc-900/80 to-yellow-950/30 group-hover:from-yellow-950/40 group-hover:to-yellow-950/40 transition-all duration-300" />
 
-                        {/* Ambient glow behind posters - subtle yellow */}
+                        {/* Ambient glow behind posters - visible by default */}
                         <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-full h-24 bg-gradient-to-r from-yellow-500/8 via-amber-500/12 to-yellow-500/8 blur-2xl opacity-40 group-hover:opacity-70 transition-opacity duration-300" />
+                            <div className="w-full h-24 bg-gradient-to-r from-yellow-500/10 via-amber-500/15 to-yellow-500/10 blur-2xl opacity-60 group-hover:opacity-90 group-hover:from-yellow-500/15 group-hover:via-amber-500/20 group-hover:to-yellow-500/15 transition-all duration-300" />
                         </div>
 
                         {/* Posters container - Larger posters */}
@@ -92,8 +92,8 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
                                         transform: `translateY(${index === 1 ? '-3px' : '0'})`,
                                     }}
                                 >
-                                    {/* Poster glow rim - subtle yellow */}
-                                    <div className="absolute -inset-0.5 bg-gradient-to-br from-yellow-400/15 via-amber-500/10 to-yellow-400/15 rounded-md blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                    {/* Poster glow rim - visible by default, stronger on hover */}
+                                    <div className="absolute -inset-0.5 bg-gradient-to-br from-yellow-400/10 via-amber-500/8 to-yellow-400/10 rounded-md blur-sm opacity-50 group-hover:opacity-100 group-hover:from-yellow-400/20 group-hover:via-amber-500/15 group-hover:to-yellow-400/20 transition-all duration-300" />
 
                                     <Image
                                         src={getPosterPath(item.content)}
