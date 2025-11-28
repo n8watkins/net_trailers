@@ -123,13 +123,25 @@ export default function SystemRecommendationRow({
             const genresParam = genres.length > 0 ? `&genres=${genres.join(',')}` : ''
             const childSafeParam = childSafetyMode ? '&childSafetyMode=true' : ''
 
+            // Fetch first 2 pages to get 40 items (20 per page) for reliable infinite scroll
             // Fetch based on media type setting
             if (mediaType === 'movie' || mediaType === 'both') {
-                const movieResponse = await fetch(
-                    `${movieEndpoint}?page=1${genresParam}${childSafeParam}`
-                )
-                if (movieResponse.ok) {
-                    const movieData = await movieResponse.json()
+                const [moviePage1, moviePage2] = await Promise.all([
+                    fetch(`${movieEndpoint}?page=1${genresParam}${childSafeParam}`),
+                    fetch(`${movieEndpoint}?page=2${genresParam}${childSafeParam}`),
+                ])
+
+                if (moviePage1.ok) {
+                    const movieData = await moviePage1.json()
+                    results.push(
+                        ...(movieData.results || []).map((item: Content) => ({
+                            ...item,
+                            media_type: 'movie' as const,
+                        }))
+                    )
+                }
+                if (moviePage2.ok) {
+                    const movieData = await moviePage2.json()
                     results.push(
                         ...(movieData.results || []).map((item: Content) => ({
                             ...item,
@@ -140,11 +152,22 @@ export default function SystemRecommendationRow({
             }
 
             if (mediaType === 'tv' || mediaType === 'both') {
-                const tvResponse = await fetch(
-                    `${tvEndpoint}?page=1${genresParam}${childSafeParam}`
-                )
-                if (tvResponse.ok) {
-                    const tvData = await tvResponse.json()
+                const [tvPage1, tvPage2] = await Promise.all([
+                    fetch(`${tvEndpoint}?page=1${genresParam}${childSafeParam}`),
+                    fetch(`${tvEndpoint}?page=2${genresParam}${childSafeParam}`),
+                ])
+
+                if (tvPage1.ok) {
+                    const tvData = await tvPage1.json()
+                    results.push(
+                        ...(tvData.results || []).map((item: Content) => ({
+                            ...item,
+                            media_type: 'tv' as const,
+                        }))
+                    )
+                }
+                if (tvPage2.ok) {
+                    const tvData = await tvPage2.json()
                     results.push(
                         ...(tvData.results || []).map((item: Content) => ({
                             ...item,
@@ -168,8 +191,8 @@ export default function SystemRecommendationRow({
                 deduped.sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
             }
 
-            // Limit to 20 items for initial display
-            setContent(deduped.slice(0, 20))
+            // Limit to 40 items for initial display (increased to ensure infinite scroll triggers reliably)
+            setContent(deduped.slice(0, 40))
         } catch (err) {
             console.error(`Error fetching ${recommendationId}:`, err)
             setError(`Failed to load ${displayName}`)
@@ -218,7 +241,23 @@ export default function SystemRecommendationRow({
     // Build the title with emoji
     const title = emoji ? `${emoji} ${displayName}` : displayName
 
-    return <Row title={title} content={content} collection={collectionForEdit} />
+    // Build apiEndpoint for infinite scroll
+    // For "both" media types, we'll use the movie endpoint as primary
+    // Note: Infinite scroll works best with single media type, but we support both
+    const baseEndpoint = mediaType === 'tv' ? tvEndpoint : movieEndpoint
+    const genresParam = genres.length > 0 ? `genres=${genres.join(',')}` : ''
+    const childSafeParam = childSafetyMode ? 'childSafetyMode=true' : ''
+    const params = [genresParam, childSafeParam].filter(Boolean).join('&')
+    const apiEndpoint = params ? `${baseEndpoint}?${params}` : baseEndpoint
+
+    return (
+        <Row
+            title={title}
+            content={content}
+            collection={collectionForEdit}
+            apiEndpoint={apiEndpoint}
+        />
+    )
 }
 
 interface WrapperRowProps {
