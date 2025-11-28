@@ -33,6 +33,7 @@ export default function PollsContent() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [userVotes, setUserVotes] = useState<Record<string, string[]>>({})
     const [searchQuery, setSearchQuery] = useState('')
+    const [isMounted, setIsMounted] = useState(false)
     const userId = getUserId()
 
     // Voice input
@@ -45,6 +46,11 @@ export default function PollsContent() {
         },
         sourceId: 'polls-search',
     })
+
+    // Track client-side mounting to avoid hydration mismatch
+    useEffect(() => {
+        setIsMounted(true)
+    }, [])
 
     const handleVoiceClick = async () => {
         if (isListening) {
@@ -310,7 +316,7 @@ export default function PollsContent() {
                                     placeholder="Search polls..."
                                     className="w-full pl-14 pr-14 py-4 bg-zinc-900/40 backdrop-blur-lg border border-zinc-800/50 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-pink-500 focus:shadow-[0_0_25px_rgba(236,72,153,0.3)] transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700"
                                 />
-                                {isSupported && (
+                                {isMounted && isSupported && (
                                     <button
                                         type="button"
                                         onClick={handleVoiceClick}
