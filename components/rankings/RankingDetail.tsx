@@ -1,13 +1,15 @@
 /**
- * RankingDetail Component
+ * RankingDetail Component - Cinematic Netflix-Inspired Edition
  *
  * Full-page view for a single ranking with:
- * - Complete list of all ranked items
- * - Drag & drop reordering (for owner)
- * - Edit/delete controls (for owner)
- * - Integrated comment section
- * - Like/share functionality
- * - View tracking
+ * - Cinematic hero section with blurred poster collage
+ * - Gold trophy icon with shimmer effect
+ * - Large cinematic title with text glow
+ * - Glassy metadata card with inner shadow
+ * - Metallic gold rank badges with shine/bevel
+ * - Neon-style rating badges
+ * - Slide-in animations for items
+ * - Premium Netflix-like production value
  */
 
 'use client'
@@ -33,12 +35,14 @@ import {
     GlobeAltIcon,
     LockClosedIcon,
     DocumentDuplicateIcon,
+    StarIcon,
+    ClockIcon,
 } from '@heroicons/react/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid'
 
 interface RankingDetailProps {
     ranking: Ranking
-    rankingId: string // Add rankingId prop to avoid re-renders from ranking object changes
+    rankingId: string
     onEdit?: () => void
     onDelete?: () => void
     onShare?: () => void
@@ -92,7 +96,6 @@ export function RankingDetail({
     useEffect(() => {
         let isMounted = true
 
-        // Only increment view if user is logged in and is not the owner
         if (userId && userId !== ranking.userId) {
             incrementView(rankingId, userId).then(() => {
                 if (isMounted) {
@@ -162,56 +165,103 @@ export function RankingDetail({
                     url: window.location.href,
                 })
             } catch (error) {
-                // User cancelled or share failed
                 console.log('Share cancelled', error)
             }
         } else {
-            // Fallback: copy to clipboard
             await navigator.clipboard.writeText(window.location.href)
             onShare?.()
         }
     }
 
+    // Get first 5 posters for blurred background collage
+    const backgroundPosters = ranking.rankedItems.slice(0, 5)
+
     return (
-        <div className="max-w-6xl mx-auto space-y-8">
-            {/* Header Section */}
-            <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-800">
-                {/* Title and actions */}
-                <div className="flex items-start justify-between gap-4 mb-4">
-                    <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                            <TrophyIcon className="w-8 h-8 text-yellow-500" />
-                            <h1 className="text-3xl font-bold text-white">{ranking.title}</h1>
+        <div className="relative max-w-6xl mx-auto -mt-8">
+            {/* Cinematic Hero Section with Blurred Poster Collage */}
+            <div className="relative mb-8 rounded-2xl overflow-hidden">
+                {/* Blurred Poster Collage Background */}
+                <div className="absolute inset-0">
+                    <div className="absolute inset-0 flex">
+                        {backgroundPosters.map((item, index) => (
+                            <div
+                                key={item.content.id}
+                                className="flex-1 relative"
+                                style={{ opacity: 0.4 - index * 0.05 }}
+                            >
+                                <Image
+                                    src={getPosterPath(item.content)}
+                                    alt=""
+                                    fill
+                                    className="object-cover blur-xl scale-110"
+                                    priority={index === 0}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                    {/* Dark overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-zinc-900/90 to-black/95" />
+                    {/* Gold ambient glow */}
+                    <div className="absolute inset-0 bg-gradient-radial from-yellow-500/10 via-transparent to-transparent" />
+                    {/* Film grain */}
+                    <div
+                        className="absolute inset-0 opacity-[0.03] pointer-events-none"
+                        style={{
+                            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+                        }}
+                    />
+                </div>
+
+                {/* Hero Content */}
+                <div className="relative z-10 p-8 lg:p-12">
+                    {/* Trophy Icon with Shimmer */}
+                    <div className="flex justify-center mb-6">
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-yellow-500/40 blur-2xl scale-150 animate-pulse" />
+                            <div className="relative p-4 rounded-full bg-gradient-to-br from-yellow-400/20 to-amber-500/20 border border-yellow-500/30">
+                                <TrophyIcon className="w-12 h-12 text-yellow-400 drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]" />
+                            </div>
                         </div>
-                        {ranking.description && (
-                            <p className="text-gray-400 text-lg">{ranking.description}</p>
-                        )}
                     </div>
 
-                    {/* Action buttons */}
-                    <div className="flex items-center gap-2">
+                    {/* Title with Glow */}
+                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-center mb-4 drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+                        <span className="bg-gradient-to-r from-white via-yellow-50 to-white bg-clip-text text-transparent">
+                            {ranking.title}
+                        </span>
+                    </h1>
+
+                    {/* Description */}
+                    {ranking.description && (
+                        <p className="text-lg text-gray-300 text-center max-w-3xl mx-auto mb-8 leading-relaxed">
+                            {ranking.description}
+                        </p>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="flex justify-center gap-3 mb-8">
                         {isOwner && (
                             <>
                                 <button
                                     onClick={onEdit}
-                                    className="p-2 sm:p-2.5 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors flex items-center justify-center"
+                                    className="group p-3 bg-zinc-800/80 hover:bg-zinc-700 backdrop-blur-sm text-white rounded-xl transition-all duration-300 border border-zinc-700/50 hover:border-yellow-500/50 hover:shadow-[0_0_20px_rgba(234,179,8,0.2)]"
                                     title="Edit ranking"
                                 >
-                                    <PencilIcon className="w-5 h-5" />
+                                    <PencilIcon className="w-5 h-5 group-hover:text-yellow-400 transition-colors" />
                                 </button>
                                 <button
                                     onClick={handleDelete}
-                                    className="p-2 sm:p-2.5 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 bg-zinc-800 hover:bg-red-900 text-white rounded-lg transition-colors flex items-center justify-center"
+                                    className="group p-3 bg-zinc-800/80 hover:bg-red-900/80 backdrop-blur-sm text-white rounded-xl transition-all duration-300 border border-zinc-700/50 hover:border-red-500/50"
                                     title="Delete ranking"
                                 >
-                                    <TrashIcon className="w-5 h-5" />
+                                    <TrashIcon className="w-5 h-5 group-hover:text-red-400 transition-colors" />
                                 </button>
                             </>
                         )}
                         {!isOwner && userId && (
                             <button
                                 onClick={onClone}
-                                className="p-2 sm:p-2.5 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors flex items-center justify-center"
+                                className="group p-3 bg-blue-600/80 hover:bg-blue-500 backdrop-blur-sm text-white rounded-xl transition-all duration-300 border border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)]"
                                 title="Clone this ranking to your account"
                             >
                                 <DocumentDuplicateIcon className="w-5 h-5" />
@@ -219,164 +269,214 @@ export function RankingDetail({
                         )}
                         <button
                             onClick={handleShare}
-                            className="p-2 sm:p-2.5 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors flex items-center justify-center"
+                            className="group p-3 bg-zinc-800/80 hover:bg-zinc-700 backdrop-blur-sm text-white rounded-xl transition-all duration-300 border border-zinc-700/50 hover:border-cyan-500/50 hover:shadow-[0_0_20px_rgba(6,182,212,0.2)]"
                             title="Share ranking"
                         >
-                            <ShareIcon className="w-5 h-5" />
+                            <ShareIcon className="w-5 h-5 group-hover:text-cyan-400 transition-colors" />
                         </button>
                     </div>
-                </div>
 
-                {/* Author info */}
-                <div className="flex items-center gap-3 mb-4">
-                    {ranking.userAvatar ? (
-                        <Image
-                            src={ranking.userAvatar}
-                            alt={ranking.userName || 'User'}
-                            width={40}
-                            height={40}
-                            className="rounded-full"
-                        />
-                    ) : (
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold">
-                            {ranking.userName?.[0]?.toUpperCase() || '?'}
+                    {/* Glassy Metadata Card */}
+                    <div className="max-w-2xl mx-auto bg-zinc-900/60 backdrop-blur-xl rounded-2xl border border-zinc-800/50 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+                        {/* Author info */}
+                        <div className="flex items-center gap-4 mb-4">
+                            {ranking.userAvatar ? (
+                                <Image
+                                    src={ranking.userAvatar}
+                                    alt={ranking.userName || 'User'}
+                                    width={48}
+                                    height={48}
+                                    className="rounded-full ring-2 ring-yellow-500/30"
+                                />
+                            ) : (
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-500 to-amber-600 flex items-center justify-center font-bold text-lg text-black shadow-lg">
+                                    {ranking.userName?.[0]?.toUpperCase() || '?'}
+                                </div>
+                            )}
+                            <div>
+                                <Link
+                                    href={`/users/${ranking.userUsername || ranking.userId}`}
+                                    className="text-white font-semibold text-lg hover:text-yellow-400 transition-colors"
+                                >
+                                    {ranking.userName || 'Unknown User'}
+                                </Link>
+                                <div className="flex items-center gap-2 text-sm text-gray-400">
+                                    <ClockIcon className="w-4 h-4" />
+                                    <span>
+                                        {formatDistanceToNow(ranking.createdAt, {
+                                            addSuffix: true,
+                                        })}
+                                        {ranking.updatedAt !== ranking.createdAt && ' (edited)'}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
-                    )}
-                    <div>
-                        <Link
-                            href={`/users/${ranking.userUsername || ranking.userId}`}
-                            className="text-white font-medium hover:text-yellow-400 transition-colors"
-                        >
-                            {ranking.userName || 'Unknown User'}
-                        </Link>
-                        <p className="text-sm text-gray-500">
-                            {formatDistanceToNow(ranking.createdAt, { addSuffix: true })}
-                            {ranking.updatedAt !== ranking.createdAt && ' (edited)'}
-                        </p>
-                    </div>
-                </div>
 
-                {/* Stats */}
-                <div className="flex items-center gap-6 pt-4 border-t border-zinc-800">
-                    {/* Like button */}
-                    <button
-                        onClick={handleLike}
-                        disabled={!userId}
-                        className="flex items-center gap-2 text-gray-400 hover:text-red-500 disabled:cursor-not-allowed transition-colors"
-                    >
-                        {isLiked ? (
-                            <HeartSolidIcon className="w-6 h-6 text-red-500" />
-                        ) : (
-                            <HeartIcon className="w-6 h-6" />
-                        )}
-                        <span className={`font-medium ${isLiked ? 'text-red-500' : ''}`}>
-                            {localLikes}
-                        </span>
-                    </button>
+                        {/* Gradient divider */}
+                        <div className="h-px bg-gradient-to-r from-transparent via-zinc-700/50 to-transparent mb-4" />
 
-                    {/* Comments count */}
-                    <div className="flex items-center gap-2 text-gray-400">
-                        <ChatBubbleLeftIcon className="w-6 h-6" />
-                        <span className="font-medium">{ranking.comments}</span>
-                    </div>
+                        {/* Stats */}
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-6">
+                                {/* Like button */}
+                                <button
+                                    onClick={handleLike}
+                                    disabled={!userId}
+                                    className="group flex items-center gap-2 disabled:cursor-not-allowed transition-all duration-300 hover:scale-110"
+                                >
+                                    {isLiked ? (
+                                        <HeartSolidIcon className="w-6 h-6 text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
+                                    ) : (
+                                        <HeartIcon className="w-6 h-6 text-gray-400 group-hover:text-red-400 transition-colors" />
+                                    )}
+                                    <span
+                                        className={`font-semibold ${isLiked ? 'text-red-400' : 'text-gray-400 group-hover:text-red-400'}`}
+                                    >
+                                        {localLikes}
+                                    </span>
+                                </button>
 
-                    {/* Views count */}
-                    <div className="flex items-center gap-2 text-gray-400">
-                        <EyeIcon className="w-6 h-6" />
-                        <span className="font-medium">{localViews}</span>
-                    </div>
+                                {/* Comments count */}
+                                <div className="group flex items-center gap-2 transition-all duration-300 hover:scale-110">
+                                    <ChatBubbleLeftIcon className="w-6 h-6 text-gray-400 group-hover:text-blue-400 transition-colors" />
+                                    <span className="font-semibold text-gray-400 group-hover:text-blue-400 transition-colors">
+                                        {ranking.comments}
+                                    </span>
+                                </div>
 
-                    {/* Privacy indicator */}
-                    <div className="flex items-center gap-2 text-gray-400 ml-auto">
-                        {ranking.isPublic ? (
-                            <>
-                                <GlobeAltIcon className="w-5 h-5" />
-                                <span className="text-sm">Public</span>
-                            </>
-                        ) : (
-                            <>
-                                <LockClosedIcon className="w-5 h-5" />
-                                <span className="text-sm">Private</span>
-                            </>
-                        )}
+                                {/* Views count */}
+                                <div className="group flex items-center gap-2 transition-all duration-300 hover:scale-110">
+                                    <EyeIcon className="w-6 h-6 text-gray-400 group-hover:text-cyan-400 transition-colors" />
+                                    <span className="font-semibold text-gray-400 group-hover:text-cyan-400 transition-colors">
+                                        {localViews}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Privacy indicator */}
+                            <div
+                                className={`flex items-center gap-2 px-4 py-2 rounded-full border ${
+                                    ranking.isPublic
+                                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                                        : 'bg-zinc-800/80 border-zinc-700 text-gray-400'
+                                }`}
+                            >
+                                {ranking.isPublic ? (
+                                    <>
+                                        <GlobeAltIcon className="w-4 h-4" />
+                                        <span className="text-sm font-medium">Public</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <LockClosedIcon className="w-4 h-4" />
+                                        <span className="text-sm font-medium">Private</span>
+                                    </>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
             {/* Ranked Items List */}
-            <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-800">
-                <h2 className="text-2xl font-bold text-white mb-6">
-                    Ranked Items ({ranking.rankedItems.length} of {ranking.itemCount})
-                </h2>
+            <div className="relative bg-zinc-900/60 backdrop-blur-xl rounded-2xl p-6 lg:p-8 border border-zinc-800/50 mb-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+                {/* Section Header */}
+                <div className="flex items-center gap-3 mb-8">
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-yellow-500/30 blur-lg" />
+                        <TrophyIcon className="relative w-8 h-8 text-yellow-400" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-white">
+                        Ranked Items{' '}
+                        <span className="text-gray-500 font-normal">
+                            ({ranking.rankedItems.length} of {ranking.itemCount})
+                        </span>
+                    </h2>
+                </div>
 
-                <div className="space-y-3">
-                    {ranking.rankedItems.map((item) => (
+                <div className="space-y-4">
+                    {ranking.rankedItems.map((item, index) => (
                         <div
                             key={item.content.id}
-                            className="group relative flex items-start gap-4 bg-zinc-800 hover:bg-zinc-750 rounded-lg p-4 transition-colors border border-zinc-700 hover:border-zinc-600"
+                            className="group relative flex items-start gap-4 lg:gap-6 bg-zinc-800/60 hover:bg-zinc-800/80 rounded-2xl p-4 lg:p-5 transition-all duration-500 border border-zinc-700/30 hover:border-yellow-500/30 hover:shadow-[0_0_30px_rgba(234,179,8,0.1)] animate-slideIn"
+                            style={{
+                                animationDelay: `${index * 100}ms`,
+                                animationFillMode: 'both',
+                            }}
                         >
-                            {/* Position number - IMDb style with gradient background */}
-                            <div className="relative flex-shrink-0">
-                                <div className="absolute -left-2 -top-2 w-16 h-16 bg-gradient-to-br from-yellow-400 via-yellow-500 to-yellow-600 rounded-tl-lg rounded-br-3xl shadow-lg flex items-center justify-center">
-                                    <span className="text-2xl font-black text-black drop-shadow-md">
-                                        {item.position}
-                                    </span>
+                            {/* Metallic Gold Rank Badge */}
+                            <div className="absolute -left-3 -top-3 z-20">
+                                <div className="relative">
+                                    {/* Glow effect */}
+                                    <div className="absolute inset-0 bg-yellow-500/50 blur-lg rounded-xl animate-pulse" />
+                                    {/* Badge */}
+                                    <div
+                                        className="relative w-14 h-14 flex items-center justify-center rounded-xl shadow-xl"
+                                        style={{
+                                            background:
+                                                'linear-gradient(135deg, #fbbf24 0%, #f59e0b 25%, #d97706 50%, #f59e0b 75%, #fbbf24 100%)',
+                                            boxShadow:
+                                                'inset 0 1px 0 rgba(255,255,255,0.4), inset 0 -1px 0 rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.3)',
+                                        }}
+                                    >
+                                        <span className="text-xl font-black text-black drop-shadow-[0_1px_0_rgba(255,255,255,0.3)]">
+                                            #{item.position}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Poster - Larger like IMDb */}
-                            <div className="relative w-24 h-36 flex-shrink-0 ml-12">
+                            {/* Poster with Ambient Glow */}
+                            <div className="relative w-24 lg:w-28 h-36 lg:h-40 flex-shrink-0 ml-10">
+                                {/* Glow behind poster */}
+                                <div className="absolute -inset-2 bg-gradient-to-br from-yellow-500/20 via-pink-500/10 to-amber-500/20 rounded-xl blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
                                 <Image
                                     src={getPosterPath(item.content)}
                                     alt={getTitle(item.content)}
                                     fill
-                                    sizes="96px"
-                                    className="object-cover rounded-md shadow-md"
+                                    sizes="112px"
+                                    className="relative z-10 object-cover rounded-xl shadow-xl ring-1 ring-white/10 group-hover:ring-yellow-500/30 transition-all duration-500 group-hover:scale-105"
                                 />
-                                {/* Checkmark overlay like IMDb */}
-                                <div className="absolute -top-2 -left-2 w-8 h-8 bg-yellow-500 rounded-sm flex items-center justify-center shadow-lg">
-                                    <svg
-                                        className="w-5 h-5 text-black"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={3}
-                                            d="M5 13l4 4L19 7"
-                                        />
-                                    </svg>
-                                </div>
                             </div>
 
                             {/* Content info */}
-                            <div className="flex-1 min-w-0 pt-1">
+                            <div className="flex-1 min-w-0 pt-2">
                                 <div className="flex items-start justify-between gap-4 mb-2">
-                                    <h3 className="text-xl font-bold text-white group-hover:text-yellow-400 transition-colors">
+                                    <h3 className="text-xl lg:text-2xl font-bold text-white group-hover:text-yellow-300 transition-colors duration-300 leading-tight">
                                         {getTitle(item.content)}
                                     </h3>
-                                    {/* Rating if available */}
+
+                                    {/* Neon Rating Badge */}
                                     {item.content.vote_average && (
-                                        <div className="flex-shrink-0 flex items-center gap-1 bg-zinc-900 px-2 py-1 rounded">
-                                            <span className="text-yellow-400 text-lg">★</span>
-                                            <span className="font-bold text-white">
+                                        <div className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900/80 rounded-full border border-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.2)]">
+                                            <StarIcon className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                                            <span className="font-bold text-yellow-300">
                                                 {item.content.vote_average.toFixed(1)}
                                             </span>
                                         </div>
                                     )}
                                 </div>
-                                <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
-                                    <span className="font-medium">{getYear(item.content)}</span>
-                                    <span>•</span>
-                                    <span>
+
+                                <div className="flex items-center gap-3 text-sm text-gray-400 mb-3">
+                                    <span className="font-medium text-gray-300">
+                                        {getYear(item.content)}
+                                    </span>
+                                    <span className="w-1 h-1 rounded-full bg-gray-600" />
+                                    <span
+                                        className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                            item.content.media_type === 'movie'
+                                                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                                                : 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                                        }`}
+                                    >
                                         {item.content.media_type === 'movie' ? 'Movie' : 'TV Show'}
                                     </span>
                                 </div>
+
                                 {item.note && (
-                                    <p className="text-sm text-gray-300 mt-2 leading-relaxed">
-                                        {item.note}
+                                    <p className="text-sm text-gray-300 leading-relaxed bg-zinc-900/50 rounded-lg p-3 border border-zinc-700/30">
+                                        "{item.note}"
                                     </p>
                                 )}
                             </div>
@@ -386,7 +486,7 @@ export function RankingDetail({
 
                 {/* Show message if not all items are ranked yet */}
                 {ranking.rankedItems.length < ranking.itemCount && (
-                    <div className="mt-6 p-4 bg-zinc-800 rounded-lg text-center">
+                    <div className="mt-6 p-4 bg-zinc-800/50 rounded-xl border border-zinc-700/30 text-center">
                         <p className="text-gray-400">
                             {isOwner
                                 ? `You still need to add ${ranking.itemCount - ranking.rankedItems.length} more ${ranking.itemCount - ranking.rankedItems.length === 1 ? 'item' : 'items'} to complete this ranking.`
@@ -397,10 +497,14 @@ export function RankingDetail({
             </div>
 
             {/* Comments Section */}
-            <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-800">
-                <h2 className="text-2xl font-bold text-white mb-6">
-                    Comments ({ranking.comments})
-                </h2>
+            <div className="relative bg-zinc-900/60 backdrop-blur-xl rounded-2xl p-6 lg:p-8 border border-zinc-800/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+                <div className="flex items-center gap-3 mb-8">
+                    <ChatBubbleLeftIcon className="w-8 h-8 text-blue-400" />
+                    <h2 className="text-2xl font-bold text-white">
+                        Comments{' '}
+                        <span className="text-gray-500 font-normal">({ranking.comments})</span>
+                    </h2>
+                </div>
                 <CommentSection
                     rankingId={ranking.id}
                     rankingOwnerId={ranking.userId}
@@ -408,6 +512,24 @@ export function RankingDetail({
                     isLoading={isLoadingComments}
                 />
             </div>
+
+            {/* Keyframe animations */}
+            <style jsx>{`
+                @keyframes slideIn {
+                    from {
+                        opacity: 0;
+                        transform: translateX(-20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateX(0);
+                    }
+                }
+
+                :global(.animate-slideIn) {
+                    animation: slideIn 0.5s ease-out;
+                }
+            `}</style>
         </div>
     )
 }

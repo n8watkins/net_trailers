@@ -36,6 +36,8 @@ interface SubPageLayoutProps {
     headerClassName?: string
     /** Show a border below the header section */
     headerBorder?: boolean
+    /** Hide the page header section entirely (for pages with custom headers) */
+    hideHeader?: boolean
 }
 
 export default function SubPageLayout({
@@ -49,6 +51,7 @@ export default function SubPageLayout({
     contentClassName = '',
     headerClassName = '',
     headerBorder = false,
+    hideHeader = false,
 }: SubPageLayoutProps) {
     const { modal } = useModalStore()
     const showModal = modal.isOpen
@@ -63,39 +66,42 @@ export default function SubPageLayout({
             <main className="relative pb-24 px-4 sm:px-6 lg:px-8 pt-28 sm:pt-36 md:pt-44">
                 <div className="max-w-[1800px] mx-auto flex flex-col space-y-6 py-8">
                     {/* Page Header */}
-                    {(title || icon || description || headerActions || titleActions) && (
-                        <div
-                            className={`space-y-4 ${headerBorder ? 'pb-6 border-b border-gray-700' : ''} ${headerClassName}`}
-                        >
-                            {/* Title Section with Actions */}
-                            {(title || icon || titleActions) && (
-                                <div className="flex items-center justify-between">
-                                    {(title || icon) && (
-                                        <div className="flex items-center space-x-3">
-                                            {icon && (
-                                                <div className={`w-8 h-8 ${iconColor}`}>{icon}</div>
-                                            )}
-                                            {title && (
-                                                <h1 className="text-3xl font-bold text-white md:text-4xl">
-                                                    {title}
-                                                </h1>
-                                            )}
-                                        </div>
-                                    )}
-                                    {/* Title Actions (e.g., manage dropdown) */}
-                                    {titleActions && <div>{titleActions}</div>}
-                                </div>
-                            )}
+                    {!hideHeader &&
+                        (title || icon || description || headerActions || titleActions) && (
+                            <div
+                                className={`space-y-4 ${headerBorder ? 'pb-6 border-b border-gray-700' : ''} ${headerClassName}`}
+                            >
+                                {/* Title Section with Actions */}
+                                {(title || icon || titleActions) && (
+                                    <div className="flex items-center justify-between">
+                                        {(title || icon) && (
+                                            <div className="flex items-center space-x-3">
+                                                {icon && (
+                                                    <div className={`w-8 h-8 ${iconColor}`}>
+                                                        {icon}
+                                                    </div>
+                                                )}
+                                                {title && (
+                                                    <h1 className="text-3xl font-bold text-white md:text-4xl">
+                                                        {title}
+                                                    </h1>
+                                                )}
+                                            </div>
+                                        )}
+                                        {/* Title Actions (e.g., manage dropdown) */}
+                                        {titleActions && <div>{titleActions}</div>}
+                                    </div>
+                                )}
 
-                            {/* Description */}
-                            {description && (
-                                <p className="text-gray-400 max-w-2xl">{description}</p>
-                            )}
+                                {/* Description */}
+                                {description && (
+                                    <p className="text-gray-400 max-w-2xl">{description}</p>
+                                )}
 
-                            {/* Header Actions (search, filters, etc.) */}
-                            {headerActions && <div className="pt-2">{headerActions}</div>}
-                        </div>
-                    )}
+                                {/* Header Actions (search, filters, etc.) */}
+                                {headerActions && <div className="pt-2">{headerActions}</div>}
+                            </div>
+                        )}
 
                     {/* Main Content Area */}
                     <div className={contentClassName}>{children}</div>

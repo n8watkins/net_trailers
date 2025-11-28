@@ -5,21 +5,20 @@ import { useRouter } from 'next/navigation'
 import { useRankingStore } from '@/stores/rankingStore'
 import { useAuthStatus } from '@/hooks/useAuthStatus'
 import NetflixLoader from '@/components/common/NetflixLoader'
-import SearchBar from '@/components/common/SearchBar'
-import { getTitle } from '@/typings'
+import { RankingCard } from '@/components/rankings/RankingCard'
 import {
     TrophyIcon,
-    FireIcon,
-    HeartIcon,
-    EyeIcon,
+    MagnifyingGlassIcon,
+    FunnelIcon,
     ChatBubbleLeftRightIcon,
+    ChartBarIcon,
+    FilmIcon,
+    TvIcon,
     SparklesIcon,
 } from '@heroicons/react/24/outline'
 
 export default function RankingsContent() {
     const router = useRouter()
-    const { isInitialized } = useAuthStatus()
-
     const {
         communityRankings,
         isLoading,
@@ -29,7 +28,7 @@ export default function RankingsContent() {
         filterByMediaType,
         setFilterByMediaType,
     } = useRankingStore()
-
+    const { isGuest, isInitialized } = useAuthStatus()
     const [searchQuery, setSearchQuery] = useState('')
     const [rankingsLimit, setRankingsLimit] = useState(20)
 
@@ -44,8 +43,12 @@ export default function RankingsContent() {
         setRankingsLimit((prev) => prev + 20)
     }
 
-    const handleRankingClick = (rankingId: string) => {
-        router.push(`/rankings/${rankingId}`)
+    const handleCreateRanking = () => {
+        if (isGuest) {
+            alert('Please sign in to create rankings')
+            return
+        }
+        router.push('/rankings/new')
     }
 
     // Filter rankings by media type
@@ -64,193 +67,350 @@ export default function RankingsContent() {
               (ranking) =>
                   ranking.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                   ranking.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  ranking.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  ranking.contentTitles?.some((title: string) =>
-                      title.toLowerCase().includes(searchQuery.toLowerCase())
-                  )
+                  ranking.userName.toLowerCase().includes(searchQuery.toLowerCase())
           )
         : filteredByMediaType
 
     const hasMore = communityRankings.length >= rankingsLimit
 
     return (
-        <div className="space-y-6">
-            {/* Filters Section - Collections-style Layout */}
-            <div className="space-y-6">
-                {/* Media Type Filter Pills and Create Button */}
-                <div className="flex flex-wrap gap-2 items-center justify-between">
-                    <div className="flex flex-wrap gap-2">
-                        {[
-                            { value: 'all', label: 'All' },
-                            { value: 'movie', label: 'Movies' },
-                            { value: 'tv', label: 'TV Shows' },
-                        ].map((option) => (
-                            <button
-                                key={option.value}
-                                onClick={() =>
-                                    setFilterByMediaType(option.value as typeof filterByMediaType)
-                                }
-                                className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
-                                    filterByMediaType === option.value
-                                        ? 'bg-yellow-500 text-black shadow-lg scale-105'
-                                        : 'bg-gray-800/80 text-gray-300 hover:bg-gray-700/80 hover:scale-105'
-                                }`}
-                            >
-                                {option.label}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Create Ranking Button */}
-                    <button
-                        onClick={() => router.push('/rankings/new')}
-                        className="rounded-full px-5 py-2.5 font-semibold transition-all duration-200 flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-black shadow-lg hover:scale-105"
-                    >
-                        <TrophyIcon className="w-5 h-5" />
-                        <span className="hidden sm:inline">Create Ranking</span>
-                    </button>
-                </div>
-
-                {/* Search Rankings Input */}
-                <SearchBar
-                    value={searchQuery}
-                    onChange={setSearchQuery}
-                    placeholder="Search rankings..."
-                    focusColor="yellow"
-                    voiceInput={true}
-                    voiceSourceId="rankings-search"
-                />
+        <div className="relative -mt-24 -mx-6 sm:-mx-8 lg:-mx-12">
+            {/* Atmospheric Background */}
+            <div className="fixed inset-0 pointer-events-none">
+                <div className="absolute inset-0 bg-black" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-yellow-900/20 via-transparent to-transparent opacity-50" />
+                <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black opacity-60" />
             </div>
 
-            {/* Loading State */}
-            {isLoading && <NetflixLoader inline={true} message="Loading rankings..." />}
+            {/* Content Container */}
+            <div className="relative z-10">
+                {/* Cinematic Hero Header */}
+                <div className="relative overflow-hidden pt-4">
+                    {/* Animated Background Gradients */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900 to-black" />
+                    <div
+                        className="absolute inset-0 bg-gradient-to-t from-yellow-900/10 via-amber-900/5 to-transparent animate-pulse"
+                        style={{ animationDuration: '4s' }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-radial from-yellow-500/5 via-transparent to-transparent" />
 
-            {/* Error State */}
-            {error && (
-                <div className="bg-red-900/20 border border-red-800 rounded-lg p-4">
-                    <p className="text-red-400">{error}</p>
-                </div>
-            )}
+                    {/* Film grain texture */}
+                    <div
+                        className="absolute inset-0 opacity-[0.02] pointer-events-none"
+                        style={{
+                            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+                        }}
+                    />
 
-            {/* Rankings Grid */}
-            {!isLoading &&
-                (filteredRankings.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {filteredRankings.map((ranking) => (
-                            <div
-                                key={ranking.id}
-                                onClick={() => handleRankingClick(ranking.id)}
-                                className="cursor-pointer"
-                            >
-                                <div className="group relative bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800 hover:border-zinc-700 transition-all duration-200 hover:shadow-xl">
-                                    {/* Main card */}
-                                    <div className="relative">
-                                        {/* Header with top 3 posters */}
-                                        {ranking.rankedItems && ranking.rankedItems.length > 0 && (
-                                            <div className="relative h-48 bg-gradient-to-br from-zinc-800/50 to-zinc-900">
-                                                <div className="absolute inset-0 flex justify-center items-center gap-2 p-4">
-                                                    {ranking.rankedItems.slice(0, 3).map((item) => (
-                                                        <div
-                                                            key={item.content.id}
-                                                            className="relative flex-1 h-full"
-                                                        >
-                                                            <img
-                                                                src={`https://image.tmdb.org/t/p/w500${item.content.poster_path}`}
-                                                                alt={getTitle(item.content)}
-                                                                className="object-cover rounded-md shadow-lg w-full h-full"
-                                                            />
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                                <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/50 to-transparent" />
-                                                {ranking.likes > 50 && (
-                                                    <div className="absolute top-3 right-3 px-2.5 py-1 bg-orange-500/90 backdrop-blur-sm rounded text-xs font-semibold text-white flex items-center gap-1">
-                                                        <FireIcon className="w-3 h-3" />
-                                                        <span>HOT</span>
-                                                    </div>
-                                                )}
+                    {/* Vignette Effect */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-black/50" />
+
+                    {/* Hero Content */}
+                    <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-6">
+                        {/* Trophy Icon with glow */}
+                        <div className="relative mb-4">
+                            <div className="absolute inset-0 bg-yellow-500/30 blur-2xl scale-150" />
+                            <TrophyIcon className="relative w-16 h-16 text-yellow-400 drop-shadow-[0_0_20px_rgba(234,179,8,0.5)]" />
+                        </div>
+
+                        {/* Title */}
+                        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-2 text-center tracking-tight">
+                            <span className="bg-gradient-to-r from-yellow-200 via-amber-100 to-yellow-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
+                                Community Rankings
+                            </span>
+                        </h1>
+
+                        {/* Subtitle */}
+                        <p className="text-base sm:text-lg text-gray-300 mb-6 text-center max-w-2xl">
+                            Discover, curate, and share your top picks in movies & TV
+                        </p>
+
+                        {/* Main Navigation Tabs */}
+                        <div className="mb-6">
+                            <div className="inline-flex gap-2 bg-zinc-900/60 backdrop-blur-xl p-2 rounded-xl border border-zinc-800/50 shadow-2xl">
+                                {[
+                                    {
+                                        id: 'rankings',
+                                        label: 'Rankings',
+                                        icon: TrophyIcon,
+                                        color: 'text-yellow-500',
+                                    },
+                                    {
+                                        id: 'threads',
+                                        label: 'Threads',
+                                        icon: ChatBubbleLeftRightIcon,
+                                        color: 'text-blue-500',
+                                    },
+                                    {
+                                        id: 'polls',
+                                        label: 'Polls',
+                                        icon: ChartBarIcon,
+                                        color: 'text-pink-500',
+                                    },
+                                ].map((tab) => {
+                                    const Icon = tab.icon
+                                    const isActive = tab.id === 'rankings'
+
+                                    return (
+                                        <button
+                                            key={tab.id}
+                                            onClick={() => router.push(`/community/${tab.id}`)}
+                                            className={`relative px-6 py-3 rounded-lg font-bold text-lg transition-all duration-300 ${
+                                                isActive
+                                                    ? 'bg-zinc-800 text-white shadow-lg scale-105'
+                                                    : 'text-gray-400 hover:text-gray-200 hover:bg-zinc-800/50 hover:scale-105'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <Icon
+                                                    className={`w-6 h-6 ${isActive ? tab.color : ''}`}
+                                                />
+                                                <span>{tab.label}</span>
                                             </div>
+                                            {/* Active glow ring */}
+                                            {isActive && (
+                                                <div className="absolute inset-0 rounded-lg ring-2 ring-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.3)]" />
+                                            )}
+                                        </button>
+                                    )
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Category Pills - Integrated in Hero */}
+                        <div className="flex flex-wrap gap-2 items-center justify-center mb-5">
+                            {[
+                                { value: 'all', label: 'All', icon: null },
+                                { value: 'movie', label: 'Movies', icon: FilmIcon },
+                                { value: 'tv', label: 'TV Shows', icon: TvIcon },
+                            ].map((option) => {
+                                const Icon = option.icon
+                                const isSelected = filterByMediaType === option.value
+
+                                return (
+                                    <button
+                                        key={option.value}
+                                        onClick={() =>
+                                            setFilterByMediaType(
+                                                option.value as typeof filterByMediaType
+                                            )
+                                        }
+                                        className={`group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 ${
+                                            isSelected
+                                                ? 'bg-yellow-500/90 text-black border-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.5)] scale-105'
+                                                : 'bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)]'
+                                        }`}
+                                    >
+                                        {Icon && (
+                                            <Icon
+                                                className={`w-4 h-4 ${isSelected ? 'text-black' : ''}`}
+                                            />
                                         )}
+                                        <span className="relative z-10">{option.label}</span>
+                                        {isSelected && (
+                                            <div className="absolute inset-0 rounded-full bg-yellow-500 blur-xl opacity-30 animate-pulse" />
+                                        )}
+                                    </button>
+                                )
+                            })}
+                        </div>
 
-                                        {/* Content section */}
-                                        <div className="p-4 space-y-3">
-                                            {/* Trophy icon + title */}
-                                            <div className="flex items-start gap-2">
-                                                <TrophyIcon className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-1" />
-                                                <div className="flex-1 min-w-0">
-                                                    <h3 className="text-lg font-bold text-white group-hover:text-yellow-400 transition-colors line-clamp-2">
-                                                        {ranking.title}
-                                                    </h3>
-                                                </div>
-                                            </div>
+                        {/* Enhanced Search Bar */}
+                        <div className="w-full max-w-3xl relative">
+                            <div className="relative group">
+                                <MagnifyingGlassIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 z-10 transition-colors group-focus-within:text-yellow-400" />
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="Search rankings..."
+                                    className="w-full pl-14 pr-14 py-4 bg-zinc-900/40 backdrop-blur-lg border border-zinc-800/50 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-yellow-500 focus:shadow-[0_0_25px_rgba(234,179,8,0.3)] transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700"
+                                />
+                                <FunnelIcon className="absolute right-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 z-10 transition-colors hover:text-yellow-400 cursor-pointer" />
 
-                                            {/* Description - Fixed height for 2 lines */}
-                                            <div className="h-10">
-                                                {ranking.description && (
-                                                    <p className="text-sm text-gray-400 line-clamp-2">
-                                                        {ranking.description}
-                                                    </p>
-                                                )}
-                                            </div>
+                                {/* Glowing border effect on focus */}
+                                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-yellow-500 to-amber-500 opacity-0 group-focus-within:opacity-20 blur-xl transition-opacity duration-300 -z-10" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                                            {/* Author info */}
-                                            <div className="flex items-center gap-2 text-sm">
-                                                <span className="text-gray-400">
-                                                    By {ranking.userName}
-                                                </span>
-                                            </div>
+                {/* Main Content Area */}
+                <div className="px-6 sm:px-8 lg:px-12 py-8 space-y-6">
+                    {/* Stats Bar */}
+                    <div className="flex items-center justify-between text-sm text-gray-400">
+                        <div className="flex items-center gap-4">
+                            <span>
+                                Total:{' '}
+                                <span className="text-white font-semibold">
+                                    {communityRankings.length}
+                                </span>{' '}
+                                rankings
+                            </span>
+                            {searchQuery && (
+                                <span>
+                                    Found:{' '}
+                                    <span className="text-white font-semibold">
+                                        {filteredRankings.length}
+                                    </span>{' '}
+                                    matches
+                                </span>
+                            )}
+                        </div>
+                    </div>
 
-                                            {/* Stats & actions */}
-                                            <div className="flex items-center justify-between pt-2 border-t border-zinc-800">
-                                                <div className="flex items-center gap-4 text-sm text-gray-400">
-                                                    <div className="flex items-center gap-1">
-                                                        <HeartIcon className="w-5 h-5" />
-                                                        <span>{ranking.likes || 0}</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-1">
-                                                        <ChatBubbleLeftRightIcon className="w-5 h-5" />
-                                                        <span>{ranking.comments || 0}</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-1">
-                                                        <EyeIcon className="w-5 h-5" />
-                                                        <span>{ranking.views || 0}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                    {/* Error State */}
+                    {error && (
+                        <div className="bg-red-900/20 border border-red-800 rounded-lg p-4">
+                            <p className="text-red-400">{error}</p>
+                        </div>
+                    )}
+
+                    {/* Loading state */}
+                    {isLoading && (
+                        <div className="py-16">
+                            <NetflixLoader inline={true} message="Loading rankings..." />
+                        </div>
+                    )}
+
+                    {/* Empty state */}
+                    {!isLoading && communityRankings.length === 0 && (
+                        <div className="flex flex-col items-center justify-center py-20 text-center">
+                            <div className="relative mb-6">
+                                <div className="absolute inset-0 bg-yellow-500/20 blur-2xl scale-150" />
+                                <div className="relative w-24 h-24 rounded-full bg-zinc-900/60 backdrop-blur-lg flex items-center justify-center border-2 border-zinc-800/50">
+                                    <TrophyIcon className="w-12 h-12 text-yellow-500" />
                                 </div>
                             </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="flex flex-col items-center justify-center py-16 text-center">
-                        <div className="w-20 h-20 mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
-                            <TrophyIcon className="w-10 h-10 text-gray-600" />
+                            <h3 className="text-2xl font-bold text-white mb-3">No rankings yet</h3>
+                            <p className="text-gray-400 mb-8 max-w-md text-lg">
+                                Be the first to create a ranking! Curate your top picks and share
+                                them with the community.
+                            </p>
+                            <button
+                                onClick={handleCreateRanking}
+                                className={`px-8 py-4 font-bold rounded-xl transition-all duration-300 ${
+                                    isGuest
+                                        ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                                        : 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-black shadow-[0_0_30px_rgba(234,179,8,0.4)] hover:shadow-[0_0_40px_rgba(234,179,8,0.6)] scale-100 hover:scale-105'
+                                }`}
+                                disabled={isGuest}
+                            >
+                                {isGuest ? 'Sign in to Create Rankings' : 'Create First Ranking'}
+                            </button>
                         </div>
-                        <p className="text-gray-400 text-lg mb-2">
-                            {searchQuery ? 'No rankings match your search' : 'No rankings found'}
-                        </p>
-                        <p className="text-gray-500 text-sm">
-                            {searchQuery
-                                ? 'Try a different search term'
-                                : 'Be the first to create one!'}
-                        </p>
-                    </div>
-                ))}
+                    )}
 
-            {/* Load More button */}
-            {hasMore && !searchQuery && filteredRankings.length > 0 && (
-                <div className="flex justify-center mt-8">
-                    <button
-                        onClick={handleLoadMoreRankings}
-                        className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
-                    >
-                        <span>Load More Rankings</span>
-                        <SparklesIcon className="w-5 h-5" />
-                    </button>
+                    {/* Rankings Grid - 2 Column Layout */}
+                    {!isLoading && filteredRankings.length > 0 && (
+                        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            {filteredRankings.map((ranking, index) => (
+                                <div
+                                    key={ranking.id}
+                                    className="animate-fadeInUp"
+                                    style={{
+                                        animationDelay: `${Math.min(index * 50, 500)}ms`,
+                                        animationFillMode: 'both',
+                                    }}
+                                >
+                                    <RankingCard ranking={ranking} />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* No results state */}
+                    {!isLoading &&
+                        communityRankings.length > 0 &&
+                        filteredRankings.length === 0 && (
+                            <div className="flex flex-col items-center justify-center py-16 text-center">
+                                <div className="w-20 h-20 mb-4 rounded-full bg-zinc-900/60 backdrop-blur-lg flex items-center justify-center border border-zinc-800/50">
+                                    <TrophyIcon className="w-10 h-10 text-gray-600" />
+                                </div>
+                                <p className="text-gray-400 text-lg mb-2">
+                                    {searchQuery
+                                        ? `No rankings match "${searchQuery}"`
+                                        : 'No rankings found'}
+                                </p>
+                                <p className="text-gray-500 text-sm">
+                                    {searchQuery
+                                        ? 'Try a different search term'
+                                        : 'Try adjusting your filters'}
+                                </p>
+                            </div>
+                        )}
+
+                    {/* Load More button */}
+                    {hasMore && !searchQuery && filteredRankings.length > 0 && !isLoading && (
+                        <div className="flex justify-center mt-8">
+                            <button
+                                onClick={handleLoadMoreRankings}
+                                className="group relative px-8 py-4 font-bold rounded-xl transition-all duration-300"
+                            >
+                                {/* Glow effect */}
+                                <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                                {/* Button */}
+                                <div className="relative flex items-center gap-3 px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl border border-zinc-700 group-hover:border-yellow-500/50 transition-all">
+                                    <span>Load More Rankings</span>
+                                    <SparklesIcon className="w-5 h-5 text-yellow-400" />
+                                </div>
+                            </button>
+                        </div>
+                    )}
                 </div>
-            )}
+
+                {/* Floating CTA Button */}
+                {!isGuest && (
+                    <button
+                        onClick={handleCreateRanking}
+                        className="fixed bottom-8 right-20 z-50 group"
+                        style={{
+                            animation: 'bob 5s ease-in-out infinite',
+                        }}
+                    >
+                        <div className="relative">
+                            {/* Glowing background */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-amber-500 rounded-full blur-2xl opacity-60 group-hover:opacity-80 transition-opacity" />
+
+                            {/* Button */}
+                            <div className="relative flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-yellow-500 via-amber-500 to-yellow-600 rounded-full text-black font-bold shadow-[0_0_40px_rgba(234,179,8,0.6)] group-hover:shadow-[0_0_60px_rgba(234,179,8,0.8)] group-hover:scale-110 transition-all duration-300">
+                                <TrophyIcon className="w-6 h-6" />
+                                <span className="hidden sm:inline">New Ranking</span>
+                            </div>
+                        </div>
+                    </button>
+                )}
+            </div>
+
+            {/* Add keyframe animation for bobbing and fade-in */}
+            <style jsx>{`
+                @keyframes bob {
+                    0%,
+                    100% {
+                        transform: translateY(0);
+                    }
+                    50% {
+                        transform: translateY(-10px);
+                    }
+                }
+
+                @keyframes fadeInUp {
+                    from {
+                        opacity: 0;
+                        transform: translateY(20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+
+                :global(.animate-fadeInUp) {
+                    animation: fadeInUp 0.5s ease-out;
+                }
+            `}</style>
         </div>
     )
 }
