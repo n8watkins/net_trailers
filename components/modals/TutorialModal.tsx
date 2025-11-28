@@ -19,9 +19,10 @@ import { useModalStore } from '../../stores/modalStore'
 interface TutorialModalProps {
     isOpen: boolean
     onClose: () => void
+    onStartTour?: () => void
 }
 
-const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
+const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartTour }) => {
     const { isGuest } = useAuthStatus()
     const { openAuthModal } = useModalStore()
     const [activeTab, setActiveTab] = useState<'basics' | 'advanced' | 'community'>('basics')
@@ -429,6 +430,33 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
                                     Integration
                                 </p>
                             </div>
+
+                            {/* Interactive Tour CTA */}
+                            {onStartTour && (
+                                <div className="mt-6 p-5 bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-xl border-2 border-orange-500/40">
+                                    <div className="flex items-center justify-between gap-4">
+                                        <div className="flex-1">
+                                            <h4 className="text-white font-bold text-lg mb-1 flex items-center gap-2">
+                                                <span className="text-2xl">🚀</span>
+                                                New Here? Take a Quick Tour!
+                                            </h4>
+                                            <p className="text-gray-300 text-sm">
+                                                60-second interactive walkthrough highlighting key
+                                                features
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                onStartTour()
+                                                onClose()
+                                            }}
+                                            className="flex-shrink-0 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold rounded-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-lg hover:shadow-orange-500/50 hover:scale-105"
+                                        >
+                                            Start Tour
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </>
                     )}
                 </div>

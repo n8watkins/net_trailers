@@ -200,7 +200,11 @@ function ClientLayout({ children }: ClientLayoutProps) {
                 onWatchDemo={handleWatchDemo}
             />
             <AboutModal isOpen={showAboutModal} onClose={handleCloseAboutModal} />
-            <TutorialModal isOpen={showTutorial} onClose={handleCloseTutorial} />
+            <TutorialModal
+                isOpen={showTutorial}
+                onClose={handleCloseTutorial}
+                onStartTour={handleStartTour}
+            />
             <KeyboardShortcutsModal
                 isOpen={showKeyboardShortcuts}
                 onClose={() => setShowKeyboardShortcuts(false)}
