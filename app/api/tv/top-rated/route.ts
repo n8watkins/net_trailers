@@ -81,15 +81,61 @@ export async function GET(request: NextRequest) {
         }
 
         // No genres - use standard top-rated or child-safe discover
+        // FALLBACK STRATEGY: TMDB's /tv/top_rated endpoint has limited content (~100-200 pages)
+        // After page 100, fall back to discover with progressive filter relaxation
         let url: string
+        const useFallback = pageNumber > 100 // Switch to discover after official top-rated runs dry
+
         if (childSafeMode) {
             // ✅ CURATED CONTENT STRATEGY: Use family-friendly TV genres sorted by rating
             // Animation (16), Kids (10762), Family (10751), Comedy (35), Sci-Fi & Fantasy (10765), Action & Adventure (10759)
             // This ensures more content availability without aggressive filtering
-            url = `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&page=${page}&sort_by=vote_average.desc&vote_count.gte=100&with_genres=16,10762,10751,35,10765,10759&include_adult=false`
+            if (useFallback) {
+                // Pages 101+: Progressive filter relaxation with family-friendly genres
+                let minVoteCount: number
+                let minRating: number
+                if (pageNumber <= 150) {
+                    minVoteCount = 100
+                    minRating = 6.5
+                } else if (pageNumber <= 200) {
+                    minVoteCount = 50
+                    minRating = 6.0
+                } else if (pageNumber <= 250) {
+                    minVoteCount = 20
+                    minRating = 5.5
+                } else {
+                    minVoteCount = 10
+                    minRating = 5.0
+                }
+                url = `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&page=${pageNumber}&sort_by=vote_average.desc&vote_count.gte=${minVoteCount}&vote_average.gte=${minRating}&with_genres=16,10762,10751,35,10765,10759&include_adult=false`
+            } else {
+                // Pages 1-100: Standard child-safe discover
+                url = `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&page=${pageNumber}&sort_by=vote_average.desc&vote_count.gte=100&with_genres=16,10762,10751,35,10765,10759&include_adult=false`
+            }
         } else {
-            // Normal mode - use top_rated endpoint
-            url = `${BASE_URL}/tv/top_rated?api_key=${API_KEY}&language=en-US&page=${page}`
+            // Normal mode
+            if (useFallback) {
+                // Pages 101+: Use discover with vote_average sorting and progressive filters
+                let minVoteCount: number
+                let minRating: number
+                if (pageNumber <= 150) {
+                    minVoteCount = 200
+                    minRating = 6.5
+                } else if (pageNumber <= 200) {
+                    minVoteCount = 100
+                    minRating = 6.0
+                } else if (pageNumber <= 250) {
+                    minVoteCount = 50
+                    minRating = 5.5
+                } else {
+                    minVoteCount = 20
+                    minRating = 5.0
+                }
+                url = `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&page=${pageNumber}&sort_by=vote_average.desc&vote_count.gte=${minVoteCount}&vote_average.gte=${minRating}&include_adult=false`
+            } else {
+                // Pages 1-100: Use official top_rated endpoint
+                url = `${BASE_URL}/tv/top_rated?api_key=${API_KEY}&language=en-US&page=${pageNumber}`
+            }
         }
 
         const response = await fetch(url)

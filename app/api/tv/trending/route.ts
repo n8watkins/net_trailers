@@ -84,15 +84,56 @@ export async function GET(request: NextRequest) {
         }
 
         // No genres - use standard trending or child-safe discover
+        // FALLBACK STRATEGY: TMDB's /trending endpoint has limited content (~20-50 pages)
+        // After page 20, fall back to discover with progressive filter relaxation
         let url: string
+        const useFallback = pageNumber > 20 // Switch to discover after official trending runs dry
+
         if (childSafeMode) {
             // ✅ CURATED CONTENT STRATEGY: Use family-friendly TV genres
             // Animation (16), Kids (10762), Family (10751), Comedy (35), Sci-Fi & Fantasy (10765), Action & Adventure (10759)
             // This ensures more content availability without aggressive filtering
-            url = `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&page=${pageNumber}&sort_by=popularity.desc&with_genres=16,10762,10751,35,10765,10759&include_adult=false`
+            if (useFallback) {
+                // Pages 21+: Progressive filter relaxation with family-friendly genres
+                let minVoteCount: number
+                if (pageNumber <= 40) {
+                    minVoteCount = 50
+                } else if (pageNumber <= 60) {
+                    minVoteCount = 20
+                } else if (pageNumber <= 80) {
+                    minVoteCount = 10
+                } else {
+                    minVoteCount = 5
+                }
+                url = `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&page=${pageNumber}&sort_by=popularity.desc&with_genres=16,10762,10751,35,10765,10759&vote_count.gte=${minVoteCount}&include_adult=false`
+            } else {
+                // Pages 1-20: Standard child-safe discover
+                url = `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&page=${pageNumber}&sort_by=popularity.desc&with_genres=16,10762,10751,35,10765,10759&include_adult=false`
+            }
         } else {
-            // Normal mode - use trending endpoint
-            url = `${BASE_URL}/trending/tv/week?api_key=${API_KEY}&language=en-US&page=${pageNumber}`
+            // Normal mode
+            if (useFallback) {
+                // Pages 21+: Use discover with popularity sorting and progressive filters
+                let minVoteCount: number
+                let minRating: number
+                if (pageNumber <= 40) {
+                    minVoteCount = 50
+                    minRating = 5.5
+                } else if (pageNumber <= 60) {
+                    minVoteCount = 20
+                    minRating = 5.0
+                } else if (pageNumber <= 80) {
+                    minVoteCount = 10
+                    minRating = 4.5
+                } else {
+                    minVoteCount = 5
+                    minRating = 4.0
+                }
+                url = `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&page=${pageNumber}&sort_by=popularity.desc&vote_count.gte=${minVoteCount}&vote_average.gte=${minRating}&include_adult=false`
+            } else {
+                // Pages 1-20: Use official trending endpoint
+                url = `${BASE_URL}/trending/tv/week?api_key=${API_KEY}&language=en-US&page=${pageNumber}`
+            }
         }
 
         const response = await fetch(url)

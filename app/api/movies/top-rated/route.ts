@@ -59,16 +59,62 @@ export async function GET(request: NextRequest) {
         }
 
         // No genres - use standard top-rated or child-safe discover
+        // FALLBACK STRATEGY: TMDB's /movie/top_rated endpoint has limited content (~100-200 pages)
+        // After page 100, fall back to discover with progressive filter relaxation
         let url: string
+        const useFallback = pageNumber > 100 // Switch to discover after official top-rated runs dry
+
         if (childSafeMode) {
             // ✅ RATING-BASED FILTERING STRATEGY
             // Use discover endpoint with certification filter for all movies
             // certification.lte=PG-13 ensures only G, PG, and PG-13 rated movies
             // Sorted by rating for top-rated content
-            url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&page=${page}&sort_by=vote_average.desc&vote_count.gte=300&certification_country=US&certification.lte=PG-13&include_adult=false`
+            if (useFallback) {
+                // Pages 101+: Progressive filter relaxation
+                let minVoteCount: number
+                let minRating: number
+                if (pageNumber <= 150) {
+                    minVoteCount = 200
+                    minRating = 6.5
+                } else if (pageNumber <= 200) {
+                    minVoteCount = 100
+                    minRating = 6.0
+                } else if (pageNumber <= 250) {
+                    minVoteCount = 50
+                    minRating = 5.5
+                } else {
+                    minVoteCount = 20
+                    minRating = 5.0
+                }
+                url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&page=${pageNumber}&sort_by=vote_average.desc&vote_count.gte=${minVoteCount}&vote_average.gte=${minRating}&certification_country=US&certification.lte=PG-13&include_adult=false`
+            } else {
+                // Pages 1-100: Standard child-safe discover
+                url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&page=${pageNumber}&sort_by=vote_average.desc&vote_count.gte=300&certification_country=US&certification.lte=PG-13&include_adult=false`
+            }
         } else {
-            // Normal mode - use top_rated endpoint
-            url = `${BASE_URL}/movie/top_rated?api_key=${API_KEY}&language=en-US&page=${page}`
+            // Normal mode
+            if (useFallback) {
+                // Pages 101+: Use discover with vote_average sorting and progressive filters
+                let minVoteCount: number
+                let minRating: number
+                if (pageNumber <= 150) {
+                    minVoteCount = 200
+                    minRating = 6.5
+                } else if (pageNumber <= 200) {
+                    minVoteCount = 100
+                    minRating = 6.0
+                } else if (pageNumber <= 250) {
+                    minVoteCount = 50
+                    minRating = 5.5
+                } else {
+                    minVoteCount = 20
+                    minRating = 5.0
+                }
+                url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&page=${pageNumber}&sort_by=vote_average.desc&vote_count.gte=${minVoteCount}&vote_average.gte=${minRating}&include_adult=false`
+            } else {
+                // Pages 1-100: Use official top_rated endpoint
+                url = `${BASE_URL}/movie/top_rated?api_key=${API_KEY}&language=en-US&page=${pageNumber}`
+            }
         }
 
         const response = await fetch(url)
