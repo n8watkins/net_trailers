@@ -9,8 +9,11 @@
 | Server actions bypass CSRF               | High     | ✅ FIXED |
 | CRON_SECRET disables CSRF for all routes | Medium   | ✅ FIXED |
 | GET-based unsubscribe state change       | Medium   | ✅ FIXED |
+| GET-based share view increment           | Low      | ✅ FIXED |
 | No regression tests                      | Low      | ✅ FIXED |
 | No server action lint guard              | Low      | ✅ FIXED |
+| Lint guard only scans lib/actions        | Low      | ✅ FIXED |
+| No route handler location guard          | Low      | ✅ FIXED |
 
 ---
 
@@ -166,6 +169,51 @@ if (isCronRoute) {
 
 ---
 
+### 6. GET-based share view increment (Low) - ✅ FIXED
+
+**Original Problem**: `/api/shares/[shareId]` GET handler called `incrementViewCount()`, a write operation. Since GET requests bypass CSRF checks, anyone could inflate view counts via img tags or prefetch.
+
+**How We Fixed It**: Split into separate handlers:
+
+- GET: Read-only, returns share data without incrementing views
+- POST: Tracks views (CSRF protected by proxy.ts)
+- Client calls POST after successful GET to track views
+
+**Files Changed**:
+
+- `app/api/shares/[shareId]/route.ts` - Added POST handler
+- `app/shared/[shareId]/page.tsx` - Calls POST to track views
+
+---
+
+### 7. Lint guard only scans lib/actions (Low) - ✅ FIXED
+
+**Original Problem**: Server action lint guard only searched `lib/actions/**/*.ts`. Server actions could be defined elsewhere (app/\*\*, components/\*\*) and bypass detection.
+
+**How We Fixed It**: Expanded `__tests__/security/serverActionCsrf.test.ts` to:
+
+1. Scan entire codebase: `{app,lib,components}/**/*.{ts,tsx}`
+2. Smart detection: distinguishes state-changing actions from redirects/page renders
+3. Exemptions: `@csrf-exempt` comment, redirect-only files, page components
+
+**Example Exempted File**: `app/community/threads/[id]/page.tsx` uses `'use server'` but only contains a redirect, so it's correctly exempted.
+
+---
+
+### 8. No route handler location guard (Low) - ✅ FIXED
+
+**Original Problem**: Route handlers (`route.ts`) with POST/PUT/DELETE/PATCH could be created outside `/api/*`, bypassing proxy.ts CSRF protection.
+
+**How We Fixed It**: Added `__tests__/security/routeHandlerCsrf.test.ts` that:
+
+1. Scans all `app/**/route.ts` files
+2. Flags any with mutation methods that aren't under `app/api/`
+3. Exemption via `@non-api-route-allowed` comment (requires manual CSRF)
+
+**Why This Helps**: Prevents accidentally creating unprotected mutation routes.
+
+---
+
 ## Questions Resolved
 
 1. **How should server actions satisfy CSRF requirements?**
@@ -185,9 +233,12 @@ if (isCronRoute) {
 | `proxy.ts`                                    | CRON_SECRET bypass restricted to `/api/cron/*` only        |
 | `app/api/email/unsubscribe/route.ts`          | GET redirects to confirmation, POST performs unsubscribe   |
 | `app/unsubscribe/page.tsx`                    | New confirmation page for unsubscribe                      |
+| `app/api/shares/[shareId]/route.ts`           | GET read-only, POST tracks views (CSRF protected)          |
+| `app/shared/[shareId]/page.tsx`               | Calls POST to track views                                  |
 | `__tests__/lib/csrfProtection.test.ts`        | 23 unit tests for CSRF protection                          |
 | `__tests__/proxy.test.ts`                     | 29 integration tests for proxy                             |
-| `__tests__/security/serverActionCsrf.test.ts` | Lint guard for server action CSRF                          |
+| `__tests__/security/serverActionCsrf.test.ts` | 8 tests: lint guard for server action CSRF (whole repo)    |
+| `__tests__/security/routeHandlerCsrf.test.ts` | 3 tests: lint guard for route handler locations            |
 | `CONTRIBUTING.md`                             | Security guidelines for contributors                       |
 
 ---
@@ -195,9 +246,9 @@ if (isCronRoute) {
 ## Verification
 
 ```bash
-# Run all security tests
-npm test -- --testPathPatterns="csrf|proxy|serverAction"
-# Expected: 55 tests pass (23 + 29 + 3)
+# Run all security tests (63 total)
+npm test -- --testPathPatterns="csrf|proxy|serverAction|routeHandler"
+# Expected: 63 tests pass (23 + 29 + 8 + 3)
 
 # Confirm server action has CSRF protection
 grep -n "validateServerActionOrigin" lib/actions/childSafety.ts
@@ -207,8 +258,12 @@ grep -n "validateServerActionOrigin" lib/actions/childSafety.ts
 grep -n "export async function POST" app/api/email/unsubscribe/route.ts
 # Expected: POST handler exists
 
-# Lint guard catches missing protection
-npm test -- --testPathPatterns=serverActionCsrf
+# Confirm shares uses POST for view tracking
+grep -n "export async function POST" "app/api/shares/[shareId]/route.ts"
+# Expected: POST handler exists
+
+# Lint guards catch missing protection
+npm test -- --testPathPatterns="serverActionCsrf|routeHandlerCsrf"
 # Expected: All tests pass
 
 # Build passes
