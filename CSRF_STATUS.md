@@ -50,3 +50,11 @@ grep -n "eyJ" lib/csrfProtection.ts
 
 - `docs/security/SECURITY-ASSESSMENT-2025-11-29.md` - Full security assessment
 - `CLAUDE.md` - API Security section documents CSRF protection
+- `docs/reference/NEXTJS_PROXY_REFERENCE.md` - Next.js 16+ proxy documentation (middleware → proxy migration)
+
+## Next.js 16+ Note
+
+In Next.js 16+, `middleware.ts` was renamed to `proxy.ts`. If an LLM or documentation references "middleware", the equivalent in this project is `proxy.ts`. See the official docs:
+
+- https://nextjs.org/docs/app/api-reference/file-conventions/proxy
+- https://nextjs.org/docs/app/guides/upgrading/version-16

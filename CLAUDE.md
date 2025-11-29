@@ -575,6 +575,8 @@ const showModal = useModalStore((state) => state.modal.isOpen)
 
 ### CSRF Protection
 
+> **Note**: Next.js 16+ uses `proxy.ts` instead of `middleware.ts`. See `docs/reference/NEXTJS_PROXY_REFERENCE.md` for full documentation on this change.
+
 Global CSRF protection is implemented in `proxy.ts` (Next.js 16+ convention):
 
 - **Protected methods**: POST, PUT, DELETE, PATCH requests to `/api/*`
