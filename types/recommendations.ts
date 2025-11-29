@@ -268,3 +268,70 @@ export const RECOMMENDATION_REASONS = {
     trending: (genre: string) => `Trending in ${genre}`,
     new_release: () => 'New release matching your taste',
 } as const
+
+// ============================================================================
+// Phase 2: Feedback Loop Types
+// ============================================================================
+
+/**
+ * Feedback action types
+ */
+export type FeedbackAction =
+    | 'viewed' // User viewed content for >3 seconds
+    | 'dismissed' // User explicitly dismissed content
+    | 'hidden' // User hid content (already handled by interactions)
+    | 'liked' // User liked content (already handled by interactions)
+    | 'watchlisted' // User added to watchlist (already handled by interactions)
+    | 'scrolled_past' // User scrolled past without interaction
+
+/**
+ * Feedback type classification
+ */
+export type FeedbackType = 'explicit' | 'implicit'
+
+/**
+ * Recommendation feedback entry
+ * Tracks user interactions with recommended content for learning
+ */
+export interface RecommendationFeedback {
+    /** Unique feedback ID */
+    id: string
+
+    /** User who performed the action */
+    userId: string
+
+    /** Content ID */
+    contentId: number
+
+    /** Media type */
+    mediaType: 'movie' | 'tv'
+
+    /** Recommendation page number (1-indexed) */
+    recommendationPage: number
+
+    /** Type of feedback */
+    feedbackType: FeedbackType
+
+    /** Action performed */
+    action: FeedbackAction
+
+    /** Timestamp when action occurred */
+    timestamp: number
+
+    /** Source row */
+    source: 'recommended_row'
+}
+
+/**
+ * Feedback constraints
+ */
+export const FEEDBACK_CONSTRAINTS = {
+    /** Retention period (90 days) */
+    RETENTION_DAYS: 90,
+
+    /** Minimum view time to count as "viewed" (3 seconds) */
+    MIN_VIEW_TIME_MS: 3000,
+
+    /** Recent feedback window (30 days) */
+    RECENT_WINDOW_DAYS: 30,
+} as const

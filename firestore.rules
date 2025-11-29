@@ -650,6 +650,37 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Recommendation feedback collection (Phase 2 - Feedback Loop)
+    match /recommendation_feedback/{feedbackId} {
+      // Only authenticated users can read their own feedback
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+
+      // Allow create if authenticated and userId matches auth
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid
+                    && isValidFeedbackData(request.resource.data);
+
+      // No updates or deletes - feedback is immutable once created
+      allow update, delete: if false;
+    }
+
+    // Helper function to validate feedback data structure
+    function isValidFeedbackData(data) {
+      return data.keys().hasAll(['id', 'userId', 'contentId', 'mediaType', 'recommendationPage', 'feedbackType', 'action', 'timestamp', 'source'])
+             && data.id is string
+             && data.userId is string
+             && data.contentId is number
+             && data.mediaType is string
+             && data.mediaType in ['movie', 'tv']
+             && data.recommendationPage is number
+             && data.feedbackType is string
+             && data.feedbackType in ['explicit', 'implicit']
+             && data.action is string
+             && data.action in ['viewed', 'dismissed', 'hidden', 'liked', 'watchlisted', 'scrolled_past']
+             && data.timestamp is number
+             && data.source == 'recommended_row';
+    }
+
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;
