@@ -726,44 +726,6 @@ const AboutModal: React.FC<AboutModalProps> = ({
                     </div>
                 )
             }
-            case 'tutorial': {
-                const tutorial = tutorialFeatures[highlightedIndex]
-                if (!tutorial) return null
-                return (
-                    <div
-                        className={`rounded-xl ${tutorial.bg} border-2 ${tutorial.activeBorder} ${tutorial.activeGlow} p-4 sm:p-5 transition-all duration-300`}
-                    >
-                        <div className="flex items-start gap-4">
-                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0">
-                                <tutorial.icon
-                                    className={`w-7 h-7 sm:w-8 sm:h-8 ${tutorial.color}`}
-                                />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <h4 className="text-lg sm:text-xl font-bold text-white mb-2">
-                                    {tutorial.title}
-                                </h4>
-                                <p className="text-sm text-gray-400 mb-2 sm:hidden">
-                                    {tutorial.desc}
-                                </p>
-                                <ul className="space-y-1.5">
-                                    {tutorial.details
-                                        .slice(0, isMobile ? 2 : 3)
-                                        .map((detail, idx) => (
-                                            <li
-                                                key={idx}
-                                                className="flex items-start gap-2 text-xs sm:text-sm text-gray-300"
-                                            >
-                                                <span className={tutorial.color}>•</span>
-                                                <span>{detail}</span>
-                                            </li>
-                                        ))}
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
             case 'architecture': {
                 const arch = architecture[highlightedIndex]
                 if (!arch) return null
