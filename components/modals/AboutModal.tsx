@@ -925,6 +925,41 @@ const AboutModal: React.FC<AboutModalProps> = ({
                                 architecture with real-world features like AI-powered search,
                                 real-time data sync, and responsive design.
                             </p>
+
+                            {/* Help Buttons */}
+                            {(onStartTour || onOpenTutorial) && (
+                                <div className="flex gap-2 mb-3">
+                                    {onOpenTutorial && (
+                                        <button
+                                            onClick={() => {
+                                                onClose()
+                                                setTimeout(() => {
+                                                    onOpenTutorial()
+                                                }, 300)
+                                            }}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/20 hover:bg-blue-500/30 rounded-full text-xs font-medium text-blue-300 hover:text-blue-200 border border-blue-500/40 hover:border-blue-400 transition-all"
+                                        >
+                                            <AcademicCapIcon className="w-3.5 h-3.5" />
+                                            Tutorial
+                                        </button>
+                                    )}
+                                    {onStartTour && (
+                                        <button
+                                            onClick={() => {
+                                                onClose()
+                                                setTimeout(() => {
+                                                    onStartTour()
+                                                }, 300)
+                                            }}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/20 hover:bg-orange-500/30 rounded-full text-xs font-medium text-orange-300 hover:text-orange-200 border border-orange-500/40 hover:border-orange-400 transition-all"
+                                        >
+                                            <RocketLaunchIcon className="w-3.5 h-3.5" />
+                                            Quick Tour
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+
                             <p className="text-sm text-gray-400 leading-relaxed mb-3">
                                 Check out my{' '}
                                 <a
@@ -990,62 +1025,6 @@ const AboutModal: React.FC<AboutModalProps> = ({
                             </div>
                         </div>
                     </div>
-
-                    {/* Help & Getting Started */}
-                    {(onStartTour || onOpenTutorial) && (
-                        <div className="mt-4 pt-4 border-t border-zinc-700/30">
-                            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                                Getting Started
-                            </h3>
-                            <div className="flex gap-2">
-                                {/* Tutorial Button */}
-                                {onOpenTutorial && (
-                                    <button
-                                        onClick={() => {
-                                            onClose()
-                                            setTimeout(() => {
-                                                onOpenTutorial()
-                                            }, 300)
-                                        }}
-                                        className="flex-1 flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-lg border border-blue-500/40 hover:border-blue-400 hover:from-blue-500/20 hover:to-cyan-500/20 transition-all group"
-                                    >
-                                        <AcademicCapIcon className="w-4 h-4 text-blue-400 flex-shrink-0" />
-                                        <div className="flex-1 text-left min-w-0">
-                                            <div className="text-xs font-semibold text-white truncate">
-                                                Tutorial
-                                            </div>
-                                            <div className="text-xs text-gray-400 group-hover:text-gray-300 truncate">
-                                                Learn features
-                                            </div>
-                                        </div>
-                                    </button>
-                                )}
-
-                                {/* Interactive Tour Button */}
-                                {onStartTour && (
-                                    <button
-                                        onClick={() => {
-                                            onClose()
-                                            setTimeout(() => {
-                                                onStartTour()
-                                            }, 300)
-                                        }}
-                                        className="flex-1 flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-lg border border-orange-500/40 hover:border-orange-400 hover:from-orange-500/20 hover:to-red-500/20 transition-all group"
-                                    >
-                                        <RocketLaunchIcon className="w-4 h-4 text-orange-400 flex-shrink-0" />
-                                        <div className="flex-1 text-left min-w-0">
-                                            <div className="text-xs font-semibold text-white truncate">
-                                                Quick Tour
-                                            </div>
-                                            <div className="text-xs text-gray-400 group-hover:text-gray-300 truncate">
-                                                60 seconds
-                                            </div>
-                                        </div>
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    )}
                 </div>
 
                 {/* Tab Navigation */}
