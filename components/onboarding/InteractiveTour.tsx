@@ -48,6 +48,8 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
         left: number
     } | null>(null)
     const [mounted, setMounted] = useState(false)
+    const [previousFeatureIndex, setPreviousFeatureIndex] = useState<number>(-1)
+    const [transitionType, setTransitionType] = useState<'feature' | 'pane' | 'none'>('none')
     const tooltipRef = useRef<HTMLDivElement>(null)
 
     const currentStep = TOUR_STEPS[currentTourStep]
@@ -64,6 +66,26 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
         setMounted(true)
         return () => setMounted(false)
     }, [])
+
+    // Track feature changes for transition animations
+    useEffect(() => {
+        if (!isActive) return
+
+        const currentFeatureIdx = panePosition.featureIndex
+
+        if (previousFeatureIndex === -1) {
+            // First render
+            setPreviousFeatureIndex(currentFeatureIdx)
+            setTransitionType('none')
+        } else if (currentFeatureIdx !== previousFeatureIndex) {
+            // Feature changed
+            setTransitionType('feature')
+            setPreviousFeatureIndex(currentFeatureIdx)
+        } else {
+            // Same feature, different pane
+            setTransitionType('pane')
+        }
+    }, [currentTourStep, isActive, panePosition.featureIndex, previousFeatureIndex])
 
     // Find and track target element
     useEffect(() => {
@@ -113,6 +135,7 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
     }, [isActive, currentStep])
 
     // Calculate tooltip position relative to target
+    // Keep position fixed for panes within the same feature
     useEffect(() => {
         if (!targetElement || !tooltipRef.current || !currentStep) return
 
@@ -160,17 +183,31 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
             setTooltipPosition({ top, left })
         }
 
-        calculatePosition()
+        // Only recalculate position when changing features or on first pane
+        // Keep position fixed when navigating between panes of the same feature
+        if (
+            transitionType === 'feature' ||
+            transitionType === 'none' ||
+            panePosition.paneIndexInFeature === 0
+        ) {
+            calculatePosition()
+        }
 
-        // Recalculate on window resize/scroll
-        window.addEventListener('resize', calculatePosition)
-        window.addEventListener('scroll', calculatePosition, true)
+        // Recalculate on window resize/scroll only if we're changing features
+        const handleResize = () => {
+            if (transitionType === 'feature' || transitionType === 'none') {
+                calculatePosition()
+            }
+        }
+
+        window.addEventListener('resize', handleResize)
+        window.addEventListener('scroll', handleResize, true)
 
         return () => {
-            window.removeEventListener('resize', calculatePosition)
-            window.removeEventListener('scroll', calculatePosition, true)
+            window.removeEventListener('resize', handleResize)
+            window.removeEventListener('scroll', handleResize, true)
         }
-    }, [targetElement, currentStep])
+    }, [targetElement, currentStep, transitionType, panePosition.paneIndexInFeature])
 
     // Define navigation handlers before they're used in keyboard effect
     const handleNext = useCallback(() => {
@@ -350,7 +387,14 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
                 >
                     <div
                         ref={tooltipRef}
-                        className="max-w-2xl p-8 bg-zinc-900/98 backdrop-blur-xl border-2 border-orange-500/40 rounded-2xl shadow-2xl shadow-orange-500/20 animate-fade-in pointer-events-auto"
+                        key={currentTourStep}
+                        className={`max-w-2xl p-8 bg-zinc-900/98 backdrop-blur-xl border-2 border-orange-500/40 rounded-2xl shadow-2xl shadow-orange-500/20 pointer-events-auto transition-all duration-300 ${
+                            transitionType === 'feature'
+                                ? 'animate-tour-feature-change'
+                                : transitionType === 'pane'
+                                  ? 'animate-tour-pane-change'
+                                  : 'animate-fade-in'
+                        }`}
                     >
                         {/* Header */}
                         <div className="flex items-start justify-between mb-4">
@@ -461,8 +505,15 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
             ) : (
                 <div
                     ref={tooltipRef}
+                    key={currentTourStep}
                     style={tooltipStyle}
-                    className="w-full max-w-md p-6 bg-zinc-900/98 backdrop-blur-xl border-2 border-orange-500/40 rounded-2xl shadow-2xl shadow-orange-500/20 animate-fade-in"
+                    className={`w-full max-w-md p-6 bg-zinc-900/98 backdrop-blur-xl border-2 border-orange-500/40 rounded-2xl shadow-2xl shadow-orange-500/20 transition-all duration-300 ${
+                        transitionType === 'feature'
+                            ? 'animate-tour-feature-change'
+                            : transitionType === 'pane'
+                              ? 'animate-tour-pane-change'
+                              : 'animate-fade-in'
+                    }`}
                 >
                     {/* Header */}
                     <div className="flex items-start justify-between mb-4">
