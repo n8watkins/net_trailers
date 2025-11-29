@@ -650,7 +650,7 @@ const AboutModal: React.FC<AboutModalProps> = ({
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-2">
-                                    <h4 className="text-lg sm:text-xl font-bold text-white">
+                                    <h4 className="text-xl sm:text-2xl font-bold text-white">
                                         {tech.name}
                                     </h4>
                                     {tech.version && (
@@ -691,7 +691,7 @@ const AboutModal: React.FC<AboutModalProps> = ({
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="mb-2">
-                                    <h4 className="text-lg sm:text-xl font-bold text-white">
+                                    <h4 className="text-xl sm:text-2xl font-bold text-white">
                                         {feature.title}
                                     </h4>
                                 </div>
@@ -727,7 +727,7 @@ const AboutModal: React.FC<AboutModalProps> = ({
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="mb-2">
-                                    <h4 className="text-lg sm:text-xl font-bold text-white">
+                                    <h4 className="text-xl sm:text-2xl font-bold text-white">
                                         {arch.title}
                                     </h4>
                                 </div>
@@ -759,7 +759,7 @@ const AboutModal: React.FC<AboutModalProps> = ({
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="mb-2">
-                                    <h4 className="text-lg sm:text-xl font-bold text-white">
+                                    <h4 className="text-xl sm:text-2xl font-bold text-white">
                                         {sec.title}
                                     </h4>
                                 </div>
@@ -818,7 +818,7 @@ const AboutModal: React.FC<AboutModalProps> = ({
                                     />
                                 )}
                             </div>
-                            <span className="text-xs sm:text-sm font-medium text-white truncate">
+                            <span className="text-sm sm:text-base font-medium text-white truncate">
                                 {tech.name}
                             </span>
                         </button>
@@ -840,7 +840,7 @@ const AboutModal: React.FC<AboutModalProps> = ({
                             <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
                                 <feature.icon className={`w-5 h-5 ${feature.color}`} />
                             </div>
-                            <span className="text-xs sm:text-sm font-medium text-white truncate">
+                            <span className="text-sm sm:text-base font-medium text-white truncate">
                                 {feature.title}
                             </span>
                         </button>
@@ -862,7 +862,7 @@ const AboutModal: React.FC<AboutModalProps> = ({
                             <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
                                 <arch.icon className="w-5 h-5 text-red-400" />
                             </div>
-                            <span className="text-xs sm:text-sm font-medium text-white truncate">
+                            <span className="text-sm sm:text-base font-medium text-white truncate">
                                 {arch.title}
                             </span>
                         </button>
@@ -884,7 +884,7 @@ const AboutModal: React.FC<AboutModalProps> = ({
                             <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
                                 <sec.icon className="w-5 h-5 text-emerald-400" />
                             </div>
-                            <span className="text-xs sm:text-sm font-medium text-white truncate">
+                            <span className="text-sm sm:text-base font-medium text-white truncate">
                                 {sec.title}
                             </span>
                         </button>
