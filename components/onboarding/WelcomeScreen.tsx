@@ -5,6 +5,7 @@ import {
     PlayCircleIcon,
     XMarkIcon,
 } from '@heroicons/react/24/outline'
+import { useRouter } from 'next/navigation'
 
 interface WelcomeScreenProps {
     isOpen: boolean
@@ -21,6 +22,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     onBrowseFeatures,
     onWatchDemo,
 }) => {
+    const router = useRouter()
     const modalRef = useRef<HTMLDivElement>(null)
     const firstButtonRef = useRef<HTMLButtonElement>(null)
 
@@ -108,9 +110,11 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                         ref={firstButtonRef}
                         onClick={() => {
                             onClose()
+                            // Navigate to home page first, then start tour after navigation
+                            router.push('/')
                             setTimeout(() => {
                                 onStartTour()
-                            }, 300)
+                            }, 400)
                         }}
                         className="group relative bg-zinc-800/60 backdrop-blur-lg border-2 border-orange-500/30 rounded-xl p-6 transition-all duration-300 hover:scale-105 hover:border-orange-500/60 hover:shadow-xl hover:shadow-orange-500/20"
                         aria-label="Quick Start: 60-second interactive tour (Recommended)"

@@ -14,6 +14,7 @@ import {
     FunnelIcon,
 } from '@heroicons/react/24/outline'
 import { HandThumbUpIcon, RectangleStackIcon } from '@heroicons/react/24/solid'
+import { useRouter } from 'next/navigation'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import { useModalStore } from '../../stores/modalStore'
 
@@ -24,6 +25,7 @@ interface TutorialModalProps {
 }
 
 const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartTour }) => {
+    const router = useRouter()
     const { isGuest } = useAuthStatus()
     const { openAuthModal } = useModalStore()
     const [activeTab, setActiveTab] = useState<'basics' | 'advanced' | 'community'>('basics')
@@ -454,9 +456,11 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartT
                                         <button
                                             onClick={() => {
                                                 onClose()
+                                                // Navigate to home page first, then start tour after navigation
+                                                router.push('/')
                                                 setTimeout(() => {
                                                     onStartTour()
-                                                }, 300)
+                                                }, 400)
                                             }}
                                             className="flex-shrink-0 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold rounded-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-lg hover:shadow-orange-500/50 hover:scale-105"
                                         >
