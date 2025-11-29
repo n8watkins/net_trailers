@@ -186,7 +186,20 @@ async function handlePersonalizedRecommendations(
         ])
 
         // Merge recommendations with diversity
-        const mergedContent = mergeRecommendations([genreBased, tmdbSimilar], limit)
+        let mergedContent = mergeRecommendations([genreBased, tmdbSimilar], limit)
+
+        // V2: Filter out content from disliked genres (3+ dislikes)
+        const hiddenGenreIds = interactionSummary?.negativeSignals.hiddenGenres || []
+        if (hiddenGenreIds.length > 0) {
+            mergedContent = mergedContent.filter((content) => {
+                // Check if content has any of the hidden genres
+                const contentGenres = content.genre_ids || []
+                const hasHiddenGenre = contentGenres.some((genreId) =>
+                    hiddenGenreIds.includes(genreId)
+                )
+                return !hasHiddenGenre
+            })
+        }
 
         // Convert to Recommendation objects with metadata
         const recommendations: Recommendation[] = mergedContent.map((content, index) => {

@@ -152,20 +152,20 @@ function calculateTimeRangedPreferences(
 
 /**
  * Extract negative signals from interactions and ratings
+ *
+ * Fix: Removed genre tracking from individual content hides (too aggressive)
+ * Fix: Optimized O(n²) dislike detection to O(n) using Map
  */
 function extractNegativeSignals(
     interactions: UserInteraction[],
     ratings: RatedContent[]
 ): NegativeSignals {
     const hiddenContent = new Set<number>()
-    const hiddenGenres = new Set<number>()
 
-    // From interactions
+    // From interactions - track only hidden content IDs
     interactions.forEach((interaction) => {
         if (interaction.interactionType === 'hide_content') {
             hiddenContent.add(interaction.contentId)
-            // Also track genres of hidden content
-            interaction.genreIds.forEach((genreId) => hiddenGenres.add(genreId))
         } else if (interaction.interactionType === 'unhide_content') {
             // Remove from hidden if unhidden
             hiddenContent.delete(interaction.contentId)
@@ -173,24 +173,28 @@ function extractNegativeSignals(
     })
 
     // From disliked content (negative signal for genres)
+    // Optimized: Single O(n) pass to count dislikes per genre
+    const dislikesByGenre = new Map<number, number>()
+
     ratings.forEach((rating) => {
         if (rating.rating === 'dislike') {
             rating.content.genre_ids?.forEach((genreId: number) => {
-                // Only add if user has multiple dislikes in this genre
-                const dislikesInGenre = ratings.filter(
-                    (r) => r.rating === 'dislike' && r.content.genre_ids?.includes(genreId)
-                ).length
-
-                if (dislikesInGenre >= 3) {
-                    hiddenGenres.add(genreId)
-                }
+                dislikesByGenre.set(genreId, (dislikesByGenre.get(genreId) || 0) + 1)
             })
+        }
+    })
+
+    // Filter genres with 3+ dislikes
+    const hiddenGenres: number[] = []
+    dislikesByGenre.forEach((count, genreId) => {
+        if (count >= 3) {
+            hiddenGenres.push(genreId)
         }
     })
 
     return {
         hiddenContent: Array.from(hiddenContent),
-        hiddenGenres: Array.from(hiddenGenres),
+        hiddenGenres,
     }
 }
 

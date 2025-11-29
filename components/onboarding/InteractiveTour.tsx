@@ -234,16 +234,75 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
               zIndex: 9999,
           }
 
+    // Calculate overlay rectangles that cover everything except the spotlight
+    const overlayRects = targetElement
+        ? (() => {
+              const rect = targetElement.getBoundingClientRect()
+              const padding = currentStep.spotlightPadding ?? 8
+              const spotlightTop = rect.top - padding
+              const spotlightBottom = rect.bottom + padding
+              const spotlightLeft = rect.left - padding
+              const spotlightRight = rect.right + padding
+
+              return {
+                  top: { top: 0, left: 0, right: 0, height: Math.max(0, spotlightTop) },
+                  bottom: {
+                      top: spotlightBottom,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                  },
+                  left: {
+                      top: spotlightTop,
+                      left: 0,
+                      width: Math.max(0, spotlightLeft),
+                      height: spotlightBottom - spotlightTop,
+                  },
+                  right: {
+                      top: spotlightTop,
+                      right: 0,
+                      left: spotlightRight,
+                      height: spotlightBottom - spotlightTop,
+                  },
+              }
+          })()
+        : null
+
     return createPortal(
         <div className="tour-overlay" role="dialog" aria-modal="true" aria-labelledby="tour-title">
-            {/* Backdrop with spotlight cutout effect */}
-            <div className="fixed inset-0 z-[9997]">
-                {/* Very light overlay - just enough to dim non-highlighted areas */}
-                <div className="absolute inset-0 bg-black/40" />
+            {/* Backdrop with spotlight cutout - 4 rectangles that don't cover the spotlight */}
+            <div className="fixed inset-0 z-[9997] pointer-events-none">
+                {targetElement && overlayRects ? (
+                    <>
+                        {/* Top overlay */}
+                        <div
+                            className="absolute bg-black/40 pointer-events-auto"
+                            style={overlayRects.top}
+                        />
+                        {/* Bottom overlay */}
+                        <div
+                            className="absolute bg-black/40 pointer-events-auto"
+                            style={overlayRects.bottom}
+                        />
+                        {/* Left overlay */}
+                        <div
+                            className="absolute bg-black/40 pointer-events-auto"
+                            style={overlayRects.left}
+                        />
+                        {/* Right overlay */}
+                        <div
+                            className="absolute bg-black/40 pointer-events-auto"
+                            style={overlayRects.right}
+                        />
+                    </>
+                ) : (
+                    /* Full overlay when no target element */
+                    <div className="absolute inset-0 bg-black/40 pointer-events-auto" />
+                )}
 
-                {/* Spotlight highlight - brightens the target area */}
+                {/* Spotlight highlight - brightens the target area and allows interaction */}
                 {targetElement && (
-                    <div style={spotlightStyle}>
+                    <div style={spotlightStyle} className="pointer-events-none">
                         {/* Bright background to make element visible */}
                         <div className="absolute inset-0 bg-white/20 rounded-lg backdrop-blur-[1px]" />
 
