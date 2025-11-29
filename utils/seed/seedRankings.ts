@@ -1895,7 +1895,7 @@ export async function seedRankings(options: SeedRankingsOptions): Promise<void> 
         try {
             const rankingId = await useRankingStore
                 .getState()
-                .createRanking(userId, userName, userAvatar, {
+                .createRanking(userId, userName, undefined, userAvatar, {
                     title: template.title,
                     description: template.description,
                     itemCount: items.length,

@@ -4,8 +4,6 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-    EnvelopeIcon,
-    KeyIcon,
     ShareIcon,
     UserCircleIcon,
     TrashIcon,
@@ -15,6 +13,7 @@ import {
     RectangleStackIcon,
     SparklesIcon,
     MagnifyingGlassIcon,
+    ShieldCheckIcon,
 } from '@heroicons/react/24/outline'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
@@ -24,8 +23,7 @@ import { useSessionStore } from '../../stores/sessionStore'
 
 type SettingsSection =
     | 'profile'
-    | 'email'
-    | 'password'
+    | 'account-management'
     | 'preferences'
     | 'notifications'
     | 'recommendations'
@@ -88,24 +86,27 @@ const SettingsLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
             ],
         },
         {
-            id: 'email',
-            path: '/settings/email',
-            title: 'Email Settings',
-            description: 'Change your email address',
-            icon: EnvelopeIcon,
-            priority: 'medium',
+            id: 'account-management',
+            path: '/settings/account-management',
+            title: 'Account Management',
+            description: 'Manage your email and password',
+            icon: ShieldCheckIcon,
+            priority: 'high',
             authenticatedOnly: true,
-            searchKeywords: ['email', 'address', 'contact', 'update email', 'change email'],
-        },
-        {
-            id: 'password',
-            path: '/settings/password',
-            title: 'Password',
-            description: 'Update your password',
-            icon: KeyIcon,
-            priority: 'medium',
-            authenticatedOnly: true,
-            searchKeywords: ['password', 'security', 'change password', 'reset', 'authentication'],
+            searchKeywords: [
+                'email',
+                'password',
+                'security',
+                'credentials',
+                'login',
+                'authentication',
+                'change email',
+                'change password',
+                'update email',
+                'update password',
+                'verify email',
+                'verification',
+            ],
         },
         {
             id: 'preferences',
