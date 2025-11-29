@@ -16,6 +16,7 @@ import { useSessionStore } from '../../stores/sessionStore'
 import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
 import { auth } from '../../firebase'
+import { useToast } from '../../hooks/useToast'
 import RecommendationInsightsModal from './RecommendationInsightsModal'
 import GenrePreferenceModal, { PreviewContent } from './GenrePreferenceModal'
 import TitlePreferenceModal, { ContentWithCredits } from './TitlePreferenceModal'
@@ -71,6 +72,7 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
 
     // Phase 2: Recommendation Feedback Tracking
     const feedbackHook = useRecommendationFeedback()
+    const { showContentHidden } = useToast()
     const contentPageMapRef = useRef<Map<string, number>>(new Map()) // Map content ID+type to page number
     const viewedContentRef = useRef<Set<string>>(new Set()) // Track which content has been viewed
     const previousDataRef = useRef<{
@@ -170,6 +172,10 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
                         mediaType: recommendation.content.media_type as 'movie' | 'tv',
                         page,
                     })
+
+                    // Show confirmation toast
+                    const contentTitle = getContentTitle(recommendation.content)
+                    showContentHidden('Content dismissed', contentTitle)
                 }
             }
         }
