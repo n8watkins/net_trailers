@@ -372,6 +372,17 @@ const AboutModal: React.FC<AboutModalProps> = ({
         },
         {
             icon: LockClosedIcon,
+            title: 'Token Verification',
+            desc: 'Firebase ID token authentication',
+            details: [
+                'Server-side Firebase Admin SDK token validation',
+                'Prevents header spoofing and unauthorized access',
+                'Admin UID verification for privileged operations',
+                'Session expiry handling with user-friendly messages',
+            ],
+        },
+        {
+            icon: CodeBracketIcon,
             title: 'Request Validation',
             desc: 'Size limits and content-type checks',
             details: [
@@ -379,6 +390,17 @@ const AboutModal: React.FC<AboutModalProps> = ({
                 'Content-Type validation for POST/PUT/PATCH requests',
                 'Rejects oversized payloads (413 status)',
                 'Protects against memory exhaustion attacks',
+            ],
+        },
+        {
+            icon: BellIcon,
+            title: 'Security Monitoring',
+            desc: 'Logging and error tracking',
+            details: [
+                'Request validation logging for security events',
+                'Sentry integration tracks errors and anomalies',
+                'CSRF attempt detection and logging',
+                'Audit trail for admin and sensitive operations',
             ],
         },
         {
