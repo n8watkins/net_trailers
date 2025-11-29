@@ -919,18 +919,14 @@ const AboutModal: React.FC<AboutModalProps> = ({
                                 Hi, I&apos;m Nathan 👋
                             </h2>
                             <p className="text-sm text-gray-300 leading-relaxed mb-2">
-                                I believe the future of content discovery isn&apos;t about endless
-                                scrolling through algorithmic feeds—it&apos;s about giving people
-                                the tools to curate their own experience. NetTrailers lets you
-                                search by vibe (&quot;rainy day movies&quot; or &quot;mind-bending
-                                thrillers&quot;), build custom collections that match exactly what
-                                you want to watch, and hide content you&apos;re not interested in so
-                                your feed actually gets better over time. You can share your top 10
-                                rankings and thoughts on what makes content worth watching, and
-                                others can pull those recommendations into their own collections.
-                                It&apos;s about using AI not to decide for you, but to help you find
-                                and organize the content you actually care about—then share that
-                                taste with others who get it.
+                                The future of content discovery isn&apos;t endless scrolling through
+                                algorithmic feeds—it&apos;s giving people tools to curate their own
+                                experience. Search by vibe instead of keywords. Build collections
+                                that match exactly what you want. Hide what you&apos;re not
+                                interested in so your feed gets better. Share your taste through
+                                rankings and let others pull your recommendations into their
+                                collections. AI should help you find and organize what you care
+                                about, not decide for you.
                             </p>
 
                             <div className="border-t border-zinc-700/30 my-3" />
