@@ -325,34 +325,46 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
                     // Try to load cached summary first
                     const cachedSummary = await getV2InteractionSummary(userId)
 
-                    // Fetch current interaction count to check if refresh needed
-                    const interactions = await getRecentInteractions(userId, 1000)
-                    const needsRefresh = shouldRefreshSummary(cachedSummary, interactions.length)
+                    // Check if cache is fresh (time-based only - 24h TTL)
+                    const now = Date.now()
+                    const isCacheFresh =
+                        cachedSummary && now - cachedSummary.lastCalculated < 24 * 60 * 60 * 1000
 
-                    if (cachedSummary && !needsRefresh) {
-                        // Use cached summary (fresh within 24h and <10 new interactions)
+                    if (isCacheFresh) {
+                        // Use cached summary WITHOUT fetching interactions (true cache hit)
                         interactionSummary = cachedSummary
-                        const age = Date.now() - cachedSummary.lastCalculated
+                        const age = now - cachedSummary!.lastCalculated
                         const ageMinutes = Math.floor(age / 60000)
                         console.log(
-                            `[V2] Using cached summary (${ageMinutes}m old, ${cachedSummary.totalInteractions} interactions)`
+                            `[V2] Cache HIT: Using cached summary (${ageMinutes}m old, ${cachedSummary!.totalInteractions} interactions)`
                         )
-                    } else if (interactions.length > 0) {
-                        // Generate new summary and cache it
-                        interactionSummary = aggregateUserInteractions(
-                            userId,
-                            interactions,
-                            sessionData.myRatings || []
-                        )
-
+                    } else {
+                        // Cache miss or stale - fetch interactions and regenerate
                         console.log(
-                            `[V2] Generated NEW summary: ${interactions.length} interactions → ${interactionSummary.topContent.length} top items`
+                            cachedSummary
+                                ? `[V2] Cache STALE: Regenerating summary (${Math.floor((now - cachedSummary.lastCalculated) / 60000)}m old)`
+                                : '[V2] Cache MISS: Generating first summary'
                         )
 
-                        // Save to cache (don't await - fire and forget)
-                        saveV2InteractionSummary(userId, interactionSummary).catch((err) =>
-                            console.warn('[V2] Failed to cache summary:', err)
-                        )
+                        const interactions = await getRecentInteractions(userId, 1000)
+
+                        if (interactions.length > 0) {
+                            // Generate new summary and cache it
+                            interactionSummary = aggregateUserInteractions(
+                                userId,
+                                interactions,
+                                sessionData.myRatings || []
+                            )
+
+                            console.log(
+                                `[V2] Generated NEW summary: ${interactions.length} interactions → ${interactionSummary.topContent.length} top items`
+                            )
+
+                            // Save to cache (don't await - fire and forget)
+                            saveV2InteractionSummary(userId, interactionSummary).catch((err) =>
+                                console.warn('[V2] Failed to cache summary:', err)
+                            )
+                        }
                     }
                 } catch (error) {
                     console.warn(
