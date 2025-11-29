@@ -926,38 +926,45 @@ const AboutModal: React.FC<AboutModalProps> = ({
                                 real-time data sync, and responsive design.
                             </p>
 
-                            {/* Help Buttons */}
+                            {/* Help Options */}
                             {(onStartTour || onOpenTutorial) && (
-                                <div className="flex gap-2 mb-3">
+                                <p className="text-sm text-gray-400 leading-relaxed mb-2 flex flex-wrap items-center gap-1.5">
+                                    <span>New to NetTrailers?</span>
                                     {onOpenTutorial && (
-                                        <button
-                                            onClick={() => {
-                                                onClose()
-                                                setTimeout(() => {
-                                                    onOpenTutorial()
-                                                }, 300)
-                                            }}
-                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/20 hover:bg-blue-500/30 rounded-full text-xs font-medium text-blue-300 hover:text-blue-200 border border-blue-500/40 hover:border-blue-400 transition-all"
-                                        >
-                                            <AcademicCapIcon className="w-3.5 h-3.5" />
-                                            Tutorial
-                                        </button>
+                                        <>
+                                            <span>Check out the</span>
+                                            <button
+                                                onClick={() => {
+                                                    onClose()
+                                                    setTimeout(() => {
+                                                        onOpenTutorial()
+                                                    }, 300)
+                                                }}
+                                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-500/20 hover:bg-blue-500/30 rounded-full text-xs font-medium text-blue-300 hover:text-blue-200 border border-blue-500/40 hover:border-blue-400 transition-all"
+                                            >
+                                                <AcademicCapIcon className="w-3 h-3" />
+                                                Tutorial
+                                            </button>
+                                        </>
                                     )}
                                     {onStartTour && (
-                                        <button
-                                            onClick={() => {
-                                                onClose()
-                                                setTimeout(() => {
-                                                    onStartTour()
-                                                }, 300)
-                                            }}
-                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/20 hover:bg-orange-500/30 rounded-full text-xs font-medium text-orange-300 hover:text-orange-200 border border-orange-500/40 hover:border-orange-400 transition-all"
-                                        >
-                                            <RocketLaunchIcon className="w-3.5 h-3.5" />
-                                            Quick Tour
-                                        </button>
+                                        <>
+                                            <span>{onOpenTutorial ? 'or take a' : 'Take a'}</span>
+                                            <button
+                                                onClick={() => {
+                                                    onClose()
+                                                    setTimeout(() => {
+                                                        onStartTour()
+                                                    }, 300)
+                                                }}
+                                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-orange-500/20 hover:bg-orange-500/30 rounded-full text-xs font-medium text-orange-300 hover:text-orange-200 border border-orange-500/40 hover:border-orange-400 transition-all"
+                                            >
+                                                <RocketLaunchIcon className="w-3 h-3" />
+                                                Quick Tour
+                                            </button>
+                                        </>
                                     )}
-                                </div>
+                                </p>
                             )}
 
                             <p className="text-sm text-gray-400 leading-relaxed mb-3">
