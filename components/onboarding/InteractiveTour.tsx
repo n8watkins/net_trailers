@@ -106,6 +106,17 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
                 const element = document.querySelector(selector) as HTMLElement
                 if (element) {
                     setTargetElement(element)
+
+                    // Scroll element into view with smooth animation
+                    // Add small delay to ensure DOM is ready
+                    setTimeout(() => {
+                        element.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center',
+                            inline: 'center',
+                        })
+                    }, 100)
+
                     return
                 }
             }
