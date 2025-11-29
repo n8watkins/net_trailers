@@ -7,7 +7,14 @@ import {
     CheckIcon,
 } from '@heroicons/react/24/outline'
 import { useOnboardingStore } from '../../stores/onboardingStore'
-import { TOUR_STEPS, TOTAL_TOUR_STEPS, TourStep } from '../../constants/tourSteps'
+import {
+    TOUR_STEPS,
+    TOTAL_TOUR_STEPS,
+    TourPane,
+    TOUR,
+    getPanePosition,
+    TOTAL_FEATURES,
+} from '../../constants/tourSteps'
 
 // Constants
 const TOOLTIP_PADDING = 32 // Gap between target and tooltip
@@ -46,6 +53,11 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
     const currentStep = TOUR_STEPS[currentTourStep]
     const isFirstStep = currentTourStep === 0
     const isLastStep = currentTourStep === TOTAL_TOUR_STEPS - 1
+
+    // Get feature position info for progress display
+    const panePosition = getPanePosition(currentTourStep)
+    const currentFeature =
+        panePosition.featureIndex >= 0 ? TOUR.features[panePosition.featureIndex] : null
 
     // Mount detection for portal
     useEffect(() => {
@@ -292,30 +304,30 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
             <div className="fixed inset-0 pointer-events-none" style={{ zIndex: Z_INDEX_OVERLAY }}>
                 {targetElement && overlayRects ? (
                     <>
-                        {/* Top overlay */}
+                        {/* Top overlay - blocks clicks */}
                         <div
-                            className="absolute bg-black/40 pointer-events-auto"
+                            className="absolute bg-black/40 pointer-events-auto cursor-not-allowed"
                             style={overlayRects.top}
                         />
-                        {/* Bottom overlay */}
+                        {/* Bottom overlay - blocks clicks */}
                         <div
-                            className="absolute bg-black/40 pointer-events-auto"
+                            className="absolute bg-black/40 pointer-events-auto cursor-not-allowed"
                             style={overlayRects.bottom}
                         />
-                        {/* Left overlay */}
+                        {/* Left overlay - blocks clicks */}
                         <div
-                            className="absolute bg-black/40 pointer-events-auto"
+                            className="absolute bg-black/40 pointer-events-auto cursor-not-allowed"
                             style={overlayRects.left}
                         />
-                        {/* Right overlay */}
+                        {/* Right overlay - blocks clicks */}
                         <div
-                            className="absolute bg-black/40 pointer-events-auto"
+                            className="absolute bg-black/40 pointer-events-auto cursor-not-allowed"
                             style={overlayRects.right}
                         />
                     </>
                 ) : (
-                    /* Full overlay when no target element */
-                    <div className="absolute inset-0 bg-black/40 pointer-events-auto" />
+                    /* Full overlay when no target element - blocks all clicks */
+                    <div className="absolute inset-0 bg-black/40 pointer-events-auto cursor-not-allowed" />
                 )}
 
                 {/* Spotlight highlight - brightens the target area and allows interaction */}
@@ -346,9 +358,18 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
                                 <h2 id="tour-title" className="text-3xl font-bold text-white mb-1">
                                     {currentStep.title}
                                 </h2>
-                                <p className="text-base text-gray-400">
-                                    Step {currentTourStep + 1} of {TOTAL_TOUR_STEPS}
-                                </p>
+                                {panePosition.isWelcome ? (
+                                    <p className="text-base text-gray-400">Welcome</p>
+                                ) : panePosition.isComplete ? (
+                                    <p className="text-base text-gray-400">Tour Complete</p>
+                                ) : currentFeature ? (
+                                    <p className="text-base text-gray-400">
+                                        {currentFeature.icon} {currentFeature.name} •{' '}
+                                        {panePosition.paneIndexInFeature + 1} of{' '}
+                                        {currentFeature.panes.length}
+                                        {currentFeature.panes.length > 1 ? ' panes' : ' pane'}
+                                    </p>
+                                ) : null}
                             </div>
                             {currentStep.skippable !== false && (
                                 <button
@@ -449,9 +470,18 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
                             <h2 id="tour-title" className="text-xl font-bold text-white mb-1">
                                 {currentStep.title}
                             </h2>
-                            <p className="text-sm text-gray-400">
-                                Step {currentTourStep + 1} of {TOTAL_TOUR_STEPS}
-                            </p>
+                            {panePosition.isWelcome ? (
+                                <p className="text-sm text-gray-400">Welcome</p>
+                            ) : panePosition.isComplete ? (
+                                <p className="text-sm text-gray-400">Tour Complete</p>
+                            ) : currentFeature ? (
+                                <p className="text-sm text-gray-400">
+                                    {currentFeature.icon} {currentFeature.name} •{' '}
+                                    {panePosition.paneIndexInFeature + 1} of{' '}
+                                    {currentFeature.panes.length}
+                                    {currentFeature.panes.length > 1 ? ' panes' : ' pane'}
+                                </p>
+                            ) : null}
                         </div>
                         {currentStep.skippable !== false && (
                             <button

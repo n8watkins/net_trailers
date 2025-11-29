@@ -530,7 +530,10 @@ export default function SearchBar({
                     <div className="absolute inset-y-0 right-0 flex items-center">
                         {/* Quick Search Mode Toggle - hidden on mobile */}
                         <div className="hidden sm:flex items-center border-r border-gray-600/30 mr-1 pr-1">
-                            <div className="flex items-center bg-gray-800/60 rounded-full p-0.5">
+                            <div
+                                className="flex items-center bg-gray-800/60 rounded-full p-0.5"
+                                data-tour="search-type-toggle"
+                            >
                                 <button
                                     onClick={() => setSearchMode('content')}
                                     className={`p-1.5 transition-all duration-200 ${
@@ -623,6 +626,7 @@ export default function SearchBar({
                             aria-label={
                                 hasActiveFilters ? 'Active search filters' : 'Search filters'
                             }
+                            data-tour="filter-button"
                         >
                             <FunnelIcon className="h-5 w-5" aria-hidden="true" />
                         </button>

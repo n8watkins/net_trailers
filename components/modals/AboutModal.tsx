@@ -912,8 +912,8 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                 for more projects, or connect with me on social media below!
                             </p>
 
-                            {/* Social Links with labels */}
-                            <div className="flex flex-wrap gap-2 mb-3">
+                            {/* Social Links (icons only) */}
+                            <div className="flex flex-wrap items-center gap-2 mb-3">
                                 {[
                                     {
                                         href: 'https://github.com/n8watkins',
@@ -932,7 +932,8 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                         href={social.href}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-800/60 hover:bg-zinc-700/80 transition-all duration-300 border border-zinc-700/50 hover:border-red-500/50 hover:scale-105 hover:shadow-[0_0_15px_rgba(239,68,68,0.2)]"
+                                        aria-label={social.label}
+                                        className="group w-8 h-8 rounded-full bg-zinc-800/60 hover:bg-zinc-700/80 transition-all duration-300 flex items-center justify-center border border-zinc-700/50 hover:border-red-500/50 hover:scale-110 hover:shadow-[0_0_20px_rgba(239,68,68,0.3)]"
                                     >
                                         {social.icon === 'x' ? (
                                             <svg
@@ -950,9 +951,6 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                                 className="w-3.5 h-3.5"
                                             />
                                         )}
-                                        <span className="text-xs font-medium text-gray-300 group-hover:text-white">
-                                            {social.label}
-                                        </span>
                                     </a>
                                 ))}
                                 <a
