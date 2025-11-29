@@ -69,6 +69,20 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
     const syncStatus = useAuthStore((state) => state.syncStatus)
     const isDataSyncing = sessionType === 'authenticated' && syncStatus === 'syncing'
 
+    // Phase 2: Recommendation Feedback Tracking
+    const feedbackHook = useRecommendationFeedback()
+    const contentPageMapRef = useRef<Map<string, number>>(new Map()) // Map content ID+type to page number
+    const viewedContentRef = useRef<Set<string>>(new Set()) // Track which content has been viewed
+    const previousDataRef = useRef<{
+        likedIds: Set<number>
+        hiddenIds: Set<number>
+        watchlistIds: Set<number>
+    }>({
+        likedIds: new Set(),
+        hiddenIds: new Set(),
+        watchlistIds: new Set(),
+    })
+
     // Check if recommendations are enabled in user preferences
     const showRecommendations = sessionData.showRecommendations ?? true
 
@@ -95,6 +109,130 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
                 .join(','),
         [genrePreferences, contentPreferences, votedContent]
     )
+
+    // Phase 2: Build content-to-page mapping when recommendations change
+    // Page 1 = first 40 items, Page 2 = next batch, etc.
+    useEffect(() => {
+        if (recommendations.length === 0) {
+            contentPageMapRef.current.clear()
+            viewedContentRef.current.clear()
+            return
+        }
+
+        // Map content IDs to page numbers (1-indexed)
+        // Assuming 40 items per page from the API
+        const itemsPerPage = 40
+        recommendations.forEach((rec, index) => {
+            const key = `${rec.content.id}-${rec.content.media_type}`
+            const page = Math.floor(index / itemsPerPage) + 1
+            contentPageMapRef.current.set(key, page)
+        })
+
+        console.log(
+            `[Feedback] Mapped ${recommendations.length} recommendations across ${Math.ceil(recommendations.length / itemsPerPage)} pages`
+        )
+    }, [recommendations])
+
+    // Phase 2: Track user actions on recommended content (liked, hidden, watchlisted)
+    useEffect(() => {
+        const currentLikedIds = new Set(sessionData.likedMovies.map((c) => c.id))
+        const currentHiddenIds = new Set(sessionData.hiddenMovies.map((c) => c.id))
+        const currentWatchlistIds = new Set(sessionData.defaultWatchlist.map((c) => c.id))
+
+        const previous = previousDataRef.current
+
+        // Detect new likes on recommended content
+        for (const id of currentLikedIds) {
+            if (!previous.likedIds.has(id)) {
+                // User just liked this content - check if it's a recommendation
+                const recommendation = recommendations.find((r) => r.content.id === id)
+                if (recommendation) {
+                    const key = `${recommendation.content.id}-${recommendation.content.media_type}`
+                    const page = contentPageMapRef.current.get(key) || 1
+                    feedbackHook.trackLiked({
+                        contentId: recommendation.content.id,
+                        mediaType: recommendation.content.media_type as 'movie' | 'tv',
+                        page,
+                    })
+                }
+            }
+        }
+
+        // Detect new hidden content
+        for (const id of currentHiddenIds) {
+            if (!previous.hiddenIds.has(id)) {
+                const recommendation = recommendations.find((r) => r.content.id === id)
+                if (recommendation) {
+                    const key = `${recommendation.content.id}-${recommendation.content.media_type}`
+                    const page = contentPageMapRef.current.get(key) || 1
+                    feedbackHook.trackHidden({
+                        contentId: recommendation.content.id,
+                        mediaType: recommendation.content.media_type as 'movie' | 'tv',
+                        page,
+                    })
+                }
+            }
+        }
+
+        // Detect new watchlist additions
+        for (const id of currentWatchlistIds) {
+            if (!previous.watchlistIds.has(id)) {
+                const recommendation = recommendations.find((r) => r.content.id === id)
+                if (recommendation) {
+                    const key = `${recommendation.content.id}-${recommendation.content.media_type}`
+                    const page = contentPageMapRef.current.get(key) || 1
+                    feedbackHook.trackWatchlisted({
+                        contentId: recommendation.content.id,
+                        mediaType: recommendation.content.media_type as 'movie' | 'tv',
+                        page,
+                    })
+                }
+            }
+        }
+
+        // Update previous state for next comparison
+        previousDataRef.current = {
+            likedIds: currentLikedIds,
+            hiddenIds: currentHiddenIds,
+            watchlistIds: currentWatchlistIds,
+        }
+    }, [
+        sessionData.likedMovies,
+        sessionData.hiddenMovies,
+        sessionData.defaultWatchlist,
+        recommendations,
+        feedbackHook,
+    ])
+
+    // Phase 2: Track viewed content (simplified - tracks when content becomes visible in the row)
+    // Note: This is a basic implementation. A more sophisticated approach would use
+    // IntersectionObserver to track actual viewport visibility >3 seconds
+    useEffect(() => {
+        if (recommendations.length === 0) return
+
+        // Track the first 10 items as "viewed" when recommendations first load
+        // This simulates the initial view of content in the row
+        const viewableCount = Math.min(10, recommendations.length)
+
+        recommendations.slice(0, viewableCount).forEach((rec) => {
+            const key = `${rec.content.id}-${rec.content.media_type}`
+
+            // Only track once per content
+            if (!viewedContentRef.current.has(key)) {
+                viewedContentRef.current.add(key)
+                const page = contentPageMapRef.current.get(key) || 1
+
+                // Track after a 3-second delay (minimum view time)
+                setTimeout(() => {
+                    feedbackHook.trackViewed({
+                        contentId: rec.content.id,
+                        mediaType: rec.content.media_type as 'movie' | 'tv',
+                        page,
+                    })
+                }, FEEDBACK_CONSTRAINTS.MIN_VIEW_TIME_MS)
+            }
+        })
+    }, [recommendations, feedbackHook])
 
     // Extract all items from user collections (for recommendation engine)
     const collectionItems = useMemo(() => {

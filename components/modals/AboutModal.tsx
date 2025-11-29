@@ -1087,13 +1087,6 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                 {/* Footer */}
                 <div className="relative z-10 px-5 py-2.5 border-t border-zinc-800/50 flex-shrink-0">
                     <div className="flex items-center justify-between">
-                        {/* Progress indicator */}
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                            <span className="font-medium">
-                                {highlightedIndex + 1}/{getCurrentTabItemCount()}
-                            </span>
-                        </div>
-
                         {/* Footer text */}
                         <p className="text-xs text-gray-500">
                             Built with <span className="text-red-400">❤️</span> as a portfolio
