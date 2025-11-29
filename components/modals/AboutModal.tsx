@@ -252,7 +252,7 @@ const AboutModal: React.FC<AboutModalProps> = ({
         {
             id: 'recommendations',
             icon: SparklesIcon,
-            title: 'Your "For You" Row',
+            title: 'Content For You',
             desc: 'Recommendations that actually get you',
             color: 'text-green-400',
             bg: 'bg-green-500/10',
