@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { Content, getTitle as getContentTitle } from '../../typings'
 import { Recommendation } from '../../types/recommendations'
 import Row from '../content/Row'
@@ -30,6 +30,8 @@ import {
     shouldRefreshSummary,
 } from '../../utils/recommendations/interactionAggregator'
 import type { InteractionSummary } from '../../utils/recommendations/interactionAggregator'
+import { useRecommendationFeedback } from '../../hooks/useRecommendationFeedback'
+import { FEEDBACK_CONSTRAINTS } from '../../types/recommendations'
 
 interface RecommendedForYouRowProps {
     onLoadComplete?: () => void

@@ -1092,11 +1092,6 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                             <span className="font-medium">
                                 {highlightedIndex + 1}/{getCurrentTabItemCount()}
                             </span>
-                            {isHovering && (
-                                <span className="text-yellow-500 text-[10px] font-medium">
-                                    PAUSED
-                                </span>
-                            )}
                         </div>
 
                         {/* Footer text */}
@@ -1105,12 +1100,20 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                             project
                         </p>
 
-                        {/* Keyboard hint */}
-                        <div className="hidden sm:flex items-center gap-1 text-xs text-gray-600">
-                            <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 text-gray-400 text-[10px]">
-                                ←/→
-                            </kbd>
-                            <span className="text-gray-500">to navigate</span>
+                        {/* Keyboard hints */}
+                        <div className="hidden sm:flex items-center gap-3 text-xs text-gray-600">
+                            <div className="flex items-center gap-1">
+                                <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 text-gray-400 text-[10px]">
+                                    ←/→
+                                </kbd>
+                                <span className="text-gray-500">navigate</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 text-gray-400 text-[10px]">
+                                    ESC
+                                </kbd>
+                                <span className="text-gray-500">close</span>
+                            </div>
                         </div>
                     </div>
                 </div>
