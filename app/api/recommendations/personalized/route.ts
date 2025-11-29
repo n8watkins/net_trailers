@@ -20,13 +20,23 @@ import {
     UserVotedContent,
 } from '@/utils/recommendations/genreEngine'
 import { getBatchSimilarContent } from '@/utils/tmdb/recommendations'
-import { Recommendation, RECOMMENDATION_CONSTRAINTS } from '@/types/recommendations'
+import {
+    Recommendation,
+    RECOMMENDATION_CONSTRAINTS,
+    RecommendationFeedback,
+    FEEDBACK_CONSTRAINTS,
+} from '@/types/recommendations'
 import { Content, getTitle } from '@/typings'
 import { withAuth } from '@/lib/auth-middleware'
 import { apiError } from '@/utils/debugLogger'
 import { VotedContent, RatedContent } from '@/types/shared'
 import { getAdminDb } from '@/lib/firebase-admin'
 import { InteractionSummary } from '@/utils/recommendations/interactionAggregator'
+import {
+    processFeedback,
+    applyFeedbackToRecommendations,
+    calculateEngagementMetrics,
+} from '@/utils/recommendations/feedbackProcessor'
 
 async function handlePersonalizedRecommendations(
     request: NextRequest,
@@ -148,9 +158,61 @@ async function handlePersonalizedRecommendations(
             votedContent
         )
 
-        // Get content IDs to exclude (already seen + "not for me" votes + negative signals)
+        // Phase 2: Fetch recent feedback data for learning
+        let feedbackSignals: ReturnType<typeof processFeedback> | null = null
+        let engagementMetrics: ReturnType<typeof calculateEngagementMetrics> | null = null
+
+        try {
+            const db = getAdminDb()
+            const thirtyDaysAgo =
+                Date.now() - FEEDBACK_CONSTRAINTS.RECENT_WINDOW_DAYS * 24 * 60 * 60 * 1000
+
+            const feedbackSnapshot = await db
+                .collection('recommendation_feedback')
+                .where('userId', '==', userId)
+                .where('timestamp', '>=', thirtyDaysAgo)
+                .orderBy('timestamp', 'desc')
+                .limit(500)
+                .get()
+
+            if (!feedbackSnapshot.empty) {
+                const feedback: RecommendationFeedback[] = []
+                feedbackSnapshot.forEach((doc) => {
+                    feedback.push(doc.data() as RecommendationFeedback)
+                })
+
+                console.log(
+                    `[Phase 2] Fetched ${feedback.length} feedback entries for user ${userId}`
+                )
+
+                // Process feedback to extract signals
+                feedbackSignals = processFeedback(feedback, contentGenreMap)
+
+                // Calculate engagement metrics for analytics
+                engagementMetrics = calculateEngagementMetrics(feedback)
+
+                console.log(
+                    `[Phase 2] Engagement: ${engagementMetrics.viewRate.toFixed(1)}% view rate, ${engagementMetrics.engagementRate.toFixed(1)}% engagement rate`
+                )
+            }
+        } catch (error) {
+            console.warn('[Phase 2] Failed to fetch feedback, continuing without it:', error)
+            // Continue without feedback - don't block recommendations
+        }
+
+        // Get content IDs to exclude (already seen + "not for me" votes + negative signals + dismissed/hidden from feedback)
         const seenIds = getSeenContentIds(userData)
-        const excludeIds = [...new Set([...seenIds, ...dislikedContentIds, ...negativeContentIds])]
+        const feedbackExcludeIds = feedbackSignals
+            ? Array.from(feedbackSignals.excludedContentIds)
+            : []
+        const excludeIds = [
+            ...new Set([
+                ...seenIds,
+                ...dislikedContentIds,
+                ...negativeContentIds,
+                ...feedbackExcludeIds,
+            ]),
+        ]
 
         // Generate recommendations from multiple sources
         // For page 1, use 60/40 split between genre and similar
@@ -187,6 +249,14 @@ async function handlePersonalizedRecommendations(
 
         // Merge recommendations with diversity
         let mergedContent = mergeRecommendations([genreBased, tmdbSimilar], limit)
+
+        // Phase 2: Apply feedback signals to filter and boost recommendations
+        if (feedbackSignals) {
+            mergedContent = applyFeedbackToRecommendations(mergedContent, feedbackSignals)
+            console.log(
+                `[Phase 2] Applied feedback: filtered ${feedbackSignals.excludedContentIds.size} excluded items`
+            )
+        }
 
         // V2: Filter out content from disliked genres (3+ dislikes)
         const hiddenGenreIds = interactionSummary?.negativeSignals.hiddenGenres || []

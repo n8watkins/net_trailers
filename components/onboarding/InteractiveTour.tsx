@@ -312,113 +312,225 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
                 )}
             </div>
 
-            {/* Tooltip card */}
-            <div
-                ref={tooltipRef}
-                style={tooltipStyle}
-                className={`${currentStep.position === 'center' ? 'max-w-2xl p-8' : 'w-full max-w-md p-6'} bg-zinc-900/98 backdrop-blur-xl border-2 border-orange-500/40 rounded-2xl shadow-2xl shadow-orange-500/20 animate-fade-in`}
-            >
-                {/* Header */}
-                <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                        <h2
-                            id="tour-title"
-                            className={`${currentStep.position === 'center' ? 'text-3xl' : 'text-xl'} font-bold text-white mb-1`}
-                        >
-                            {currentStep.title}
-                        </h2>
-                        <p
-                            className={`${currentStep.position === 'center' ? 'text-base' : 'text-sm'} text-gray-400`}
-                        >
-                            Step {currentTourStep + 1} of {TOTAL_TOUR_STEPS}
-                        </p>
-                    </div>
-                    {currentStep.skippable !== false && (
-                        <button
-                            onClick={onSkip}
-                            className="ml-4 p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/10"
-                            aria-label="Skip tour"
-                        >
-                            <XMarkIcon className="h-5 w-5" />
-                        </button>
-                    )}
-                </div>
-
-                {/* Progress bar */}
-                <div className="w-full h-1.5 bg-zinc-800 rounded-full mb-4 overflow-hidden">
+            {/* Tooltip card - use flexbox centering for center position, absolute positioning for others */}
+            {currentStep.position === 'center' ? (
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-none">
                     <div
-                        className="h-full bg-gradient-to-r from-orange-500 to-red-600 transition-all duration-300 ease-out"
-                        style={{
-                            width: `${((currentTourStep + 1) / TOTAL_TOUR_STEPS) * 100}%`,
-                        }}
-                    />
-                </div>
-
-                {/* Content */}
-                <p
-                    className={`text-gray-300 ${currentStep.position === 'center' ? 'text-lg' : 'text-base'} leading-relaxed mb-6`}
-                >
-                    {currentStep.description}
-                </p>
-
-                {/* Action hint */}
-                {currentStep.action && (
-                    <div className="mb-6 p-3 bg-orange-500/10 border border-orange-500/30 rounded-lg">
-                        <p className="text-sm text-orange-300">
-                            💡 Try it:{' '}
-                            <span className="font-medium capitalize">{currentStep.action}</span> the
-                            highlighted element
-                        </p>
-                    </div>
-                )}
-
-                {/* Navigation */}
-                <div className="flex items-center justify-between gap-3">
-                    <button
-                        onClick={handlePrevious}
-                        disabled={isFirstStep}
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors rounded-lg hover:bg-white/5"
+                        ref={tooltipRef}
+                        className="max-w-2xl p-8 bg-zinc-900/98 backdrop-blur-xl border-2 border-orange-500/40 rounded-2xl shadow-2xl shadow-orange-500/20 animate-fade-in pointer-events-auto"
                     >
-                        <ChevronLeftIcon className="h-4 w-4" />
-                        Previous
-                    </button>
+                        {/* Header */}
+                        <div className="flex items-start justify-between mb-4">
+                            <div className="flex-1">
+                                <h2
+                                    id="tour-title"
+                                    className={`${currentStep.position === 'center' ? 'text-3xl' : 'text-xl'} font-bold text-white mb-1`}
+                                >
+                                    {currentStep.title}
+                                </h2>
+                                <p
+                                    className={`${currentStep.position === 'center' ? 'text-base' : 'text-sm'} text-gray-400`}
+                                >
+                                    Step {currentTourStep + 1} of {TOTAL_TOUR_STEPS}
+                                </p>
+                            </div>
+                            {currentStep.skippable !== false && (
+                                <button
+                                    onClick={onSkip}
+                                    className="ml-4 p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/10"
+                                    aria-label="Skip tour"
+                                >
+                                    <XMarkIcon className="h-5 w-5" />
+                                </button>
+                            )}
+                        </div>
 
-                    <div className="flex gap-2">
+                        {/* Progress bar */}
+                        <div className="w-full h-1.5 bg-zinc-800 rounded-full mb-4 overflow-hidden">
+                            <div
+                                className="h-full bg-gradient-to-r from-orange-500 to-red-600 transition-all duration-300 ease-out"
+                                style={{
+                                    width: `${((currentTourStep + 1) / TOTAL_TOUR_STEPS) * 100}%`,
+                                }}
+                            />
+                        </div>
+
+                        {/* Content */}
+                        <p
+                            className={`text-gray-300 ${currentStep.position === 'center' ? 'text-lg' : 'text-base'} leading-relaxed mb-6`}
+                        >
+                            {currentStep.description}
+                        </p>
+
+                        {/* Action hint */}
+                        {currentStep.action && (
+                            <div className="mb-6 p-3 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+                                <p className="text-sm text-orange-300">
+                                    💡 Try it:{' '}
+                                    <span className="font-medium capitalize">
+                                        {currentStep.action}
+                                    </span>{' '}
+                                    the highlighted element
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Navigation */}
+                        <div className="flex items-center justify-between gap-3">
+                            <button
+                                onClick={handlePrevious}
+                                disabled={isFirstStep}
+                                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors rounded-lg hover:bg-white/5"
+                            >
+                                <ChevronLeftIcon className="h-4 w-4" />
+                                Previous
+                            </button>
+
+                            <div className="flex gap-2">
+                                {currentStep.skippable !== false && (
+                                    <button
+                                        onClick={onSkip}
+                                        className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+                                    >
+                                        Skip Tour
+                                    </button>
+                                )}
+                                {isLastStep ? (
+                                    <button
+                                        onClick={handleFinish}
+                                        className="flex items-center gap-2 px-6 py-2 text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-red-600 rounded-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-lg hover:shadow-orange-500/50"
+                                    >
+                                        <CheckIcon className="h-4 w-4" />
+                                        Finish
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={handleNext}
+                                        className="flex items-center gap-2 px-6 py-2 text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-red-600 rounded-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-lg hover:shadow-orange-500/50"
+                                    >
+                                        Next
+                                        <ChevronRightIcon className="h-4 w-4" />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Keyboard hints */}
+                        <div className="mt-4 pt-4 border-t border-zinc-800">
+                            <p className="text-xs text-gray-500 text-center">
+                                Use arrow keys to navigate • Press ESC to skip
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <div
+                    ref={tooltipRef}
+                    style={tooltipStyle}
+                    className="w-full max-w-md p-6 bg-zinc-900/98 backdrop-blur-xl border-2 border-orange-500/40 rounded-2xl shadow-2xl shadow-orange-500/20 animate-fade-in"
+                >
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                            <h2
+                                id="tour-title"
+                                className={`${currentStep.position === 'center' ? 'text-3xl' : 'text-xl'} font-bold text-white mb-1`}
+                            >
+                                {currentStep.title}
+                            </h2>
+                            <p
+                                className={`${currentStep.position === 'center' ? 'text-base' : 'text-sm'} text-gray-400`}
+                            >
+                                Step {currentTourStep + 1} of {TOTAL_TOUR_STEPS}
+                            </p>
+                        </div>
                         {currentStep.skippable !== false && (
                             <button
                                 onClick={onSkip}
-                                className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+                                className="ml-4 p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/10"
+                                aria-label="Skip tour"
                             >
-                                Skip Tour
-                            </button>
-                        )}
-                        {isLastStep ? (
-                            <button
-                                onClick={handleFinish}
-                                className="flex items-center gap-2 px-6 py-2 text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-red-600 rounded-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-lg hover:shadow-orange-500/50"
-                            >
-                                <CheckIcon className="h-4 w-4" />
-                                Finish
-                            </button>
-                        ) : (
-                            <button
-                                onClick={handleNext}
-                                className="flex items-center gap-2 px-6 py-2 text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-red-600 rounded-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-lg hover:shadow-orange-500/50"
-                            >
-                                Next
-                                <ChevronRightIcon className="h-4 w-4" />
+                                <XMarkIcon className="h-5 w-5" />
                             </button>
                         )}
                     </div>
-                </div>
 
-                {/* Keyboard hints */}
-                <div className="mt-4 pt-4 border-t border-zinc-800">
-                    <p className="text-xs text-gray-500 text-center">
-                        Use arrow keys to navigate • Press ESC to skip
+                    {/* Progress bar */}
+                    <div className="w-full h-1.5 bg-zinc-800 rounded-full mb-4 overflow-hidden">
+                        <div
+                            className="h-full bg-gradient-to-r from-orange-500 to-red-600 transition-all duration-300 ease-out"
+                            style={{
+                                width: `${((currentTourStep + 1) / TOTAL_TOUR_STEPS) * 100}%`,
+                            }}
+                        />
+                    </div>
+
+                    {/* Content */}
+                    <p
+                        className={`text-gray-300 ${currentStep.position === 'center' ? 'text-lg' : 'text-base'} leading-relaxed mb-6`}
+                    >
+                        {currentStep.description}
                     </p>
+
+                    {/* Action hint */}
+                    {currentStep.action && (
+                        <div className="mb-6 p-3 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+                            <p className="text-sm text-orange-300">
+                                💡 Try it:{' '}
+                                <span className="font-medium capitalize">{currentStep.action}</span>{' '}
+                                the highlighted element
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Navigation */}
+                    <div className="flex items-center justify-between gap-3">
+                        <button
+                            onClick={handlePrevious}
+                            disabled={isFirstStep}
+                            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors rounded-lg hover:bg-white/5"
+                        >
+                            <ChevronLeftIcon className="h-4 w-4" />
+                            Previous
+                        </button>
+
+                        <div className="flex gap-2">
+                            {currentStep.skippable !== false && (
+                                <button
+                                    onClick={onSkip}
+                                    className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+                                >
+                                    Skip Tour
+                                </button>
+                            )}
+                            {isLastStep ? (
+                                <button
+                                    onClick={handleFinish}
+                                    className="flex items-center gap-2 px-6 py-2 text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-red-600 rounded-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-lg hover:shadow-orange-500/50"
+                                >
+                                    <CheckIcon className="h-4 w-4" />
+                                    Finish
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={handleNext}
+                                    className="flex items-center gap-2 px-6 py-2 text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-red-600 rounded-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-lg hover:shadow-orange-500/50"
+                                >
+                                    Next
+                                    <ChevronRightIcon className="h-4 w-4" />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Keyboard hints */}
+                    <div className="mt-4 pt-4 border-t border-zinc-800">
+                        <p className="text-xs text-gray-500 text-center">
+                            Use arrow keys to navigate • Press ESC to skip
+                        </p>
+                    </div>
                 </div>
-            </div>
+            )}
         </div>,
         document.body
     )
