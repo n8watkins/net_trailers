@@ -38,9 +38,10 @@ interface AboutModalProps {
     isOpen: boolean
     onClose: () => void
     onStartTour?: () => void
+    onOpenTutorial?: () => void
 }
 
-type TabId = 'tech' | 'features' | 'architecture' | 'security' | 'tutorial'
+type TabId = 'tech' | 'features' | 'architecture' | 'security'
 
 interface Tab {
     id: TabId
@@ -167,13 +168,13 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, onStartTour })
         },
     ]
 
-    // Features data - highlighting key technical achievements first
+    // Features data - user-focused and compelling
     const features = [
         {
             id: 'ai-search',
             icon: StarIcon,
-            title: 'AI-Powered Smart Search',
-            desc: 'Natural language search with voice input and semantic understanding',
+            title: 'Search with AI',
+            desc: 'Just describe what you want to watch in plain English',
             color: 'text-yellow-400',
             bg: 'bg-yellow-500/10',
             border: 'border-yellow-500/20',
@@ -1335,6 +1336,34 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, onStartTour })
                     >
                         {renderMiniCards()}
                     </div>
+
+                    {/* Interactive Tour CTA */}
+                    {onStartTour && (
+                        <div className="mt-5 p-4 bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-xl border-2 border-orange-500/40">
+                            <div className="flex items-center justify-between gap-4">
+                                <div className="flex-1">
+                                    <h4 className="text-white font-bold text-base mb-1 flex items-center gap-2">
+                                        <RocketLaunchIcon className="w-5 h-5 text-orange-400" />
+                                        New to NetTrailers? Take a Quick Tour!
+                                    </h4>
+                                    <p className="text-gray-300 text-sm">
+                                        60-second interactive walkthrough highlighting key features
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        onClose()
+                                        setTimeout(() => {
+                                            onStartTour()
+                                        }, 300)
+                                    }}
+                                    className="flex-shrink-0 px-5 py-2.5 bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold text-sm rounded-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-lg hover:shadow-orange-500/50 hover:scale-105"
+                                >
+                                    Start Tour
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Footer */}
