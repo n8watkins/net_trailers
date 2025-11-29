@@ -1,29 +1,117 @@
-```markdown
 # CSRF Review
+
+## Status Summary
+
+| Finding                                  | Severity | Status   |
+| ---------------------------------------- | -------- | -------- |
+| Server actions bypass CSRF               | High     | ✅ FIXED |
+| CRON_SECRET disables CSRF for all routes | Medium   | ✅ FIXED |
+| No regression tests                      | Low      | ⏳ Open  |
+
+---
 
 ## Findings
 
-1. **Server actions bypass CSRF (High)**
-    - The proxy (`proxy.ts:45-124`) only guards `/api/*` paths. Server actions (App Router POST endpoints that live under page URLs) never pass through it, so they skip `applyCsrfProtection`.
-    - Example: `toggleChildSafetyAction` (`lib/actions/childSafety.ts:1-14`). The client settings page (`app/settings/preferences/page.tsx:97-149`) calls this action whenever a signed-in user toggles child safety mode. The server action sets the `nettrailer_child_safety` cookie but never inspects the request origin, so a forged POST from another site can force the victim’s browser to accept attacker-chosen cookie values. Any new server actions that mutate Firestore or user data would inherit the same flaw.
+### 1. Server actions bypass CSRF (High) - ✅ FIXED
 
-2. **CRON_SECRET disables CSRF for all routes (Medium)**
-    - `applyCsrfProtection` treats any request bearing the `CRON_SECRET` as “server-to-server” (`lib/csrfProtection.ts:96-137`) and returns early. Because the proxy unconditionally calls this helper for every non-cron POST/PUT/PATCH (`proxy.ts:52-72`), the single cron secret now bypasses CSRF on unrelated endpoints (password reset, share toggles, etc.).
-    - If the secret leaks (logs, preview builds, third-party integrations), an attacker can hit any state-changing route from another origin and succeed without Origin/Referer headers. The secret was meant to protect `/api/cron/*`; keeping it as a global CSRF override significantly increases blast radius.
+**Problem**: The proxy (`proxy.ts:45-124`) only guards `/api/*` paths. Server actions (App Router POST endpoints that live under page URLs) never pass through it, so they skip `applyCsrfProtection`.
 
-3. **No regression tests (Low)**
-    - `__tests__` contains no coverage for `parseOrigin`, `validateOrigin`, or proxy enforcement (`rg -n "csrf" __tests__`). Without tests, future refactors could reintroduce the prefix-matching bug or another bypass without detection. Jest tests targeting origin parsing/matching and proxy behavior (allowed vs. rejected Origin, CRON_SECRET success/failure) would harden the fixes.
+**Example**: `toggleChildSafetyAction` (`lib/actions/childSafety.ts`) - The client settings page (`app/settings/preferences/page.tsx`) calls this action when toggling child safety mode.
 
-## Open Questions
+**Fix Applied**: Added `validateServerActionOrigin()` function to `lib/csrfProtection.ts` and applied it directly in the server action:
 
-1. How should server actions satisfy CSRF requirements? Options include removing the `/api/` guard so the proxy runs on all POST/PUT/PATCH requests, or routing server actions through API helpers that explicitly call `applyCsrfProtection`.
-2. Is there a legitimate case for using `CRON_SECRET` outside `/api/cron/*`? If yes, would separate secrets per integration reduce risk compared to one global bypass?
+```typescript
+// lib/actions/childSafety.ts
+import { headers } from 'next/headers'
+import { validateServerActionOrigin } from '../csrfProtection'
 
-## Next Steps
+export async function toggleChildSafetyAction(enabled: boolean): Promise<void> {
+    const headersList = await headers()
+    if (!validateServerActionOrigin(headersList)) {
+        throw new Error('CSRF validation failed')
+    }
+    await setChildSafetyModeCookie(enabled)
+}
+```
 
-1. Update `proxy.ts` (and/or a dedicated server-action hook) so every state-changing request, including App Router server actions, invokes `applyCsrfProtection`. Detect the `Next-Action` header if needed and enforce Origin/Referer validation there.
-2. Restrict the CRON_SECRET bypass to cron endpoints (e.g., only allow the exception when `pathname.startsWith('/api/cron/')`) and rotate the secret after deploying the change.
-3. Add Jest coverage for:
-    - `parseOrigin` and `validateOrigin` to ensure exact matching stays in place.
-    - Proxy behavior for allowed vs. disallowed Origins, CRON_SECRET present/absent, and safe vs. unsafe methods.
+**Pattern for New Server Actions**: Any new state-changing server action must:
+
+1. Import `headers` from `next/headers`
+2. Import `validateServerActionOrigin` from `lib/csrfProtection`
+3. Call validation at the start of the action and throw if it fails
+
+---
+
+### 2. CRON_SECRET disables CSRF for all routes (Medium) - ✅ FIXED
+
+**Problem**: `applyCsrfProtection` treated any request bearing the `CRON_SECRET` as "server-to-server" and bypassed CSRF for all routes.
+
+**Fix Applied**: CRON_SECRET bypass is now restricted to `/api/cron/*` routes only in `proxy.ts`:
+
+```typescript
+// proxy.ts
+if (isCronRoute) {
+    if (!hasCronSecret(request)) {
+        return NextResponse.json(
+            { error: 'Unauthorized - valid CRON_SECRET required' },
+            { status: 401 }
+        )
+    }
+    // Valid CRON_SECRET - skip CSRF check (cron routes only)
+} else {
+    // All other routes go through CSRF protection
+    const csrfResponse = applyCsrfProtection(request)
+    if (csrfResponse) return csrfResponse
+}
+```
+
+---
+
+### 3. No regression tests (Low) - ⏳ Open
+
+**Problem**: `__tests__` contains no coverage for `parseOrigin`, `validateOrigin`, `validateServerActionOrigin`, or proxy enforcement.
+
+**Recommended Tests**:
+
+- `parseOrigin`: Verify exact origin extraction (scheme + host + port)
+- `validateOrigin` / `validateServerActionOrigin`: Test allowed vs rejected origins
+- Proxy behavior: CRON_SECRET required for `/api/cron/*`, rejected elsewhere
+- Server action protection: Origin validation throws on invalid origins
+
+---
+
+## Questions Resolved
+
+1. **How should server actions satisfy CSRF requirements?**
+    - **Answer**: Server actions call `validateServerActionOrigin()` directly at the start of the action using `headers()` from `next/headers`. This is simpler than modifying the proxy matcher since server actions don't route through proxy.ts.
+
+2. **Is there a legitimate case for using CRON_SECRET outside `/api/cron/*`?**
+    - **Answer**: No. CRON_SECRET is now restricted to cron routes only. Other server-to-server integrations should use their own authentication mechanism.
+
+---
+
+## Files Changed
+
+| File                         | Change                                                     |
+| ---------------------------- | ---------------------------------------------------------- |
+| `lib/csrfProtection.ts`      | Added `validateServerActionOrigin()` for server actions    |
+| `lib/actions/childSafety.ts` | Added CSRF validation using `validateServerActionOrigin()` |
+| `proxy.ts`                   | CRON_SECRET bypass restricted to `/api/cron/*` only        |
+
+---
+
+## Verification
+
+```bash
+# Confirm server action has CSRF protection
+grep -n "validateServerActionOrigin" lib/actions/childSafety.ts
+# Expected: Import and usage
+
+# Confirm validateServerActionOrigin exists
+grep -n "validateServerActionOrigin" lib/csrfProtection.ts
+# Expected: Function definition
+
+# Confirm CRON_SECRET restricted to cron routes
+grep -n "isCronRoute" proxy.ts
+# Expected: Conditional check before CRON_SECRET validation
 ```

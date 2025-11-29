@@ -968,7 +968,8 @@ const AboutModal: React.FC<AboutModalProps> = ({
                                 </p>
                             )}
 
-                            <p className="text-sm text-gray-400 leading-relaxed mb-3 flex flex-wrap items-center gap-1.5">
+                            <p className="text-sm text-gray-400 leading-relaxed mb-3 flex flex-wrap items-center justify-center gap-1.5">
+                                <br />
                                 <span>Check out my</span>
                                 <a
                                     href="https://n8sportfolio.vercel.app/"
