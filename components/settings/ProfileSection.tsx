@@ -200,6 +200,9 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                                 className="inputClass w-full"
                                 disabled={isSavingProfile}
                             />
+                            <p className="text-xs text-[#888] mt-1.5">
+                                What others see in comments, rankings, and across the site.
+                            </p>
                         </div>
 
                         {/* Email (read-only) */}
@@ -259,20 +262,23 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                         </button>
                     </div>
 
-                    {/* Username Section (Profile URL) */}
+                    {/* Username Section (Optional Custom URL) */}
                     <div className="bg-[#0a0a0a] rounded-lg border border-[#313131] p-5 space-y-4">
                         <div className="flex items-center gap-2">
                             <AtSymbolIcon className="h-4 w-4 text-[#888]" />
-                            <h4 className="text-sm font-medium text-white">Profile URL</h4>
+                            <h4 className="text-sm font-medium text-white">Custom Profile URL</h4>
+                            <span className="text-xs px-2 py-0.5 bg-blue-900/30 border border-blue-600/40 rounded-full text-blue-300">
+                                Optional
+                            </span>
                         </div>
                         <p className="text-xs text-[#888]">
-                            This is your unique username used in your profile URL. It must be unique
-                            across all users.
+                            Set a custom username for your profile URL instead of using your user
+                            ID. Must be 3-20 characters (letters, numbers, underscores only).
                         </p>
 
                         <div>
                             <label className="block text-sm font-medium text-[#e5e5e5] mb-1.5">
-                                Username
+                                Username (URL Slug)
                             </label>
                             <div className="relative">
                                 <input
@@ -309,10 +315,17 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                                         Username is available!
                                     </p>
                                 )}
-                            <p className="text-xs text-[#666] mt-1.5">
-                                Your profile will be at: nettrailers.com/users/
-                                {username || 'your_username'}
-                            </p>
+                            {username ? (
+                                <p className="text-xs text-[#666] mt-1.5">
+                                    Profile URL: nettrailers.com/users/{username}
+                                </p>
+                            ) : (
+                                <p className="text-xs text-[#666] mt-1.5">
+                                    {profileUserId
+                                        ? `Current: nettrailers.com/users/${profileUserId} (user ID)`
+                                        : 'No custom username set'}
+                                </p>
+                            )}
                         </div>
 
                         <button
@@ -338,7 +351,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                                     Saving...
                                 </>
                             ) : (
-                                'Update Username'
+                                'Set Custom URL'
                             )}
                         </button>
                     </div>
