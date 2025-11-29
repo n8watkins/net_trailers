@@ -199,7 +199,12 @@ function ClientLayout({ children }: ClientLayoutProps) {
                 onBrowseFeatures={handleBrowseFeatures}
                 onWatchDemo={handleWatchDemo}
             />
-            <AboutModal isOpen={showAboutModal} onClose={handleCloseAboutModal} />
+            <AboutModal
+                isOpen={showAboutModal}
+                onClose={handleCloseAboutModal}
+                onOpenTutorial={handleOpenTutorial}
+                onStartTour={handleStartTour}
+            />
             <TutorialModal
                 isOpen={showTutorial}
                 onClose={handleCloseTutorial}
