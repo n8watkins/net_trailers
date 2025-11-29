@@ -718,9 +718,9 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
 
     // Render mini cards for all items in current tab
     const renderMiniCards = () => {
-        // Common card height class for consistency
+        // Common card class - smaller height, centered content
         const cardClass =
-            'flex items-start gap-3 px-4 py-3 rounded-xl border transition-all duration-300 h-[76px]'
+            'flex items-center gap-2 px-3 py-2 rounded-xl border transition-all duration-300'
 
         switch (activeTab) {
             case 'tech':
@@ -737,28 +737,23 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                             }`}
                         >
                             <div
-                                className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${tech.iconBg || 'bg-white/5'}`}
+                                className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${tech.iconBg || 'bg-white/5'}`}
                             >
                                 {tech.emoji ? (
-                                    <span className="text-xl">{tech.emoji}</span>
+                                    <span className="text-lg">{tech.emoji}</span>
                                 ) : (
                                     <Image
                                         src={tech.icon!}
                                         alt={tech.name}
-                                        width={24}
-                                        height={24}
-                                        className="w-6 h-6"
+                                        width={20}
+                                        height={20}
+                                        className="w-5 h-5"
                                     />
                                 )}
                             </div>
-                            <div className="flex flex-col items-start min-w-0">
-                                <span className="text-base font-semibold text-white">
-                                    {tech.name}
-                                </span>
-                                <span className="text-xs text-gray-400 truncate w-full">
-                                    {tech.desc}
-                                </span>
-                            </div>
+                            <span className="text-xs sm:text-sm font-medium text-white truncate">
+                                {tech.name}
+                            </span>
                         </button>
                     )
                 })
@@ -775,17 +770,12 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                     : `bg-zinc-800/40 border-zinc-700/50 opacity-60 hover:opacity-90`
                             }`}
                         >
-                            <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
-                                <feature.icon className={`w-6 h-6 ${feature.color}`} />
+                            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
+                                <feature.icon className={`w-5 h-5 ${feature.color}`} />
                             </div>
-                            <div className="flex flex-col items-start min-w-0">
-                                <span className="text-base font-semibold text-white">
-                                    {feature.title.split(' ')[0]}
-                                </span>
-                                <span className="text-xs text-gray-400 truncate w-full">
-                                    {feature.desc}
-                                </span>
-                            </div>
+                            <span className="text-xs sm:text-sm font-medium text-white truncate">
+                                {feature.title}
+                            </span>
                         </button>
                     )
                 })
@@ -802,17 +792,12 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                     : 'bg-zinc-800/40 border-zinc-700/50 opacity-60 hover:opacity-90'
                             }`}
                         >
-                            <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
-                                <arch.icon className="w-6 h-6 text-red-400" />
+                            <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
+                                <arch.icon className="w-5 h-5 text-red-400" />
                             </div>
-                            <div className="flex flex-col items-start min-w-0">
-                                <span className="text-base font-semibold text-white">
-                                    {arch.title.split(' ')[0]}
-                                </span>
-                                <span className="text-xs text-gray-400 truncate w-full">
-                                    {arch.text}
-                                </span>
-                            </div>
+                            <span className="text-xs sm:text-sm font-medium text-white truncate">
+                                {arch.title}
+                            </span>
                         </button>
                     )
                 })
@@ -829,17 +814,12 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                     : 'bg-zinc-800/40 border-zinc-700/50 opacity-60 hover:opacity-90'
                             }`}
                         >
-                            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
-                                <sec.icon className="w-6 h-6 text-emerald-400" />
+                            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+                                <sec.icon className="w-5 h-5 text-emerald-400" />
                             </div>
-                            <div className="flex flex-col items-start min-w-0">
-                                <span className="text-base font-semibold text-white">
-                                    {sec.title.split(' ')[0]}
-                                </span>
-                                <span className="text-xs text-gray-400 truncate w-full">
-                                    {sec.desc}
-                                </span>
-                            </div>
+                            <span className="text-xs sm:text-sm font-medium text-white truncate">
+                                {sec.title}
+                            </span>
                         </button>
                     )
                 })
@@ -1057,8 +1037,8 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                         <div
                             className={`flex-1 transition-all duration-300 ${
                                 isAnimating
-                                    ? 'opacity-0 translate-y-2'
-                                    : 'opacity-100 translate-y-0'
+                                    ? 'opacity-0 -translate-x-4'
+                                    : 'opacity-100 translate-x-0'
                             }`}
                         >
                             {renderFocusedItem()}

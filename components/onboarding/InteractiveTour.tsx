@@ -9,6 +9,14 @@ import {
 import { useOnboardingStore } from '../../stores/onboardingStore'
 import { TOUR_STEPS, TOTAL_TOUR_STEPS, TourStep } from '../../constants/tourSteps'
 
+// Constants
+const TOOLTIP_PADDING = 32 // Gap between target and tooltip
+const VIEWPORT_PADDING = 20 // Minimum distance from viewport edges
+const DEFAULT_SPOTLIGHT_PADDING = 8 // Default padding around highlighted element
+const Z_INDEX_OVERLAY = 9997
+const Z_INDEX_SPOTLIGHT = 9998
+const Z_INDEX_TOOLTIP = 9999
+
 interface InteractiveTourProps {
     isActive: boolean
     onComplete: () => void
@@ -69,7 +77,10 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
             }
 
             // Target not found - fall back to center
-            console.warn(`[Tour] Target element not found: ${currentStep.targetSelector}`)
+            // Note: In production, consider using a proper logging service
+            if (process.env.NODE_ENV === 'development') {
+                console.warn(`[Tour] Target element not found: ${currentStep.targetSelector}`)
+            }
             setTargetElement(null)
             setTooltipPosition(null)
         }
@@ -78,6 +89,8 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
         findTarget()
 
         // Re-find on DOM changes (for dynamically rendered elements)
+        // Note: Observing document.body with subtree:true can be expensive
+        // Consider limiting to a specific container in future optimization
         const observer = new MutationObserver(findTarget)
         observer.observe(document.body, {
             childList: true,
@@ -92,30 +105,29 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
         if (!targetElement || !tooltipRef.current || !currentStep) return
 
         const calculatePosition = () => {
+            if (!tooltipRef.current) return
             const targetRect = targetElement.getBoundingClientRect()
-            const tooltipRect = tooltipRef.current!.getBoundingClientRect()
-            const padding = 32 // Increased gap between target and tooltip
-            const viewportPadding = 20 // Minimum distance from viewport edges
+            const tooltipRect = tooltipRef.current.getBoundingClientRect()
 
             let top = 0
             let left = 0
 
             switch (currentStep.position) {
                 case 'top':
-                    top = targetRect.top - tooltipRect.height - padding
+                    top = targetRect.top - tooltipRect.height - TOOLTIP_PADDING
                     left = targetRect.left + targetRect.width / 2 - tooltipRect.width / 2
                     break
                 case 'bottom':
-                    top = targetRect.bottom + padding
+                    top = targetRect.bottom + TOOLTIP_PADDING
                     left = targetRect.left + targetRect.width / 2 - tooltipRect.width / 2
                     break
                 case 'left':
                     top = targetRect.top + targetRect.height / 2 - tooltipRect.height / 2
-                    left = targetRect.left - tooltipRect.width - padding
+                    left = targetRect.left - tooltipRect.width - TOOLTIP_PADDING
                     break
                 case 'right':
                     top = targetRect.top + targetRect.height / 2 - tooltipRect.height / 2
-                    left = targetRect.right + padding
+                    left = targetRect.right + TOOLTIP_PADDING
                     break
                 default:
                     // Center of viewport
@@ -125,12 +137,12 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
 
             // Keep tooltip within viewport bounds
             top = Math.max(
-                viewportPadding,
-                Math.min(top, window.innerHeight - tooltipRect.height - viewportPadding)
+                VIEWPORT_PADDING,
+                Math.min(top, window.innerHeight - tooltipRect.height - VIEWPORT_PADDING)
             )
             left = Math.max(
-                viewportPadding,
-                Math.min(left, window.innerWidth - tooltipRect.width - viewportPadding)
+                VIEWPORT_PADDING,
+                Math.min(left, window.innerWidth - tooltipRect.width - VIEWPORT_PADDING)
             )
 
             setTooltipPosition({ top, left })
@@ -181,7 +193,16 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
 
         document.addEventListener('keydown', handleKeyDown)
         return () => document.removeEventListener('keydown', handleKeyDown)
-    }, [isActive, currentTourStep, isLastStep, isFirstStep])
+    }, [
+        isActive,
+        currentTourStep,
+        isLastStep,
+        isFirstStep,
+        handleNext,
+        handlePrevious,
+        handleFinish,
+        onSkip,
+    ])
 
     const handleNext = useCallback(() => {
         if (currentTourStep < TOTAL_TOUR_STEPS - 1) {
@@ -205,7 +226,7 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
     const spotlightStyle: React.CSSProperties = targetElement
         ? (() => {
               const rect = targetElement.getBoundingClientRect()
-              const padding = currentStep.spotlightPadding ?? 8
+              const padding = currentStep.spotlightPadding ?? DEFAULT_SPOTLIGHT_PADDING
               return {
                   position: 'fixed',
                   top: rect.top - padding,
@@ -214,31 +235,27 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
                   height: rect.height + padding * 2,
                   borderRadius: '8px',
                   pointerEvents: 'none',
-                  zIndex: 9998,
+                  zIndex: Z_INDEX_SPOTLIGHT,
               }
           })()
         : {}
 
-    const tooltipStyle: React.CSSProperties = tooltipPosition
-        ? {
-              position: 'fixed',
-              top: tooltipPosition.top,
-              left: tooltipPosition.left,
-              zIndex: 9999,
-          }
-        : {
-              position: 'fixed',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              zIndex: 9999,
-          }
+    // Only calculate positioned tooltip style for non-centered positions
+    const tooltipStyle: React.CSSProperties =
+        currentStep.position !== 'center' && tooltipPosition
+            ? {
+                  position: 'fixed',
+                  top: tooltipPosition.top,
+                  left: tooltipPosition.left,
+                  zIndex: Z_INDEX_TOOLTIP,
+              }
+            : {}
 
     // Calculate overlay rectangles that cover everything except the spotlight
     const overlayRects = targetElement
         ? (() => {
               const rect = targetElement.getBoundingClientRect()
-              const padding = currentStep.spotlightPadding ?? 8
+              const padding = currentStep.spotlightPadding ?? DEFAULT_SPOTLIGHT_PADDING
               const spotlightTop = rect.top - padding
               const spotlightBottom = rect.bottom + padding
               const spotlightLeft = rect.left - padding
@@ -271,7 +288,7 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
     return createPortal(
         <div className="tour-overlay" role="dialog" aria-modal="true" aria-labelledby="tour-title">
             {/* Backdrop with spotlight cutout - 4 rectangles that don't cover the spotlight */}
-            <div className="fixed inset-0 z-[9997] pointer-events-none">
+            <div className="fixed inset-0 pointer-events-none" style={{ zIndex: Z_INDEX_OVERLAY }}>
                 {targetElement && overlayRects ? (
                     <>
                         {/* Top overlay */}
@@ -314,7 +331,10 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
 
             {/* Tooltip card - use flexbox centering for center position, absolute positioning for others */}
             {currentStep.position === 'center' ? (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-none">
+                <div
+                    className="fixed inset-0 flex items-center justify-center p-4 pointer-events-none"
+                    style={{ zIndex: Z_INDEX_TOOLTIP }}
+                >
                     <div
                         ref={tooltipRef}
                         className="max-w-2xl p-8 bg-zinc-900/98 backdrop-blur-xl border-2 border-orange-500/40 rounded-2xl shadow-2xl shadow-orange-500/20 animate-fade-in pointer-events-auto"
@@ -322,15 +342,10 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
                         {/* Header */}
                         <div className="flex items-start justify-between mb-4">
                             <div className="flex-1">
-                                <h2
-                                    id="tour-title"
-                                    className={`${currentStep.position === 'center' ? 'text-3xl' : 'text-xl'} font-bold text-white mb-1`}
-                                >
+                                <h2 id="tour-title" className="text-3xl font-bold text-white mb-1">
                                     {currentStep.title}
                                 </h2>
-                                <p
-                                    className={`${currentStep.position === 'center' ? 'text-base' : 'text-sm'} text-gray-400`}
-                                >
+                                <p className="text-base text-gray-400">
                                     Step {currentTourStep + 1} of {TOTAL_TOUR_STEPS}
                                 </p>
                             </div>
@@ -356,9 +371,7 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
                         </div>
 
                         {/* Content */}
-                        <p
-                            className={`text-gray-300 ${currentStep.position === 'center' ? 'text-lg' : 'text-base'} leading-relaxed mb-6`}
-                        >
+                        <p className="text-gray-300 text-lg leading-relaxed mb-6">
                             {currentStep.description}
                         </p>
 
@@ -432,15 +445,10 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
                     {/* Header */}
                     <div className="flex items-start justify-between mb-4">
                         <div className="flex-1">
-                            <h2
-                                id="tour-title"
-                                className={`${currentStep.position === 'center' ? 'text-3xl' : 'text-xl'} font-bold text-white mb-1`}
-                            >
+                            <h2 id="tour-title" className="text-xl font-bold text-white mb-1">
                                 {currentStep.title}
                             </h2>
-                            <p
-                                className={`${currentStep.position === 'center' ? 'text-base' : 'text-sm'} text-gray-400`}
-                            >
+                            <p className="text-sm text-gray-400">
                                 Step {currentTourStep + 1} of {TOTAL_TOUR_STEPS}
                             </p>
                         </div>
@@ -466,9 +474,7 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
                     </div>
 
                     {/* Content */}
-                    <p
-                        className={`text-gray-300 ${currentStep.position === 'center' ? 'text-lg' : 'text-base'} leading-relaxed mb-6`}
-                    >
+                    <p className="text-gray-300 text-base leading-relaxed mb-6">
                         {currentStep.description}
                     </p>
 
