@@ -160,6 +160,23 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
         }
     }, [targetElement, currentStep])
 
+    // Define navigation handlers before they're used in keyboard effect
+    const handleNext = useCallback(() => {
+        if (currentTourStep < TOTAL_TOUR_STEPS - 1) {
+            setCurrentTourStep(currentTourStep + 1)
+        }
+    }, [currentTourStep, setCurrentTourStep])
+
+    const handlePrevious = useCallback(() => {
+        if (currentTourStep > 0) {
+            setCurrentTourStep(currentTourStep - 1)
+        }
+    }, [currentTourStep, setCurrentTourStep])
+
+    const handleFinish = useCallback(() => {
+        onComplete()
+    }, [onComplete])
+
     // Keyboard navigation
     useEffect(() => {
         if (!isActive) return
@@ -203,22 +220,6 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
         handleFinish,
         onSkip,
     ])
-
-    const handleNext = useCallback(() => {
-        if (currentTourStep < TOTAL_TOUR_STEPS - 1) {
-            setCurrentTourStep(currentTourStep + 1)
-        }
-    }, [currentTourStep, setCurrentTourStep])
-
-    const handlePrevious = useCallback(() => {
-        if (currentTourStep > 0) {
-            setCurrentTourStep(currentTourStep - 1)
-        }
-    }, [currentTourStep, setCurrentTourStep])
-
-    const handleFinish = useCallback(() => {
-        onComplete()
-    }, [onComplete])
 
     if (!isActive || !currentStep || !mounted) return null
 
