@@ -238,15 +238,20 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
         <div className="tour-overlay" role="dialog" aria-modal="true" aria-labelledby="tour-title">
             {/* Backdrop with spotlight cutout effect */}
             <div className="fixed inset-0 z-[9997]">
-                {/* Lighter overlay for better visibility */}
-                <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+                {/* Very light overlay - just enough to dim non-highlighted areas */}
+                <div className="absolute inset-0 bg-black/40" />
 
-                {/* Spotlight highlight with brighter ring */}
+                {/* Spotlight highlight - brightens the target area */}
                 {targetElement && (
                     <div style={spotlightStyle}>
-                        <div className="absolute inset-0 rounded-lg ring-4 ring-orange-400 ring-offset-4 ring-offset-black/30 animate-pulse shadow-[0_0_30px_rgba(251,146,60,0.8)]" />
-                        {/* Additional inner glow for more visibility */}
-                        <div className="absolute inset-0 rounded-lg ring-2 ring-white/40" />
+                        {/* Bright background to make element visible */}
+                        <div className="absolute inset-0 bg-white/20 rounded-lg backdrop-blur-[1px]" />
+
+                        {/* Bright, glowing ring */}
+                        <div className="absolute inset-0 rounded-lg ring-[3px] ring-orange-400 animate-pulse shadow-[0_0_40px_rgba(251,146,60,1),0_0_20px_rgba(255,255,255,0.5)]" />
+
+                        {/* Additional bright border for maximum visibility */}
+                        <div className="absolute inset-0 rounded-lg ring-[6px] ring-white/60 ring-offset-2 ring-offset-transparent" />
                     </div>
                 )}
             </div>
