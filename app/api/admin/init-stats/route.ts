@@ -11,7 +11,6 @@ import {
     createUnauthorizedResponse,
     createForbiddenResponse,
 } from '@/utils/adminMiddleware'
-import { applyCsrfProtection } from '@/lib/csrfProtection'
 
 /**
  * Get the start of the current week (Monday at 00:00:00)
@@ -44,12 +43,6 @@ function countUsersInPeriod(users: Array<{ createdAt: string }>, periodStart: nu
 
 export async function POST(request: NextRequest) {
     try {
-        // Apply CSRF protection
-        const csrfResponse = applyCsrfProtection(request)
-        if (csrfResponse) {
-            return csrfResponse
-        }
-
         // Validate admin access via Firebase Auth
         const authResult = await validateAdminRequest(request)
         if (!authResult.authorized) {

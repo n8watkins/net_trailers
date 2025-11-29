@@ -86,6 +86,10 @@ function isValidCronSecret(token: string | null | undefined): boolean {
 /**
  * Check if request is an authenticated server-to-server call
  * These can bypass CSRF checks because they use secure authentication
+ *
+ * SECURITY: Only trusts CRON_SECRET, not unverified JWT tokens.
+ * User authentication tokens are verified by withAuth() middleware,
+ * and CSRF protection for browser requests uses Origin/Referer validation.
  */
 function isServerToServerCall(request: NextRequest): boolean {
     const authHeader = request.headers.get('authorization')
@@ -93,18 +97,10 @@ function isServerToServerCall(request: NextRequest): boolean {
 
     const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader
 
-    // Check for cron secret (machine-to-machine)
-    if (isValidCronSecret(token)) {
-        return true
-    }
-
-    // Firebase ID tokens start with "eyJ" (base64-encoded JWT header)
-    // These are verified server-side by Firebase Admin SDK
-    if (token.startsWith('eyJ')) {
-        return true
-    }
-
-    return false
+    // Only trust verified CRON_SECRET for server-to-server calls
+    // User tokens (JWTs) must go through withAuth() for verification
+    // CSRF for browser requests is handled by Origin/Referer validation
+    return isValidCronSecret(token)
 }
 
 /**
@@ -114,7 +110,9 @@ function isServerToServerCall(request: NextRequest): boolean {
  * Bypasses CSRF for:
  * - Safe methods (GET, HEAD, OPTIONS)
  * - Authenticated server-to-server calls (cron jobs with CRON_SECRET)
- * - Requests with valid Firebase ID tokens (verified by downstream handlers)
+ *
+ * Browser requests must have valid Origin or Referer headers.
+ * User authentication is handled separately by withAuth() middleware.
  */
 export function applyCsrfProtection(request: NextRequest): NextResponse | null {
     // Only check state-changing methods

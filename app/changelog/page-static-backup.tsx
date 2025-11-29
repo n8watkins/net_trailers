@@ -496,11 +496,6 @@ export default function ChangelogPage() {
                                     </li>
                                     <li>Voice input with live transcription (Web Speech API)</li>
                                     <li>
-                                        Entity recognition with autocomplete (
-                                        <code className="text-green-400 text-xs">@actors</code>,{' '}
-                                        <code className="text-green-400 text-xs">#directors</code>)
-                                    </li>
-                                    <li>
                                         Auto-detection of media type preferences (movies, TV, or
                                         both)
                                     </li>

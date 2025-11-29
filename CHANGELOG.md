@@ -346,7 +346,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Natural language query understanding with Google Gemini 2.5 Flash
     - Voice input with live transcription using Web Speech API
     - Semantic concept recognition ("rainy day vibes", "mind-bending thrillers")
-    - Entity recognition with autocomplete (`@actors`, `#directors`)
     - Auto-detection of media type preferences
     - Save results as custom collections
     - Live preview showing result count as user types

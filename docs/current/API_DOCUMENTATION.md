@@ -28,6 +28,19 @@ Production: https://yourapp.vercel.app/api
 
 API routes are **server-side only** and use the `TMDB_API_KEY` environment variable. Client applications don't need to provide authentication - the server handles it.
 
+## CSRF Protection
+
+All state-changing API requests (POST, PUT, DELETE, PATCH) are protected against Cross-Site Request Forgery (CSRF) attacks via global middleware in `proxy.ts`.
+
+**Protection Mechanism:**
+
+- Validates `Origin` and `Referer` headers match the application's domain
+- Exempt routes: GET, HEAD, OPTIONS (safe methods), and `/api/cron/*` (protected by CRON_SECRET)
+- Returns 403 Forbidden for requests with mismatched origins
+
+**Client Implementation:**
+CSRF protection is transparent to same-origin requests from the application - no additional headers or tokens required.
+
 ## Search API
 
 ### Search Movies and TV Shows

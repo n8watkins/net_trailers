@@ -227,7 +227,6 @@ The app handles both movies and TV shows through a unified type system:
 - **Natural language query understanding** powered by Google Gemini 2.5 Flash
 - **Voice input** with live transcription using Web Speech API
 - **Semantic concept recognition** ("rainy day vibes", "mind-bending thrillers")
-- **Entity recognition** with autocomplete (`@actors`, `#directors`)
 - **Auto-detection** of media type preferences
 - **Save results** as custom collections
 - **Live preview** shows result count as user types
@@ -573,6 +572,28 @@ const showModal = useModalStore((state) => state.modal.isOpen)
 - **Input sanitization**: All Gemini API routes use isomorphic-dompurify
 - **Firestore security rules**: Deployed from `firestore.rules`
 - **Security headers**: CSP, HSTS, X-Frame-Options, etc.
+
+### CSRF Protection
+
+Global CSRF protection is implemented in `proxy.ts` (Next.js 16+ convention):
+
+- **Protected methods**: POST, PUT, DELETE, PATCH requests to `/api/*`
+- **Safe methods**: GET, HEAD, OPTIONS are skipped (read-only)
+- **Validation**: Checks Origin/Referer headers against allowed origins
+- **Exempt paths**: `/api/cron/` (uses CRON_SECRET authentication instead)
+
+**Key files:**
+
+- `proxy.ts` - Global proxy with CSRF protection
+- `lib/csrfProtection.ts` - CSRF validation logic
+
+**How it works:**
+
+1. State-changing requests must have valid Origin or Referer from allowed domains
+2. Server-to-server calls (cron jobs) bypass CSRF by providing valid `CRON_SECRET`
+3. User authentication (Firebase ID tokens) is handled separately by `withAuth()` middleware
+
+**IMPORTANT**: The CSRF bypass only trusts verified `CRON_SECRET`, not unverified JWT tokens. This prevents attackers from bypassing CSRF by sending fake Authorization headers.
 
 ## User Assets
 

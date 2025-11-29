@@ -21,14 +21,26 @@ import {
     RocketLaunchIcon,
     ChevronLeftIcon,
     ChevronRightIcon,
+    ClipboardDocumentListIcon,
+    AcademicCapIcon,
+    EyeSlashIcon,
+    MagnifyingGlassIcon,
+    SparklesIcon,
+    ChatBubbleLeftRightIcon,
+    BellIcon,
+    ShareIcon,
+    TrophyIcon,
+    MicrophoneIcon,
 } from '@heroicons/react/24/outline'
+import { HandThumbUpIcon, RectangleStackIcon } from '@heroicons/react/24/solid'
 
 interface AboutModalProps {
     isOpen: boolean
     onClose: () => void
+    onStartTour?: () => void
 }
 
-type TabId = 'tech' | 'features' | 'architecture' | 'security'
+type TabId = 'tech' | 'features' | 'architecture' | 'security' | 'tutorial'
 
 interface Tab {
     id: TabId
@@ -38,7 +50,7 @@ interface Tab {
     blurb: string
 }
 
-const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
+const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, onStartTour }) => {
     const [activeTab, setActiveTab] = useState<TabId>('tech')
     const [highlightedIndex, setHighlightedIndex] = useState(0)
     const [isHovering, setIsHovering] = useState(false)
@@ -155,13 +167,89 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
         },
     ]
 
-    // Features data
+    // Features data - highlighting key technical achievements first
     const features = [
+        {
+            id: 'ai-search',
+            icon: StarIcon,
+            title: 'AI-Powered Smart Search',
+            desc: 'Natural language search with voice input and semantic understanding',
+            color: 'text-yellow-400',
+            bg: 'bg-yellow-500/10',
+            border: 'border-yellow-500/20',
+            activeBorder: 'border-yellow-400',
+            activeGlow: 'shadow-[0_0_25px_rgba(250,204,21,0.5)]',
+            details: [
+                'Google Gemini 2.5 Flash integration for natural language query parsing',
+                'Web Speech API voice input with live transcription feedback',
+                'Semantic concept understanding ("rainy day vibes", "mind-bending thrillers")',
+                'Save AI search results as custom collections',
+                'Live preview showing result count as you type',
+                'Debounced input with race condition handling for optimal performance',
+            ],
+        },
+        {
+            id: 'collections',
+            icon: HeartIcon,
+            title: 'Advanced Collection System',
+            desc: 'Three types of collections with auto-updates and sharing',
+            color: 'text-pink-400',
+            bg: 'bg-pink-500/10',
+            border: 'border-pink-500/20',
+            activeBorder: 'border-pink-400',
+            activeGlow: 'shadow-[0_0_25px_rgba(236,72,153,0.5)]',
+            details: [
+                'Manual collections: Drag-and-drop reordering with visual feedback',
+                'TMDB Genre-Based: Auto-updating via daily cron job (Vercel scheduled)',
+                'AI-Generated: Create from natural language queries',
+                'Advanced filters: Year range, rating, cast, director, popularity',
+                'Shareable links with public view pages and collection snapshots',
+                'New content badges and "Updated X ago" timestamps',
+            ],
+        },
+        {
+            id: 'rankings',
+            icon: Cog6ToothIcon,
+            title: 'Community Rankings & Forums',
+            desc: 'Drag-and-drop ranking creator with engagement features',
+            color: 'text-purple-400',
+            bg: 'bg-purple-500/10',
+            border: 'border-purple-500/20',
+            activeBorder: 'border-purple-400',
+            activeGlow: 'shadow-[0_0_25px_rgba(168,85,247,0.5)]',
+            details: [
+                'Drag-and-drop interface for creating ranked lists with custom scores',
+                'Public/private visibility controls with engagement tracking',
+                'Threaded comment system with nested replies and likes',
+                'Discussion forums with categories, polls, and voting',
+                'Real-time like counts, view tracking, and reply notifications',
+                'Firestore backend with comprehensive security rules',
+            ],
+        },
+        {
+            id: 'realtime',
+            icon: BoltIcon,
+            title: 'Real-Time Data Architecture',
+            desc: 'Firebase sync with dual storage adapters',
+            color: 'text-orange-400',
+            bg: 'bg-orange-500/10',
+            border: 'border-orange-500/20',
+            activeBorder: 'border-orange-400',
+            activeGlow: 'shadow-[0_0_25px_rgba(251,146,60,0.5)]',
+            details: [
+                'Firestore real-time listeners for notifications and live updates',
+                'Dual storage adapters: Firebase for auth users, localStorage for guests',
+                'User ID validation to prevent race conditions and data mixing',
+                'Interaction tracking with 90-day TTL for personalized recommendations',
+                'Automatic cache invalidation on state changes',
+                '18 focused Zustand stores for optimal performance',
+            ],
+        },
         {
             id: 'discovery',
             icon: PlayIcon,
-            title: 'Movies & TV Shows Discovery',
-            desc: 'Browse trending content, genres, and watch trailers',
+            title: 'Content Discovery & Browsing',
+            desc: 'Trending movies and TV shows with trailer integration',
             color: 'text-red-400',
             bg: 'bg-red-500/10',
             border: 'border-red-500/20',
@@ -169,60 +257,26 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             activeGlow: 'shadow-[0_0_25px_rgba(239,68,68,0.5)]',
             details: [
                 'Trending, popular, and top-rated content rows',
-                'Genre-based browsing with unified genre system',
+                'Unified genre system for consistent browsing across media types',
                 'YouTube trailer integration with ReactPlayer',
-                'Content modal with full details and recommendations',
-            ],
-        },
-        {
-            id: 'collections',
-            icon: HeartIcon,
-            title: 'Custom Watchlists & Likes',
-            desc: 'Create unlimited lists, like content, organize favorites',
-            color: 'text-pink-400',
-            bg: 'bg-pink-500/10',
-            border: 'border-pink-500/20',
-            activeBorder: 'border-pink-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(236,72,153,0.5)]',
-            details: [
-                '3 collection types: Manual, TMDB Genre-Based, AI-Generated',
-                'Auto-updating collections via daily cron job (2 AM UTC)',
-                'Drag-and-drop reordering with visual feedback',
-                'Shareable collection links with public view pages',
+                'Content modal with full details, cast, crew, and recommendations',
             ],
         },
         {
             id: 'search',
-            icon: StarIcon,
-            title: 'Advanced Search & Filters',
-            desc: 'Real-time search with genre, year, and rating filters',
-            color: 'text-yellow-400',
-            bg: 'bg-yellow-500/10',
-            border: 'border-yellow-500/20',
-            activeBorder: 'border-yellow-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(250,204,21,0.5)]',
-            details: [
-                '300ms debounced search with race condition handling',
-                'AI Smart Search powered by Google Gemini 2.5 Flash',
-                'Voice input with Web Speech API transcription',
-                'URL synchronization for shareable search results',
-            ],
-        },
-        {
-            id: 'responsive',
             icon: DevicePhoneMobileIcon,
-            title: 'Responsive Design',
-            desc: 'Seamless experience across desktop, tablet, and mobile',
+            title: 'Advanced Search & Filters',
+            desc: 'Real-time search with comprehensive filtering options',
             color: 'text-blue-400',
             bg: 'bg-blue-500/10',
             border: 'border-blue-500/20',
             activeBorder: 'border-blue-400',
             activeGlow: 'shadow-[0_0_25px_rgba(59,130,246,0.5)]',
             details: [
-                'Mobile-first design with Tailwind breakpoints',
-                'Touch-friendly interactions and gestures',
-                'Adaptive layouts for content grids and modals',
-                'Optimized images with responsive srcset',
+                '300ms debounced search with 2+ character minimum',
+                'Genre, year range, and rating filters',
+                'URL synchronization for shareable search results',
+                'Race condition prevention with proper cleanup',
             ],
         },
         {
@@ -238,25 +292,223 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             details: [
                 'Guest mode with localStorage persistence',
                 'Google OAuth and Email/Password authentication',
-                'Seamless data migration from guest to auth user',
+                'Seamless data migration from guest to authenticated user',
                 'Session management with auto-refresh tokens',
             ],
         },
         {
-            id: 'smart',
-            icon: Cog6ToothIcon,
-            title: 'Smart Features',
-            desc: 'Keyboard shortcuts, child safety, CSV export',
+            id: 'safety',
+            icon: ShieldCheckIcon,
+            title: 'Child Safety & Personalization',
+            desc: 'Content filtering and personalized recommendations',
+            color: 'text-cyan-400',
+            bg: 'bg-cyan-500/10',
+            border: 'border-cyan-500/20',
+            activeBorder: 'border-cyan-400',
+            activeGlow: 'shadow-[0_0_25px_rgba(6,182,212,0.5)]',
+            details: [
+                'PIN-protected child safety mode with content filtering by rating',
+                'Personalized recommendations based on viewing history',
+                'Interaction tracking with 90-day TTL for privacy',
+                'CSV export for collections and watch history',
+            ],
+        },
+    ]
+
+    // Tutorial features - user-facing features organized for tutorial
+    const tutorialFeatures = [
+        {
+            id: 'like-dislike',
+            icon: HandThumbUpIcon,
+            title: 'Like & Dislike Content',
+            desc: 'Build your taste profile',
+            color: 'text-white',
+            bg: 'bg-white/5',
+            border: 'border-white/20',
+            activeBorder: 'border-white/60',
+            activeGlow: 'shadow-[0_0_25px_rgba(255,255,255,0.3)]',
+            details: [
+                'Rate content to influence personalized recommendations',
+                'Liked content shapes your "For You" row',
+                'Disliked content is filtered from suggestions',
+            ],
+        },
+        {
+            id: 'hide-content',
+            icon: EyeSlashIcon,
+            title: 'Hide Unwanted Content',
+            desc: 'Clean up your feed',
+            color: 'text-gray-400',
+            bg: 'bg-gray-500/10',
+            border: 'border-gray-500/20',
+            activeBorder: 'border-gray-400',
+            activeGlow: 'shadow-[0_0_25px_rgba(156,163,175,0.5)]',
+            details: [
+                "Hide content you're not interested in",
+                "Hidden content won't appear in recommendations",
+                'Keeps your browsing experience clean and relevant',
+            ],
+        },
+        {
+            id: 'collections',
+            icon: RectangleStackIcon,
+            title: 'Create Collections',
+            desc: 'Organize your content',
+            color: 'text-blue-400',
+            bg: 'bg-blue-500/10',
+            border: 'border-blue-500/20',
+            activeBorder: 'border-blue-400',
+            activeGlow: 'shadow-[0_0_25px_rgba(59,130,246,0.5)]',
+            details: [
+                'Manual collections with drag-and-drop',
+                'AI-generated from natural language',
+                'Auto-updating genre-based collections',
+                'Share collections with public links',
+            ],
+        },
+        {
+            id: 'smart-search',
+            icon: SparklesIcon,
+            title: 'AI Smart Search',
+            desc: 'Natural language queries',
             color: 'text-purple-400',
             bg: 'bg-purple-500/10',
             border: 'border-purple-500/20',
             activeBorder: 'border-purple-400',
             activeGlow: 'shadow-[0_0_25px_rgba(168,85,247,0.5)]',
             details: [
-                'PIN-protected child safety mode with content filtering',
-                'Keyboard navigation throughout the app',
-                'CSV export for collections and watch history',
-                'Personalized recommendations based on interactions',
+                'Try "rainy day movies" or "mind-bending thrillers"',
+                'Save AI search results as collections',
+                'Live preview of result counts',
+            ],
+        },
+        {
+            id: 'voice-search',
+            icon: MicrophoneIcon,
+            title: 'Voice Search',
+            desc: 'Hands-free discovery',
+            color: 'text-green-400',
+            bg: 'bg-green-500/10',
+            border: 'border-green-500/20',
+            activeBorder: 'border-green-400',
+            activeGlow: 'shadow-[0_0_25px_rgba(34,197,94,0.5)]',
+            details: [
+                'Use voice input for AI queries',
+                'Live transcription feedback',
+                'Perfect for hands-free browsing',
+            ],
+        },
+        {
+            id: 'child-safety',
+            icon: ShieldCheckIcon,
+            title: 'Child Safety Mode',
+            desc: 'Family-friendly filtering',
+            color: 'text-red-400',
+            bg: 'bg-red-500/10',
+            border: 'border-red-500/20',
+            activeBorder: 'border-red-400',
+            activeGlow: 'shadow-[0_0_25px_rgba(239,68,68,0.5)]',
+            details: [
+                'Filter adult content with PIN protection',
+                'Configurable rating thresholds',
+                'Server-side filtering across all routes',
+            ],
+        },
+        {
+            id: 'notifications',
+            icon: BellIcon,
+            title: 'Notifications',
+            desc: 'Stay updated',
+            color: 'text-orange-400',
+            bg: 'bg-orange-500/10',
+            border: 'border-orange-500/20',
+            activeBorder: 'border-orange-400',
+            activeGlow: 'shadow-[0_0_25px_rgba(251,146,60,0.5)]',
+            details: [
+                'Collection updates when new content is added',
+                'Watchlist releases and new episodes',
+                'Real-time Firestore listeners',
+            ],
+        },
+        {
+            id: 'share-collections',
+            icon: ShareIcon,
+            title: 'Share Collections',
+            desc: 'Showcase your curations',
+            color: 'text-yellow-400',
+            bg: 'bg-yellow-500/10',
+            border: 'border-yellow-500/20',
+            activeBorder: 'border-yellow-400',
+            activeGlow: 'shadow-[0_0_25px_rgba(250,204,21,0.5)]',
+            details: [
+                'Generate shareable public links',
+                'Public view pages with collection snapshots',
+                'Share your curated lists with friends',
+            ],
+        },
+        {
+            id: 'rankings',
+            icon: TrophyIcon,
+            title: 'Create Rankings',
+            desc: 'Build top 10 lists',
+            color: 'text-cyan-400',
+            bg: 'bg-cyan-500/10',
+            border: 'border-cyan-500/20',
+            activeBorder: 'border-cyan-400',
+            activeGlow: 'shadow-[0_0_25px_rgba(6,182,212,0.5)]',
+            details: [
+                'Drag-and-drop ranking creator',
+                'Get likes and comments from community',
+                'Public/private visibility controls',
+            ],
+        },
+        {
+            id: 'forums',
+            icon: ChatBubbleLeftRightIcon,
+            title: 'Discussion Forums',
+            desc: 'Join the conversation',
+            color: 'text-indigo-400',
+            bg: 'bg-indigo-500/10',
+            border: 'border-indigo-500/20',
+            activeBorder: 'border-indigo-400',
+            activeGlow: 'shadow-[0_0_25px_rgba(99,102,241,0.5)]',
+            details: [
+                'Start threads about movies and TV',
+                'Create and vote on community polls',
+                'Threaded replies and like system',
+            ],
+        },
+        {
+            id: 'advanced-search',
+            icon: MagnifyingGlassIcon,
+            title: 'Advanced Search',
+            desc: 'Powerful filters',
+            color: 'text-pink-400',
+            bg: 'bg-pink-500/10',
+            border: 'border-pink-500/20',
+            activeBorder: 'border-pink-400',
+            activeGlow: 'shadow-[0_0_25px_rgba(236,72,153,0.5)]',
+            details: [
+                'Filter by genre, year, rating',
+                'Search by cast, director, keywords',
+                'URL-synced for shareable results',
+            ],
+        },
+        {
+            id: 'personalized',
+            icon: SparklesIcon,
+            title: 'Personalized Recommendations',
+            desc: 'Your "For You" row',
+            color: 'text-violet-400',
+            bg: 'bg-violet-500/10',
+            border: 'border-violet-500/20',
+            activeBorder: 'border-violet-400',
+            activeGlow: 'shadow-[0_0_25px_rgba(139,92,246,0.5)]',
+            details: [
+                'Updates based on your viewing habits',
+                'Genre preferences from interactions',
+                "Excludes content you've already seen",
+                'Refreshes with new content regularly',
             ],
         },
     ]
@@ -393,7 +645,14 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             title: 'Features',
             icon: StarIcon,
             itemCount: features.length,
-            blurb: 'A comprehensive streaming platform experience with movie and TV discovery, custom watchlists, AI-powered smart search using Google Gemini, and personalized recommendations. Features guest mode, child safety controls, and CSV export capabilities.',
+            blurb: 'NetTrailers showcases production-ready features that demonstrate full-stack development expertise. From AI-powered natural language search to real-time data synchronization, these features highlight advanced React patterns, API integrations, and scalable architecture design.',
+        },
+        {
+            id: 'tutorial',
+            title: 'Tutorial',
+            icon: AcademicCapIcon,
+            itemCount: tutorialFeatures.length,
+            blurb: 'Learn how to use NetTrailers with this complete guide to all user-facing features. From basic content rating to advanced AI search and community features, discover everything this app has to offer.',
         },
         {
             id: 'architecture',
@@ -666,6 +925,44 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                     </div>
                 )
             }
+            case 'tutorial': {
+                const tutorial = tutorialFeatures[highlightedIndex]
+                if (!tutorial) return null
+                return (
+                    <div
+                        className={`rounded-xl ${tutorial.bg} border-2 ${tutorial.activeBorder} ${tutorial.activeGlow} p-4 sm:p-5 transition-all duration-300`}
+                    >
+                        <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0">
+                                <tutorial.icon
+                                    className={`w-7 h-7 sm:w-8 sm:h-8 ${tutorial.color}`}
+                                />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <h4 className="text-lg sm:text-xl font-bold text-white mb-2">
+                                    {tutorial.title}
+                                </h4>
+                                <p className="text-sm text-gray-400 mb-2 sm:hidden">
+                                    {tutorial.desc}
+                                </p>
+                                <ul className="space-y-1.5">
+                                    {tutorial.details
+                                        .slice(0, isMobile ? 2 : 3)
+                                        .map((detail, idx) => (
+                                            <li
+                                                key={idx}
+                                                className="flex items-start gap-2 text-xs sm:text-sm text-gray-300"
+                                            >
+                                                <span className={tutorial.color}>•</span>
+                                                <span>{detail}</span>
+                                            </li>
+                                        ))}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
             case 'architecture': {
                 const arch = architecture[highlightedIndex]
                 if (!arch) return null
@@ -913,7 +1210,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                             </p>
 
                             {/* Social Links (icons only) */}
-                            <div className="flex flex-wrap items-center gap-2 mb-3">
+                            <div className="flex flex-wrap items-center justify-center gap-2">
                                 {[
                                     {
                                         href: 'https://github.com/n8watkins',
@@ -933,22 +1230,19 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         aria-label={social.label}
-                                        className="group w-8 h-8 rounded-full bg-zinc-800/60 hover:bg-zinc-700/80 transition-all duration-300 flex items-center justify-center border border-zinc-700/50 hover:border-red-500/50 hover:scale-110 hover:shadow-[0_0_20px_rgba(239,68,68,0.3)]"
+                                        className="group w-9 h-9 rounded-full bg-zinc-800/60 hover:bg-zinc-700/80 transition-all duration-300 flex items-center justify-center border border-zinc-700/50 hover:border-red-500/50 hover:scale-110 hover:shadow-[0_0_20px_rgba(239,68,68,0.3)]"
                                     >
                                         {social.icon === 'x' ? (
-                                            <svg
-                                                className="w-3.5 h-3.5 fill-white"
-                                                viewBox="0 0 24 24"
-                                            >
+                                            <svg className="w-4 h-4 fill-white" viewBox="0 0 24 24">
                                                 <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" />
                                             </svg>
                                         ) : (
                                             <Image
                                                 src={social.icon}
                                                 alt={social.label}
-                                                width={14}
-                                                height={14}
-                                                className="w-3.5 h-3.5"
+                                                width={16}
+                                                height={16}
+                                                className="w-4 h-4"
                                             />
                                         )}
                                     </a>
@@ -963,35 +1257,6 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                     <span className="text-xs font-medium text-red-400 group-hover:text-red-300">
                                         View Portfolio
                                     </span>
-                                </a>
-                            </div>
-
-                            {/* Quick Links */}
-                            <div className="flex flex-wrap gap-2">
-                                <Link
-                                    href="/security"
-                                    onClick={onClose}
-                                    className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-zinc-800/60 text-gray-300 border border-zinc-700/50 hover:border-red-500/50 hover:text-red-400 transition-all duration-300"
-                                >
-                                    <DocumentTextIcon className="w-3.5 h-3.5" />
-                                    Security
-                                </Link>
-                                <Link
-                                    href="/changelog"
-                                    onClick={onClose}
-                                    className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-zinc-800/60 text-gray-300 border border-zinc-700/50 hover:border-red-500/50 hover:text-red-400 transition-all duration-300"
-                                >
-                                    <DocumentTextIcon className="w-3.5 h-3.5" />
-                                    Changelog
-                                </Link>
-                                <a
-                                    href="https://github.com/n8watkins/net_trailer/issues"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-zinc-800/60 text-gray-300 border border-zinc-700/50 hover:border-red-500/50 hover:text-red-400 transition-all duration-300"
-                                >
-                                    <ArrowTopRightOnSquareIcon className="w-3.5 h-3.5" />
-                                    GitHub Issues
                                 </a>
                             </div>
                         </div>
@@ -1028,11 +1293,6 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                     onMouseEnter={() => setIsHovering(true)}
                     onMouseLeave={() => setIsHovering(false)}
                 >
-                    {/* Section Blurb */}
-                    <p className="text-sm text-gray-400 leading-relaxed px-1">
-                        {getCurrentTabBlurb()}
-                    </p>
-
                     {/* Focused Item Display with Navigation */}
                     <div className="flex items-center gap-2">
                         {/* Left Arrow */}
@@ -1078,7 +1338,41 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                 </div>
 
                 {/* Footer */}
-                <div className="relative z-10 px-5 py-2.5 border-t border-zinc-800/50 flex-shrink-0">
+                <div className="relative z-10 px-5 py-3 border-t border-zinc-800/50 flex-shrink-0 space-y-2.5">
+                    {/* Quick Links Intro */}
+                    <p className="text-xs text-gray-500 text-center">
+                        Learn more about this project&apos;s development and security practices
+                    </p>
+
+                    {/* Quick Links */}
+                    <div className="flex flex-wrap gap-2 justify-center">
+                        <Link
+                            href="/security"
+                            onClick={onClose}
+                            className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-zinc-800/60 text-gray-300 border border-zinc-700/50 hover:border-red-500/50 hover:text-red-400 transition-all duration-300"
+                        >
+                            <ShieldCheckIcon className="w-3.5 h-3.5" />
+                            Security
+                        </Link>
+                        <Link
+                            href="/changelog"
+                            onClick={onClose}
+                            className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-zinc-800/60 text-gray-300 border border-zinc-700/50 hover:border-red-500/50 hover:text-red-400 transition-all duration-300"
+                        >
+                            <ClipboardDocumentListIcon className="w-3.5 h-3.5" />
+                            Changelog
+                        </Link>
+                        <a
+                            href="https://github.com/n8watkins/net_trailer/issues"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-zinc-800/60 text-gray-300 border border-zinc-700/50 hover:border-red-500/50 hover:text-red-400 transition-all duration-300"
+                        >
+                            <ArrowTopRightOnSquareIcon className="w-3.5 h-3.5" />
+                            GitHub Issues
+                        </a>
+                    </div>
+
                     <div className="flex items-center justify-between">
                         {/* Footer text */}
                         <p className="text-xs text-gray-500">

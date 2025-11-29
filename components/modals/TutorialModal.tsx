@@ -130,7 +130,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartT
                                 </p>
                             </div>
 
-                            <div className="space-y-2">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <FeatureItem
                                     icon={<HandThumbUpIcon className="w-5 h-5 text-white" />}
                                     title="Like & Dislike Content"
@@ -233,7 +233,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartT
                                         </p>
                                     </div>
 
-                                    <div className="space-y-2">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         <FeatureItem
                                             icon={
                                                 <HandThumbUpIcon className="w-5 h-5 text-white" />
@@ -291,7 +291,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartT
                                         </p>
                                     </div>
 
-                                    <div className="space-y-2">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         <FeatureItem
                                             icon={
                                                 <SparklesIcon className="w-5 h-5 text-blue-400" />
@@ -357,7 +357,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartT
                                         </p>
                                     </div>
 
-                                    <div className="space-y-2">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         <FeatureItem
                                             icon={
                                                 <TrophyIcon className="w-5 h-5 text-yellow-400" />

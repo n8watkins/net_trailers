@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { applyCsrfProtection } from './lib/csrfProtection'
 
 /**
  * Global proxy for security and request validation
@@ -8,11 +9,38 @@ import { NextRequest, NextResponse } from 'next/server'
 const MAX_REQUEST_BODY_SIZE = 1024 * 1024 // 1MB limit for request bodies
 const MAX_JSON_PAYLOAD_SIZE = 500 * 1024 // 500KB for JSON payloads
 
+/**
+ * Routes exempt from CSRF protection.
+ * These use alternative authentication (CRON_SECRET, webhooks, etc.)
+ */
+const CSRF_EXEMPT_PATHS = ['/api/cron/']
+
+/**
+ * Safe HTTP methods that don't require CSRF protection.
+ */
+const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS']
+
 export async function proxy(request: NextRequest) {
+    const { pathname } = request.nextUrl
+    const method = request.method
+
     // Apply security checks only to API routes
-    if (request.nextUrl.pathname.startsWith('/api/')) {
+    if (pathname.startsWith('/api/')) {
+        // CSRF Protection for state-changing requests
+        if (!SAFE_METHODS.includes(method)) {
+            // Skip exempt paths (cron jobs, webhooks)
+            const isExempt = CSRF_EXEMPT_PATHS.some((path) => pathname.startsWith(path))
+
+            if (!isExempt) {
+                const csrfResponse = applyCsrfProtection(request)
+                if (csrfResponse) {
+                    return csrfResponse
+                }
+            }
+        }
+
         // Check Content-Length header for POST/PUT/PATCH requests
-        if (['POST', 'PUT', 'PATCH'].includes(request.method)) {
+        if (['POST', 'PUT', 'PATCH'].includes(method)) {
             const contentLength = request.headers.get('content-length')
             const contentType = request.headers.get('content-type')
 

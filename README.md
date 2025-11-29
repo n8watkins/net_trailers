@@ -51,7 +51,6 @@ A Netflix-inspired streaming discovery platform built with modern web technologi
     - Natural language query understanding powered by Google Gemini AI
     - Voice input with live transcription (Web Speech API)
     - Semantic concept recognition ("rainy day vibes", "mind-bending thrillers")
-    - Entity recognition with autocomplete (`@actors`, `#directors`)
     - Auto-detection of media type preferences
     - Save AI search results as custom collections
     - Live result count preview
@@ -1011,6 +1010,7 @@ NetTrailer implements comprehensive security measures. See the full [Security Do
 **Key Security Features:**
 
 - **Authentication**: Firebase Auth with server-side token verification
+- **CSRF Protection**: Global CSRF protection on all state-changing API requests (POST/PUT/DELETE/PATCH)
 - **Input Sanitization**: DOMPurify, control character removal, length validation
 - **Rate Limiting**: Per-user limits on AI requests, password reset, email verification
 - **Data Protection**: 540+ lines of Firestore security rules, user data isolation
