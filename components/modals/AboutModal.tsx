@@ -1122,13 +1122,7 @@ const AboutModal: React.FC<AboutModalProps> = ({
                     </div>
 
                     {/* Mini Cards Grid */}
-                    <div
-                        className={`grid gap-2 ${
-                            activeTab === 'security' ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3'
-                        }`}
-                    >
-                        {renderMiniCards()}
-                    </div>
+                    <div className="grid grid-cols-2 gap-2">{renderMiniCards()}</div>
                 </div>
 
                 {/* Footer */}
