@@ -187,3 +187,39 @@ export function withCsrfForAuthRoute(
         return handler(request, userId, ...args)
     }
 }
+
+/**
+ * Validate CSRF for server actions using headers() from next/headers
+ * Server actions don't go through proxy.ts, so they need explicit validation
+ *
+ * @param headersList - Headers from next/headers
+ * @returns true if origin is valid, false otherwise
+ */
+export function validateServerActionOrigin(headersList: Headers): boolean {
+    const origin = headersList.get('origin')
+    const referer = headersList.get('referer')
+
+    // Normalize allowed origins for comparison
+    const normalizedAllowedOrigins = ALLOWED_ORIGINS.map((o) => parseOrigin(o)).filter(
+        (o): o is string => o !== null
+    )
+
+    // Check Origin header (preferred)
+    if (origin) {
+        const parsedOrigin = parseOrigin(origin)
+        if (parsedOrigin && normalizedAllowedOrigins.includes(parsedOrigin)) {
+            return true
+        }
+    }
+
+    // Fallback to Referer header - extract origin from full URL
+    if (referer) {
+        const parsedRefererOrigin = parseOrigin(referer)
+        if (parsedRefererOrigin && normalizedAllowedOrigins.includes(parsedRefererOrigin)) {
+            return true
+        }
+    }
+
+    // If neither header is present or doesn't match, reject
+    return false
+}

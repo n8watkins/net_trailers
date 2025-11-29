@@ -929,6 +929,7 @@ const AboutModal: React.FC<AboutModalProps> = ({
                             {/* Help Options */}
                             {(onStartTour || onOpenTutorial) && (
                                 <p className="text-sm text-gray-400 leading-relaxed mb-2 flex flex-wrap items-center gap-1.5">
+                                    <br />
                                     <span>New to NetTrailers?</span>
                                     {onOpenTutorial && (
                                         <>
@@ -967,17 +968,20 @@ const AboutModal: React.FC<AboutModalProps> = ({
                                 </p>
                             )}
 
-                            <p className="text-sm text-gray-400 leading-relaxed mb-3">
-                                Check out my{' '}
+                            <p className="text-sm text-gray-400 leading-relaxed mb-3 flex flex-wrap items-center gap-1.5">
+                                <span>Check out my</span>
                                 <a
                                     href="https://n8sportfolio.vercel.app/"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-red-400 hover:text-red-300 underline underline-offset-2"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-500/20 hover:bg-red-500/30 rounded-full text-xs font-medium text-red-300 hover:text-red-200 border border-red-500/40 hover:border-red-400 transition-all"
                                 >
-                                    portfolio
-                                </a>{' '}
-                                for more projects, or connect with me on social media below!
+                                    <ArrowTopRightOnSquareIcon className="w-3 h-3" />
+                                    Portfolio
+                                </a>
+                                <span>
+                                    for more projects, or connect with me on social media below!
+                                </span>
                             </p>
 
                             {/* Social Links (icons only) */}
@@ -1018,17 +1022,6 @@ const AboutModal: React.FC<AboutModalProps> = ({
                                         )}
                                     </a>
                                 ))}
-                                <a
-                                    href="https://n8sportfolio.vercel.app/"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-500/20 hover:bg-red-500/30 transition-all duration-300 border border-red-500/50 hover:border-red-400 hover:scale-105 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]"
-                                >
-                                    <ArrowTopRightOnSquareIcon className="w-3.5 h-3.5 text-red-400" />
-                                    <span className="text-xs font-medium text-red-400 group-hover:text-red-300">
-                                        View Portfolio
-                                    </span>
-                                </a>
                             </div>
                         </div>
                     </div>
