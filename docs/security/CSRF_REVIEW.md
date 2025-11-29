@@ -1,12 +1,16 @@
 # CSRF Review
 
+**Last Updated:** November 29, 2025
+
 ## Status Summary
 
 | Finding                                  | Severity | Status   |
 | ---------------------------------------- | -------- | -------- |
 | Server actions bypass CSRF               | High     | ✅ FIXED |
 | CRON_SECRET disables CSRF for all routes | Medium   | ✅ FIXED |
-| No regression tests                      | Low      | ⏳ Open  |
+| GET-based unsubscribe state change       | Medium   | ✅ FIXED |
+| No regression tests                      | Low      | ✅ FIXED |
+| No server action lint guard              | Low      | ✅ FIXED |
 
 ---
 
@@ -103,21 +107,62 @@ if (isCronRoute) {
 
 ---
 
-### 3. No regression tests (Low) - ⏳ Open
+### 3. GET-based unsubscribe state change (Medium) - ✅ FIXED
 
-**Problem**: `__tests__` contains no coverage for `parseOrigin`, `validateOrigin`, `validateServerActionOrigin`, or proxy enforcement.
+**Original Problem**: `/api/email/unsubscribe` used GET to perform state changes (disabling notifications). GET requests bypass CSRF protection in proxy.ts.
 
-**Risk**: Without tests, future refactors could reintroduce vulnerabilities without detection.
+**Attack Vectors**:
 
-**Recommended Tests**:
+- Email scanners pre-fetching links
+- Slack/Discord link previews
+- Browser `<link rel="prefetch">`
+- Compromised email access
 
-| Test Target                    | Test Cases                                                   |
-| ------------------------------ | ------------------------------------------------------------ |
-| `parseOrigin()`                | Valid URLs return exact origin; invalid URLs return null     |
-| `validateOrigin()`             | Allowed origins pass; attacker domains (prefix attacks) fail |
-| `validateServerActionOrigin()` | Same validation logic with Headers object                    |
-| `proxy.ts` CRON routes         | Valid CRON_SECRET passes; missing/invalid returns 401        |
-| `proxy.ts` non-cron routes     | CSRF validation applied; CRON_SECRET ignored                 |
+**How We Fixed It**: Converted to POST-with-confirmation-page pattern:
+
+1. GET redirects to `/unsubscribe?token=xxx` confirmation page
+2. User must click "Unsubscribe" button
+3. Button sends POST to `/api/email/unsubscribe` (CSRF protected)
+
+**Files Changed**:
+
+- `app/api/email/unsubscribe/route.ts` - GET redirects, POST performs action
+- `app/unsubscribe/page.tsx` - New confirmation page
+
+---
+
+### 4. No regression tests (Low) - ✅ FIXED
+
+**Original Problem**: `__tests__` contained no coverage for CSRF protection logic.
+
+**How We Fixed It**: Added comprehensive test suites:
+
+| Test File                                     | Coverage                                          |
+| --------------------------------------------- | ------------------------------------------------- |
+| `__tests__/lib/csrfProtection.test.ts`        | 23 tests for origin validation, CSRF application  |
+| `__tests__/proxy.test.ts`                     | 29 tests for cron auth, size limits, content-type |
+| `__tests__/security/serverActionCsrf.test.ts` | 3 tests for server action lint guard              |
+
+**Test Coverage**:
+
+- `validateOrigin()` - Allowed origins, spoofed origins, subdomain attacks, prefix attacks
+- `applyCsrfProtection()` - Safe methods skip, state-changing methods protected
+- `validateServerActionOrigin()` - Headers object validation
+- `proxy.ts` - CRON_SECRET validation, request size limits, content-type validation
+
+---
+
+### 5. No server action lint guard (Low) - ✅ FIXED
+
+**Original Problem**: New server actions could be added without CSRF protection, with no automated detection.
+
+**How We Fixed It**: Added `__tests__/security/serverActionCsrf.test.ts` that:
+
+1. Scans `lib/actions/**/*.ts` for `'use server'` directive
+2. Verifies `validateServerActionOrigin` is imported and called
+3. Fails with clear fix instructions if violations found
+
+**Why This Helps**: CI/CD will catch missing CSRF protection before code reaches production.
 
 ---
 
@@ -133,28 +178,38 @@ if (isCronRoute) {
 
 ## Files Changed
 
-| File                         | Change                                                     |
-| ---------------------------- | ---------------------------------------------------------- |
-| `lib/csrfProtection.ts`      | Added `validateServerActionOrigin()` for server actions    |
-| `lib/actions/childSafety.ts` | Added CSRF validation using `validateServerActionOrigin()` |
-| `proxy.ts`                   | CRON_SECRET bypass restricted to `/api/cron/*` only        |
+| File                                          | Change                                                     |
+| --------------------------------------------- | ---------------------------------------------------------- |
+| `lib/csrfProtection.ts`                       | Added `validateServerActionOrigin()` for server actions    |
+| `lib/actions/childSafety.ts`                  | Added CSRF validation using `validateServerActionOrigin()` |
+| `proxy.ts`                                    | CRON_SECRET bypass restricted to `/api/cron/*` only        |
+| `app/api/email/unsubscribe/route.ts`          | GET redirects to confirmation, POST performs unsubscribe   |
+| `app/unsubscribe/page.tsx`                    | New confirmation page for unsubscribe                      |
+| `__tests__/lib/csrfProtection.test.ts`        | 23 unit tests for CSRF protection                          |
+| `__tests__/proxy.test.ts`                     | 29 integration tests for proxy                             |
+| `__tests__/security/serverActionCsrf.test.ts` | Lint guard for server action CSRF                          |
+| `CONTRIBUTING.md`                             | Security guidelines for contributors                       |
 
 ---
 
 ## Verification
 
 ```bash
+# Run all security tests
+npm test -- --testPathPatterns="csrf|proxy|serverAction"
+# Expected: 55 tests pass (23 + 29 + 3)
+
 # Confirm server action has CSRF protection
 grep -n "validateServerActionOrigin" lib/actions/childSafety.ts
-# Expected: Import and usage on lines 12, 22
+# Expected: Import and usage
 
-# Confirm validateServerActionOrigin exists
-grep -n "validateServerActionOrigin" lib/csrfProtection.ts
-# Expected: Function definition at line 198
+# Confirm unsubscribe uses POST for state change
+grep -n "export async function POST" app/api/email/unsubscribe/route.ts
+# Expected: POST handler exists
 
-# Confirm CRON_SECRET restricted to cron routes
-grep -n "isCronRoute" proxy.ts
-# Expected: Conditional check at line 55
+# Lint guard catches missing protection
+npm test -- --testPathPatterns=serverActionCsrf
+# Expected: All tests pass
 
 # Build passes
 npm run build

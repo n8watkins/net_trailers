@@ -104,6 +104,39 @@ Server-side validation for database operations:
 
 ## API Security
 
+### CSRF Protection
+
+Cross-Site Request Forgery protection is implemented at multiple layers:
+
+**Global Proxy Protection (`proxy.ts`):**
+
+- All state-changing requests (POST, PUT, DELETE, PATCH) to `/api/*` validate Origin/Referer headers
+- Only requests from allowed origins are processed
+- Uses exact origin matching to prevent subdomain attacks
+
+**Server Action Protection:**
+
+- Server actions bypass proxy.ts, so they must call `validateServerActionOrigin()` directly
+- Automated lint guard test ensures all server actions have CSRF protection
+- See `CONTRIBUTING.md` for required implementation pattern
+
+**Cron Route Protection:**
+
+- `/api/cron/*` routes require valid `CRON_SECRET` instead of Origin validation
+- CRON_SECRET bypass is limited to cron routes only (prevents leaked secret from bypassing all CSRF)
+
+**Test Coverage:**
+
+```bash
+# Run CSRF-related tests (55 tests total)
+npm test -- --testPathPatterns="csrf|proxy|serverAction"
+```
+
+**Related Documentation:**
+
+- `docs/security/CSRF_REVIEW.md` - Detailed CSRF audit and fixes
+- `CONTRIBUTING.md` - Security guidelines for contributors
+
 ### Rate Limiting
 
 **General Rate Limiting:**
