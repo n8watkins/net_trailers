@@ -316,7 +316,7 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
             <div
                 ref={tooltipRef}
                 style={tooltipStyle}
-                className={`w-full ${currentStep.position === 'center' ? 'max-w-2xl p-8' : 'max-w-md p-6'} bg-zinc-900/98 backdrop-blur-xl border-2 border-orange-500/40 rounded-2xl shadow-2xl shadow-orange-500/20 animate-fade-in`}
+                className={`${currentStep.position === 'center' ? 'max-w-2xl p-8' : 'w-full max-w-md p-6'} bg-zinc-900/98 backdrop-blur-xl border-2 border-orange-500/40 rounded-2xl shadow-2xl shadow-orange-500/20 animate-fade-in`}
             >
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
