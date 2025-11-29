@@ -67,6 +67,25 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
         return () => setMounted(false)
     }, [])
 
+    // Lock scrolling during tour
+    useEffect(() => {
+        if (!isActive) return
+
+        // Save current scroll position and overflow state
+        const originalOverflow = document.body.style.overflow
+        const originalPosition = document.body.style.position
+
+        // Lock scrolling
+        document.body.style.overflow = 'hidden'
+        document.body.style.position = 'relative'
+
+        // Restore on cleanup
+        return () => {
+            document.body.style.overflow = originalOverflow
+            document.body.style.position = originalPosition
+        }
+    }, [isActive])
+
     // Track feature changes for transition animations
     useEffect(() => {
         if (!isActive) return
