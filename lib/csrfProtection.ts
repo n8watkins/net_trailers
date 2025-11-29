@@ -1,12 +1,11 @@
 /**
  * CSRF Protection Middleware
  *
- * Validates Origin and Referer headers to prevent Cross-Site Request Forgery attacks
- * Allows bypass for authenticated server-to-server calls (cron jobs, webhooks)
+ * Validates Origin and Referer headers to prevent Cross-Site Request Forgery attacks.
+ * CRON_SECRET bypass is handled separately in proxy.ts for /api/cron/* routes only.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import crypto from 'crypto'
 
 // Allowed origins for CSRF protection
 const ALLOWED_ORIGINS = [
@@ -22,9 +21,6 @@ if (process.env.VERCEL_URL) {
 if (process.env.NEXT_PUBLIC_VERCEL_URL) {
     ALLOWED_ORIGINS.push(`https://${process.env.NEXT_PUBLIC_VERCEL_URL}`)
 }
-
-// Server-side secrets for bypass
-const CRON_SECRET = process.env.CRON_SECRET
 
 /**
  * Parse and extract origin from a URL string
@@ -77,49 +73,14 @@ export function validateOrigin(request: NextRequest): boolean {
 }
 
 /**
- * Timing-safe comparison of cron secret tokens.
- * Prevents timing attacks by using constant-time comparison.
- */
-function isValidCronSecret(token: string | null | undefined): boolean {
-    if (!token || !CRON_SECRET) return false
-    try {
-        const encoder = new TextEncoder()
-        const tokenBytes = encoder.encode(token)
-        const secretBytes = encoder.encode(CRON_SECRET)
-        if (tokenBytes.length !== secretBytes.length) return false
-        return crypto.timingSafeEqual(tokenBytes, secretBytes)
-    } catch {
-        return false
-    }
-}
-
-/**
- * Check if request is an authenticated server-to-server call
- * These can bypass CSRF checks because they use secure authentication
- *
- * SECURITY: Only trusts CRON_SECRET, not unverified JWT tokens.
- * User authentication tokens are verified by withAuth() middleware,
- * and CSRF protection for browser requests uses Origin/Referer validation.
- */
-function isServerToServerCall(request: NextRequest): boolean {
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader) return false
-
-    const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader
-
-    // Only trust verified CRON_SECRET for server-to-server calls
-    // User tokens (JWTs) must go through withAuth() for verification
-    // CSRF for browser requests is handled by Origin/Referer validation
-    return isValidCronSecret(token)
-}
-
-/**
  * Apply CSRF protection to a request
  * Returns null if valid, NextResponse with 403 status if CSRF detected
  *
  * Bypasses CSRF for:
  * - Safe methods (GET, HEAD, OPTIONS)
- * - Authenticated server-to-server calls (cron jobs with CRON_SECRET)
+ *
+ * NOTE: CRON_SECRET bypass is handled ONLY in proxy.ts for /api/cron/* routes.
+ * This function should NOT check for CRON_SECRET to limit blast radius if leaked.
  *
  * Browser requests must have valid Origin or Referer headers.
  * User authentication is handled separately by withAuth() middleware.
@@ -131,13 +92,8 @@ export function applyCsrfProtection(request: NextRequest): NextResponse | null {
         return null // Safe methods don't need CSRF protection
     }
 
-    // Allow authenticated server-to-server calls to bypass CSRF
-    // These use secure tokens that cannot be forged by attackers
-    if (isServerToServerCall(request)) {
-        return null
-    }
-
     // Validate origin/referer for browser-based requests
+    // NOTE: CRON_SECRET bypass removed - now handled only in proxy.ts for /api/cron/*
     if (!validateOrigin(request)) {
         return NextResponse.json(
             {
