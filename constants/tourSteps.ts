@@ -19,16 +19,16 @@ export const TOUR_STEPS: TourStep[] = [
         id: 'welcome',
         title: '👋 Welcome to Net Trailers!',
         description:
-            "Let's take a quick 60-second tour of the key features. You can skip at any time or use the arrow keys to navigate.",
+            "Let's take a quick tour of how to discover amazing movies and TV shows. Navigate with arrow keys or the buttons below.",
         targetSelector: 'body',
         position: 'center',
         skippable: true,
     },
     {
         id: 'search',
-        title: '🔍 Search Everything',
+        title: '🔍 Search Anything',
         description:
-            'Search for movies and TV shows instantly. Try typing "action movies" or a specific title. Press "/" to focus the search bar from anywhere.',
+            'Search for movies, TV shows, actors, or directors. Press "/" anytime to jump to search. Try "Christopher Nolan" or "action movies".',
         targetSelector: '#navbar-search-input, #navbar-mobile-search-input',
         position: 'bottom',
         action: 'focus',
@@ -36,52 +36,38 @@ export const TOUR_STEPS: TourStep[] = [
     },
     {
         id: 'content-cards',
-        title: '🎬 Discover Content',
+        title: '🎬 Browse Content',
         description:
-            'Click any poster to watch trailers, read details, and add to your collections. Hover to see quick actions.',
+            'Click any poster to watch trailers, view details, rate content, and add to your collections. Hover over cards to see quick actions like Like and Add to Watchlist.',
         targetSelector: '[data-tour="content-card"]',
         position: 'top',
         action: 'hover',
+        spotlightPadding: 12,
     },
     {
-        id: 'collections',
-        title: '📚 Your Collections',
+        id: 'avatar-menu',
+        title: '👤 Your Personal Hub',
         description:
-            'Save content to Watch Later, Favorites, or create custom collections. Access them anytime from the avatar menu or collections page.',
+            'Access everything here: your collections (Watch Later, Favorites), rankings, ratings, watch history, and settings. Click to explore!',
         targetSelector: '[data-tour="avatar-button"]',
         position: 'bottom',
         spotlightPadding: 12,
         action: 'click',
     },
     {
-        id: 'custom-rows',
-        title: '✨ Create Custom Collections',
+        id: 'features',
+        title: '✨ Powerful Features',
         description:
-            'Build your own collections with genre filters, AI queries, or manual picks. Auto-updating collections refresh daily with new content!',
-        targetSelector: '[data-tour="collections-link"]',
+            'Create custom collections with AI search, share top 10 rankings with the community, join forum discussions, enable child safety mode, and track your watch history - all available from your avatar menu!',
+        targetSelector: '[data-tour="avatar-button"]',
         position: 'bottom',
-    },
-    {
-        id: 'rankings',
-        title: '🏆 Share Your Rankings',
-        description:
-            'Create and share your top 10 lists. Browse community rankings, leave comments, and discover what others are watching.',
-        targetSelector: '[data-tour="community-link"]',
-        position: 'bottom',
-    },
-    {
-        id: 'settings',
-        title: '⚙️ Personalize Your Experience',
-        description:
-            'Customize content ratings, enable child safety mode, manage your data, and adjust your preferences in settings.',
-        targetSelector: '[data-tour="settings-link"]',
-        position: 'bottom',
+        spotlightPadding: 12,
     },
     {
         id: 'complete',
-        title: "🎉 You're All Set!",
+        title: '🎉 Ready to Explore!',
         description:
-            "You've completed the tour! Explore at your own pace. You can restart this tour anytime from Help & Tutorial in the footer.",
+            "You're all set! Start discovering content, building collections, or sharing your opinions. Access this tour anytime from Help & Tutorial in the footer or press Alt+T.",
         targetSelector: 'body',
         position: 'center',
         skippable: false,

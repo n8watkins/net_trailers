@@ -238,13 +238,15 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
         <div className="tour-overlay" role="dialog" aria-modal="true" aria-labelledby="tour-title">
             {/* Backdrop with spotlight cutout effect */}
             <div className="fixed inset-0 z-[9997]">
-                {/* Dark overlay */}
-                <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+                {/* Lighter overlay for better visibility */}
+                <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
 
-                {/* Spotlight highlight */}
+                {/* Spotlight highlight with brighter ring */}
                 {targetElement && (
                     <div style={spotlightStyle}>
-                        <div className="absolute inset-0 rounded-lg ring-4 ring-orange-500/60 ring-offset-4 ring-offset-black/50 animate-pulse" />
+                        <div className="absolute inset-0 rounded-lg ring-4 ring-orange-400 ring-offset-4 ring-offset-black/30 animate-pulse shadow-[0_0_30px_rgba(251,146,60,0.8)]" />
+                        {/* Additional inner glow for more visibility */}
+                        <div className="absolute inset-0 rounded-lg ring-2 ring-white/40" />
                     </div>
                 )}
             </div>
