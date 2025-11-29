@@ -387,28 +387,156 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
                 >
                     <div
                         ref={tooltipRef}
-                        key={currentTourStep}
                         className={`max-w-2xl p-8 bg-zinc-900/98 backdrop-blur-xl border-2 border-orange-500/40 rounded-2xl shadow-2xl shadow-orange-500/20 pointer-events-auto transition-all duration-300 ${
-                            transitionType === 'feature'
+                            transitionType === 'feature' || transitionType === 'none'
                                 ? 'animate-tour-feature-change'
-                                : transitionType === 'pane'
-                                  ? 'animate-tour-pane-change'
-                                  : 'animate-fade-in'
+                                : ''
                         }`}
+                    >
+                        {/* Content wrapper with animation for pane transitions */}
+                        <div
+                            key={currentTourStep}
+                            className={transitionType === 'pane' ? 'animate-tour-pane-change' : ''}
+                        >
+                            {/* Header */}
+                            <div className="flex items-start justify-between mb-4">
+                                <div className="flex-1">
+                                    <h2
+                                        id="tour-title"
+                                        className="text-3xl font-bold text-white mb-1"
+                                    >
+                                        {currentStep.title}
+                                    </h2>
+                                    {panePosition.isWelcome ? (
+                                        <p className="text-base text-gray-400">Welcome</p>
+                                    ) : panePosition.isComplete ? (
+                                        <p className="text-base text-gray-400">Tour Complete</p>
+                                    ) : currentFeature ? (
+                                        <p className="text-base text-gray-400">
+                                            {currentFeature.name} •{' '}
+                                            {panePosition.paneIndexInFeature + 1} of{' '}
+                                            {currentFeature.panes.length}
+                                            {currentFeature.panes.length > 1 ? ' panes' : ' pane'}
+                                        </p>
+                                    ) : null}
+                                </div>
+                                {(currentStep.skippable ?? true) && (
+                                    <button
+                                        onClick={onSkip}
+                                        className="ml-4 p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/10"
+                                        aria-label="Skip tour"
+                                    >
+                                        <XMarkIcon className="h-5 w-5" />
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Progress bar */}
+                            <div className="w-full h-1.5 bg-zinc-800 rounded-full mb-4 overflow-hidden">
+                                <div
+                                    className="h-full bg-gradient-to-r from-orange-500 to-red-600 transition-all duration-300 ease-out"
+                                    style={{
+                                        width: `${((currentTourStep + 1) / TOTAL_TOUR_STEPS) * 100}%`,
+                                    }}
+                                />
+                            </div>
+
+                            {/* Content */}
+                            <p className="text-gray-300 text-lg leading-relaxed mb-6">
+                                {currentStep.description}
+                            </p>
+
+                            {/* Action hint */}
+                            {currentStep.action && (
+                                <div className="mb-6 p-3 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+                                    <p className="text-sm text-orange-300">
+                                        💡 Try it:{' '}
+                                        <span className="font-medium capitalize">
+                                            {currentStep.action}
+                                        </span>{' '}
+                                        the highlighted element
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Navigation */}
+                            <div className="flex items-center justify-between gap-3">
+                                <button
+                                    onClick={handlePrevious}
+                                    disabled={isFirstStep}
+                                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors rounded-lg hover:bg-white/5"
+                                >
+                                    <ChevronLeftIcon className="h-4 w-4" />
+                                    Previous
+                                </button>
+
+                                <div className="flex gap-2">
+                                    {(currentStep.skippable ?? true) && (
+                                        <button
+                                            onClick={onSkip}
+                                            className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+                                        >
+                                            Skip Tour
+                                        </button>
+                                    )}
+                                    {isLastStep ? (
+                                        <button
+                                            onClick={handleFinish}
+                                            className="flex items-center gap-2 px-6 py-2 text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-red-600 rounded-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-lg hover:shadow-orange-500/50"
+                                        >
+                                            <CheckIcon className="h-4 w-4" />
+                                            Finish
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={handleNext}
+                                            className="flex items-center gap-2 px-6 py-2 text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-red-600 rounded-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-lg hover:shadow-orange-500/50"
+                                        >
+                                            Next
+                                            <ChevronRightIcon className="h-4 w-4" />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Keyboard hints */}
+                            <div className="mt-4 pt-4 border-t border-zinc-800">
+                                <p className="text-xs text-gray-500 text-center">
+                                    Use arrow keys to navigate • Press ESC to skip
+                                </p>
+                            </div>
+                        </div>
+                        {/* End content wrapper */}
+                    </div>
+                </div>
+            ) : (
+                <div
+                    ref={tooltipRef}
+                    style={tooltipStyle}
+                    className={`w-full max-w-md p-6 bg-zinc-900/98 backdrop-blur-xl border-2 border-orange-500/40 rounded-2xl shadow-2xl shadow-orange-500/20 transition-all duration-300 ${
+                        transitionType === 'feature' || transitionType === 'none'
+                            ? 'animate-tour-feature-change'
+                            : ''
+                    }`}
+                >
+                    {/* Content wrapper with animation for pane transitions */}
+                    <div
+                        key={currentTourStep}
+                        className={transitionType === 'pane' ? 'animate-tour-pane-change' : ''}
                     >
                         {/* Header */}
                         <div className="flex items-start justify-between mb-4">
                             <div className="flex-1">
-                                <h2 id="tour-title" className="text-3xl font-bold text-white mb-1">
+                                <h2 id="tour-title" className="text-xl font-bold text-white mb-1">
                                     {currentStep.title}
                                 </h2>
                                 {panePosition.isWelcome ? (
-                                    <p className="text-base text-gray-400">Welcome</p>
+                                    <p className="text-sm text-gray-400">Welcome</p>
                                 ) : panePosition.isComplete ? (
-                                    <p className="text-base text-gray-400">Tour Complete</p>
+                                    <p className="text-sm text-gray-400">Tour Complete</p>
                                 ) : currentFeature ? (
-                                    <p className="text-base text-gray-400">
-                                        {currentFeature.icon} {currentFeature.name} •{' '}
+                                    <p className="text-sm text-gray-400">
+                                        {currentFeature.name} •{' '}
                                         {panePosition.paneIndexInFeature + 1} of{' '}
                                         {currentFeature.panes.length}
                                         {currentFeature.panes.length > 1 ? ' panes' : ' pane'}
@@ -437,7 +565,7 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
                         </div>
 
                         {/* Content */}
-                        <p className="text-gray-300 text-lg leading-relaxed mb-6">
+                        <p className="text-gray-300 text-base leading-relaxed mb-6">
                             {currentStep.description}
                         </p>
 
@@ -501,122 +629,7 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
                             </p>
                         </div>
                     </div>
-                </div>
-            ) : (
-                <div
-                    ref={tooltipRef}
-                    key={currentTourStep}
-                    style={tooltipStyle}
-                    className={`w-full max-w-md p-6 bg-zinc-900/98 backdrop-blur-xl border-2 border-orange-500/40 rounded-2xl shadow-2xl shadow-orange-500/20 transition-all duration-300 ${
-                        transitionType === 'feature'
-                            ? 'animate-tour-feature-change'
-                            : transitionType === 'pane'
-                              ? 'animate-tour-pane-change'
-                              : 'animate-fade-in'
-                    }`}
-                >
-                    {/* Header */}
-                    <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                            <h2 id="tour-title" className="text-xl font-bold text-white mb-1">
-                                {currentStep.title}
-                            </h2>
-                            {panePosition.isWelcome ? (
-                                <p className="text-sm text-gray-400">Welcome</p>
-                            ) : panePosition.isComplete ? (
-                                <p className="text-sm text-gray-400">Tour Complete</p>
-                            ) : currentFeature ? (
-                                <p className="text-sm text-gray-400">
-                                    {currentFeature.icon} {currentFeature.name} •{' '}
-                                    {panePosition.paneIndexInFeature + 1} of{' '}
-                                    {currentFeature.panes.length}
-                                    {currentFeature.panes.length > 1 ? ' panes' : ' pane'}
-                                </p>
-                            ) : null}
-                        </div>
-                        {(currentStep.skippable ?? true) && (
-                            <button
-                                onClick={onSkip}
-                                className="ml-4 p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/10"
-                                aria-label="Skip tour"
-                            >
-                                <XMarkIcon className="h-5 w-5" />
-                            </button>
-                        )}
-                    </div>
-
-                    {/* Progress bar */}
-                    <div className="w-full h-1.5 bg-zinc-800 rounded-full mb-4 overflow-hidden">
-                        <div
-                            className="h-full bg-gradient-to-r from-orange-500 to-red-600 transition-all duration-300 ease-out"
-                            style={{
-                                width: `${((currentTourStep + 1) / TOTAL_TOUR_STEPS) * 100}%`,
-                            }}
-                        />
-                    </div>
-
-                    {/* Content */}
-                    <p className="text-gray-300 text-base leading-relaxed mb-6">
-                        {currentStep.description}
-                    </p>
-
-                    {/* Action hint */}
-                    {currentStep.action && (
-                        <div className="mb-6 p-3 bg-orange-500/10 border border-orange-500/30 rounded-lg">
-                            <p className="text-sm text-orange-300">
-                                💡 Try it:{' '}
-                                <span className="font-medium capitalize">{currentStep.action}</span>{' '}
-                                the highlighted element
-                            </p>
-                        </div>
-                    )}
-
-                    {/* Navigation */}
-                    <div className="flex items-center justify-between gap-3">
-                        <button
-                            onClick={handlePrevious}
-                            disabled={isFirstStep}
-                            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors rounded-lg hover:bg-white/5"
-                        >
-                            <ChevronLeftIcon className="h-4 w-4" />
-                            Previous
-                        </button>
-
-                        <div className="flex gap-2">
-                            {(currentStep.skippable ?? true) && (
-                                <button
-                                    onClick={onSkip}
-                                    className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/5"
-                                >
-                                    Skip Tour
-                                </button>
-                            )}
-                            {isLastStep ? (
-                                <button
-                                    onClick={handleFinish}
-                                    className="flex items-center gap-2 px-6 py-2 text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-red-600 rounded-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-lg hover:shadow-orange-500/50"
-                                >
-                                    <CheckIcon className="h-4 w-4" />
-                                    Finish
-                                </button>
-                            ) : (
-                                <button
-                                    onClick={handleNext}
-                                    className="flex items-center gap-2 px-6 py-2 text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-red-600 rounded-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-lg hover:shadow-orange-500/50"
-                                >
-                                    Next
-                                    <ChevronRightIcon className="h-4 w-4" />
-                                </button>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Keyboard hints */}
-                    <div className="mt-4 pt-4 border-t border-zinc-800">
-                        <p className="text-xs text-gray-500 text-center">
-                            Use arrow keys to navigate • Press ESC to skip
-                        </p>
-                    </div>
+                    {/* End content wrapper */}
                 </div>
             )}
         </div>,
