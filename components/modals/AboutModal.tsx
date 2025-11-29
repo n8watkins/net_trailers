@@ -668,9 +668,11 @@ const AboutModal: React.FC<AboutModalProps> = ({
                                 />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <h4 className="text-lg sm:text-xl font-bold text-white mb-2">
-                                    {feature.title}
-                                </h4>
+                                <div className="mb-2">
+                                    <h4 className="text-lg sm:text-xl font-bold text-white">
+                                        {feature.title}
+                                    </h4>
+                                </div>
                                 <p className="text-sm text-gray-400 mb-2 sm:hidden">
                                     {feature.desc}
                                 </p>
@@ -702,9 +704,11 @@ const AboutModal: React.FC<AboutModalProps> = ({
                                 <arch.icon className="w-7 h-7 sm:w-8 sm:h-8 text-red-400" />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <h4 className="text-lg sm:text-xl font-bold text-white mb-2">
-                                    {arch.title}
-                                </h4>
+                                <div className="mb-2">
+                                    <h4 className="text-lg sm:text-xl font-bold text-white">
+                                        {arch.title}
+                                    </h4>
+                                </div>
                                 <p className="text-sm text-gray-400 mb-2 sm:hidden">{arch.text}</p>
                                 <ul className="space-y-1.5">
                                     {arch.details.slice(0, isMobile ? 2 : 4).map((detail, idx) => (
@@ -732,9 +736,11 @@ const AboutModal: React.FC<AboutModalProps> = ({
                                 <sec.icon className="w-7 h-7 sm:w-8 sm:h-8 text-emerald-400" />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <h4 className="text-lg sm:text-xl font-bold text-white mb-2">
-                                    {sec.title}
-                                </h4>
+                                <div className="mb-2">
+                                    <h4 className="text-lg sm:text-xl font-bold text-white">
+                                        {sec.title}
+                                    </h4>
+                                </div>
                                 <p className="text-sm text-gray-400 mb-2 sm:hidden">{sec.desc}</p>
                                 <ul className="space-y-1.5">
                                     {sec.details.slice(0, isMobile ? 2 : 4).map((detail, idx) => (
