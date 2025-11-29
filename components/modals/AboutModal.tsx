@@ -818,7 +818,7 @@ const AboutModal: React.FC<AboutModalProps> = ({
                                     />
                                 )}
                             </div>
-                            <span className="text-sm sm:text-base font-medium text-white truncate">
+                            <span className="text-xs sm:text-sm font-medium text-white truncate">
                                 {tech.name}
                             </span>
                         </button>
@@ -840,7 +840,7 @@ const AboutModal: React.FC<AboutModalProps> = ({
                             <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
                                 <feature.icon className={`w-5 h-5 ${feature.color}`} />
                             </div>
-                            <span className="text-sm sm:text-base font-medium text-white truncate">
+                            <span className="text-xs sm:text-sm font-medium text-white truncate">
                                 {feature.title}
                             </span>
                         </button>
@@ -862,7 +862,7 @@ const AboutModal: React.FC<AboutModalProps> = ({
                             <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
                                 <arch.icon className="w-5 h-5 text-red-400" />
                             </div>
-                            <span className="text-sm sm:text-base font-medium text-white truncate">
+                            <span className="text-xs sm:text-sm font-medium text-white truncate">
                                 {arch.title}
                             </span>
                         </button>
@@ -884,7 +884,7 @@ const AboutModal: React.FC<AboutModalProps> = ({
                             <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
                                 <sec.icon className="w-5 h-5 text-emerald-400" />
                             </div>
-                            <span className="text-sm sm:text-base font-medium text-white truncate">
+                            <span className="text-xs sm:text-sm font-medium text-white truncate">
                                 {sec.title}
                             </span>
                         </button>
@@ -1066,7 +1066,7 @@ const AboutModal: React.FC<AboutModalProps> = ({
                             <button
                                 key={tab.id}
                                 onClick={() => handleTabChange(tab.id)}
-                                className={`group flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-full transition-all duration-300 ${
+                                className={`group flex items-center gap-2 px-5 py-2.5 text-base sm:text-lg font-bold rounded-full transition-all duration-300 ${
                                     isActive
                                         ? isSecurityTab
                                             ? 'bg-emerald-500/90 text-white shadow-[0_0_10px_rgba(52,211,153,0.3)]'
@@ -1074,7 +1074,7 @@ const AboutModal: React.FC<AboutModalProps> = ({
                                         : 'bg-zinc-800/60 text-gray-400 hover:text-white hover:bg-zinc-700/80'
                                 }`}
                             >
-                                <tab.icon className="w-5 h-5" />
+                                <tab.icon className="w-6 h-6" />
                                 <span>{tab.title}</span>
                             </button>
                         )
