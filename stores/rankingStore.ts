@@ -76,7 +76,8 @@ interface RankingState {
     loadRanking: (rankingId: string, userId?: string | null) => Promise<void>
     createRanking: (
         userId: string | null,
-        username: string,
+        displayName: string,
+        username: string | undefined,
         userAvatar: string | undefined,
         request: CreateRankingRequest
     ) => Promise<string | null>
@@ -199,7 +200,8 @@ export const useRankingStore = create<RankingState>()(
             // Create new ranking
             createRanking: async (
                 userId: string | null,
-                username: string,
+                displayName: string,
+                username: string | undefined,
                 userAvatar: string | undefined,
                 request: CreateRankingRequest
             ) => {
@@ -218,6 +220,7 @@ export const useRankingStore = create<RankingState>()(
                 try {
                     const newRanking = await createRankingInFirestore(
                         userId,
+                        displayName,
                         username,
                         userAvatar,
                         request

@@ -1,77 +1,32 @@
 /**
  * Display Name Validation Utilities
  *
- * Lighter validation for display names (what appears in UI)
- * More permissive than username validation - allows spaces, accents, etc.
- * Only filters extreme profanity and keeps character limits
+ * Display names appear in UI everywhere (comments, rankings, etc.)
+ * so we apply the same strict toxic word filtering as usernames,
+ * but allow spaces, accents, and other characters for flexibility
  */
 
 import { PROFILE_CONSTRAINTS } from '@/types/profile'
-
-/**
- * Core profanity list - most offensive words only
- * Display names are more lenient than usernames
- */
-const PROFANITY_LIST = [
-    // Extreme profanity
-    'fuck',
-    'shit',
-    'bitch',
-    'cunt',
-    'nigger',
-    'faggot',
-
-    // Slurs and hate speech
-    'nazi',
-    'hitler',
-    'kkk',
-    'rape',
-    'molest',
-    'pedo',
-    'pedophile',
-] as const
-
-/**
- * Profanity variations (leetspeak, common obfuscation)
- */
-const PROFANITY_VARIATIONS = [
-    'f*ck',
-    'fuk',
-    'fck',
-    'sh*t',
-    'sht',
-    'b*tch',
-    'n*gger',
-    'f@ggot',
-] as const
+import { containsInappropriateContent as checkUsernameInappropriate } from './usernameValidation'
 
 /**
  * Check if display name contains inappropriate content
- * More lenient than username validation
+ * Uses the same comprehensive filtering as username validation (80+ words)
+ * to prevent obscene content from appearing across the site
  */
 export function containsInappropriateContent(displayName: string): {
     isInappropriate: boolean
     reason?: string
 } {
-    const lower = displayName.toLowerCase().trim()
+    // Remove spaces and check with username validation logic
+    // This catches all profanity, slurs, hate speech, sexual content, etc.
+    const normalized = displayName.replace(/\s+/g, '').toLowerCase()
+    const check = checkUsernameInappropriate(normalized)
 
-    // Check core profanity list
-    for (const word of PROFANITY_LIST) {
-        if (lower.includes(word)) {
-            return {
-                isInappropriate: true,
-                reason: 'Display name contains inappropriate language',
-            }
-        }
-    }
-
-    // Check profanity variations
-    for (const word of PROFANITY_VARIATIONS) {
-        if (lower.includes(word)) {
-            return {
-                isInappropriate: true,
-                reason: 'Display name contains inappropriate language',
-            }
+    if (check.isInappropriate) {
+        return {
+            isInappropriate: true,
+            reason: 'Display name contains inappropriate content',
         }
     }
 

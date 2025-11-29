@@ -104,10 +104,16 @@ function extractContentMetadata(rankedItems: RankedItem[]) {
 
 /**
  * Create a new ranking
+ * @param userId - User's Firebase auth ID
+ * @param displayName - User's display name (shown in UI)
+ * @param username - Optional username for profile URL
+ * @param userAvatar - User's avatar URL
+ * @param request - Ranking creation request
  */
 export async function createRanking(
     userId: string,
-    username: string,
+    displayName: string,
+    username: string | undefined,
     userAvatar: string | undefined,
     request: CreateRankingRequest
 ): Promise<Ranking> {
@@ -121,8 +127,8 @@ export async function createRanking(
     const ranking: Ranking = {
         id: rankingId,
         userId,
-        userName: username,
-        userUsername: username,
+        userName: displayName, // Display name for UI
+        userUsername: username, // Optional username for profile URL
         userAvatar: userAvatar || null,
         title: request.title.trim(),
         description: request.description?.trim(),
