@@ -51,7 +51,12 @@ interface Tab {
     blurb: string
 }
 
-const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, onStartTour }) => {
+const AboutModal: React.FC<AboutModalProps> = ({
+    isOpen,
+    onClose,
+    onStartTour,
+    onOpenTutorial,
+}) => {
     const [activeTab, setActiveTab] = useState<TabId>('tech')
     const [highlightedIndex, setHighlightedIndex] = useState(0)
     const [isHovering, setIsHovering] = useState(false)
@@ -192,324 +197,126 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, onStartTour })
         {
             id: 'collections',
             icon: HeartIcon,
-            title: 'Advanced Collection System',
-            desc: 'Three types of collections with auto-updates and sharing',
+            title: 'Create Custom Collections',
+            desc: 'Organize your watchlist exactly how you want',
             color: 'text-pink-400',
             bg: 'bg-pink-500/10',
             border: 'border-pink-500/20',
             activeBorder: 'border-pink-400',
             activeGlow: 'shadow-[0_0_25px_rgba(236,72,153,0.5)]',
             details: [
-                'Manual collections: Drag-and-drop reordering with visual feedback',
-                'TMDB Genre-Based: Auto-updating via daily cron job (Vercel scheduled)',
-                'AI-Generated: Create from natural language queries',
-                'Advanced filters: Year range, rating, cast, director, popularity',
-                'Shareable links with public view pages and collection snapshots',
-                'New content badges and "Updated X ago" timestamps',
-            ],
-        },
-        {
-            id: 'rankings',
-            icon: Cog6ToothIcon,
-            title: 'Community Rankings & Forums',
-            desc: 'Drag-and-drop ranking creator with engagement features',
-            color: 'text-purple-400',
-            bg: 'bg-purple-500/10',
-            border: 'border-purple-500/20',
-            activeBorder: 'border-purple-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(168,85,247,0.5)]',
-            details: [
-                'Drag-and-drop interface for creating ranked lists with custom scores',
-                'Public/private visibility controls with engagement tracking',
-                'Threaded comment system with nested replies and likes',
-                'Discussion forums with categories, polls, and voting',
-                'Real-time like counts, view tracking, and reply notifications',
-                'Firestore backend with comprehensive security rules',
-            ],
-        },
-        {
-            id: 'realtime',
-            icon: BoltIcon,
-            title: 'Real-Time Data Architecture',
-            desc: 'Firebase sync with dual storage adapters',
-            color: 'text-orange-400',
-            bg: 'bg-orange-500/10',
-            border: 'border-orange-500/20',
-            activeBorder: 'border-orange-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(251,146,60,0.5)]',
-            details: [
-                'Firestore real-time listeners for notifications and live updates',
-                'Dual storage adapters: Firebase for auth users, localStorage for guests',
-                'User ID validation to prevent race conditions and data mixing',
-                'Interaction tracking with 90-day TTL for personalized recommendations',
-                'Automatic cache invalidation on state changes',
-                '18 focused Zustand stores for optimal performance',
-            ],
-        },
-        {
-            id: 'discovery',
-            icon: PlayIcon,
-            title: 'Content Discovery & Browsing',
-            desc: 'Trending movies and TV shows with trailer integration',
-            color: 'text-red-400',
-            bg: 'bg-red-500/10',
-            border: 'border-red-500/20',
-            activeBorder: 'border-red-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(239,68,68,0.5)]',
-            details: [
-                'Trending, popular, and top-rated content rows',
-                'Unified genre system for consistent browsing across media types',
-                'YouTube trailer integration with ReactPlayer',
-                'Content modal with full details, cast, crew, and recommendations',
-            ],
-        },
-        {
-            id: 'search',
-            icon: DevicePhoneMobileIcon,
-            title: 'Advanced Search & Filters',
-            desc: 'Real-time search with comprehensive filtering options',
-            color: 'text-blue-400',
-            bg: 'bg-blue-500/10',
-            border: 'border-blue-500/20',
-            activeBorder: 'border-blue-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(59,130,246,0.5)]',
-            details: [
-                '300ms debounced search with 2+ character minimum',
-                'Genre, year range, and rating filters',
-                'URL synchronization for shareable search results',
-                'Race condition prevention with proper cleanup',
-            ],
-        },
-        {
-            id: 'auth',
-            icon: UserIcon,
-            title: 'Guest Mode & Authentication',
-            desc: 'Try without signing up or sync with cloud storage',
-            color: 'text-green-400',
-            bg: 'bg-green-500/10',
-            border: 'border-green-500/20',
-            activeBorder: 'border-green-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(34,197,94,0.5)]',
-            details: [
-                'Guest mode with localStorage persistence',
-                'Google OAuth and Email/Password authentication',
-                'Seamless data migration from guest to authenticated user',
-                'Session management with auto-refresh tokens',
-            ],
-        },
-        {
-            id: 'safety',
-            icon: ShieldCheckIcon,
-            title: 'Child Safety & Personalization',
-            desc: 'Content filtering and personalized recommendations',
-            color: 'text-cyan-400',
-            bg: 'bg-cyan-500/10',
-            border: 'border-cyan-500/20',
-            activeBorder: 'border-cyan-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(6,182,212,0.5)]',
-            details: [
-                'PIN-protected child safety mode with content filtering by rating',
-                'Personalized recommendations based on viewing history',
-                'Interaction tracking with 90-day TTL for privacy',
-                'CSV export for collections and watch history',
-            ],
-        },
-    ]
-
-    // Tutorial features - user-facing features organized for tutorial
-    const tutorialFeatures = [
-        {
-            id: 'like-dislike',
-            icon: HandThumbUpIcon,
-            title: 'Like & Dislike Content',
-            desc: 'Build your taste profile',
-            color: 'text-white',
-            bg: 'bg-white/5',
-            border: 'border-white/20',
-            activeBorder: 'border-white/60',
-            activeGlow: 'shadow-[0_0_25px_rgba(255,255,255,0.3)]',
-            details: [
-                'Rate content to influence personalized recommendations',
-                'Liked content shapes your "For You" row',
-                'Disliked content is filtered from suggestions',
-            ],
-        },
-        {
-            id: 'hide-content',
-            icon: EyeSlashIcon,
-            title: 'Hide Unwanted Content',
-            desc: 'Clean up your feed',
-            color: 'text-gray-400',
-            bg: 'bg-gray-500/10',
-            border: 'border-gray-500/20',
-            activeBorder: 'border-gray-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(156,163,175,0.5)]',
-            details: [
-                "Hide content you're not interested in",
-                "Hidden content won't appear in recommendations",
-                'Keeps your browsing experience clean and relevant',
-            ],
-        },
-        {
-            id: 'collections',
-            icon: RectangleStackIcon,
-            title: 'Create Collections',
-            desc: 'Organize your content',
-            color: 'text-blue-400',
-            bg: 'bg-blue-500/10',
-            border: 'border-blue-500/20',
-            activeBorder: 'border-blue-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(59,130,246,0.5)]',
-            details: [
-                'Manual collections with drag-and-drop',
-                'AI-generated from natural language',
-                'Auto-updating genre-based collections',
-                'Share collections with public links',
-            ],
-        },
-        {
-            id: 'smart-search',
-            icon: SparklesIcon,
-            title: 'AI Smart Search',
-            desc: 'Natural language queries',
-            color: 'text-purple-400',
-            bg: 'bg-purple-500/10',
-            border: 'border-purple-500/20',
-            activeBorder: 'border-purple-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(168,85,247,0.5)]',
-            details: [
-                'Try "rainy day movies" or "mind-bending thrillers"',
-                'Save AI search results as collections',
-                'Live preview of result counts',
-            ],
-        },
-        {
-            id: 'voice-search',
-            icon: MicrophoneIcon,
-            title: 'Voice Search',
-            desc: 'Hands-free discovery',
-            color: 'text-green-400',
-            bg: 'bg-green-500/10',
-            border: 'border-green-500/20',
-            activeBorder: 'border-green-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(34,197,94,0.5)]',
-            details: [
-                'Use voice input for AI queries',
-                'Live transcription feedback',
-                'Perfect for hands-free browsing',
-            ],
-        },
-        {
-            id: 'child-safety',
-            icon: ShieldCheckIcon,
-            title: 'Child Safety Mode',
-            desc: 'Family-friendly filtering',
-            color: 'text-red-400',
-            bg: 'bg-red-500/10',
-            border: 'border-red-500/20',
-            activeBorder: 'border-red-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(239,68,68,0.5)]',
-            details: [
-                'Filter adult content with PIN protection',
-                'Configurable rating thresholds',
-                'Server-side filtering across all routes',
-            ],
-        },
-        {
-            id: 'notifications',
-            icon: BellIcon,
-            title: 'Notifications',
-            desc: 'Stay updated',
-            color: 'text-orange-400',
-            bg: 'bg-orange-500/10',
-            border: 'border-orange-500/20',
-            activeBorder: 'border-orange-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(251,146,60,0.5)]',
-            details: [
-                'Collection updates when new content is added',
-                'Watchlist releases and new episodes',
-                'Real-time Firestore listeners',
-            ],
-        },
-        {
-            id: 'share-collections',
-            icon: ShareIcon,
-            title: 'Share Collections',
-            desc: 'Showcase your curations',
-            color: 'text-yellow-400',
-            bg: 'bg-yellow-500/10',
-            border: 'border-yellow-500/20',
-            activeBorder: 'border-yellow-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(250,204,21,0.5)]',
-            details: [
-                'Generate shareable public links',
-                'Public view pages with collection snapshots',
-                'Share your curated lists with friends',
+                'Drag-and-drop to reorder - build your perfect list visually',
+                'Auto-updating collections that refresh daily with new content',
+                'Let AI create collections from natural language descriptions',
+                'Filter by year, rating, cast, director - get exactly what you want',
+                'Share your collections with friends via public links',
+                'Get notified when new content matches your collections',
             ],
         },
         {
             id: 'rankings',
             icon: TrophyIcon,
-            title: 'Create Rankings',
-            desc: 'Build top 10 lists',
+            title: 'Build & Share Rankings',
+            desc: 'Create your definitive top 10 lists',
+            color: 'text-purple-400',
+            bg: 'bg-purple-500/10',
+            border: 'border-purple-500/20',
+            activeBorder: 'border-purple-400',
+            activeGlow: 'shadow-[0_0_25px_rgba(168,85,247,0.5)]',
+            details: [
+                'Drag-and-drop ranking builder with custom scores',
+                'Make your rankings public or keep them private',
+                'Get comments, likes, and engagement from the community',
+                'Join discussion forums with polls and voting',
+                'See real-time likes and view counts on your rankings',
+                'Threaded conversations so you can debate with other users',
+            ],
+        },
+        {
+            id: 'realtime',
+            icon: BoltIcon,
+            title: 'Sync Across Devices',
+            desc: 'Your data follows you everywhere',
+            color: 'text-orange-400',
+            bg: 'bg-orange-500/10',
+            border: 'border-orange-500/20',
+            activeBorder: 'border-orange-400',
+            activeGlow: 'shadow-[0_0_25px_rgba(251,146,60,0.5)]',
+            details: [
+                'Real-time sync - changes appear instantly on all your devices',
+                'Try guest mode first, then upgrade to cloud sync when ready',
+                'Never lose your data - everything backed up to the cloud',
+                'Get personalized recommendations based on what you watch',
+                'Lightning-fast performance with optimized state management',
+                "Seamless experience whether you're signed in or browsing as guest",
+            ],
+        },
+        {
+            id: 'discovery',
+            icon: PlayIcon,
+            title: 'Discover New Content',
+            desc: 'Find trending movies and shows worth watching',
+            color: 'text-red-400',
+            bg: 'bg-red-500/10',
+            border: 'border-red-500/20',
+            activeBorder: 'border-red-400',
+            activeGlow: 'shadow-[0_0_25px_rgba(239,68,68,0.5)]',
+            details: [
+                'Browse trending, popular, and top-rated content',
+                'Explore by genre - consistent experience for movies and TV',
+                'Watch trailers without leaving the site',
+                'See full cast, crew, and get similar recommendations',
+            ],
+        },
+        {
+            id: 'search',
+            icon: DevicePhoneMobileIcon,
+            title: 'Powerful Search',
+            desc: "Find exactly what you're looking for",
+            color: 'text-blue-400',
+            bg: 'bg-blue-500/10',
+            border: 'border-blue-500/20',
+            activeBorder: 'border-blue-400',
+            activeGlow: 'shadow-[0_0_25px_rgba(59,130,246,0.5)]',
+            details: [
+                'Lightning-fast search with instant results as you type',
+                'Filter by genre, year range, and minimum rating',
+                'Share your search results with a simple URL',
+                'Search intelligently prevents race conditions and stale results',
+            ],
+        },
+        {
+            id: 'auth',
+            icon: UserIcon,
+            title: 'Try Before You Sign Up',
+            desc: 'No account required to start exploring',
+            color: 'text-green-400',
+            bg: 'bg-green-500/10',
+            border: 'border-green-500/20',
+            activeBorder: 'border-green-400',
+            activeGlow: 'shadow-[0_0_25px_rgba(34,197,94,0.5)]',
+            details: [
+                'Start using immediately in guest mode - no signup wall',
+                "Sign in with Google or email when you're ready",
+                'All your guest data transfers seamlessly when you create an account',
+                'Your session stays active - no annoying re-logins',
+            ],
+        },
+        {
+            id: 'safety',
+            icon: ShieldCheckIcon,
+            title: 'Family-Friendly & Personal',
+            desc: 'Safe for kids, smart for you',
             color: 'text-cyan-400',
             bg: 'bg-cyan-500/10',
             border: 'border-cyan-500/20',
             activeBorder: 'border-cyan-400',
             activeGlow: 'shadow-[0_0_25px_rgba(6,182,212,0.5)]',
             details: [
-                'Drag-and-drop ranking creator',
-                'Get likes and comments from community',
-                'Public/private visibility controls',
-            ],
-        },
-        {
-            id: 'forums',
-            icon: ChatBubbleLeftRightIcon,
-            title: 'Discussion Forums',
-            desc: 'Join the conversation',
-            color: 'text-indigo-400',
-            bg: 'bg-indigo-500/10',
-            border: 'border-indigo-500/20',
-            activeBorder: 'border-indigo-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(99,102,241,0.5)]',
-            details: [
-                'Start threads about movies and TV',
-                'Create and vote on community polls',
-                'Threaded replies and like system',
-            ],
-        },
-        {
-            id: 'advanced-search',
-            icon: MagnifyingGlassIcon,
-            title: 'Advanced Search',
-            desc: 'Powerful filters',
-            color: 'text-pink-400',
-            bg: 'bg-pink-500/10',
-            border: 'border-pink-500/20',
-            activeBorder: 'border-pink-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(236,72,153,0.5)]',
-            details: [
-                'Filter by genre, year, rating',
-                'Search by cast, director, keywords',
-                'URL-synced for shareable results',
-            ],
-        },
-        {
-            id: 'personalized',
-            icon: SparklesIcon,
-            title: 'Personalized Recommendations',
-            desc: 'Your "For You" row',
-            color: 'text-violet-400',
-            bg: 'bg-violet-500/10',
-            border: 'border-violet-500/20',
-            activeBorder: 'border-violet-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(139,92,246,0.5)]',
-            details: [
-                'Updates based on your viewing habits',
-                'Genre preferences from interactions',
-                "Excludes content you've already seen",
-                'Refreshes with new content regularly',
+                'PIN-protected child safety mode filters adult content automatically',
+                'Get recommendations tailored to what you actually like',
+                'Your viewing history stays private with automatic cleanup',
+                'Export your collections and watch history anytime as CSV',
             ],
         },
     ]
@@ -647,13 +454,6 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, onStartTour })
             icon: StarIcon,
             itemCount: features.length,
             blurb: 'NetTrailers showcases production-ready features that demonstrate full-stack development expertise. From AI-powered natural language search to real-time data synchronization, these features highlight advanced React patterns, API integrations, and scalable architecture design.',
-        },
-        {
-            id: 'tutorial',
-            title: 'Tutorial',
-            icon: AcademicCapIcon,
-            itemCount: tutorialFeatures.length,
-            blurb: 'Learn how to use NetTrailers with this complete guide to all user-facing features. From basic content rating to advanced AI search and community features, discover everything this app has to offer.',
         },
         {
             id: 'architecture',
@@ -1337,31 +1137,65 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, onStartTour })
                         {renderMiniCards()}
                     </div>
 
-                    {/* Interactive Tour CTA */}
-                    {onStartTour && (
-                        <div className="mt-5 p-4 bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-xl border-2 border-orange-500/40">
-                            <div className="flex items-center justify-between gap-4">
-                                <div className="flex-1">
-                                    <h4 className="text-white font-bold text-base mb-1 flex items-center gap-2">
-                                        <RocketLaunchIcon className="w-5 h-5 text-orange-400" />
-                                        New to NetTrailers? Take a Quick Tour!
-                                    </h4>
-                                    <p className="text-gray-300 text-sm">
-                                        60-second interactive walkthrough highlighting key features
-                                    </p>
+                    {/* Help & Tutorials Section */}
+                    {(onStartTour || onOpenTutorial) && (
+                        <div className="mt-5 space-y-3">
+                            {/* Tutorial Button */}
+                            {onOpenTutorial && (
+                                <div className="p-4 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-xl border-2 border-blue-500/40">
+                                    <div className="flex items-center justify-between gap-4">
+                                        <div className="flex-1">
+                                            <h4 className="text-white font-bold text-base mb-1 flex items-center gap-2">
+                                                <AcademicCapIcon className="w-5 h-5 text-blue-400" />
+                                                How to Use NetTrailers
+                                            </h4>
+                                            <p className="text-gray-300 text-sm">
+                                                Complete guide to all features - from basics to
+                                                advanced tools
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                onClose()
+                                                setTimeout(() => {
+                                                    onOpenTutorial()
+                                                }, 300)
+                                            }}
+                                            className="flex-shrink-0 px-5 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-600 text-white font-bold text-sm rounded-lg hover:from-blue-600 hover:to-cyan-700 transition-all shadow-lg hover:shadow-blue-500/50 hover:scale-105"
+                                        >
+                                            View Tutorial
+                                        </button>
+                                    </div>
                                 </div>
-                                <button
-                                    onClick={() => {
-                                        onClose()
-                                        setTimeout(() => {
-                                            onStartTour()
-                                        }, 300)
-                                    }}
-                                    className="flex-shrink-0 px-5 py-2.5 bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold text-sm rounded-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-lg hover:shadow-orange-500/50 hover:scale-105"
-                                >
-                                    Start Tour
-                                </button>
-                            </div>
+                            )}
+
+                            {/* Interactive Tour Button */}
+                            {onStartTour && (
+                                <div className="p-4 bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-xl border-2 border-orange-500/40">
+                                    <div className="flex items-center justify-between gap-4">
+                                        <div className="flex-1">
+                                            <h4 className="text-white font-bold text-base mb-1 flex items-center gap-2">
+                                                <RocketLaunchIcon className="w-5 h-5 text-orange-400" />
+                                                Take a Quick Interactive Tour
+                                            </h4>
+                                            <p className="text-gray-300 text-sm">
+                                                60-second walkthrough highlighting key features
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                onClose()
+                                                setTimeout(() => {
+                                                    onStartTour()
+                                                }, 300)
+                                            }}
+                                            className="flex-shrink-0 px-5 py-2.5 bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold text-sm rounded-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-lg hover:shadow-orange-500/50 hover:scale-105"
+                                        >
+                                            Start Tour
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
