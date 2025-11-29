@@ -35,6 +35,7 @@ interface Tab {
     title: string
     icon: React.ComponentType<{ className?: string }>
     itemCount: number
+    blurb: string
 }
 
 const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
@@ -378,23 +379,48 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
         },
     ]
 
-    // Tab configuration
+    // Tab configuration with section blurbs
     const tabs: Tab[] = [
-        { id: 'tech', title: 'Tech Stack', icon: CodeBracketIcon, itemCount: techStack.length },
-        { id: 'features', title: 'Features', icon: StarIcon, itemCount: features.length },
+        {
+            id: 'tech',
+            title: 'Tech Stack',
+            icon: CodeBracketIcon,
+            itemCount: techStack.length,
+            blurb: 'Built with a modern, production-ready stack featuring Next.js 16, React 19, and TypeScript for type-safe development. State management is handled by Zustand with 18 focused stores, while Firebase provides authentication and real-time data sync.',
+        },
+        {
+            id: 'features',
+            title: 'Features',
+            icon: StarIcon,
+            itemCount: features.length,
+            blurb: 'A comprehensive streaming platform experience with movie and TV discovery, custom watchlists, AI-powered smart search using Google Gemini, and personalized recommendations. Features guest mode, child safety controls, and CSV export capabilities.',
+        },
         {
             id: 'architecture',
             title: 'Architecture',
             icon: CpuChipIcon,
             itemCount: architecture.length,
+            blurb: 'Designed with scalability and maintainability in mind. Uses a focused store pattern for state management, dual storage adapters for auth/guest users, comprehensive error monitoring with Sentry, and optimized API caching for performance.',
         },
-        { id: 'security', title: 'Security', icon: ShieldCheckIcon, itemCount: security.length },
+        {
+            id: 'security',
+            title: 'Security',
+            icon: ShieldCheckIcon,
+            itemCount: security.length,
+            blurb: 'Enterprise-grade security with Firebase security rules, XSS protection via input sanitization, security headers (CSP, HSTS), and PIN-protected child safety mode. All sensitive operations are validated server-side.',
+        },
     ]
 
     // Get current tab's item count
     const getCurrentTabItemCount = useCallback(() => {
         const tab = tabs.find((t) => t.id === activeTab)
         return tab?.itemCount || 0
+    }, [activeTab, tabs])
+
+    // Get current tab's blurb
+    const getCurrentTabBlurb = useCallback(() => {
+        const tab = tabs.find((t) => t.id === activeTab)
+        return tab?.blurb || ''
     }, [activeTab, tabs])
 
     // Auto-cycle through highlighted items (pauses on hover)
@@ -873,15 +899,28 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                             <h2 className="text-lg font-bold text-white mb-1">
                                 Hi, I&apos;m Nathan 👋
                             </h2>
-                            <p className="text-sm text-gray-300 leading-relaxed mb-3">
-                                NetTrailers is a portfolio project designed to showcase modern web
-                                development practices with a real-world application. It highlights
-                                my skills in full-stack development, API integration, and user
-                                experience design.
+                            <p className="text-sm text-gray-300 leading-relaxed mb-2">
+                                I&apos;m a full-stack developer passionate about building polished,
+                                production-ready web applications. NetTrailers demonstrates my
+                                expertise in React, TypeScript, Next.js, and modern frontend
+                                architecture with real-world features like AI-powered search,
+                                real-time data sync, and responsive design.
+                            </p>
+                            <p className="text-sm text-gray-400 leading-relaxed mb-3">
+                                Check out my{' '}
+                                <a
+                                    href="https://n8sportfolio.vercel.app/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-red-400 hover:text-red-300 underline underline-offset-2"
+                                >
+                                    portfolio
+                                </a>{' '}
+                                for more projects, or connect with me on social media below!
                             </p>
 
-                            {/* Social Links */}
-                            <div className="flex gap-2 mb-3">
+                            {/* Social Links with labels */}
+                            <div className="flex flex-wrap gap-2 mb-3">
                                 {[
                                     {
                                         href: 'https://github.com/n8watkins',
@@ -900,8 +939,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                         href={social.href}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        aria-label={`Nathan's ${social.label}`}
-                                        className="group w-8 h-8 rounded-full bg-zinc-800/60 hover:bg-zinc-700/80 transition-all duration-300 flex items-center justify-center border border-zinc-700/50 hover:border-red-500/50 hover:scale-110 hover:shadow-[0_0_20px_rgba(239,68,68,0.3)]"
+                                        className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-800/60 hover:bg-zinc-700/80 transition-all duration-300 border border-zinc-700/50 hover:border-red-500/50 hover:scale-105 hover:shadow-[0_0_15px_rgba(239,68,68,0.2)]"
                                     >
                                         {social.icon === 'x' ? (
                                             <svg
@@ -919,8 +957,22 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                                 className="w-3.5 h-3.5"
                                             />
                                         )}
+                                        <span className="text-xs font-medium text-gray-300 group-hover:text-white">
+                                            {social.label}
+                                        </span>
                                     </a>
                                 ))}
+                                <a
+                                    href="https://n8sportfolio.vercel.app/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-500/20 hover:bg-red-500/30 transition-all duration-300 border border-red-500/50 hover:border-red-400 hover:scale-105 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]"
+                                >
+                                    <ArrowTopRightOnSquareIcon className="w-3.5 h-3.5 text-red-400" />
+                                    <span className="text-xs font-medium text-red-400 group-hover:text-red-300">
+                                        View Portfolio
+                                    </span>
+                                </a>
                             </div>
 
                             {/* Quick Links */}
@@ -949,15 +1001,6 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                 >
                                     <ArrowTopRightOnSquareIcon className="w-3.5 h-3.5" />
                                     GitHub Issues
-                                </a>
-                                <a
-                                    href="https://n8sportfolio.vercel.app/"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-zinc-800/60 text-gray-300 border border-zinc-700/50 hover:border-red-500/50 hover:text-red-400 transition-all duration-300"
-                                >
-                                    <ArrowTopRightOnSquareIcon className="w-3.5 h-3.5" />
-                                    Portfolio
                                 </a>
                             </div>
                         </div>
@@ -994,6 +1037,11 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                     onMouseEnter={() => setIsHovering(true)}
                     onMouseLeave={() => setIsHovering(false)}
                 >
+                    {/* Section Blurb */}
+                    <p className="text-sm text-gray-400 leading-relaxed px-1">
+                        {getCurrentTabBlurb()}
+                    </p>
+
                     {/* Focused Item Display with Navigation */}
                     <div className="flex items-center gap-2">
                         {/* Left Arrow */}

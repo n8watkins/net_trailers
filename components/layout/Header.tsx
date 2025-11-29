@@ -459,7 +459,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
 
                         {/* Search Bar in Navigation */}
                         <div className="flex items-center search-container">
-                            <div className="w-full max-w-96">
+                            <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl">
                                 <SearchBar
                                     placeholder="Search movies and shows..."
                                     className="w-full"

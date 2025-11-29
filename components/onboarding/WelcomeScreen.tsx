@@ -107,8 +107,10 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                     <button
                         ref={firstButtonRef}
                         onClick={() => {
-                            onStartTour()
                             onClose()
+                            setTimeout(() => {
+                                onStartTour()
+                            }, 300)
                         }}
                         className="group relative bg-zinc-800/60 backdrop-blur-lg border-2 border-orange-500/30 rounded-xl p-6 transition-all duration-300 hover:scale-105 hover:border-orange-500/60 hover:shadow-xl hover:shadow-orange-500/20"
                         aria-label="Quick Start: 60-second interactive tour (Recommended)"

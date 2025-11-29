@@ -447,8 +447,10 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartT
                                         </div>
                                         <button
                                             onClick={() => {
-                                                onStartTour()
                                                 onClose()
+                                                setTimeout(() => {
+                                                    onStartTour()
+                                                }, 300)
                                             }}
                                             className="flex-shrink-0 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold rounded-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-lg hover:shadow-orange-500/50 hover:scale-105"
                                         >
