@@ -42,7 +42,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
     const [activeTab, setActiveTab] = useState<TabId>('tech')
     const [highlightedIndex, setHighlightedIndex] = useState(0)
     const [isHovering, setIsHovering] = useState(false)
-    const [isAnimating, setIsAnimating] = useState(false)
+    const [animationPhase, setAnimationPhase] = useState<'idle' | 'exit' | 'enter'>('idle')
     const [isMobile, setIsMobile] = useState(false)
     const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -436,8 +436,11 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
         const cycleInterval = 5000 // 5 seconds per highlight
 
         intervalRef.current = setInterval(() => {
-            setIsAnimating(true)
+            // Phase 1: Exit animation (slide out to left)
+            setAnimationPhase('exit')
+
             setTimeout(() => {
+                // Phase 2: Update content while hidden
                 setHighlightedIndex((prev) => {
                     const itemCount = getCurrentTabItemCount()
                     const nextIndex = (prev + 1) % itemCount
@@ -453,7 +456,13 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
 
                     return nextIndex
                 })
-                setTimeout(() => setIsAnimating(false), 200)
+
+                // Phase 3: Enter animation (slide in from right)
+                setAnimationPhase('enter')
+
+                setTimeout(() => {
+                    setAnimationPhase('idle')
+                }, 200)
             }, 200)
         }, cycleInterval)
 
@@ -472,7 +481,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             setActiveTab('tech')
             setHighlightedIndex(0)
             setIsHovering(false)
-            setIsAnimating(false)
+            setAnimationPhase('idle')
         } else {
             document.body.style.overflow = 'unset'
         }
@@ -484,11 +493,12 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
 
     // Handle tab change
     const handleTabChange = useCallback((tabId: TabId) => {
-        setIsAnimating(true)
+        setAnimationPhase('exit')
         setTimeout(() => {
             setActiveTab(tabId)
             setHighlightedIndex(0)
-            setTimeout(() => setIsAnimating(false), 200)
+            setAnimationPhase('enter')
+            setTimeout(() => setAnimationPhase('idle'), 200)
         }, 200)
     }, [])
 
@@ -496,10 +506,11 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
     const handleItemClick = useCallback(
         (index: number) => {
             if (index === highlightedIndex) return
-            setIsAnimating(true)
+            setAnimationPhase('exit')
             setTimeout(() => {
                 setHighlightedIndex(index)
-                setTimeout(() => setIsAnimating(false), 200)
+                setAnimationPhase('enter')
+                setTimeout(() => setAnimationPhase('idle'), 200)
             }, 200)
         },
         [highlightedIndex]
@@ -507,7 +518,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
 
     // Navigate to previous item (wraps to previous tab if at first item)
     const goToPrev = useCallback(() => {
-        setIsAnimating(true)
+        setAnimationPhase('exit')
         setTimeout(() => {
             if (highlightedIndex === 0) {
                 // Go to previous tab's last item
@@ -519,14 +530,15 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             } else {
                 setHighlightedIndex((prev) => prev - 1)
             }
-            setTimeout(() => setIsAnimating(false), 200)
+            setAnimationPhase('enter')
+            setTimeout(() => setAnimationPhase('idle'), 200)
         }, 200)
     }, [highlightedIndex, activeTab, tabs])
 
     // Navigate to next item (wraps to next tab if at last item)
     const goToNext = useCallback(() => {
         const itemCount = getCurrentTabItemCount()
-        setIsAnimating(true)
+        setAnimationPhase('exit')
         setTimeout(() => {
             if (highlightedIndex === itemCount - 1) {
                 // Go to next tab's first item
@@ -537,7 +549,8 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             } else {
                 setHighlightedIndex((prev) => prev + 1)
             }
-            setTimeout(() => setIsAnimating(false), 200)
+            setAnimationPhase('enter')
+            setTimeout(() => setAnimationPhase('idle'), 200)
         }, 200)
     }, [getCurrentTabItemCount, highlightedIndex, activeTab, tabs])
 
@@ -1036,9 +1049,11 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                         {/* Focused Item */}
                         <div
                             className={`flex-1 transition-all duration-300 ${
-                                isAnimating
-                                    ? 'opacity-0 -translate-x-4'
-                                    : 'opacity-100 translate-x-0'
+                                animationPhase === 'exit'
+                                    ? 'opacity-0 -translate-x-8'
+                                    : animationPhase === 'enter'
+                                      ? 'opacity-0 translate-x-8'
+                                      : 'opacity-100 translate-x-0'
                             }`}
                         >
                             {renderFocusedItem()}
