@@ -926,10 +926,11 @@ const AboutModal: React.FC<AboutModalProps> = ({
                                 real-time data sync, and responsive design.
                             </p>
 
+                            <div className="border-t border-zinc-700/30 my-3" />
+
                             {/* Help Options */}
                             {(onStartTour || onOpenTutorial) && (
                                 <p className="text-sm text-gray-400 leading-relaxed mb-2 flex flex-wrap items-center gap-1.5">
-                                    <br />
                                     <span>New to NetTrailers?</span>
                                     {onOpenTutorial && (
                                         <>
@@ -967,8 +968,6 @@ const AboutModal: React.FC<AboutModalProps> = ({
                                     )}
                                 </p>
                             )}
-
-                            <div className="border-t border-zinc-700/30 my-3" />
 
                             <p className="text-sm text-gray-400 leading-relaxed mb-3">
                                 Check out my{' '}
