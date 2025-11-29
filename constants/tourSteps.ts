@@ -38,30 +38,55 @@ export const TOUR_STEPS: TourStep[] = [
         id: 'content-cards',
         title: '🎬 Browse Content',
         description:
-            'Click any poster to watch trailers, view details, rate content, and add to your collections. Hover over cards to see quick actions like Like and Add to Watchlist.',
+            'Click any poster to watch trailers, view details, and get recommendations. Each card shows rating, release year, and content type.',
         targetSelector: '[data-tour="content-card"]',
         position: 'top',
         action: 'hover',
         spotlightPadding: 12,
     },
     {
+        id: 'quick-actions',
+        title: '❤️ Quick Actions',
+        description:
+            "Hover over any card to reveal quick action buttons: Add to Watch Later, mark as Favorite, or Hide content you're not interested in.",
+        targetSelector: '[data-tour="content-card"]',
+        position: 'top',
+        spotlightPadding: 12,
+        action: 'hover',
+    },
+    {
         id: 'avatar-menu',
         title: '👤 Your Personal Hub',
         description:
-            'Access everything here: your collections (Watch Later, Favorites), rankings, ratings, watch history, and settings. Click to explore!',
+            'Click your avatar to access your collections (Watch Later, Favorites), rankings, ratings, watch history, and settings.',
         targetSelector: '[data-tour="avatar-button"]',
         position: 'bottom',
         spotlightPadding: 12,
         action: 'click',
     },
     {
-        id: 'features',
-        title: '✨ Powerful Features',
+        id: 'collections',
+        title: '📚 Custom Collections',
         description:
-            'Create custom collections with AI search, share top 10 rankings with the community, join forum discussions, enable child safety mode, and track your watch history - all available from your avatar menu!',
-        targetSelector: '[data-tour="avatar-button"]',
-        position: 'bottom',
-        spotlightPadding: 12,
+            'Create and manage custom collections with AI-powered smart search. Organize content by genre, mood, or any criteria you want.',
+        targetSelector: 'body',
+        position: 'center',
+    },
+    {
+        id: 'rankings',
+        title: '🏆 Rankings & Community',
+        description:
+            "Share your top 10 rankings with the community, join forum discussions, comment on others' rankings, and discover what people are watching.",
+        targetSelector: 'body',
+        position: 'center',
+    },
+    {
+        id: 'child-safety',
+        title: '🛡️ Child Safety Mode',
+        description:
+            'Enable child safety mode to filter content by rating. Set a PIN to protect settings and ensure age-appropriate viewing.',
+        targetSelector: 'body',
+        position: 'center',
     },
     {
         id: 'complete',

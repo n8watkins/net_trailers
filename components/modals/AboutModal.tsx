@@ -19,8 +19,8 @@ import {
     BeakerIcon,
     BoltIcon,
     RocketLaunchIcon,
-    PauseIcon,
-    PlayCircleIcon,
+    ChevronLeftIcon,
+    ChevronRightIcon,
 } from '@heroicons/react/24/outline'
 
 interface AboutModalProps {
@@ -40,11 +40,20 @@ interface Tab {
 const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
     const [activeTab, setActiveTab] = useState<TabId>('tech')
     const [highlightedIndex, setHighlightedIndex] = useState(0)
-    const [isPaused, setIsPaused] = useState(false)
+    const [isHovering, setIsHovering] = useState(false)
     const [isAnimating, setIsAnimating] = useState(false)
+    const [isMobile, setIsMobile] = useState(false)
     const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
-    // Tech stack data
+    // Check for mobile viewport
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 640)
+        checkMobile()
+        window.addEventListener('resize', checkMobile)
+        return () => window.removeEventListener('resize', checkMobile)
+    }, [])
+
+    // Tech stack data with specific package versions from package.json
     const techStack = [
         {
             name: 'TypeScript',
@@ -54,7 +63,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             border: 'border-blue-500/30',
             activeBorder: 'border-blue-400',
             activeGlow: 'shadow-[0_0_25px_rgba(59,130,246,0.5)]',
-            version: '5.x',
+            version: '5.9.3',
             details: [
                 'Strict mode enabled for maximum type safety',
                 'Custom type guards for Content (Movie | TVShow) discrimination',
@@ -71,12 +80,28 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             activeBorder: 'border-white/60',
             activeGlow: 'shadow-[0_0_25px_rgba(255,255,255,0.3)]',
             iconBg: 'bg-black border border-white/30',
-            version: '15.x (App Router)',
+            version: '16.0.1',
             details: [
                 'App Router with React Server Components',
                 'API routes for TMDB proxy and Gemini AI integration',
                 'Image optimization with next/image for TMDB CDN',
                 'Middleware for security headers (CSP, HSTS, X-Frame-Options)',
+            ],
+        },
+        {
+            name: 'React',
+            desc: 'UI library',
+            icon: '/icons/react.svg',
+            bg: 'bg-sky-500/10',
+            border: 'border-sky-500/30',
+            activeBorder: 'border-sky-400',
+            activeGlow: 'shadow-[0_0_25px_rgba(14,165,233,0.5)]',
+            version: '19.2.0',
+            details: [
+                'React 19 with concurrent features',
+                'Server Components for improved performance',
+                'Hooks-based architecture throughout the app',
+                'Strict mode for detecting potential issues',
             ],
         },
         {
@@ -87,7 +112,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             border: 'border-cyan-500/30',
             activeBorder: 'border-cyan-400',
             activeGlow: 'shadow-[0_0_25px_rgba(6,182,212,0.5)]',
-            version: '3.x',
+            version: '3.4.17',
             details: [
                 'Custom color palette with cinematic dark theme',
                 'Responsive breakpoints for mobile-first design',
@@ -103,7 +128,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             border: 'border-orange-500/30',
             activeBorder: 'border-orange-400',
             activeGlow: 'shadow-[0_0_25px_rgba(249,115,22,0.5)]',
-            version: '10.x',
+            version: '12.2.1',
             details: [
                 'Firebase Auth with Google & Email/Password providers',
                 'Firestore for user data, rankings, threads, and polls',
@@ -119,28 +144,12 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             border: 'border-amber-500/30',
             activeBorder: 'border-amber-400',
             activeGlow: 'shadow-[0_0_25px_rgba(245,158,11,0.5)]',
-            version: '4.x',
+            version: '5.0.8',
             details: [
                 '18 focused stores (auth, session, UI, notifications, etc.)',
                 'Storage adapters: Firebase for auth users, localStorage for guests',
                 'Optimized selectors to prevent unnecessary re-renders',
                 'Devtools integration for debugging state changes',
-            ],
-        },
-        {
-            name: 'TMDB API',
-            desc: 'Movie database',
-            emoji: '🎬',
-            bg: 'bg-green-500/10',
-            border: 'border-green-500/30',
-            activeBorder: 'border-green-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(34,197,94,0.5)]',
-            version: 'v3',
-            details: [
-                '49+ internal API routes proxying TMDB calls',
-                'Custom caching layer for performance optimization',
-                'Rate limiting respect (40 requests/second)',
-                'Unified genre system mapping TMDB IDs to app genres',
             ],
         },
     ]
@@ -388,9 +397,9 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
         return tab?.itemCount || 0
     }, [activeTab, tabs])
 
-    // Auto-cycle through highlighted items
+    // Auto-cycle through highlighted items (pauses on hover)
     useEffect(() => {
-        if (!isOpen || isPaused) {
+        if (!isOpen || isHovering) {
             if (intervalRef.current) {
                 clearInterval(intervalRef.current)
                 intervalRef.current = null
@@ -398,7 +407,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             return
         }
 
-        const cycleInterval = 4000 // 4 seconds per highlight
+        const cycleInterval = 5000 // 5 seconds per highlight
 
         intervalRef.current = setInterval(() => {
             setIsAnimating(true)
@@ -428,7 +437,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                 intervalRef.current = null
             }
         }
-    }, [isOpen, isPaused, getCurrentTabItemCount, tabs])
+    }, [isOpen, isHovering, getCurrentTabItemCount, tabs])
 
     // Reset state when modal opens
     useEffect(() => {
@@ -436,7 +445,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             document.body.style.overflow = 'hidden'
             setActiveTab('tech')
             setHighlightedIndex(0)
-            setIsPaused(false)
+            setIsHovering(false)
             setIsAnimating(false)
         } else {
             document.body.style.overflow = 'unset'
@@ -464,12 +473,47 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             setIsAnimating(true)
             setTimeout(() => {
                 setHighlightedIndex(index)
-                setIsPaused(true)
                 setTimeout(() => setIsAnimating(false), 200)
             }, 200)
         },
         [highlightedIndex]
     )
+
+    // Navigate to previous item (wraps to previous tab if at first item)
+    const goToPrev = useCallback(() => {
+        setIsAnimating(true)
+        setTimeout(() => {
+            if (highlightedIndex === 0) {
+                // Go to previous tab's last item
+                const currentTabIndex = tabs.findIndex((t) => t.id === activeTab)
+                const prevTabIndex = (currentTabIndex - 1 + tabs.length) % tabs.length
+                const prevTab = tabs[prevTabIndex]
+                setActiveTab(prevTab.id)
+                setHighlightedIndex(prevTab.itemCount - 1)
+            } else {
+                setHighlightedIndex((prev) => prev - 1)
+            }
+            setTimeout(() => setIsAnimating(false), 200)
+        }, 200)
+    }, [highlightedIndex, activeTab, tabs])
+
+    // Navigate to next item (wraps to next tab if at last item)
+    const goToNext = useCallback(() => {
+        const itemCount = getCurrentTabItemCount()
+        setIsAnimating(true)
+        setTimeout(() => {
+            if (highlightedIndex === itemCount - 1) {
+                // Go to next tab's first item
+                const currentTabIndex = tabs.findIndex((t) => t.id === activeTab)
+                const nextTabIndex = (currentTabIndex + 1) % tabs.length
+                setActiveTab(tabs[nextTabIndex].id)
+                setHighlightedIndex(0)
+            } else {
+                setHighlightedIndex((prev) => prev + 1)
+            }
+            setTimeout(() => setIsAnimating(false), 200)
+        }, 200)
+    }, [getCurrentTabItemCount, highlightedIndex, activeTab, tabs])
 
     // Keyboard navigation
     useEffect(() => {
@@ -478,15 +522,18 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
                 onClose()
-            } else if (e.key === ' ') {
+            } else if (e.key === 'ArrowLeft') {
                 e.preventDefault()
-                setIsPaused((p) => !p)
+                goToPrev()
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault()
+                goToNext()
             }
         }
 
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [isOpen, onClose])
+    }, [isOpen, onClose, goToPrev, goToNext])
 
     // Render the focused/detailed view of current item
     const renderFocusedItem = () => {
@@ -496,39 +543,41 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                 if (!tech) return null
                 return (
                     <div
-                        className={`rounded-xl ${tech.bg} border-2 ${tech.activeBorder} ${tech.activeGlow} p-4 transition-all duration-300`}
+                        className={`rounded-xl ${tech.bg} border-2 ${tech.activeBorder} ${tech.activeGlow} p-4 sm:p-5 transition-all duration-300`}
                     >
                         <div className="flex items-start gap-4">
                             <div
-                                className={`w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 ${tech.iconBg || 'bg-white/5'}`}
+                                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center flex-shrink-0 ${tech.iconBg || 'bg-white/5'}`}
                             >
                                 {tech.emoji ? (
-                                    <span className="text-3xl">{tech.emoji}</span>
+                                    <span className="text-2xl sm:text-3xl">{tech.emoji}</span>
                                 ) : (
                                     <Image
                                         src={tech.icon!}
                                         alt={tech.name}
                                         width={32}
                                         height={32}
-                                        className="w-8 h-8"
+                                        className="w-7 h-7 sm:w-8 sm:h-8"
                                     />
                                 )}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                    <h4 className="text-lg font-bold text-white">{tech.name}</h4>
+                                <div className="flex items-center gap-2 mb-2">
+                                    <h4 className="text-lg sm:text-xl font-bold text-white">
+                                        {tech.name}
+                                    </h4>
                                     {tech.version && (
                                         <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-white/10 text-gray-300">
-                                            {tech.version}
+                                            v{tech.version}
                                         </span>
                                     )}
                                 </div>
-                                <p className="text-sm text-gray-400 mb-3">{tech.desc}</p>
+                                <p className="text-sm text-gray-400 mb-2 sm:hidden">{tech.desc}</p>
                                 <ul className="space-y-1.5">
-                                    {tech.details.map((detail, idx) => (
+                                    {tech.details.slice(0, isMobile ? 2 : 4).map((detail, idx) => (
                                         <li
                                             key={idx}
-                                            className="flex items-start gap-2 text-xs text-gray-300"
+                                            className="flex items-start gap-2 text-xs sm:text-sm text-gray-300"
                                         >
                                             <span className="text-red-400 mt-0.5">•</span>
                                             <span>{detail}</span>
@@ -545,27 +594,33 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                 if (!feature) return null
                 return (
                     <div
-                        className={`rounded-xl ${feature.bg} border-2 ${feature.activeBorder} ${feature.activeGlow} p-4 transition-all duration-300`}
+                        className={`rounded-xl ${feature.bg} border-2 ${feature.activeBorder} ${feature.activeGlow} p-4 sm:p-5 transition-all duration-300`}
                     >
                         <div className="flex items-start gap-4">
-                            <div className="w-14 h-14 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0">
-                                <feature.icon className={`w-8 h-8 ${feature.color}`} />
+                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0">
+                                <feature.icon
+                                    className={`w-7 h-7 sm:w-8 sm:h-8 ${feature.color}`}
+                                />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <h4 className="text-lg font-bold text-white mb-1">
+                                <h4 className="text-lg sm:text-xl font-bold text-white mb-2">
                                     {feature.title}
                                 </h4>
-                                <p className="text-sm text-gray-400 mb-3">{feature.desc}</p>
+                                <p className="text-sm text-gray-400 mb-2 sm:hidden">
+                                    {feature.desc}
+                                </p>
                                 <ul className="space-y-1.5">
-                                    {feature.details.map((detail, idx) => (
-                                        <li
-                                            key={idx}
-                                            className="flex items-start gap-2 text-xs text-gray-300"
-                                        >
-                                            <span className={feature.color}>•</span>
-                                            <span>{detail}</span>
-                                        </li>
-                                    ))}
+                                    {feature.details
+                                        .slice(0, isMobile ? 2 : 4)
+                                        .map((detail, idx) => (
+                                            <li
+                                                key={idx}
+                                                className="flex items-start gap-2 text-xs sm:text-sm text-gray-300"
+                                            >
+                                                <span className={feature.color}>•</span>
+                                                <span>{detail}</span>
+                                            </li>
+                                        ))}
                                 </ul>
                             </div>
                         </div>
@@ -576,19 +631,21 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                 const arch = architecture[highlightedIndex]
                 if (!arch) return null
                 return (
-                    <div className="rounded-xl bg-zinc-800/60 border-2 border-red-400 shadow-[0_0_25px_rgba(239,68,68,0.4)] p-4 transition-all duration-300">
+                    <div className="rounded-xl bg-zinc-800/60 border-2 border-red-400 shadow-[0_0_25px_rgba(239,68,68,0.4)] p-4 sm:p-5 transition-all duration-300">
                         <div className="flex items-start gap-4">
-                            <div className="w-14 h-14 rounded-xl bg-red-500/10 flex items-center justify-center flex-shrink-0">
-                                <arch.icon className="w-8 h-8 text-red-400" />
+                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-red-500/10 flex items-center justify-center flex-shrink-0">
+                                <arch.icon className="w-7 h-7 sm:w-8 sm:h-8 text-red-400" />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <h4 className="text-lg font-bold text-white mb-1">{arch.title}</h4>
-                                <p className="text-sm text-gray-400 mb-3">{arch.text}</p>
+                                <h4 className="text-lg sm:text-xl font-bold text-white mb-2">
+                                    {arch.title}
+                                </h4>
+                                <p className="text-sm text-gray-400 mb-2 sm:hidden">{arch.text}</p>
                                 <ul className="space-y-1.5">
-                                    {arch.details.map((detail, idx) => (
+                                    {arch.details.slice(0, isMobile ? 2 : 4).map((detail, idx) => (
                                         <li
                                             key={idx}
-                                            className="flex items-start gap-2 text-xs text-gray-300"
+                                            className="flex items-start gap-2 text-xs sm:text-sm text-gray-300"
                                         >
                                             <span className="text-red-400">•</span>
                                             <span>{detail}</span>
@@ -604,19 +661,21 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                 const sec = security[highlightedIndex]
                 if (!sec) return null
                 return (
-                    <div className="rounded-xl bg-emerald-500/10 border-2 border-emerald-400 shadow-[0_0_25px_rgba(52,211,153,0.4)] p-4 transition-all duration-300">
+                    <div className="rounded-xl bg-emerald-500/10 border-2 border-emerald-400 shadow-[0_0_25px_rgba(52,211,153,0.4)] p-4 sm:p-5 transition-all duration-300">
                         <div className="flex items-start gap-4">
-                            <div className="w-14 h-14 rounded-xl bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
-                                <sec.icon className="w-8 h-8 text-emerald-400" />
+                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                                <sec.icon className="w-7 h-7 sm:w-8 sm:h-8 text-emerald-400" />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <h4 className="text-lg font-bold text-white mb-1">{sec.title}</h4>
-                                <p className="text-sm text-gray-400 mb-3">{sec.desc}</p>
+                                <h4 className="text-lg sm:text-xl font-bold text-white mb-2">
+                                    {sec.title}
+                                </h4>
+                                <p className="text-sm text-gray-400 mb-2 sm:hidden">{sec.desc}</p>
                                 <ul className="space-y-1.5">
-                                    {sec.details.map((detail, idx) => (
+                                    {sec.details.slice(0, isMobile ? 2 : 4).map((detail, idx) => (
                                         <li
                                             key={idx}
-                                            className="flex items-start gap-2 text-xs text-gray-300"
+                                            className="flex items-start gap-2 text-xs sm:text-sm text-gray-300"
                                         >
                                             <span className="text-emerald-400">•</span>
                                             <span>{detail}</span>
@@ -633,6 +692,10 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
 
     // Render mini cards for all items in current tab
     const renderMiniCards = () => {
+        // Common card height class for consistency
+        const cardClass =
+            'flex items-start gap-3 px-4 py-3 rounded-xl border transition-all duration-300 h-[76px]'
+
         switch (activeTab) {
             case 'tech':
                 return techStack.map((tech, index) => {
@@ -641,30 +704,35 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                         <button
                             key={tech.name}
                             onClick={() => handleItemClick(index)}
-                            className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all duration-300 ${
+                            className={`${cardClass} ${
                                 isActive
                                     ? `${tech.bg} ${tech.activeBorder} ${tech.activeGlow}`
-                                    : `bg-zinc-800/40 border-zinc-700/50 opacity-50 hover:opacity-80`
+                                    : `bg-zinc-800/40 border-zinc-700/50 opacity-60 hover:opacity-90`
                             }`}
                         >
                             <div
-                                className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 ${tech.iconBg || 'bg-transparent'}`}
+                                className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${tech.iconBg || 'bg-white/5'}`}
                             >
                                 {tech.emoji ? (
-                                    <span className="text-sm">{tech.emoji}</span>
+                                    <span className="text-xl">{tech.emoji}</span>
                                 ) : (
                                     <Image
                                         src={tech.icon!}
                                         alt={tech.name}
-                                        width={16}
-                                        height={16}
-                                        className="w-4 h-4"
+                                        width={24}
+                                        height={24}
+                                        className="w-6 h-6"
                                     />
                                 )}
                             </div>
-                            <span className="text-xs font-medium text-white truncate">
-                                {tech.name}
-                            </span>
+                            <div className="flex flex-col items-start min-w-0">
+                                <span className="text-base font-semibold text-white">
+                                    {tech.name}
+                                </span>
+                                <span className="text-xs text-gray-400 truncate w-full">
+                                    {tech.desc}
+                                </span>
+                            </div>
                         </button>
                     )
                 })
@@ -675,16 +743,23 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                         <button
                             key={feature.id}
                             onClick={() => handleItemClick(index)}
-                            className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all duration-300 ${
+                            className={`${cardClass} ${
                                 isActive
                                     ? `${feature.bg} ${feature.activeBorder} ${feature.activeGlow}`
-                                    : `bg-zinc-800/40 border-zinc-700/50 opacity-50 hover:opacity-80`
+                                    : `bg-zinc-800/40 border-zinc-700/50 opacity-60 hover:opacity-90`
                             }`}
                         >
-                            <feature.icon className={`w-4 h-4 ${feature.color} flex-shrink-0`} />
-                            <span className="text-xs font-medium text-white truncate">
-                                {feature.title.split(' ')[0]}
-                            </span>
+                            <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
+                                <feature.icon className={`w-6 h-6 ${feature.color}`} />
+                            </div>
+                            <div className="flex flex-col items-start min-w-0">
+                                <span className="text-base font-semibold text-white">
+                                    {feature.title.split(' ')[0]}
+                                </span>
+                                <span className="text-xs text-gray-400 truncate w-full">
+                                    {feature.desc}
+                                </span>
+                            </div>
                         </button>
                     )
                 })
@@ -695,16 +770,23 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                         <button
                             key={index}
                             onClick={() => handleItemClick(index)}
-                            className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all duration-300 ${
+                            className={`${cardClass} ${
                                 isActive
                                     ? 'bg-red-500/10 border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.3)]'
-                                    : 'bg-zinc-800/40 border-zinc-700/50 opacity-50 hover:opacity-80'
+                                    : 'bg-zinc-800/40 border-zinc-700/50 opacity-60 hover:opacity-90'
                             }`}
                         >
-                            <arch.icon className="w-4 h-4 text-red-400 flex-shrink-0" />
-                            <span className="text-xs font-medium text-white truncate">
-                                {arch.title.split(' ')[0]}
-                            </span>
+                            <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
+                                <arch.icon className="w-6 h-6 text-red-400" />
+                            </div>
+                            <div className="flex flex-col items-start min-w-0">
+                                <span className="text-base font-semibold text-white">
+                                    {arch.title.split(' ')[0]}
+                                </span>
+                                <span className="text-xs text-gray-400 truncate w-full">
+                                    {arch.text}
+                                </span>
+                            </div>
                         </button>
                     )
                 })
@@ -715,16 +797,23 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                         <button
                             key={index}
                             onClick={() => handleItemClick(index)}
-                            className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all duration-300 ${
+                            className={`${cardClass} ${
                                 isActive
                                     ? 'bg-emerald-500/10 border-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.3)]'
-                                    : 'bg-zinc-800/40 border-zinc-700/50 opacity-50 hover:opacity-80'
+                                    : 'bg-zinc-800/40 border-zinc-700/50 opacity-60 hover:opacity-90'
                             }`}
                         >
-                            <sec.icon className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                            <span className="text-xs font-medium text-white truncate">
-                                {sec.title.split(' ')[0]}
-                            </span>
+                            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+                                <sec.icon className="w-6 h-6 text-emerald-400" />
+                            </div>
+                            <div className="flex flex-col items-start min-w-0">
+                                <span className="text-base font-semibold text-white">
+                                    {sec.title.split(' ')[0]}
+                                </span>
+                                <span className="text-xs text-gray-400 truncate w-full">
+                                    {sec.desc}
+                                </span>
+                            </div>
                         </button>
                     )
                 })
@@ -739,7 +828,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             onClick={onClose}
         >
             <div
-                className="relative bg-gradient-to-br from-zinc-900 via-zinc-900/95 to-black rounded-2xl max-w-2xl w-full border border-red-500/30 shadow-2xl shadow-red-500/10 overflow-hidden max-h-[90vh] flex flex-col"
+                className="relative bg-gradient-to-br from-zinc-900 via-zinc-900/95 to-black rounded-2xl max-w-2xl lg:max-w-3xl w-full border border-red-500/30 shadow-2xl shadow-red-500/10 overflow-hidden max-h-[90vh] flex flex-col"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Animated background glow */}
@@ -761,6 +850,11 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
 
                 {/* About Section (Always Visible) */}
                 <div className="relative z-10 p-6 border-b border-zinc-800/50 flex-shrink-0">
+                    {/* Welcome Heading */}
+                    <h1 className="text-2xl font-bold text-white mb-4 text-center">
+                        Welcome to <span className="text-red-500">NetTrailers</span>
+                    </h1>
+
                     <div className="flex items-start gap-4">
                         {/* Profile Photo */}
                         <div className="relative group flex-shrink-0">
@@ -776,16 +870,61 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
 
                         {/* Intro */}
                         <div className="flex-1 min-w-0">
-                            <h2 className="text-xl font-bold text-white mb-1">Hi all, 👋</h2>
-                            <p className="text-sm text-gray-300 leading-relaxed">
-                                I&apos;m Nathan, and NetTrailers is a Portfolio project designed to
-                                showcase modern web dev practices with a real-world application. It
-                                highlights my skills in full-stack development, API integration, and
-                                user experience design.
+                            <h2 className="text-lg font-bold text-white mb-1">
+                                Hi, I&apos;m Nathan 👋
+                            </h2>
+                            <p className="text-sm text-gray-300 leading-relaxed mb-3">
+                                NetTrailers is a portfolio project designed to showcase modern web
+                                development practices with a real-world application. It highlights
+                                my skills in full-stack development, API integration, and user
+                                experience design.
                             </p>
 
+                            {/* Social Links */}
+                            <div className="flex gap-2 mb-3">
+                                {[
+                                    {
+                                        href: 'https://github.com/n8watkins',
+                                        icon: '/icons/github.svg',
+                                        label: 'GitHub',
+                                    },
+                                    {
+                                        href: 'https://www.linkedin.com/in/n8watkins/',
+                                        icon: '/icons/linkedin.svg',
+                                        label: 'LinkedIn',
+                                    },
+                                    { href: 'https://x.com/n8watkins', icon: 'x', label: 'X' },
+                                ].map((social) => (
+                                    <a
+                                        key={social.label}
+                                        href={social.href}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        aria-label={`Nathan's ${social.label}`}
+                                        className="group w-8 h-8 rounded-full bg-zinc-800/60 hover:bg-zinc-700/80 transition-all duration-300 flex items-center justify-center border border-zinc-700/50 hover:border-red-500/50 hover:scale-110 hover:shadow-[0_0_20px_rgba(239,68,68,0.3)]"
+                                    >
+                                        {social.icon === 'x' ? (
+                                            <svg
+                                                className="w-3.5 h-3.5 fill-white"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" />
+                                            </svg>
+                                        ) : (
+                                            <Image
+                                                src={social.icon}
+                                                alt={social.label}
+                                                width={14}
+                                                height={14}
+                                                className="w-3.5 h-3.5"
+                                            />
+                                        )}
+                                    </a>
+                                ))}
+                            </div>
+
                             {/* Quick Links */}
-                            <div className="flex flex-wrap gap-2 mt-3">
+                            <div className="flex flex-wrap gap-2">
                                 <Link
                                     href="/security"
                                     onClick={onClose}
@@ -822,93 +961,79 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                 </a>
                             </div>
                         </div>
-
-                        {/* Social Links */}
-                        <div className="flex flex-col gap-2 flex-shrink-0">
-                            {[
-                                {
-                                    href: 'https://github.com/n8watkins',
-                                    icon: '/icons/github.svg',
-                                    label: 'GitHub',
-                                },
-                                {
-                                    href: 'https://www.linkedin.com/in/n8watkins/',
-                                    icon: '/icons/linkedin.svg',
-                                    label: 'LinkedIn',
-                                },
-                                { href: 'https://x.com/n8watkins', icon: 'x', label: 'X' },
-                            ].map((social) => (
-                                <a
-                                    key={social.label}
-                                    href={social.href}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    aria-label={`Nathan's ${social.label}`}
-                                    className="group w-9 h-9 rounded-full bg-zinc-800/60 hover:bg-zinc-700/80 transition-all duration-300 flex items-center justify-center border border-zinc-700/50 hover:border-red-500/50 hover:scale-110 hover:shadow-[0_0_20px_rgba(239,68,68,0.3)]"
-                                >
-                                    {social.icon === 'x' ? (
-                                        <svg className="w-4 h-4 fill-white" viewBox="0 0 24 24">
-                                            <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" />
-                                        </svg>
-                                    ) : (
-                                        <Image
-                                            src={social.icon}
-                                            alt={social.label}
-                                            width={18}
-                                            height={18}
-                                            className="w-4.5 h-4.5"
-                                        />
-                                    )}
-                                </a>
-                            ))}
-                        </div>
                     </div>
                 </div>
 
                 {/* Tab Navigation */}
-                <div className="relative z-10 flex items-center justify-center gap-1 px-4 py-2.5 border-b border-zinc-800/50 flex-shrink-0">
-                    {tabs.map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => handleTabChange(tab.id)}
-                            className={`group flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition-all duration-300 ${
-                                activeTab === tab.id
-                                    ? 'bg-red-500/90 text-white shadow-[0_0_10px_rgba(239,68,68,0.3)]'
-                                    : 'bg-zinc-800/60 text-gray-400 hover:text-white hover:bg-zinc-700/80'
-                            }`}
-                        >
-                            <tab.icon className="w-4 h-4" />
-                            <span>{tab.title}</span>
-                        </button>
-                    ))}
-
-                    {/* Pause/Play button */}
-                    <button
-                        onClick={() => setIsPaused((p) => !p)}
-                        className="ml-2 p-1.5 rounded-full bg-zinc-800/60 text-gray-400 hover:text-white hover:bg-zinc-700/80 transition-all duration-300"
-                        title={isPaused ? 'Resume (Space)' : 'Pause (Space)'}
-                    >
-                        {isPaused ? (
-                            <PlayCircleIcon className="w-4 h-4" />
-                        ) : (
-                            <PauseIcon className="w-4 h-4" />
-                        )}
-                    </button>
+                <div className="relative z-10 flex items-center justify-center gap-1.5 px-4 py-3 border-b border-zinc-800/50 flex-shrink-0">
+                    {tabs.map((tab) => {
+                        const isSecurityTab = tab.id === 'security'
+                        const isActive = activeTab === tab.id
+                        return (
+                            <button
+                                key={tab.id}
+                                onClick={() => handleTabChange(tab.id)}
+                                className={`group flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-full transition-all duration-300 ${
+                                    isActive
+                                        ? isSecurityTab
+                                            ? 'bg-emerald-500/90 text-white shadow-[0_0_10px_rgba(52,211,153,0.3)]'
+                                            : 'bg-red-500/90 text-white shadow-[0_0_10px_rgba(239,68,68,0.3)]'
+                                        : 'bg-zinc-800/60 text-gray-400 hover:text-white hover:bg-zinc-700/80'
+                                }`}
+                            >
+                                <tab.icon className="w-5 h-5" />
+                                <span>{tab.title}</span>
+                            </button>
+                        )
+                    })}
                 </div>
 
-                {/* Content Area */}
-                <div className="relative z-10 flex-1 overflow-y-auto p-5 space-y-4">
-                    {/* Focused Item Display */}
-                    <div
-                        className={`transition-all duration-300 ${
-                            isAnimating ? 'opacity-0 translate-y-2' : 'opacity-100 translate-y-0'
-                        }`}
-                    >
-                        {renderFocusedItem()}
+                {/* Content Area - pauses on hover */}
+                <div
+                    className="relative z-10 flex-1 overflow-y-auto p-5 space-y-4"
+                    onMouseEnter={() => setIsHovering(true)}
+                    onMouseLeave={() => setIsHovering(false)}
+                >
+                    {/* Focused Item Display with Navigation */}
+                    <div className="flex items-center gap-2">
+                        {/* Left Arrow */}
+                        <button
+                            onClick={goToPrev}
+                            className="flex-shrink-0 p-2 rounded-full bg-zinc-800/60 text-gray-400 hover:text-white hover:bg-zinc-700/80 transition-all duration-300 hover:scale-110"
+                            aria-label="Previous item"
+                        >
+                            <ChevronLeftIcon className="w-5 h-5" />
+                        </button>
+
+                        {/* Focused Item */}
+                        <div
+                            className={`flex-1 transition-all duration-300 ${
+                                isAnimating
+                                    ? 'opacity-0 translate-y-2'
+                                    : 'opacity-100 translate-y-0'
+                            }`}
+                        >
+                            {renderFocusedItem()}
+                        </div>
+
+                        {/* Right Arrow */}
+                        <button
+                            onClick={goToNext}
+                            className="flex-shrink-0 p-2 rounded-full bg-zinc-800/60 text-gray-400 hover:text-white hover:bg-zinc-700/80 transition-all duration-300 hover:scale-110"
+                            aria-label="Next item"
+                        >
+                            <ChevronRightIcon className="w-5 h-5" />
+                        </button>
                     </div>
 
-                    {/* Mini Cards Row */}
-                    <div className="flex flex-wrap gap-2 justify-center">{renderMiniCards()}</div>
+                    {/* Mini Cards Grid */}
+                    <div
+                        className={`grid gap-2 ${
+                            activeTab === 'security' ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3'
+                        }`}
+                    >
+                        {renderMiniCards()}
+                    </div>
                 </div>
 
                 {/* Footer */}
@@ -919,7 +1044,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                             <span className="font-medium">
                                 {highlightedIndex + 1}/{getCurrentTabItemCount()}
                             </span>
-                            {isPaused && (
+                            {isHovering && (
                                 <span className="text-yellow-500 text-[10px] font-medium">
                                     PAUSED
                                 </span>
@@ -935,9 +1060,9 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                         {/* Keyboard hint */}
                         <div className="hidden sm:flex items-center gap-1 text-xs text-gray-600">
                             <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 text-gray-400 text-[10px]">
-                                Space
+                                ←/→
                             </kbd>
-                            <span className="text-gray-500">to pause</span>
+                            <span className="text-gray-500">to navigate</span>
                         </div>
                     </div>
                 </div>

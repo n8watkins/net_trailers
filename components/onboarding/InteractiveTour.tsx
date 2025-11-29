@@ -94,7 +94,7 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
         const calculatePosition = () => {
             const targetRect = targetElement.getBoundingClientRect()
             const tooltipRect = tooltipRef.current!.getBoundingClientRect()
-            const padding = 16 // Gap between target and tooltip
+            const padding = 32 // Increased gap between target and tooltip
             const viewportPadding = 20 // Minimum distance from viewport edges
 
             let top = 0
@@ -303,14 +303,11 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
                 {/* Spotlight highlight - brightens the target area and allows interaction */}
                 {targetElement && (
                     <div style={spotlightStyle} className="pointer-events-none">
-                        {/* Bright background to make element visible */}
-                        <div className="absolute inset-0 bg-white/20 rounded-lg backdrop-blur-[1px]" />
+                        {/* Bright background to make element visible - NO BLUR */}
+                        <div className="absolute inset-0 bg-white/15 rounded-lg" />
 
-                        {/* Bright, glowing ring */}
-                        <div className="absolute inset-0 rounded-lg ring-[3px] ring-orange-400 animate-pulse shadow-[0_0_40px_rgba(251,146,60,1),0_0_20px_rgba(255,255,255,0.5)]" />
-
-                        {/* Additional bright border for maximum visibility */}
-                        <div className="absolute inset-0 rounded-lg ring-[6px] ring-white/60 ring-offset-2 ring-offset-transparent" />
+                        {/* Bright, glowing ring - smaller size */}
+                        <div className="absolute inset-0 rounded-lg ring-2 ring-orange-400 animate-pulse shadow-[0_0_30px_rgba(251,146,60,0.9)]" />
                     </div>
                 )}
             </div>
@@ -319,15 +316,20 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
             <div
                 ref={tooltipRef}
                 style={tooltipStyle}
-                className="w-full max-w-md bg-zinc-900/98 backdrop-blur-xl border-2 border-orange-500/40 rounded-2xl shadow-2xl shadow-orange-500/20 p-6 animate-fade-in"
+                className={`w-full ${currentStep.position === 'center' ? 'max-w-2xl p-8' : 'max-w-md p-6'} bg-zinc-900/98 backdrop-blur-xl border-2 border-orange-500/40 rounded-2xl shadow-2xl shadow-orange-500/20 animate-fade-in`}
             >
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                        <h2 id="tour-title" className="text-xl font-bold text-white mb-1">
+                        <h2
+                            id="tour-title"
+                            className={`${currentStep.position === 'center' ? 'text-3xl' : 'text-xl'} font-bold text-white mb-1`}
+                        >
                             {currentStep.title}
                         </h2>
-                        <p className="text-sm text-gray-400">
+                        <p
+                            className={`${currentStep.position === 'center' ? 'text-base' : 'text-sm'} text-gray-400`}
+                        >
                             Step {currentTourStep + 1} of {TOTAL_TOUR_STEPS}
                         </p>
                     </div>
@@ -353,7 +355,9 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
                 </div>
 
                 {/* Content */}
-                <p className="text-gray-300 text-base leading-relaxed mb-6">
+                <p
+                    className={`text-gray-300 ${currentStep.position === 'center' ? 'text-lg' : 'text-base'} leading-relaxed mb-6`}
+                >
                     {currentStep.description}
                 </p>
 
