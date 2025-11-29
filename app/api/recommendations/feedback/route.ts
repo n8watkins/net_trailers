@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/firebase'
 import { collection, addDoc, query, where, orderBy, limit, getDocs } from 'firebase/firestore'
 import { nanoid } from 'nanoid'
+import { withAuth } from '@/lib/auth-middleware'
 import {
     RecommendationFeedback,
     FeedbackAction,
@@ -26,8 +27,10 @@ import {
  * - mediaType: 'movie' | 'tv'
  * - action: FeedbackAction
  * - page: number (1-indexed)
+ *
+ * Authentication: Requires valid Firebase ID token in Authorization header
  */
-export async function POST(request: NextRequest) {
+async function handlePostFeedback(request: NextRequest, userId: string): Promise<NextResponse> {
     try {
         const body = await request.json()
         const { contentId, mediaType, action, page } = body
@@ -61,15 +64,17 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 })
         }
 
-        // Get user ID from request (would come from auth in production)
-        // For now, expect it in the body
-        const { userId } = body
-        if (!userId) {
-            return NextResponse.json({ success: false, error: 'User ID required' }, { status: 401 })
+        // Validate page number
+        if (!Number.isInteger(page) || page < 1 || page > 100) {
+            return NextResponse.json(
+                { success: false, error: 'Invalid page number (must be 1-100)' },
+                { status: 400 }
+            )
         }
 
-        // Determine feedback type
-        const feedbackType: FeedbackType = ['dismissed', 'hidden'].includes(action)
+        // Determine feedback type (fixed: liked/watchlisted are explicit actions)
+        const explicitActions: FeedbackAction[] = ['dismissed', 'hidden', 'liked', 'watchlisted']
+        const feedbackType: FeedbackType = explicitActions.includes(action)
             ? 'explicit'
             : 'implicit'
 
@@ -110,22 +115,25 @@ export async function POST(request: NextRequest) {
     }
 }
 
+export const POST = withAuth(handlePostFeedback)
+
 /**
- * GET /api/recommendations/feedback?userId={userId}&limit={limit}
+ * GET /api/recommendations/feedback?limit={limit}
  *
- * Get recent feedback for a user (for GET handler to use)
+ * Get recent feedback for authenticated user
+ *
+ * Authentication: Requires valid Firebase ID token in Authorization header
  */
-export async function GET(request: NextRequest) {
+async function handleGetFeedback(request: NextRequest, userId: string): Promise<NextResponse> {
     try {
         const { searchParams } = new URL(request.url)
-        const userId = searchParams.get('userId')
         const limitParam = searchParams.get('limit')
 
-        if (!userId) {
-            return NextResponse.json({ success: false, error: 'User ID required' }, { status: 400 })
-        }
-
-        const feedbackLimit = limitParam ? parseInt(limitParam, 10) : 100
+        // Validate and cap limit
+        const MAX_LIMIT = 500
+        const feedbackLimit = limitParam
+            ? Math.max(1, Math.min(parseInt(limitParam, 10), MAX_LIMIT))
+            : 100
 
         // Get recent feedback (last 30 days)
         const thirtyDaysAgo =
@@ -165,3 +173,5 @@ export async function GET(request: NextRequest) {
         )
     }
 }
+
+export const GET = withAuth(handleGetFeedback)
