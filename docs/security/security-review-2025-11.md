@@ -67,15 +67,14 @@ state‑changing routes", etc.) before the next release.
   would return 403 and prevent legitimate maintenance tasks.
 - **Impact**: Operational DoS—the admin couldn't run provisioning scripts without
   spoofing browser headers, undermining the security "fix".
-- **Resolution** (November 27, 2025)
-    1. Updated `lib/csrfProtection.ts` with `isServerToServerCall()` function that
-       detects and allows bypass for:
-        - Requests with valid CRON_SECRET (timing-safe comparison)
-        - Requests with Firebase ID tokens (JWT format starting with "eyJ")
-    2. The bypass logic is centralized in the middleware, avoiding copy/paste
-       mistakes across routes.
-    3. Server-to-server calls now work without Origin headers while browser
-       requests still require CSRF validation.
+- **Resolution** (Updated November 29, 2025)
+    1. CSRF protection is now centralized in `proxy.ts` - no per-route CSRF wrappers needed.
+    2. Cron routes (`/api/cron/*`) require valid CRON_SECRET for ALL HTTP methods (including GET).
+       The check happens before the safe-method guard so Vercel's GET-based cron jobs are protected.
+    3. The `eyJ` JWT bypass was **removed** (it was a security vulnerability - see CSRF_REVIEW.md).
+    4. Admin routes now use Firebase Auth verification, not CSRF bypass.
+    5. `isServerToServerCall()` has been **removed** from `lib/csrfProtection.ts` to limit
+       CRON_SECRET blast radius - it's now only checked in `proxy.ts` for `/api/cron/*` routes.
 
 ## Tracking & Next Steps
 
@@ -116,11 +115,15 @@ grep -l "useAdminAuth" app/admin/*/page.tsx
 grep -l "applyCsrfProtection" app/api/auth/*/route.ts
 # Expected: record-signup, reset-password, send-password-reset, verify-email
 
-# 4. Verify CSRF bypass function exists
-grep "isServerToServerCall" lib/csrfProtection.ts
-# Expected: function definition and usage in applyCsrfProtection
+# 4. Verify CSRF is centralized in proxy.ts (not per-route)
+grep -n "applyCsrfProtection" proxy.ts
+# Expected: Single call in proxy function
 
-# 5. Verify README uses ADMIN_UID (not NEXT_PUBLIC_)
+# 5. Verify cron routes require CRON_SECRET for all methods
+grep -n "isCronRoute" proxy.ts
+# Expected: Check happens before SAFE_METHODS guard
+
+# 6. Verify README uses ADMIN_UID (not NEXT_PUBLIC_)
 grep "ADMIN_UID" README.md | head -2
 # Expected: ADMIN_UID=your_firebase_uid_here (server-side only)
 ```
@@ -130,7 +133,7 @@ grep "ADMIN_UID" README.md | head -2
 ### Security Fixes
 
 - `hooks/useAdminAuth.ts` - **NEW** - Server-side admin verification hook
-- `lib/csrfProtection.ts` - Added `isServerToServerCall()` bypass for authenticated requests
+- `lib/csrfProtection.ts` - Origin validation (isServerToServerCall removed Nov 29)
 - `app/admin/accounts/page.tsx` - Replaced `NEXT_PUBLIC_ADMIN_UID` with `useAdminAuth`
 - `app/admin/signups/page.tsx` - Replaced `NEXT_PUBLIC_ADMIN_UID` with `useAdminAuth`
 - `app/admin/activity/page.tsx` - Replaced `NEXT_PUBLIC_ADMIN_UID` with `useAdminAuth`

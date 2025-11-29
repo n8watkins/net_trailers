@@ -48,27 +48,24 @@ export async function proxy(request: NextRequest) {
 
     // Apply security checks only to API routes
     if (pathname.startsWith('/api/')) {
-        // CSRF Protection for state-changing requests
-        if (!SAFE_METHODS.includes(method)) {
-            // Cron routes require CRON_SECRET - they don't use origin-based CSRF
-            // but they MUST have the secret header to be exempt
-            const isCronRoute = pathname.startsWith('/api/cron/')
+        // Cron routes require CRON_SECRET for ALL methods (including GET)
+        // Vercel cron jobs use GET, so we check auth before the safe-method guard
+        const isCronRoute = pathname.startsWith('/api/cron/')
 
-            if (isCronRoute) {
-                // Cron routes MUST have valid CRON_SECRET
-                if (!hasCronSecret(request)) {
-                    return NextResponse.json(
-                        { error: 'Unauthorized - valid CRON_SECRET required' },
-                        { status: 401 }
-                    )
-                }
-                // Valid CRON_SECRET - skip CSRF check
-            } else {
-                // All other routes go through CSRF protection
-                const csrfResponse = applyCsrfProtection(request)
-                if (csrfResponse) {
-                    return csrfResponse
-                }
+        if (isCronRoute) {
+            // Cron routes MUST have valid CRON_SECRET regardless of HTTP method
+            if (!hasCronSecret(request)) {
+                return NextResponse.json(
+                    { error: 'Unauthorized - valid CRON_SECRET required' },
+                    { status: 401 }
+                )
+            }
+            // Valid CRON_SECRET - skip CSRF check and continue to handler
+        } else if (!SAFE_METHODS.includes(method)) {
+            // CSRF Protection for state-changing requests (non-cron routes only)
+            const csrfResponse = applyCsrfProtection(request)
+            if (csrfResponse) {
+                return csrfResponse
             }
         }
 
