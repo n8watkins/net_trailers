@@ -312,6 +312,15 @@ async function handlePersonalizedRecommendations(
                     summaryAge: Date.now() - interactionSummary.lastCalculated,
                 }),
             },
+            // Phase 2: Include feedback-based engagement metrics
+            ...(engagementMetrics && {
+                feedback: {
+                    enabled: true,
+                    metrics: engagementMetrics,
+                    excludedCount: feedbackSignals?.excludedContentIds.size || 0,
+                    boostedCount: feedbackSignals?.positiveSignals.size || 0,
+                },
+            }),
             totalCount: recommendations.length,
             generatedAt: Date.now(),
         })
