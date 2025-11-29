@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { applyCsrfProtection } from './lib/csrfProtection'
+import crypto from 'crypto'
 
 /**
  * Global proxy for security and request validation
@@ -10,15 +11,36 @@ const MAX_REQUEST_BODY_SIZE = 1024 * 1024 // 1MB limit for request bodies
 const MAX_JSON_PAYLOAD_SIZE = 500 * 1024 // 500KB for JSON payloads
 
 /**
- * Routes exempt from CSRF protection.
- * These use alternative authentication (CRON_SECRET, webhooks, etc.)
- */
-const CSRF_EXEMPT_PATHS = ['/api/cron/']
-
-/**
  * Safe HTTP methods that don't require CSRF protection.
  */
 const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS']
+
+/**
+ * Timing-safe comparison of cron secret
+ */
+function isValidCronSecret(token: string | null | undefined): boolean {
+    const cronSecret = process.env.CRON_SECRET
+    if (!token || !cronSecret) return false
+    try {
+        const encoder = new TextEncoder()
+        const tokenBytes = encoder.encode(token)
+        const secretBytes = encoder.encode(cronSecret)
+        if (tokenBytes.length !== secretBytes.length) return false
+        return crypto.timingSafeEqual(tokenBytes, secretBytes)
+    } catch {
+        return false
+    }
+}
+
+/**
+ * Check if request has valid CRON_SECRET in Authorization header
+ */
+function hasCronSecret(request: NextRequest): boolean {
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader) return false
+    const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader
+    return isValidCronSecret(token)
+}
 
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl
@@ -28,10 +50,21 @@ export async function proxy(request: NextRequest) {
     if (pathname.startsWith('/api/')) {
         // CSRF Protection for state-changing requests
         if (!SAFE_METHODS.includes(method)) {
-            // Skip exempt paths (cron jobs, webhooks)
-            const isExempt = CSRF_EXEMPT_PATHS.some((path) => pathname.startsWith(path))
+            // Cron routes require CRON_SECRET - they don't use origin-based CSRF
+            // but they MUST have the secret header to be exempt
+            const isCronRoute = pathname.startsWith('/api/cron/')
 
-            if (!isExempt) {
+            if (isCronRoute) {
+                // Cron routes MUST have valid CRON_SECRET
+                if (!hasCronSecret(request)) {
+                    return NextResponse.json(
+                        { error: 'Unauthorized - valid CRON_SECRET required' },
+                        { status: 401 }
+                    )
+                }
+                // Valid CRON_SECRET - skip CSRF check
+            } else {
+                // All other routes go through CSRF protection
                 const csrfResponse = applyCsrfProtection(request)
                 if (csrfResponse) {
                     return csrfResponse

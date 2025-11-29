@@ -27,37 +27,47 @@ if (process.env.NEXT_PUBLIC_VERCEL_URL) {
 const CRON_SECRET = process.env.CRON_SECRET
 
 /**
+ * Parse and extract origin from a URL string
+ * Returns normalized origin (scheme + host + port) or null if invalid
+ */
+function parseOrigin(urlString: string): string | null {
+    try {
+        const url = new URL(urlString)
+        // Origin is scheme + host (includes port if non-default)
+        return url.origin
+    } catch {
+        return null
+    }
+}
+
+/**
  * Validate request origin/referer to prevent CSRF attacks
  * Returns true if request is from an allowed origin
+ *
+ * SECURITY: Uses exact origin matching (scheme + host + port) to prevent
+ * bypass via look-alike domains like https://allowed.com.attacker.com
  */
 export function validateOrigin(request: NextRequest): boolean {
     const origin = request.headers.get('origin')
     const referer = request.headers.get('referer')
 
+    // Normalize allowed origins for comparison
+    const normalizedAllowedOrigins = ALLOWED_ORIGINS.map((o) => parseOrigin(o)).filter(
+        (o): o is string => o !== null
+    )
+
     // Check Origin header (preferred)
     if (origin) {
-        // Normalize origin (remove trailing slash)
-        const normalizedOrigin = origin.replace(/\/$/, '')
-        const allowed = ALLOWED_ORIGINS.some((allowedOrigin) => {
-            const normalizedAllowed = allowedOrigin.replace(/\/$/, '')
-            return (
-                normalizedOrigin === normalizedAllowed ||
-                normalizedOrigin.startsWith(normalizedAllowed)
-            )
-        })
-
-        if (allowed) {
+        const parsedOrigin = parseOrigin(origin)
+        if (parsedOrigin && normalizedAllowedOrigins.includes(parsedOrigin)) {
             return true
         }
     }
 
-    // Fallback to Referer header
+    // Fallback to Referer header - extract origin from full URL
     if (referer) {
-        const allowed = ALLOWED_ORIGINS.some((allowedOrigin) => {
-            return referer.startsWith(allowedOrigin)
-        })
-
-        if (allowed) {
+        const parsedRefererOrigin = parseOrigin(referer)
+        if (parsedRefererOrigin && normalizedAllowedOrigins.includes(parsedRefererOrigin)) {
             return true
         }
     }

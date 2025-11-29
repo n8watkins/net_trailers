@@ -2,48 +2,86 @@
 
 ## Status: FIXED (2025-11-29)
 
-The CSRF bypass vulnerability has been fixed. This document was created by an AI that analyzed outdated information.
+The CSRF bypass vulnerabilities have been fixed.
 
 ## What Was Fixed
 
-The `eyJ` JWT bypass in `isServerToServerCall()` has been **removed**. The function now only trusts verified `CRON_SECRET`:
+### 1. Removed `eyJ` JWT Bypass
+
+The `eyJ` JWT bypass in `isServerToServerCall()` has been **removed**. The function now only trusts verified `CRON_SECRET`.
+
+### 2. Fixed Origin Prefix Matching Bypass
+
+**Problem**: Origin validation used `startsWith`, allowing attackers to bypass with:
+
+- `https://nettrailers.app.attacker.com`
+
+**Fix**: Now uses exact origin matching via `new URL().origin`:
 
 ```typescript
-// lib/csrfProtection.ts:94-104 (CURRENT CODE)
-function isServerToServerCall(request: NextRequest): boolean {
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader) return false
+function parseOrigin(urlString: string): string | null {
+    try {
+        const url = new URL(urlString)
+        return url.origin // Returns exact scheme + host + port
+    } catch {
+        return null
+    }
+}
 
-    const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader
+// Comparison is now exact match, not prefix
+if (parsedOrigin && normalizedAllowedOrigins.includes(parsedOrigin)) {
+    return true
+}
+```
 
-    // Only trust verified CRON_SECRET for server-to-server calls
-    // User tokens (JWTs) must go through withAuth() for verification
-    // CSRF for browser requests is handled by Origin/Referer validation
-    return isValidCronSecret(token)
+### 3. Tightened Cron Route Exemption
+
+**Problem**: Any route under `/api/cron/` was exempt from CSRF without verification.
+
+**Fix**: Cron routes now **MUST** have valid CRON_SECRET:
+
+```typescript
+if (isCronRoute) {
+    // Cron routes MUST have valid CRON_SECRET
+    if (!hasCronSecret(request)) {
+        return NextResponse.json(
+            { error: 'Unauthorized - valid CRON_SECRET required' },
+            { status: 401 }
+        )
+    }
+    // Valid CRON_SECRET - skip CSRF check
 }
 ```
 
 ## Verification
 
-Run this to confirm no `eyJ` check exists:
-
 ```bash
+# Confirm no eyJ check exists
 grep -n "eyJ" lib/csrfProtection.ts
 # Returns: No matches
+
+# Confirm exact origin matching
+grep -n "parseOrigin" lib/csrfProtection.ts
+# Returns: parseOrigin function and usage
+
+# Confirm cron routes require secret
+grep -n "hasCronSecret" proxy.ts
+# Returns: validation check
 ```
 
 ## How CSRF Works Now
 
 1. **State-changing requests** (POST/PUT/DELETE/PATCH) to `/api/*` go through `proxy.ts`
-2. `applyCsrfProtection()` is called before the route handler
-3. **CRON_SECRET bypass**: Only requests with valid `CRON_SECRET` in Authorization header bypass CSRF
-4. **Browser requests**: Must have valid Origin or Referer header from allowed domains
-5. **Fake JWT attack**: `Authorization: Bearer eyJfake` does NOT bypass CSRF - the request is rejected unless Origin/Referer is valid
+2. **Cron routes** (`/api/cron/*`) MUST have valid CRON_SECRET or get 401
+3. **All other routes** go through `applyCsrfProtection()`
+4. **Origin validation** uses exact matching (scheme + host + port)
+5. **Fake JWT attack**: `Authorization: Bearer eyJfake` does NOT bypass CSRF
+6. **Domain spoofing**: `https://allowed.com.attacker.com` does NOT bypass CSRF
 
-## Files Changed in Fix
+## Files Changed
 
-- `lib/csrfProtection.ts` - Removed `eyJ` bypass, only trust `CRON_SECRET`
-- `proxy.ts` - Added global CSRF protection
+- `lib/csrfProtection.ts` - Removed `eyJ` bypass, exact origin matching
+- `proxy.ts` - Global CSRF protection, mandatory CRON_SECRET for cron routes
 - 13 API route files - Removed redundant per-route CSRF checks
 
 ## References

@@ -107,11 +107,13 @@ function isServerToServerCall(request: NextRequest): boolean {
 1. Removed the `eyJ` check from `isServerToServerCall()` - only CRON_SECRET is trusted
 2. Added CSRF protection to global `proxy.ts` (Next.js 16+ convention) to protect all API routes automatically
 3. Removed per-route CSRF wrappers (13 files cleaned up)
+4. **Fixed origin prefix bypass** - Changed from `startsWith` to exact origin matching using `new URL().origin`
+5. **Tightened cron exemption** - Cron routes now MUST have valid CRON_SECRET (not just path-based exemption)
 
 **Files changed:**
 
-- `lib/csrfProtection.ts` - Removed eyJ bypass
-- `proxy.ts` - Added global CSRF protection
+- `lib/csrfProtection.ts` - Removed eyJ bypass, fixed origin validation to use exact matching
+- `proxy.ts` - Added global CSRF protection with mandatory CRON_SECRET validation for cron routes
 - 13 API route files - Removed redundant per-route CSRF checks
 
 ---
