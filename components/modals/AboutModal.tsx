@@ -988,6 +988,62 @@ const AboutModal: React.FC<AboutModalProps> = ({
                             </div>
                         </div>
                     </div>
+
+                    {/* Help & Getting Started */}
+                    {(onStartTour || onOpenTutorial) && (
+                        <div className="mt-4 pt-4 border-t border-zinc-700/30">
+                            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                                Getting Started
+                            </h3>
+                            <div className="flex gap-2">
+                                {/* Tutorial Button */}
+                                {onOpenTutorial && (
+                                    <button
+                                        onClick={() => {
+                                            onClose()
+                                            setTimeout(() => {
+                                                onOpenTutorial()
+                                            }, 300)
+                                        }}
+                                        className="flex-1 flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-lg border border-blue-500/40 hover:border-blue-400 hover:from-blue-500/20 hover:to-cyan-500/20 transition-all group"
+                                    >
+                                        <AcademicCapIcon className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                                        <div className="flex-1 text-left min-w-0">
+                                            <div className="text-xs font-semibold text-white truncate">
+                                                Tutorial
+                                            </div>
+                                            <div className="text-xs text-gray-400 group-hover:text-gray-300 truncate">
+                                                Learn features
+                                            </div>
+                                        </div>
+                                    </button>
+                                )}
+
+                                {/* Interactive Tour Button */}
+                                {onStartTour && (
+                                    <button
+                                        onClick={() => {
+                                            onClose()
+                                            setTimeout(() => {
+                                                onStartTour()
+                                            }, 300)
+                                        }}
+                                        className="flex-1 flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-lg border border-orange-500/40 hover:border-orange-400 hover:from-orange-500/20 hover:to-red-500/20 transition-all group"
+                                    >
+                                        <RocketLaunchIcon className="w-4 h-4 text-orange-400 flex-shrink-0" />
+                                        <div className="flex-1 text-left min-w-0">
+                                            <div className="text-xs font-semibold text-white truncate">
+                                                Quick Tour
+                                            </div>
+                                            <div className="text-xs text-gray-400 group-hover:text-gray-300 truncate">
+                                                60 seconds
+                                            </div>
+                                        </div>
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Tab Navigation */}
@@ -1062,68 +1118,6 @@ const AboutModal: React.FC<AboutModalProps> = ({
                     >
                         {renderMiniCards()}
                     </div>
-
-                    {/* Help & Tutorials Section */}
-                    {(onStartTour || onOpenTutorial) && (
-                        <div className="mt-5 space-y-3">
-                            {/* Tutorial Button */}
-                            {onOpenTutorial && (
-                                <div className="p-4 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-xl border-2 border-blue-500/40">
-                                    <div className="flex items-center justify-between gap-4">
-                                        <div className="flex-1">
-                                            <h4 className="text-white font-bold text-base mb-1 flex items-center gap-2">
-                                                <AcademicCapIcon className="w-5 h-5 text-blue-400" />
-                                                How to Use NetTrailers
-                                            </h4>
-                                            <p className="text-gray-300 text-sm">
-                                                Complete guide to all features - from basics to
-                                                advanced tools
-                                            </p>
-                                        </div>
-                                        <button
-                                            onClick={() => {
-                                                onClose()
-                                                setTimeout(() => {
-                                                    onOpenTutorial()
-                                                }, 300)
-                                            }}
-                                            className="flex-shrink-0 px-5 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-600 text-white font-bold text-sm rounded-lg hover:from-blue-600 hover:to-cyan-700 transition-all shadow-lg hover:shadow-blue-500/50 hover:scale-105"
-                                        >
-                                            View Tutorial
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Interactive Tour Button */}
-                            {onStartTour && (
-                                <div className="p-4 bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-xl border-2 border-orange-500/40">
-                                    <div className="flex items-center justify-between gap-4">
-                                        <div className="flex-1">
-                                            <h4 className="text-white font-bold text-base mb-1 flex items-center gap-2">
-                                                <RocketLaunchIcon className="w-5 h-5 text-orange-400" />
-                                                Take a Quick Interactive Tour
-                                            </h4>
-                                            <p className="text-gray-300 text-sm">
-                                                60-second walkthrough highlighting key features
-                                            </p>
-                                        </div>
-                                        <button
-                                            onClick={() => {
-                                                onClose()
-                                                setTimeout(() => {
-                                                    onStartTour()
-                                                }, 300)
-                                            }}
-                                            className="flex-shrink-0 px-5 py-2.5 bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold text-sm rounded-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-lg hover:shadow-orange-500/50 hover:scale-105"
-                                        >
-                                            Start Tour
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
                 </div>
 
                 {/* Footer */}
