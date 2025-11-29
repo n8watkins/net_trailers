@@ -985,47 +985,47 @@ const AboutModal: React.FC<AboutModalProps> = ({
                                 </a>{' '}
                                 for more projects, or connect with me on social media below!
                             </p>
-
-                            {/* Social Links (icons only) */}
-                            <div className="flex flex-wrap items-center justify-center gap-2.5">
-                                {[
-                                    {
-                                        href: 'https://github.com/n8watkins',
-                                        icon: '/icons/github.svg',
-                                        label: 'GitHub',
-                                    },
-                                    {
-                                        href: 'https://www.linkedin.com/in/n8watkins/',
-                                        icon: '/icons/linkedin.svg',
-                                        label: 'LinkedIn',
-                                    },
-                                    { href: 'https://x.com/n8watkins', icon: 'x', label: 'X' },
-                                ].map((social) => (
-                                    <a
-                                        key={social.label}
-                                        href={social.href}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        aria-label={social.label}
-                                        className="group w-11 h-11 rounded-full bg-zinc-800/60 hover:bg-zinc-700/80 transition-all duration-300 flex items-center justify-center border border-zinc-700/50 hover:border-red-500/50 hover:scale-110 hover:shadow-[0_0_20px_rgba(239,68,68,0.3)]"
-                                    >
-                                        {social.icon === 'x' ? (
-                                            <svg className="w-5 h-5 fill-white" viewBox="0 0 24 24">
-                                                <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" />
-                                            </svg>
-                                        ) : (
-                                            <Image
-                                                src={social.icon}
-                                                alt={social.label}
-                                                width={20}
-                                                height={20}
-                                                className="w-5 h-5"
-                                            />
-                                        )}
-                                    </a>
-                                ))}
-                            </div>
                         </div>
+                    </div>
+
+                    {/* Social Links (icons only) */}
+                    <div className="flex flex-wrap items-center justify-center gap-2.5 mt-3">
+                        {[
+                            {
+                                href: 'https://github.com/n8watkins',
+                                icon: '/icons/github.svg',
+                                label: 'GitHub',
+                            },
+                            {
+                                href: 'https://www.linkedin.com/in/n8watkins/',
+                                icon: '/icons/linkedin.svg',
+                                label: 'LinkedIn',
+                            },
+                            { href: 'https://x.com/n8watkins', icon: 'x', label: 'X' },
+                        ].map((social) => (
+                            <a
+                                key={social.label}
+                                href={social.href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label={social.label}
+                                className="group w-11 h-11 rounded-full bg-zinc-800/60 hover:bg-zinc-700/80 transition-all duration-300 flex items-center justify-center border border-zinc-700/50 hover:border-red-500/50 hover:scale-110 hover:shadow-[0_0_20px_rgba(239,68,68,0.3)]"
+                            >
+                                {social.icon === 'x' ? (
+                                    <svg className="w-5 h-5 fill-white" viewBox="0 0 24 24">
+                                        <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" />
+                                    </svg>
+                                ) : (
+                                    <Image
+                                        src={social.icon}
+                                        alt={social.label}
+                                        width={20}
+                                        height={20}
+                                        className="w-5 h-5"
+                                    />
+                                )}
+                            </a>
+                        ))}
                     </div>
                 </div>
 
