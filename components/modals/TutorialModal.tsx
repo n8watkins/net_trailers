@@ -11,6 +11,7 @@ import {
     ShareIcon,
     TrophyIcon,
     MicrophoneIcon,
+    FunnelIcon,
 } from '@heroicons/react/24/outline'
 import { HandThumbUpIcon, RectangleStackIcon } from '@heroicons/react/24/solid'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
@@ -307,11 +308,9 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartT
                                             description="Use voice input for hands-free search and AI queries"
                                         />
                                         <FeatureItem
-                                            icon={
-                                                <RectangleStackIcon className="w-5 h-5 text-cyan-400" />
-                                            }
-                                            title="Auto-Updating Collections"
-                                            description="Collections that refresh daily with new matching content"
+                                            icon={<FunnelIcon className="w-5 h-5 text-cyan-400" />}
+                                            title="Advanced Filters"
+                                            description="Filter collections by year, rating, cast, director, and popularity"
                                         />
                                         <FeatureItem
                                             icon={<ShareIcon className="w-5 h-5 text-yellow-400" />}
@@ -416,6 +415,13 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartT
                                             }
                                             title="Like & Comment"
                                             description="Engage with rankings and forum posts - build community connections"
+                                        />
+                                        <FeatureItem
+                                            icon={
+                                                <MagnifyingGlassIcon className="w-5 h-5 text-cyan-400" />
+                                            }
+                                            title="Explore Rankings"
+                                            description="Create top 10 lists and discover what the community loves most"
                                         />
                                     </div>
                                 </>
