@@ -371,7 +371,7 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
                                     </p>
                                 ) : null}
                             </div>
-                            {currentStep.skippable !== false && (
+                            {(currentStep.skippable ?? true) && (
                                 <button
                                     onClick={onSkip}
                                     className="ml-4 p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/10"
@@ -422,7 +422,7 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
                             </button>
 
                             <div className="flex gap-2">
-                                {currentStep.skippable !== false && (
+                                {(currentStep.skippable ?? true) && (
                                     <button
                                         onClick={onSkip}
                                         className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/5"
@@ -483,7 +483,7 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
                                 </p>
                             ) : null}
                         </div>
-                        {currentStep.skippable !== false && (
+                        {(currentStep.skippable ?? true) && (
                             <button
                                 onClick={onSkip}
                                 className="ml-4 p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/10"
@@ -532,7 +532,7 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
                         </button>
 
                         <div className="flex gap-2">
-                            {currentStep.skippable !== false && (
+                            {(currentStep.skippable ?? true) && (
                                 <button
                                     onClick={onSkip}
                                     className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/5"

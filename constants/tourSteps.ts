@@ -11,6 +11,7 @@ export interface TourPane {
     position: 'top' | 'bottom' | 'left' | 'right' | 'center'
     spotlightPadding?: number // Padding around the highlighted element (default: 8)
     action?: 'click' | 'hover' | 'focus' | null // Optional action hint
+    skippable?: boolean // Whether the tour can be skipped at this step (default: true)
 }
 
 export interface TourFeature {
