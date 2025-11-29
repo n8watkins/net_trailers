@@ -51,7 +51,7 @@ export default function SharedCollectionViewPage() {
             setIsLoading(true)
             setError(null)
 
-            // Fetch shared collection data
+            // Fetch shared collection data (GET - read-only)
             const response = await fetch(`/api/shares/${shareId}`)
             const data = await response.json()
 
@@ -61,6 +61,11 @@ export default function SharedCollectionViewPage() {
             }
 
             setShareData(data.data)
+
+            // Track view via POST (CSRF-protected, fire-and-forget)
+            fetch(`/api/shares/${shareId}`, { method: 'POST' }).catch(() => {
+                // Silently ignore view tracking errors
+            })
 
             // Fetch content details for each item
             await loadCollectionItems(data.data.contentIds)
