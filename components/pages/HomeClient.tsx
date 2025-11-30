@@ -40,17 +40,30 @@ export default function HomeClient({ data }: HomeClientProps) {
         const modalType = searchParams.get('modal')
         const contentId = searchParams.get('id')
 
-        if (modalType && contentId) {
+        if (modalType && contentId && (modalType === 'movie' || modalType === 'tv')) {
             // Fetch content details and open modal
             const fetchAndOpenModal = async () => {
                 try {
-                    const response = await fetch(
-                        `/api/${modalType}/${contentId}?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY || ''}`
-                    )
+                    // Use the TMDB details API route (doesn't need api_key in query)
+                    const endpoint =
+                        modalType === 'movie'
+                            ? `/api/movies/details/${contentId}`
+                            : `/api/tv/details/${contentId}`
+
+                    const response = await fetch(endpoint)
+
                     if (response.ok) {
                         const content = await response.json()
                         content.media_type = modalType
                         openModal(content, true, false)
+
+                        // Clear the query params after opening modal (optional - keeps URL clean)
+                        const url = new URL(window.location.href)
+                        url.searchParams.delete('modal')
+                        url.searchParams.delete('id')
+                        window.history.replaceState({}, '', url.toString())
+                    } else {
+                        console.error(`Failed to fetch ${modalType} ${contentId}:`, response.status)
                     }
                 } catch (error) {
                     console.error('Failed to fetch content for modal:', error)

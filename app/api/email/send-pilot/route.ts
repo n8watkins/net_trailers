@@ -3,6 +3,7 @@ import { EmailService } from '../../../../lib/email/email-service'
 import { Content } from '../../../../typings'
 import { withAuth } from '../../../../lib/auth-middleware'
 import { apiError, apiWarn } from '@/utils/debugLogger'
+import { generateUnsubscribeToken } from '../unsubscribe/route'
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
@@ -120,12 +121,22 @@ async function handleSendPilot(request: NextRequest, userId: string): Promise<Ne
             )
         }
 
+        // Generate unsubscribe token for this user
+        let unsubscribeToken: string | undefined
+        try {
+            unsubscribeToken = await generateUnsubscribeToken(userId)
+        } catch (error) {
+            apiWarn('[PilotEmail] Failed to generate unsubscribe token:', error)
+            // Continue without token - email will link to settings page instead
+        }
+
         // Send email using EmailService
         const emailResult = await EmailService.sendTrendingContent({
             to: email,
             userName: userName || '',
             movies,
             tvShows,
+            unsubscribeToken,
         })
 
         if (!emailResult) {

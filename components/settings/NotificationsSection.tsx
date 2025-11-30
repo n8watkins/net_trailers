@@ -8,7 +8,6 @@ import { useToast } from '../../hooks/useToast'
 import useAuth from '../../hooks/useAuth'
 import { createNotification } from '../../utils/firestore/notifications'
 import { useDebugSettings } from '../debug/DebugControls'
-import { authenticatedFetch, AuthRequiredError } from '../../lib/authenticatedFetch'
 
 interface NotificationsSectionProps {
     notifications: NotificationPreferences
@@ -24,48 +23,9 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
     onSave,
 }) => {
     const { user } = useAuth()
-    const { showSuccess, showError } = useToast()
+    const { showError } = useToast()
     const debugSettings = useDebugSettings()
-    const [isSendingEmail, setIsSendingEmail] = useState(false)
     const [isGeneratingNotifications, setIsGeneratingNotifications] = useState(false)
-
-    const handleSendTestEmail = async () => {
-        if (!user?.email) {
-            showError('No email address found for your account')
-            return
-        }
-
-        setIsSendingEmail(true)
-        try {
-            const response = await authenticatedFetch('/api/email/send-pilot', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    email: user.email,
-                    userName: user.displayName || '',
-                }),
-            })
-
-            const data = await response.json()
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Failed to send email')
-            }
-
-            showSuccess('Test email sent successfully! Check your inbox.')
-        } catch (error) {
-            console.error('Error sending test email:', error)
-            if (error instanceof AuthRequiredError) {
-                showError('Please sign in again before sending emails.')
-            } else {
-                showError(error instanceof Error ? error.message : 'Failed to send test email')
-            }
-        } finally {
-            setIsSendingEmail(false)
-        }
-    }
 
     const handleGenerateTestNotifications = async () => {
         if (!user?.uid) {
@@ -458,22 +418,7 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
                                 </div>
                             )}
 
-                            {/* Send Test Email Button */}
-                            {notifications.email && user?.email && (
-                                <div className="pt-4 border-t border-[#313131]">
-                                    <button
-                                        onClick={handleSendTestEmail}
-                                        disabled={isSendingEmail}
-                                        className="px-4 py-2 bg-[#1a1a1a] border border-[#313131] text-white rounded-lg hover:bg-[#2a2a2a] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                    >
-                                        <EnvelopeIcon className="w-4 h-4" />
-                                        {isSendingEmail ? 'Sending...' : 'Send Test Email'}
-                                    </button>
-                                    <p className="text-xs text-[#b3b3b3] mt-2">
-                                        Test email will be sent to: {user.email}
-                                    </p>
-                                </div>
-                            )}
+                            {/* Email testing moved to Debug Console (Alt+Shift+D → Email Testing) */}
                         </div>
                     </div>
                 </div>

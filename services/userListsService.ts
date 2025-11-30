@@ -306,4 +306,70 @@ export class UserListsService {
     static getAllLists<T extends StateWithLists>(state: T): UserList[] {
         return state.userCreatedWatchlists
     }
+
+    /**
+     * Build initial cache for a collection with actor/director filters
+     * Fetches first 50 items using unified cascading and stores their IDs
+     * This enables zero-TMDB-call serving for pages 1-3
+     */
+    static async buildInitialCache(collection: UserList): Promise<{
+        cachedContentIds: number[]
+        cacheMetadata: {
+            lastFetched: number
+            totalResultsAvailable: number
+            cacheSource: 'initial' | 'refresh' | 'manual'
+            needsRefresh: boolean
+        }
+    } | null> {
+        // Only build cache for collections with actor/director filters
+        const hasActorFilters =
+            collection.advancedFilters?.withCastIds &&
+            collection.advancedFilters.withCastIds.length > 0
+        const hasDirectorFilter = !!collection.advancedFilters?.withDirectorId
+
+        if (!hasActorFilters && !hasDirectorFilter) {
+            return null
+        }
+
+        // Only build cache for TMDB genre-based collections
+        if (collection.collectionType !== 'tmdb-genre') {
+            return null
+        }
+
+        try {
+            const { buildInitialCache } = await import('../utils/unifiedCascadingFetch')
+
+            const apiKey = process.env.NEXT_PUBLIC_TMDB_API_KEY
+            if (!apiKey) {
+                console.error('TMDB API key not configured, cannot build cache')
+                return null
+            }
+
+            const cachedIds = await buildInitialCache(
+                {
+                    actorIds: collection.advancedFilters?.withCastIds || [],
+                    directorId: collection.advancedFilters?.withDirectorId,
+                    genres: collection.genres || [],
+                    mediaType: collection.mediaType || 'both',
+                    genreLogic: collection.genreLogic,
+                    childSafeMode: false, // Cache without child safety, apply filter on serve
+                    infiniteEnabled: collection.canGenerateMore ?? false,
+                },
+                apiKey
+            )
+
+            return {
+                cachedContentIds: cachedIds,
+                cacheMetadata: {
+                    lastFetched: Date.now(),
+                    totalResultsAvailable: cachedIds.length,
+                    cacheSource: 'initial',
+                    needsRefresh: false,
+                },
+            }
+        } catch (error) {
+            console.error('Failed to build initial cache:', error)
+            return null
+        }
+    }
 }

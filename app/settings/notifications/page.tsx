@@ -31,20 +31,21 @@ const NotificationsPage: React.FC = () => {
     // Track original preferences to detect changes
     const [originalNotifications, setOriginalNotifications] = useState(notificationPreferences)
 
-    // React to store changes
+    // React to store changes - only sync when store changes, not when local state changes
     React.useEffect(() => {
         if (userData.isInitializing) {
             return
         }
 
-        const notificationsChanged =
-            JSON.stringify(notificationPreferences) !== JSON.stringify(notifications)
+        // Only update if the store value changed (not if local state diverged)
+        const storeChanged =
+            JSON.stringify(notificationPreferences) !== JSON.stringify(originalNotifications)
 
-        if (notificationsChanged) {
+        if (storeChanged) {
             setNotifications(notificationPreferences)
             setOriginalNotifications(notificationPreferences)
         }
-    }, [notificationPreferences, userData.isInitializing, notifications])
+    }, [notificationPreferences, userData.isInitializing, originalNotifications])
 
     // Check if notifications have changed
     const notificationsChanged =

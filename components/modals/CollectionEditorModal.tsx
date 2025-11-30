@@ -507,10 +507,12 @@ export default function CollectionEditorModal({
 
     const addActor = (actor: any) => {
         const currentActors = advancedFilters.withCast || []
+        const currentActorIds = advancedFilters.withCastIds || []
         if (!currentActors.includes(actor.name)) {
             setAdvancedFilters({
                 ...advancedFilters,
                 withCast: [...currentActors, actor.name],
+                withCastIds: [...currentActorIds, actor.id], // Store TMDB person ID
             })
             // Store the profile image for this actor
             setActorProfileImages((prev) => ({
@@ -526,9 +528,13 @@ export default function CollectionEditorModal({
 
     const removeActor = (actorName: string) => {
         const currentActors = advancedFilters.withCast || []
+        const currentActorIds = advancedFilters.withCastIds || []
+        const actorIndex = currentActors.indexOf(actorName)
+
         setAdvancedFilters({
             ...advancedFilters,
             withCast: currentActors.filter((name) => name !== actorName),
+            withCastIds: currentActorIds.filter((_, index) => index !== actorIndex), // Remove corresponding ID
         })
     }
 
@@ -536,6 +542,7 @@ export default function CollectionEditorModal({
         setAdvancedFilters({
             ...advancedFilters,
             withDirector: director.name,
+            withDirectorId: director.id, // Store TMDB person ID
         })
         setDirectorInput('')
         setDirectorSearchResults([])
@@ -546,6 +553,7 @@ export default function CollectionEditorModal({
         setAdvancedFilters({
             ...advancedFilters,
             withDirector: undefined,
+            withDirectorId: undefined, // Clear director ID
         })
     }
 

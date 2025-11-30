@@ -290,6 +290,7 @@ export class EmailService {
         userName: string
         movies: Content[]
         tvShows: Content[]
+        unsubscribeToken?: string
     }) {
         if (!this.isAvailable()) return null
         return await resend!.emails.send({
@@ -300,6 +301,7 @@ export class EmailService {
                 userName: params.userName,
                 movies: params.movies,
                 tvShows: params.tvShows,
+                unsubscribeToken: params.unsubscribeToken,
             }),
         })
     }

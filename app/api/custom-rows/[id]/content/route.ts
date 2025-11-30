@@ -2,13 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { filterContentByAdultFlag } from '../../../../../utils/contentFilter'
 import { filterMatureTVShows } from '../../../../../utils/tvContentRatings'
 import { apiError, apiWarn } from '../../../../../utils/debugLogger'
-import {
-    translateToTMDBGenres,
-    translateToTMDBGenresForBoth,
-} from '../../../../../utils/genreMapping'
 import { verifyIdToken, getAdminDb } from '../../../../../lib/firebase-admin'
 import { Content } from '../../../../../typings'
 import { fetchWithPrioritizedGenres } from '../../../../../utils/prioritizedGenreFetch'
+import { fetchWithUnifiedCascading } from '../../../../../utils/unifiedCascadingFetch'
+import { UserList } from '../../../../../types/collections'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -42,7 +40,8 @@ type GenreLogic = 'AND' | 'OR'
  */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
-        await params // Consume params to satisfy Next.js requirements
+        const resolvedParams = await params
+        const collectionId = resolvedParams.id
 
         // Fetch user's hidden movies based on auth context (optional - this is a public endpoint)
         let hiddenMovieIds: number[] = []
@@ -106,6 +105,156 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         const genreLogic =
             fallbackGenreLogic && pageNumber > 1 ? fallbackGenreLogic : baseGenreLogic
         const mediaType = (searchParams.get('mediaType') || 'movie') as MediaType
+
+        // Try to fetch collection from Firebase to check for cache
+        let collection: UserList | null = null
+        try {
+            // Try to get userId from auth header
+            const authHeader = request.headers.get('authorization')
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                const idToken = authHeader.substring(7)
+                const decodedToken = await verifyIdToken(idToken)
+                const userId = decodedToken.uid
+
+                const db = getAdminDb()
+                const collectionDoc = await db
+                    .collection('users')
+                    .doc(userId)
+                    .collection('customRows')
+                    .doc(collectionId)
+                    .get()
+
+                if (collectionDoc.exists) {
+                    collection = { id: collectionDoc.id, ...collectionDoc.data() } as UserList
+                }
+            }
+        } catch (error) {
+            // Silently fail - cache is optional optimization
+            apiWarn('Could not fetch collection for cache check:', error)
+        }
+
+        // Check if we can serve from cache (first 50 items = pages 1-3)
+        const hasActorOrDirectorFilters =
+            (collection?.advancedFilters?.withCastIds?.length ?? 0) > 0 ||
+            !!collection?.advancedFilters?.withDirectorId
+        const hasCache = collection?.cachedContentIds && collection.cachedContentIds.length > 0
+        const isWithinCacheRange = pageNumber <= 3
+
+        if (hasActorOrDirectorFilters && hasCache && isWithinCacheRange) {
+            // Serve from cache - ZERO TMDB calls!
+            const startIndex = (pageNumber - 1) * 20
+            const endIndex = startIndex + 20
+            const pageContentIds = collection!.cachedContentIds!.slice(startIndex, endIndex)
+
+            // Fetch full content details for these IDs
+            const fetchPromises = pageContentIds.map(async (tmdbId) => {
+                try {
+                    const endpoint =
+                        mediaType === 'both'
+                            ? null // Will try both
+                            : mediaType === 'tv'
+                              ? `${BASE_URL}/tv/${tmdbId}`
+                              : `${BASE_URL}/movie/${tmdbId}`
+
+                    // For "both", try movie first, then TV
+                    if (mediaType === 'both') {
+                        const movieUrl = `${BASE_URL}/movie/${tmdbId}?api_key=${API_KEY}&language=en-US`
+                        const movieResponse = await fetch(movieUrl)
+                        if (movieResponse.ok) {
+                            const item = await movieResponse.json()
+                            return { ...item, media_type: 'movie' }
+                        }
+
+                        const tvUrl = `${BASE_URL}/tv/${tmdbId}?api_key=${API_KEY}&language=en-US`
+                        const tvResponse = await fetch(tvUrl)
+                        if (tvResponse.ok) {
+                            const item = await tvResponse.json()
+                            return { ...item, media_type: 'tv' }
+                        }
+
+                        return null
+                    }
+
+                    const url = `${endpoint}?api_key=${API_KEY}&language=en-US`
+                    const response = await fetch(url)
+                    if (!response.ok) return null
+
+                    const item = await response.json()
+                    return { ...item, media_type: mediaType }
+                } catch (error) {
+                    apiWarn(`Failed to fetch cached content ${tmdbId}:`, error)
+                    return null
+                }
+            })
+
+            let cachedResults = (await Promise.all(fetchPromises)).filter((item) => item !== null)
+
+            // Apply child safety filtering if needed
+            if (childSafeMode) {
+                const beforeCount = cachedResults.length
+                const filteredByAdultFlag = filterContentByAdultFlag(cachedResults, true)
+
+                const tvItems = filteredByAdultFlag.filter((item: any) => item.media_type === 'tv')
+                let safeTvIds: Set<number> | null = null
+                if (tvItems.length > 0) {
+                    const safeTv = await filterMatureTVShows(tvItems, API_KEY)
+                    safeTvIds = new Set(safeTv.map((item: any) => item.id))
+                }
+
+                cachedResults = filteredByAdultFlag.filter((item: any) => {
+                    if (item.media_type === 'tv') {
+                        return safeTvIds?.has(item.id)
+                    }
+                    return true
+                })
+
+                const hiddenCount = beforeCount - cachedResults.length
+
+                return NextResponse.json(
+                    {
+                        results: cachedResults,
+                        page: pageNumber,
+                        total_pages: Math.ceil((collection!.cachedContentIds!.length || 50) / 20),
+                        total_results: collection!.cachedContentIds!.length || 50,
+                        from_cache: true,
+                        child_safety_enabled: true,
+                        hidden_count: hiddenCount,
+                    },
+                    {
+                        status: 200,
+                        headers: {
+                            'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200',
+                        },
+                    }
+                )
+            }
+
+            // Filter out user's hidden movies
+            let filteredResults = cachedResults
+            let userHiddenCount = 0
+            if (hiddenIdsSet.size > 0) {
+                const beforeUserFilter = cachedResults.length
+                filteredResults = cachedResults.filter((item: any) => !hiddenIdsSet.has(item.id))
+                userHiddenCount = beforeUserFilter - filteredResults.length
+            }
+
+            return NextResponse.json(
+                {
+                    results: filteredResults,
+                    page: pageNumber,
+                    total_pages: Math.ceil((collection!.cachedContentIds!.length || 50) / 20),
+                    total_results: collection!.cachedContentIds!.length || 50,
+                    from_cache: true,
+                    hidden_count: userHiddenCount > 0 ? userHiddenCount : undefined,
+                },
+                {
+                    status: 200,
+                    headers: {
+                        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200',
+                    },
+                }
+            )
+        }
 
         // Handle curated content lists (Gemini recommendations)
         // Page 1: Show curated content
@@ -270,71 +419,127 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         let totalPages = 0
         let totalResults = 0
 
+        // Check if we should use unified cascading (with actors/directors) or genre-only
+        const shouldUseUnifiedCascading =
+            hasActorOrDirectorFilters &&
+            collection?.advancedFilters?.withCastIds &&
+            collection?.advancedFilters?.withCastIds.length > 0
+
+        // Adjust page number if beyond cache range (pages 1-3 are cached)
+        const adjustedPageNumber = hasCache && pageNumber > 3 ? pageNumber - 3 : pageNumber
+
         // Handle "both" media type by fetching from both endpoints with prioritization
         if (mediaType === 'both') {
-            // Fetch movies and TV separately with prioritized genre cascading
-            const [movieData, tvData] = await Promise.all([
-                fetchWithPrioritizedGenres(
-                    unifiedGenreIds,
-                    'movie',
-                    'discover',
-                    pageNumber,
-                    API_KEY!,
-                    childSafeMode,
-                    genreLogic
-                ),
-                fetchWithPrioritizedGenres(
-                    unifiedGenreIds,
-                    'tv',
-                    'discover',
-                    pageNumber,
-                    API_KEY!,
-                    childSafeMode,
-                    genreLogic
-                ),
-            ])
+            if (shouldUseUnifiedCascading) {
+                // Use unified cascading with actors/directors
+                const data = await fetchWithUnifiedCascading(
+                    {
+                        actorIds: collection!.advancedFilters!.withCastIds || [],
+                        directorId: collection!.advancedFilters!.withDirectorId,
+                        genres: unifiedGenreIds,
+                        mediaType: 'both',
+                        genreLogic,
+                        childSafeMode,
+                        infiniteEnabled: collection!.canGenerateMore ?? false,
+                    },
+                    adjustedPageNumber,
+                    API_KEY!
+                )
 
-            // Merge and enrich results
-            const movieResults = movieData.results.map((item: any) => ({
-                ...item,
-                media_type: 'movie',
-            }))
-            const tvResults = tvData.results.map((item: any) => ({
-                ...item,
-                media_type: 'tv',
-            }))
+                enrichedResults = data.results
+                totalPages = data.total_pages
+                totalResults = data.total_results
+            } else {
+                // Fetch movies and TV separately with prioritized genre cascading
+                const [movieData, tvData] = await Promise.all([
+                    fetchWithPrioritizedGenres(
+                        unifiedGenreIds,
+                        'movie',
+                        'discover',
+                        pageNumber,
+                        API_KEY!,
+                        childSafeMode,
+                        genreLogic
+                    ),
+                    fetchWithPrioritizedGenres(
+                        unifiedGenreIds,
+                        'tv',
+                        'discover',
+                        pageNumber,
+                        API_KEY!,
+                        childSafeMode,
+                        genreLogic
+                    ),
+                ])
 
-            // Interleave results for better variety
-            enrichedResults = []
-            const maxLength = Math.max(movieResults.length, tvResults.length)
-            for (let i = 0; i < maxLength; i++) {
-                if (i < movieResults.length) enrichedResults.push(movieResults[i])
-                if (i < tvResults.length) enrichedResults.push(tvResults[i])
+                // Merge and enrich results
+                const movieResults = movieData.results.map((item: any) => ({
+                    ...item,
+                    media_type: 'movie',
+                }))
+                const tvResults = tvData.results.map((item: any) => ({
+                    ...item,
+                    media_type: 'tv',
+                }))
+
+                // Interleave results for better variety
+                enrichedResults = []
+                const maxLength = Math.max(movieResults.length, tvResults.length)
+                for (let i = 0; i < maxLength; i++) {
+                    if (i < movieResults.length) enrichedResults.push(movieResults[i])
+                    if (i < tvResults.length) enrichedResults.push(tvResults[i])
+                }
+
+                // Combine totals
+                totalPages = Math.max(movieData.total_pages, tvData.total_pages)
+                totalResults = movieData.total_results + tvData.total_results
             }
-
-            // Combine totals
-            totalPages = Math.max(movieData.total_pages, tvData.total_pages)
-            totalResults = movieData.total_results + tvData.total_results
         } else {
-            // Single media type (movie or tv) - use prioritized genre cascading
-            const data = await fetchWithPrioritizedGenres(
-                unifiedGenreIds,
-                mediaType,
-                'discover',
-                pageNumber,
-                API_KEY!,
-                childSafeMode,
-                genreLogic
-            )
+            if (shouldUseUnifiedCascading) {
+                // Use unified cascading with actors/directors
+                const data = await fetchWithUnifiedCascading(
+                    {
+                        actorIds: collection!.advancedFilters!.withCastIds || [],
+                        directorId: collection!.advancedFilters!.withDirectorId,
+                        genres: unifiedGenreIds,
+                        mediaType,
+                        genreLogic,
+                        childSafeMode,
+                        infiniteEnabled: collection!.canGenerateMore ?? false,
+                    },
+                    adjustedPageNumber,
+                    API_KEY!
+                )
 
-            // Enrich results with media_type
-            enrichedResults = data.results.map((item: any) => ({
-                ...item,
-                media_type: mediaType,
-            }))
+                // Enrich results with media_type
+                enrichedResults = data.results.map((item: any) => ({
+                    ...item,
+                    media_type: mediaType,
+                }))
 
-            totalPages = data.total_pages
-            totalResults = data.total_results
+                totalPages = data.total_pages
+                totalResults = data.total_results
+            } else {
+                // Single media type (movie or tv) - use prioritized genre cascading
+                const data = await fetchWithPrioritizedGenres(
+                    unifiedGenreIds,
+                    mediaType,
+                    'discover',
+                    pageNumber,
+                    API_KEY!,
+                    childSafeMode,
+                    genreLogic
+                )
+
+                // Enrich results with media_type
+                enrichedResults = data.results.map((item: any) => ({
+                    ...item,
+                    media_type: mediaType,
+                }))
+
+                totalPages = data.total_pages
+                totalResults = data.total_results
+            }
         }
 
         // Apply child safety filtering

@@ -10,10 +10,14 @@ import {
     TrashIcon,
     DocumentTextIcon,
     CircleStackIcon,
+    EnvelopeIcon,
 } from '@heroicons/react/24/outline'
 import { useProfileActions } from '../../hooks/useProfileActions'
 import useUserData from '../../hooks/useUserData'
 import { useDebugOperationsStore } from '../../stores/debugOperationsStore'
+import useAuth from '../../hooks/useAuth'
+import { useToast } from '../../hooks/useToast'
+import { authenticatedFetch, AuthRequiredError } from '../../lib/authenticatedFetch'
 
 interface DebugSettings {
     showFirebaseTracker: boolean
@@ -149,6 +153,11 @@ export default function DebugControls() {
 
     // User data for clearing user data
     const { clearAccountData } = useUserData()
+
+    // Email sending state
+    const { user } = useAuth()
+    const { showSuccess, showError } = useToast()
+    const [sendingEmail, setSendingEmail] = useState<string | null>(null)
 
     // Visibility state - load from localStorage, hidden by default
     const [isVisible, setIsVisible] = useState(false)
@@ -394,6 +403,51 @@ export default function DebugControls() {
             console.error('[DebugControls] Failed to clear user data:', error)
         } finally {
             setClearing(false)
+        }
+    }
+
+    // Send test email
+    const handleSendEmail = async (
+        emailType: string,
+        endpoint: string,
+        body: object,
+        method: string = 'POST'
+    ) => {
+        if (!user?.email) {
+            showError('No email address - sign in to test emails')
+            return
+        }
+
+        setSendingEmail(emailType)
+        try {
+            const response = await authenticatedFetch(endpoint, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: method === 'POST' ? JSON.stringify(body) : undefined,
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.error || `Failed to send ${emailType}`)
+            }
+
+            // Show detailed success message for digest emails
+            if (emailType.includes('Digest')) {
+                const details = `${data.newItems || 0} new items, ${data.notifications || 0} notifications, ${data.emailsSent || 0} emails sent`
+                showSuccess(`${emailType} complete! ${details}`)
+            } else {
+                showSuccess(`${emailType} sent to ${user.email}!`)
+            }
+        } catch (error) {
+            console.error(`Email test error (${emailType}):`, error)
+            if (error instanceof AuthRequiredError) {
+                showError('Sign in again to send emails')
+            } else {
+                showError(error instanceof Error ? error.message : `Failed: ${emailType}`)
+            }
+        } finally {
+            setSendingEmail(null)
         }
     }
 
@@ -682,6 +736,77 @@ export default function DebugControls() {
                                     <DocumentTextIcon className="w-3 h-3" />
                                     <span className="text-xs">Docs</span>
                                 </a>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Email Testing Row - Always visible when hovering */}
+                    {showAllControls && (
+                        <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2 px-2 py-1">
+                                <EnvelopeIcon className="w-3.5 h-3.5 text-sky-500" />
+                                <span className="text-xs font-medium text-gray-400">
+                                    Email Testing
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2 flex-wrap pl-6">
+                                {/* Trending Content Email */}
+                                <button
+                                    onClick={() =>
+                                        handleSendEmail('Trending', '/api/email/send-pilot', {
+                                            email: user?.email,
+                                            userName: user?.displayName || '',
+                                        })
+                                    }
+                                    disabled={sendingEmail !== null || !user?.email}
+                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-sky-600/20 text-sky-400 border border-sky-500/30 hover:bg-sky-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Send trending content email (pilot template with top 5 movies + TV)"
+                                >
+                                    <EnvelopeIcon className="w-3 h-3" />
+                                    <span className="text-xs">
+                                        {sendingEmail === 'Trending' ? 'Sending...' : 'Trending'}
+                                    </span>
+                                </button>
+
+                                {/* Weekly Digest - Real */}
+                                <button
+                                    onClick={() =>
+                                        handleSendEmail(
+                                            'Digest (Real)',
+                                            '/api/email/test-weekly-digest',
+                                            { demoMode: false }
+                                        )
+                                    }
+                                    disabled={sendingEmail !== null || !user?.email}
+                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-purple-600/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Run weekly digest cron (real data comparison, only emails if new trending found)"
+                                >
+                                    <EnvelopeIcon className="w-3 h-3" />
+                                    <span className="text-xs">
+                                        {sendingEmail === 'Digest (Real)' ? 'Running...' : 'Digest'}
+                                    </span>
+                                </button>
+
+                                {/* Weekly Digest - Demo */}
+                                <button
+                                    onClick={() =>
+                                        handleSendEmail(
+                                            'Digest (Demo)',
+                                            '/api/email/test-weekly-digest',
+                                            { demoMode: true }
+                                        )
+                                    }
+                                    disabled={sendingEmail !== null || !user?.email}
+                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-pink-600/20 text-pink-400 border border-pink-500/30 hover:bg-pink-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Run weekly digest cron (demo mode - always finds new items and sends email)"
+                                >
+                                    <EnvelopeIcon className="w-3 h-3" />
+                                    <span className="text-xs">
+                                        {sendingEmail === 'Digest (Demo)'
+                                            ? 'Running...'
+                                            : 'Demo Digest'}
+                                    </span>
+                                </button>
                             </div>
                         </div>
                     )}

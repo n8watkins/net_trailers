@@ -5,6 +5,7 @@ import { compareTrendingContent, getTrendingTitle } from '@/utils/trendingCompar
 import { validateAdminRequest } from '@/utils/adminMiddleware'
 import { EmailService } from '@/lib/email/email-service'
 import { Content } from '@/typings'
+import { generateUnsubscribeToken } from '../../email/unsubscribe/route'
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY
 const CRON_SECRET = process.env.CRON_SECRET
@@ -52,9 +53,9 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: 'TMDB API key not configured' }, { status: 500 })
         }
 
-        // Check for demo mode (admin only)
+        // Check for demo mode (admin or cron only)
         const { searchParams } = new URL(req.url)
-        const isDemoMode = searchParams.get('demo') === 'true' && isAdmin
+        const isDemoMode = searchParams.get('demo') === 'true' && (isAdmin || isCron)
 
         // Fetch current trending from TMDB
         const [moviesRes, tvRes] = await Promise.all([
@@ -160,6 +161,18 @@ export async function GET(req: NextRequest) {
                     const emailEnabled = userData.notifications?.email ?? false
                     if (emailEnabled && userData.email) {
                         try {
+                            // Generate unsubscribe token for this user
+                            let unsubscribeToken: string | undefined
+                            try {
+                                unsubscribeToken = await generateUnsubscribeToken(userDoc.id)
+                            } catch (tokenError) {
+                                console.warn(
+                                    `⚠️  [Trending] Failed to generate unsubscribe token for ${userDoc.id}:`,
+                                    tokenError
+                                )
+                                // Continue without token - email will link to settings page instead
+                            }
+
                             // Prepare trending content for email (top 5 of each)
                             const trendingMovies = moviesData.results.slice(0, 5).map((m: any) => ({
                                 ...m,
@@ -175,6 +188,7 @@ export async function GET(req: NextRequest) {
                                 userName: userData.displayName || userData.email.split('@')[0],
                                 movies: trendingMovies as Content[],
                                 tvShows: trendingShows as Content[],
+                                unsubscribeToken,
                             })
                             emailsSent++
                             console.log(

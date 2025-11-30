@@ -6,14 +6,25 @@ interface TrendingContentEmailProps {
     userName: string
     movies: Content[]
     tvShows: Content[]
+    unsubscribeToken?: string
 }
 
 /**
  * Premium Netflix-caliber Weekly Trending Digest Email
  * Redesigned with table-based layout for maximum email client compatibility
  */
-export const TrendingContentEmail = ({ userName, movies, tvShows }: TrendingContentEmailProps) => {
+export const TrendingContentEmail = ({
+    userName,
+    movies,
+    tvShows,
+    unsubscribeToken,
+}: TrendingContentEmailProps) => {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+
+    // Unsubscribe URL - use token if available, otherwise go to settings
+    const unsubscribeUrl = unsubscribeToken
+        ? `${appUrl}/api/email/unsubscribe?token=${unsubscribeToken}`
+        : `${appUrl}/settings/notifications`
 
     const formatRuntime = (content: Content) => {
         if ('runtime' in content && content.runtime) {
@@ -485,7 +496,7 @@ export const TrendingContentEmail = ({ userName, movies, tvShows }: TrendingCont
                                                     </p>
                                                     <p style={{ margin: '0 0 20px 0' }}>
                                                         <a
-                                                            href={`${appUrl}/settings`}
+                                                            href={`${appUrl}/settings/notifications`}
                                                             style={{
                                                                 color: '#8c8c8c',
                                                                 textDecoration: 'none',
@@ -496,7 +507,7 @@ export const TrendingContentEmail = ({ userName, movies, tvShows }: TrendingCont
                                                         </a>
                                                         <span style={{ color: '#4a4a4a' }}>•</span>
                                                         <a
-                                                            href={`${appUrl}/unsubscribe`}
+                                                            href={unsubscribeUrl}
                                                             style={{
                                                                 color: '#8c8c8c',
                                                                 textDecoration: 'none',

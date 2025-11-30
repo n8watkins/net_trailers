@@ -13,6 +13,17 @@ export type CollectionType =
     | 'manual' // Manually curated by user (static items array)
 
 /**
+ * Cache metadata for actor/director cascading collections
+ * Tracks cached content and refresh status
+ */
+export interface CacheMetadata {
+    lastFetched: number // Unix timestamp of last cache build/refresh
+    totalResultsAvailable: number // Total TMDB results available (for reference)
+    cacheSource: 'initial' | 'refresh' | 'manual' // How the cache was created
+    needsRefresh: boolean // Flag for weekly cron job to check
+}
+
+/**
  * Advanced filter options for TMDB-based collections
  */
 export interface AdvancedFilters {
@@ -33,8 +44,10 @@ export interface AdvancedFilters {
     voteCount?: number // 0-4 (index in vote count scale)
 
     // Cast/Crew filters
-    withCast?: string[] // Actor names or TMDB person IDs
-    withDirector?: string // Director name or TMDB person ID
+    withCast?: string[] // Actor display names (for UI)
+    withDirector?: string // Director display name (for UI)
+    withCastIds?: number[] // TMDB person IDs for API calls (cascading logic)
+    withDirectorId?: number // TMDB person ID for API calls (cascading logic)
 
     // Curated content list (Gemini AI recommendations)
     contentIds?: number[] // Specific TMDB IDs for concept-based collections
@@ -88,6 +101,10 @@ export interface UserList {
 
     // Public profile visibility
     showOnPublicProfile?: boolean // Show on user's public profile (default: true)
+
+    // Actor/Director cascading cache (first 50 items for zero-TMDB-call serving)
+    cachedContentIds?: number[] // TMDB content IDs for first 50 results (pages 1-3)
+    cacheMetadata?: CacheMetadata // Cache tracking metadata
 }
 
 // DEPRECATED - OLD SCHEMA
