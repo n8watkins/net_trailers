@@ -424,10 +424,9 @@ export default function CollectionEditorModal({
                 >
                     {/* Header with Collection Identity */}
                     <div className="p-6 border-b border-zinc-800/50">
-                        <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-start justify-between">
                             {/* Collection Identity Section */}
-                            {!canOnlyToggle && !isEditingIdentity ? (
-                                /* Collapsed View - Display Mode */
+                            {!canOnlyToggle ? (
                                 <div
                                     className="flex-1 p-4 rounded-xl border-2 transition-all duration-200"
                                     style={{
@@ -435,24 +434,101 @@ export default function CollectionEditorModal({
                                         borderColor: `${color}80`,
                                     }}
                                 >
-                                    <div className="flex items-center gap-4">
-                                        {/* Emoji Display */}
-                                        <div className="text-5xl">{emoji}</div>
-                                        {/* Collection Name Display */}
-                                        <h3 className="text-2xl font-bold text-white">
-                                            {name || 'Untitled Collection'}
-                                        </h3>
-                                        {/* Edit Button (Pencil Icon) */}
-                                        <button
-                                            onClick={() => setIsEditingIdentity(true)}
-                                            className="p-2 bg-zinc-800/60 hover:bg-zinc-700/80 text-white rounded-lg transition-all duration-200 border border-zinc-700/50 hover:border-zinc-600"
-                                            title="Edit collection identity"
-                                        >
-                                            <PencilIcon className="w-5 h-5" />
-                                        </button>
-                                    </div>
+                                    {!isEditingIdentity ? (
+                                        /* Display Mode */
+                                        <div className="flex items-center gap-4">
+                                            {/* Emoji Display */}
+                                            <div className="text-5xl">{emoji}</div>
+                                            {/* Collection Name Display */}
+                                            <h3 className="text-2xl font-bold text-white">
+                                                {name || 'Untitled Collection'}
+                                            </h3>
+                                            {/* Edit Button (Pencil Icon) */}
+                                            <button
+                                                onClick={() => setIsEditingIdentity(true)}
+                                                className="p-2 bg-zinc-800/60 hover:bg-zinc-700/80 text-white rounded-lg transition-all duration-200 border border-zinc-700/50 hover:border-zinc-600"
+                                                title="Edit collection identity"
+                                            >
+                                                <PencilIcon className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        /* Edit Mode - Inside the same colored container */
+                                        <div className="flex items-center space-x-3">
+                                            {/* Icon Picker */}
+                                            <div className="relative flex-shrink-0">
+                                                <button
+                                                    onClick={() => setShowIconPicker(true)}
+                                                    className="w-14 h-14 bg-gray-800 border border-gray-600 rounded-lg flex items-center justify-center text-3xl transition-all duration-200 hover:bg-gray-700 hover:border-gray-500"
+                                                    title="Choose an icon"
+                                                >
+                                                    {emoji}
+                                                </button>
+
+                                                <IconPickerModal
+                                                    isOpen={showIconPicker}
+                                                    selectedIcon={emoji}
+                                                    onSelectIcon={(selectedEmoji) => {
+                                                        setEmoji(selectedEmoji)
+                                                        setShowIconPicker(false)
+                                                    }}
+                                                    onClose={() => setShowIconPicker(false)}
+                                                />
+                                            </div>
+
+                                            {/* Color Picker - Available for user collections and editable system collections */}
+                                            {(canEditFull || canEditLimited) && (
+                                                <div className="relative flex-shrink-0">
+                                                    <button
+                                                        onClick={() => setShowColorPicker(true)}
+                                                        className="w-14 h-14 bg-gray-800 border-2 border-gray-700 rounded-lg transition-all duration-200 hover:bg-gray-700 hover:border-gray-600 p-2 flex items-center justify-center"
+                                                        title="Choose a color"
+                                                    >
+                                                        <div
+                                                            className="w-full h-full rounded-md"
+                                                            style={{ backgroundColor: color }}
+                                                        />
+                                                    </button>
+
+                                                    <ColorPickerModal
+                                                        isOpen={showColorPicker}
+                                                        selectedColor={color}
+                                                        onSelectColor={(selectedColor) => {
+                                                            setColor(selectedColor)
+                                                            setShowColorPicker(false)
+                                                        }}
+                                                        onClose={() => setShowColorPicker(false)}
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {/* Name Input */}
+                                            <div className="flex-1">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Collection name"
+                                                    value={name}
+                                                    onChange={(e) => setName(e.target.value)}
+                                                    disabled={canOnlyToggle}
+                                                    className={`w-full max-w-md h-14 px-4 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                                        canOnlyToggle
+                                                            ? 'opacity-50 cursor-not-allowed'
+                                                            : ''
+                                                    }`}
+                                                />
+                                            </div>
+
+                                            {/* Done Button */}
+                                            <button
+                                                onClick={() => setIsEditingIdentity(false)}
+                                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 text-sm font-medium"
+                                            >
+                                                Done
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
-                            ) : canOnlyToggle ? (
+                            ) : (
                                 /* System collection header */
                                 <div>
                                     <h2 className="text-xl font-bold text-white">
@@ -462,7 +538,7 @@ export default function CollectionEditorModal({
                                         System collection with limited customization
                                     </p>
                                 </div>
-                            ) : null}
+                            )}
 
                             {/* Delete button - show for user collections and deletable system collections */}
                             {(canEditFull ||
@@ -477,82 +553,6 @@ export default function CollectionEditorModal({
                                 </button>
                             )}
                         </div>
-
-                        {/* Editing Mode - Show edit controls inline */}
-                        {!canOnlyToggle && isEditingIdentity && (
-                            <div className="space-y-3">
-                                <div className="flex items-center space-x-3">
-                                    {/* Icon Picker */}
-                                    <div className="relative flex-shrink-0">
-                                        <button
-                                            onClick={() => setShowIconPicker(true)}
-                                            className="w-14 h-14 bg-gray-800 border border-gray-600 rounded-lg flex items-center justify-center text-3xl transition-all duration-200 hover:bg-gray-700 hover:border-gray-500"
-                                            title="Choose an icon"
-                                        >
-                                            {emoji}
-                                        </button>
-
-                                        <IconPickerModal
-                                            isOpen={showIconPicker}
-                                            selectedIcon={emoji}
-                                            onSelectIcon={(selectedEmoji) => {
-                                                setEmoji(selectedEmoji)
-                                                setShowIconPicker(false)
-                                            }}
-                                            onClose={() => setShowIconPicker(false)}
-                                        />
-                                    </div>
-
-                                    {/* Color Picker - Available for user collections and editable system collections */}
-                                    {(canEditFull || canEditLimited) && (
-                                        <div className="relative flex-shrink-0">
-                                            <button
-                                                onClick={() => setShowColorPicker(true)}
-                                                className="w-14 h-14 bg-gray-800 border-2 border-gray-700 rounded-lg transition-all duration-200 hover:bg-gray-700 hover:border-gray-600 p-2 flex items-center justify-center"
-                                                title="Choose a color"
-                                            >
-                                                <div
-                                                    className="w-full h-full rounded-md"
-                                                    style={{ backgroundColor: color }}
-                                                />
-                                            </button>
-
-                                            <ColorPickerModal
-                                                isOpen={showColorPicker}
-                                                selectedColor={color}
-                                                onSelectColor={(selectedColor) => {
-                                                    setColor(selectedColor)
-                                                    setShowColorPicker(false)
-                                                }}
-                                                onClose={() => setShowColorPicker(false)}
-                                            />
-                                        </div>
-                                    )}
-
-                                    {/* Name Input */}
-                                    <div className="flex-1">
-                                        <input
-                                            type="text"
-                                            placeholder="Collection name"
-                                            value={name}
-                                            onChange={(e) => setName(e.target.value)}
-                                            disabled={canOnlyToggle}
-                                            className={`w-full max-w-md h-14 px-4 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                                canOnlyToggle ? 'opacity-50 cursor-not-allowed' : ''
-                                            }`}
-                                        />
-                                    </div>
-
-                                    {/* Done Button */}
-                                    <button
-                                        onClick={() => setIsEditingIdentity(false)}
-                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 text-sm font-medium"
-                                    >
-                                        Done
-                                    </button>
-                                </div>
-                            </div>
-                        )}
                     </div>
 
                     {/* Content */}
