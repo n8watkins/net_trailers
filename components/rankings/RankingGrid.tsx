@@ -66,13 +66,17 @@ export function RankingGrid({
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {rankings.map((ranking) => (
-                <RankingCard
+            {rankings.map((ranking, index) => (
+                <div
                     key={ranking.id}
-                    ranking={ranking}
-                    showAuthor={showAuthor}
-                    onLike={onLike}
-                />
+                    className="animate-fadeInUp"
+                    style={{
+                        animationDelay: `${Math.min(index * 50, 500)}ms`,
+                        animationFillMode: 'both',
+                    }}
+                >
+                    <RankingCard ranking={ranking} showAuthor={showAuthor} onLike={onLike} />
+                </div>
             ))}
         </div>
     )
