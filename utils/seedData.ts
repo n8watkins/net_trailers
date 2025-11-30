@@ -39,8 +39,8 @@ export const sampleMovies: Movie[] = [
         original_title: 'Pulp Fiction',
         overview:
             "A burger-loving hit man, his philosophical partner, a drug-addled gangster's moll and a washed-up boxer converge in this sprawling, comedic crime caper.",
-        poster_path: '/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg',
-        backdrop_path: '/4cDFJr4HnXN5AdPw4AKrmLlMWdO.jpg',
+        poster_path: '/vQWk5YBFWF4bZaofAbv0tShwBvQ.jpg',
+        backdrop_path: '/suaEOtk1N1sgg2MTM7oZd2cfVp3.jpg',
         release_date: '1994-09-10',
         vote_average: 8.5,
         vote_count: 26711,
@@ -56,8 +56,8 @@ export const sampleMovies: Movie[] = [
         original_title: 'Forrest Gump',
         overview:
             'A man with a low IQ has accomplished great things in his life and been present during significant historic events—in each case, far exceeding what anyone imagined he could do.',
-        poster_path: '/arw2vcBveWOVZr6pxd9XTd1TdQa.jpg',
-        backdrop_path: '/3h1JZGDhZ8nxha0qBqi05.jpg',
+        poster_path: '/saHP97rTPS5eLmrLQEcANmKrsFl.jpg',
+        backdrop_path: '/67HggiWaP9ZLv5sPYmyRV37yAJM.jpg',
         release_date: '1994-07-06',
         vote_average: 8.5,
         vote_count: 25844,
@@ -74,7 +74,7 @@ export const sampleMovies: Movie[] = [
         overview:
             'Batman raises the stakes in his war on crime. With the help of Lt. Jim Gordon and District Attorney Harvey Dent, Batman sets out to dismantle the remaining criminal organizations.',
         poster_path: '/qJ2tW6WMUDux911r6m7haRef0WH.jpg',
-        backdrop_path: '/hqkIcbrOHL86UncnHIsHVcVmzue.jpg',
+        backdrop_path: '/dqK9Hag1054tghRQSqLSfrkvQnA.jpg',
         release_date: '2008-07-16',
         vote_average: 8.5,
         vote_count: 31233,
@@ -142,7 +142,7 @@ export const sampleMovies: Movie[] = [
         overview:
             'High schoolers Mitsuha and Taki are complete strangers living separate lives. But one night, they suddenly switch places.',
         poster_path: '/q719jXXEzOoYaps6babgKnONONX.jpg',
-        backdrop_path: '/7prYzufdIOy1KCTZKVWpw4kbAe.jpg',
+        backdrop_path: '/8x9iKH8kWA0zdkgNdpAew7OstYe.jpg',
         release_date: '2016-08-26',
         vote_average: 8.5,
         vote_count: 10245,
@@ -227,7 +227,7 @@ export const sampleMovies: Movie[] = [
         overview:
             "A filmmaker recalls his childhood, when he fell in love with the movies at his village's theater and formed a deep friendship with the theater's projectionist.",
         poster_path: '/gCI2AeMV4IHSewhJkzsur5MEp6R.jpg',
-        backdrop_path: '/3WZUOiFPhUa8nSVYp7PaJAELnQn.jpg',
+        backdrop_path: '/zoVeIgKzGJzpdG6Gwnr7iOYfIMU.jpg',
         release_date: '1988-11-17',
         vote_average: 8.4,
         vote_count: 4000,
@@ -312,7 +312,7 @@ export const sampleMovies: Movie[] = [
         overview:
             'Young hobbit Frodo Baggins, after inheriting a mysterious ring from his uncle Bilbo, must leave his home in order to keep it from falling into the hands of its evil creator.',
         poster_path: '/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg',
-        backdrop_path: '/pIUvQ9Ed35wlWhY2oU6OmwEsmzG.jpg',
+        backdrop_path: '/x2RS3uTcsJJ9IfjNPcgDmukoEcQ.jpg',
         release_date: '2001-12-18',
         vote_average: 8.4,
         vote_count: 23000,
@@ -363,7 +363,7 @@ export const sampleMovies: Movie[] = [
         overview:
             'When larcenous real estate clerk Marion Crane goes on the lam with a wad of cash and hopes of starting a new life, she ends up at the notorious Bates Motel.',
         poster_path: '/yz4QVqPx3h1hD1DfqqQkCq3rmxW.jpg',
-        backdrop_path: '/3md49VBi6ke20Da2UrM3XD6LdLY.jpg',
+        backdrop_path: '/mufF1aYvwdpKerhq5R1YrVcbJLY.jpg',
         release_date: '1960-06-22',
         vote_average: 8.4,
         vote_count: 11000,
@@ -431,7 +431,7 @@ export const sampleMovies: Movie[] = [
         overview:
             'While the Civil War rages on, three men comb the American Southwest in search of a strongbox containing $200,000 in stolen gold.',
         poster_path: '/bX2xnavhMYjWDoZp1VM6VnU1xwe.jpg',
-        backdrop_path: '/gvHPG2Pl9TQBbYpuBdqDLFGNfwT.jpg',
+        backdrop_path: '/Adrip2Jqzw56KeuV2nAxucKMNXA.jpg',
         release_date: '1966-12-23',
         vote_average: 8.5,
         vote_count: 7500,
@@ -604,7 +604,7 @@ export const sampleTVShows: TVShow[] = [
         overview:
             'The misadventures of a group of friends as they navigate the pitfalls of work, life and love in Manhattan.',
         poster_path: '/f496cm9enuEsZkSPzCwnTESEK5s.jpg',
-        backdrop_path: '/efiX8iir6GEBWCD0Vz7cQSWX0L3.jpg',
+        backdrop_path: '/wGI8MPfv23B80AF5Yrg1Ss2mVCp.jpg',
         first_air_date: '1994-09-22',
         vote_average: 8.4,
         vote_count: 6000,
@@ -620,8 +620,8 @@ export const sampleTVShows: TVShow[] = [
         original_name: 'Family Guy',
         overview:
             'Sick, twisted, politically incorrect and Freakin Sweet animated series featuring the adventures of the dysfunctional Griffin family.',
-        poster_path: '/y0HUz4eUNUe3TeEd8fQWYazPaC7.jpg',
-        backdrop_path: '/rT0W7Q8fZ0YP2jKHT1qQ0Y6TcQc.jpg',
+        poster_path: '/8o8kiBkWFK3gVytHdyzEWUBXVfK.jpg',
+        backdrop_path: '/lgGZ2ysbRyAOi2VgIZpp6k8qILj.jpg',
         first_air_date: '1999-01-31',
         vote_average: 7.3,
         vote_count: 4000,
@@ -637,8 +637,8 @@ export const sampleTVShows: TVShow[] = [
         original_name: 'Supernatural',
         overview:
             'When they were boys, Sam and Dean Winchester lost their mother to a mysterious and demonic supernatural force.',
-        poster_path: '/KoYWXbnYuS3b0GyQPkbuexlVK9.jpg',
-        backdrop_path: '/o9OKe3M06QMLOzTl3l6GStYtnE9.jpg',
+        poster_path: '/u40gJarLPlIkwouKlzGdobQOV9k.jpg',
+        backdrop_path: '/ro0tlgnsco4SwbdAgmscLkSlMSL.jpg',
         first_air_date: '2005-09-13',
         vote_average: 8.3,
         vote_count: 5000,
@@ -654,8 +654,8 @@ export const sampleTVShows: TVShow[] = [
         original_name: 'The Boys',
         overview:
             'A group of vigilantes known informally as "The Boys" set out to take down corrupt superheroes with no more than blue-collar grit and a willingness to fight dirty.',
-        poster_path: '/2zmTngn1tYC1AvfnrFLhxeD82hz.jpg',
-        backdrop_path: '/mGVrXeIHyEc89C4Uaj6Qp0LGLGw.jpg',
+        poster_path: '/4HTfd1PhgFUenJxVuBDNdLmdr0c.jpg',
+        backdrop_path: '/2eIlCirgcvEwmCSYh2wDfz5Sxvz.jpg',
         first_air_date: '2019-07-26',
         vote_average: 8.5,
         vote_count: 8000,
@@ -671,8 +671,8 @@ export const sampleTVShows: TVShow[] = [
         original_name: 'Criminal Minds',
         overview:
             "An elite team of FBI profilers analyze the country's most twisted criminal minds, anticipating their next moves before they strike again.",
-        poster_path: '/7TCwgX7oQKxcWYEhSPRmaHe6ULN.jpg',
-        backdrop_path: '/85WoMVoN3S0mDyFBThXA5FLHHA3.jpg',
+        poster_path: '/gigxjNnACiXAfrwoMox5WJFgc0I.jpg',
+        backdrop_path: '/65Y6PweSvQ1OOFBzStybjipURRP.jpg',
         first_air_date: '2005-09-22',
         vote_average: 8.3,
         vote_count: 3500,
@@ -739,8 +739,8 @@ export const sampleTVShows: TVShow[] = [
         original_name: 'The Lord of the Rings: The Rings of Power',
         overview:
             'Beginning in a time of relative peace, we follow an ensemble cast of characters as they confront the re-emergence of evil to Middle-earth.',
-        poster_path: '/mYLOqiStMxDK3fYZFirgrMt8z5d.jpg',
-        backdrop_path: '/1syhqGHEZIyvvtDnbqwVLs14IDN.jpg',
+        poster_path: '/kf5Hz70tjNAHg4swGDzOr9BfoZ1.jpg',
+        backdrop_path: '/ukewRnKD05Si7DkED2tSKBTXeEd.jpg',
         first_air_date: '2022-09-01',
         vote_average: 7.4,
         vote_count: 2800,
