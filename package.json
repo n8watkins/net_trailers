@@ -17,6 +17,7 @@
         "test:cron": "node scripts/test-cron.js",
         "test:cron:v2": "node scripts/test-cron-v2.js",
         "test:trending-notifications": "npx tsx scripts/test-trending-notifications.ts",
+        "test:notification": "npx tsx scripts/test-create-notification.ts",
         "test:persistence": "npx tsx test-persistence-flow.ts",
         "test:create-user": "npx tsx scripts/create-test-user.ts",
         "test:verify-user": "npx tsx scripts/create-test-user.ts verify",

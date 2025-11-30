@@ -79,9 +79,6 @@ export async function GET(request: NextRequest) {
             // Filter out adult content
             if (person.adult) return false
 
-            // Only include people with profile images for better UX
-            if (!person.profile_path) return false
-
             // Filter by department if specified
             if (department && department !== 'all') {
                 const personDept = person.known_for_department?.toLowerCase()
@@ -99,10 +96,11 @@ export async function GET(request: NextRequest) {
         // Transform known_for to include media_type properly
         const transformedResults = filteredResults.map((person) => ({
             ...person,
-            known_for: person.known_for?.map((item) => ({
-                ...item,
-                media_type: item.media_type,
-            })) || [],
+            known_for:
+                person.known_for?.map((item) => ({
+                    ...item,
+                    media_type: item.media_type,
+                })) || [],
         }))
 
         const responseData = {
