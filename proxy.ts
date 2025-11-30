@@ -84,7 +84,7 @@ export async function proxy(request: NextRequest) {
 
                 if (size > maxSize) {
                     console.warn(
-                        `[Security] Request body too large: ${size} bytes (max: ${maxSize} bytes) for ${request.nextUrl.pathname}`
+                        `🔒 [Security] Request body too large: ${size} bytes (max: ${maxSize} bytes) for ${request.nextUrl.pathname}`
                     )
                     return NextResponse.json(
                         {
@@ -105,7 +105,7 @@ export async function proxy(request: NextRequest) {
                 !contentType.includes('application/x-www-form-urlencoded')
             ) {
                 console.warn(
-                    `[Security] Invalid Content-Type: ${contentType} for ${request.nextUrl.pathname}`
+                    `🔒 [Security] Invalid Content-Type: ${contentType} for ${request.nextUrl.pathname}`
                 )
                 return NextResponse.json(
                     { error: 'Invalid Content-Type. Expected application/json' },

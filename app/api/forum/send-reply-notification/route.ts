@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
         // Skip if Resend API key is not configured
         const resendApiKey = process.env.RESEND_API_KEY
         if (!resendApiKey || resendApiKey === 'your_resend_api_key_here') {
-            console.log('Resend API key not configured, skipping email notification')
+            console.log('📧 Resend API key not configured, skipping email notification')
             return NextResponse.json({ success: true, skipped: true, reason: 'no-api-key' })
         }
         const resend = new Resend(resendApiKey)
@@ -67,11 +67,11 @@ export async function POST(request: NextRequest) {
             recipientName = userRecord.displayName || 'User'
 
             if (!recipientEmail) {
-                console.log('Recipient has no email, skipping notification')
+                console.log('📧 Recipient has no email, skipping notification')
                 return NextResponse.json({ success: true, skipped: true, reason: 'no-email' })
             }
         } catch (error) {
-            console.error('Failed to get user email:', error)
+            console.error('📧 ❌ Failed to get user email:', error)
             return NextResponse.json({ error: 'Failed to get recipient email' }, { status: 500 })
         }
 
@@ -107,13 +107,13 @@ export async function POST(request: NextRequest) {
         })
 
         if (error) {
-            console.error('Failed to send email:', error)
+            console.error('📧 ❌ Failed to send email:', error)
             return NextResponse.json({ error: error.message }, { status: 500 })
         }
 
         return NextResponse.json({ success: true, data })
     } catch (error) {
-        console.error('Error sending reply notification:', error)
+        console.error('📧 ❌ Error sending reply notification:', error)
         return NextResponse.json(
             { error: error instanceof Error ? error.message : 'Internal server error' },
             { status: 500 }

@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({ isAdmin: true }, { status: 200 })
     } catch (error) {
-        console.error('Admin check error:', error)
+        console.error('👑 ❌ Admin check error:', error)
         return NextResponse.json({ isAdmin: false }, { status: 500 })
     }
 }

@@ -55,7 +55,7 @@ const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ isOpen,
         return keys.map((key, index) => (
             <React.Fragment key={key}>
                 {index > 0 && <span className="text-gray-400 mx-1">+</span>}
-                <kbd className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-200 border border-gray-300 rounded-md shadow-sm">
+                <kbd className="px-2 py-1 text-xs font-semibold rounded bg-zinc-800 text-gray-400 border border-zinc-700/50">
                     {key}
                 </kbd>
             </React.Fragment>
@@ -63,65 +63,82 @@ const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ isOpen,
     }
 
     return (
-        <div className="fixed inset-0 z-modal flex items-center justify-center p-4">
-            {/* Background overlay */}
+        <div
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-modal flex items-center justify-center p-4"
+            onClick={onClose}
+        >
             <div
-                className="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-75"
-                onClick={onClose}
-            />
+                className="relative bg-gradient-to-br from-zinc-900 via-zinc-900/95 to-black rounded-2xl max-w-4xl w-full border border-red-500/30 shadow-2xl shadow-red-500/10 overflow-hidden max-h-[90vh] flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Animated background glow */}
+                <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-64 bg-gradient-radial from-red-500/10 via-transparent to-transparent" />
+                    <div
+                        className="absolute inset-0 bg-gradient-to-t from-red-900/5 via-transparent to-transparent animate-pulse"
+                        style={{ animationDuration: '4s' }}
+                    />
+                </div>
 
-            {/* Modal panel */}
-            <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto px-6 py-5 bg-[#0a0a0a] border border-red-500/40 rounded-xl shadow-2xl shadow-red-500/20">
+                {/* Close Button */}
+                <button
+                    onClick={onClose}
+                    className="absolute top-4 right-4 z-20 p-2 rounded-full bg-zinc-800/60 text-gray-400 hover:text-white hover:bg-zinc-700/80 transition-all duration-300 hover:scale-110"
+                >
+                    <XMarkIcon className="w-5 h-5" />
+                </button>
+
                 {/* Header */}
-                <div className="flex items-center justify-between mb-6">
+                <div className="relative z-10 p-6 border-b border-zinc-800/50 flex-shrink-0">
                     <div className="flex items-center space-x-3">
                         <CommandLineIcon className="w-6 h-6 text-red-500" />
                         <h2 className="text-xl font-semibold text-white">Keyboard Shortcuts</h2>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="p-1 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-gray-700"
-                    >
-                        <XMarkIcon className="w-6 h-6" />
-                    </button>
                 </div>
 
                 {/* Content */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {Object.entries(shortcutsByCategory).map(([category, categoryShortcuts]) => (
-                        <div key={category} className="space-y-4">
-                            <h3 className="text-lg font-medium text-red-400 border-b border-gray-600 pb-2">
-                                {category}
-                            </h3>
-                            <div className="space-y-3">
-                                {categoryShortcuts.map((shortcut, index) => (
-                                    <div key={index} className="flex items-center justify-between">
-                                        <span className="text-gray-300 text-sm flex-1 pr-4">
-                                            {shortcut.description}
-                                        </span>
-                                        <div className="flex items-center space-x-1 flex-shrink-0">
-                                            {renderKeys(shortcut.keys)}
-                                        </div>
+                <div className="relative z-10 flex-1 overflow-y-auto p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {Object.entries(shortcutsByCategory).map(
+                            ([category, categoryShortcuts]) => (
+                                <div key={category} className="space-y-4">
+                                    <h3 className="text-lg font-medium text-red-400 border-b border-zinc-800/50 pb-2">
+                                        {category}
+                                    </h3>
+                                    <div className="space-y-3">
+                                        {categoryShortcuts.map((shortcut, index) => (
+                                            <div
+                                                key={index}
+                                                className="flex items-center justify-between"
+                                            >
+                                                <span className="text-gray-300 text-sm flex-1 pr-4">
+                                                    {shortcut.description}
+                                                </span>
+                                                <div className="flex items-center space-x-1 flex-shrink-0">
+                                                    {renderKeys(shortcut.keys)}
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
-                                ))}
-                            </div>
-                        </div>
-                    ))}
+                                </div>
+                            )
+                        )}
+                    </div>
                 </div>
 
                 {/* Footer */}
-                <div className="mt-8 pt-6 border-t border-gray-600">
+                <div className="relative z-10 px-6 py-4 border-t border-zinc-800/50 flex-shrink-0">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
                         <p className="text-gray-400 text-sm">
                             Press{' '}
-                            <kbd className="px-1 py-0.5 text-xs font-semibold text-gray-800 bg-gray-200 border border-gray-300 rounded">
+                            <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 text-gray-400 text-xs">
                                 ?
                             </kbd>{' '}
                             to open this menu anytime
                         </p>
                         <button
                             onClick={onClose}
-                            className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+                            className="px-4 py-2 text-sm font-medium text-white bg-red-500/90 hover:bg-red-600 rounded-lg transition-all duration-300 shadow-[0_0_10px_rgba(239,68,68,0.3)]"
                         >
                             Got it!
                         </button>

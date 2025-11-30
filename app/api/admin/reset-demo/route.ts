@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
                 await adminDb.collection('signupLog').doc(user.uid).delete()
                 deleteCount++
             } catch (error) {
-                console.error(`Failed to delete user ${user.uid}:`, error)
+                console.error(`👑 ❌ Failed to delete user ${user.uid}:`, error)
             }
         }
 
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
             remaining: usersToKeep.length,
         })
     } catch (error) {
-        console.error('Error resetting demo accounts:', error)
+        console.error('👑 ❌ Error resetting demo accounts:', error)
         return NextResponse.json({ error: 'Failed to reset' }, { status: 500 })
     }
 }

@@ -110,7 +110,7 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
 
         return profile
     } catch (error) {
-        console.error('Error getting profile:', error)
+        console.error('🔥 ❌ Error getting profile:', error)
         throw error
     }
 }
@@ -133,7 +133,7 @@ export async function getProfileByUsername(username: string): Promise<UserProfil
         // 2. Get profile with that userId
         return await getProfile(userId)
     } catch (error) {
-        console.error('Error getting profile by username:', error)
+        console.error('🔥 ❌ Error getting profile by username:', error)
         throw error
     }
 }
@@ -253,7 +253,7 @@ export async function checkUsernameAvailability(
             error: 'Username is already taken',
         }
     } catch (error) {
-        console.error('Error checking username availability:', error)
+        console.error('🔥 ❌ Error checking username availability:', error)
         return {
             available: false,
             error: 'Could not verify username availability',
@@ -300,7 +300,7 @@ export async function uploadAvatar(userId: string, file: File): Promise<string> 
 
         return downloadURL
     } catch (error) {
-        console.error('Error uploading avatar:', error)
+        console.error('🔥 ❌ Error uploading avatar:', error)
         throw error
     }
 }
@@ -323,7 +323,7 @@ export async function deleteAvatar(userId: string, avatarUrl: string): Promise<v
         await deleteObject(avatarRef)
     } catch (error) {
         // Log but don't throw - avatar might already be deleted or URL invalid
-        console.warn('Could not delete avatar from storage:', error)
+        console.warn('🔥 ⚠️ Could not delete avatar from storage:', error)
     }
 }
 
@@ -342,7 +342,7 @@ export async function incrementProfileStats(
             updatedAt: Date.now(),
         })
     } catch (error) {
-        console.error('Error incrementing profile stats:', error)
+        console.error('🔥 ❌ Error incrementing profile stats:', error)
         throw error
     }
 }
@@ -378,7 +378,7 @@ export async function getProfilesByUserIds(userIds: string[]): Promise<Map<strin
 
         return profiles
     } catch (error) {
-        console.error('Error getting profiles by user IDs:', error)
+        console.error('🔥 ❌ Error getting profiles by user IDs:', error)
         throw error
     }
 }
@@ -416,7 +416,7 @@ export async function searchProfiles(
 
         return profiles
     } catch (error) {
-        console.error('Error searching profiles:', error)
+        console.error('🔥 ❌ Error searching profiles:', error)
         throw error
     }
 }
@@ -456,7 +456,7 @@ export async function updateProfileVisibility(
 
         return newVisibility
     } catch (error) {
-        console.error('Error updating profile visibility:', error)
+        console.error('🔥 ❌ Error updating profile visibility:', error)
         throw error
     }
 }
@@ -479,7 +479,7 @@ export async function getProfileVisibility(userId: string): Promise<ProfileVisib
             ...(profile.visibility ?? {}),
         }
     } catch (error) {
-        console.error('Error getting profile visibility:', error)
+        console.error('🔥 ❌ Error getting profile visibility:', error)
         return { ...DEFAULT_PROFILE_VISIBILITY }
     }
 }

@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
 
         if (isDemoMode) {
             // Demo mode: Always find at least one new item
-            console.log('[Trending] Running in DEMO mode')
+            console.log('📊 [Trending] Running in DEMO mode')
             newMovies = moviesData.results.slice(0, 1)
             newShows = tvData.results.slice(0, 1)
         } else {
@@ -89,7 +89,9 @@ export async function GET(req: NextRequest) {
             newShows = compareTrendingContent(previousData.tvSnapshot || [], tvData.results)
         }
 
-        console.log(`[Trending] Found ${newMovies.length} new movies, ${newShows.length} new shows`)
+        console.log(
+            `📊 [Trending] Found ${newMovies.length} new movies, ${newShows.length} new shows`
+        )
 
         // Create notifications for users
         let notificationCount = 0
@@ -157,9 +159,9 @@ export async function GET(req: NextRequest) {
             }
         }
 
-        console.log(`[Trending] Skipped ${skippedUsers} users (opted out or already seen)`)
+        console.log(`📊 [Trending] Skipped ${skippedUsers} users (opted out or already seen)`)
 
-        console.log(`[Trending] Created ${notificationCount} notifications`)
+        console.log(`📊 [Trending] Created ${notificationCount} notifications`)
 
         // Update snapshot
         await db.doc('system/trending').set({
@@ -178,7 +180,7 @@ export async function GET(req: NextRequest) {
             demoMode: isDemoMode,
         })
     } catch (error) {
-        console.error('Trending update error:', error)
+        console.error('📊 ❌ Trending update error:', error)
         return NextResponse.json(
             {
                 error: 'Failed to update trending',

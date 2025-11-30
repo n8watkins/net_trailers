@@ -161,7 +161,7 @@ export async function createComment(
     // Don't await to avoid blocking the comment creation
     sendCommentEmailNotification(userId, username, comment, request.parentCommentId ?? null).catch(
         (error) => {
-            console.error('Error sending comment email notification:', error)
+            console.error('📧 ❌ Error sending comment email notification:', error)
             // Don't throw - email failure shouldn't fail comment creation
         }
     )
@@ -255,9 +255,11 @@ async function sendCommentEmailNotification(
             parentCommentText,
         })
 
-        console.log(`Sent comment email notification to ${email} for ranking "${ranking.title}"`)
+        console.log(
+            `📧 ✅ Sent comment email notification to ${email} for ranking "${ranking.title}"`
+        )
     } catch (error) {
-        console.error('Error in sendCommentEmailNotification:', error)
+        console.error('📧 ❌ Error in sendCommentEmailNotification:', error)
         throw error
     }
 }
@@ -296,7 +298,7 @@ export async function getRankingComments(
         const lastDoc = snapshot.docs[snapshot.docs.length - 1] || null
         return createPaginatedResult(comments, lastDoc, limit)
     } catch (error) {
-        console.error('Error getting ranking comments:', error)
+        console.error('🔥 ❌ Error getting ranking comments:', error)
         throw error
     }
 }
@@ -338,7 +340,7 @@ export async function getPositionComments(
         const lastDoc = snapshot.docs[snapshot.docs.length - 1] || null
         return createPaginatedResult(comments, lastDoc, limit)
     } catch (error) {
-        console.error('Error getting position comments:', error)
+        console.error('🔥 ❌ Error getting position comments:', error)
         throw error
     }
 }
@@ -430,7 +432,7 @@ export async function likeComment(userId: string, commentId: string): Promise<vo
             })
         })
     } catch (error) {
-        console.error('Error liking comment:', error)
+        console.error('🔥 ❌ Error liking comment:', error)
         throw error
     }
 }
@@ -460,7 +462,7 @@ export async function unlikeComment(userId: string, commentId: string): Promise<
             })
         })
     } catch (error) {
-        console.error('Error unliking comment:', error)
+        console.error('🔥 ❌ Error unliking comment:', error)
         throw error
     }
 }
@@ -476,7 +478,7 @@ export async function hasUserLikedComment(userId: string, commentId: string): Pr
 
         return likeDoc.exists()
     } catch (error) {
-        console.error('Error checking if user liked comment:', error)
+        console.error('🔥 ❌ Error checking if user liked comment:', error)
         return false
     }
 }
@@ -514,7 +516,7 @@ export async function getUserComments(
         const lastDoc = snapshot.docs[snapshot.docs.length - 1] || null
         return createPaginatedResult(comments, lastDoc, limit)
     } catch (error) {
-        console.error('Error getting user comments:', error)
+        console.error('🔥 ❌ Error getting user comments:', error)
         throw error
     }
 }
@@ -588,7 +590,7 @@ export async function updateRankingCommentsUsername(
             }
         }
     } catch (error) {
-        console.error('Error updating ranking comment usernames:', error)
+        console.error('🔥 ❌ Error updating ranking comment usernames:', error)
         throw error
     }
 }
