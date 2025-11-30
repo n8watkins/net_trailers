@@ -240,34 +240,30 @@ export default function RankingsPage() {
                             </div>
 
                             {/* Subtitle */}
-                            <p className="text-base sm:text-lg text-gray-300 mb-4 text-center max-w-2xl">
+                            <p className="text-base sm:text-lg text-gray-300 mb-6 text-center max-w-2xl">
                                 Create, manage, and share your personalized content rankings
                             </p>
 
-                            {/* Tab Pills */}
+                            {/* Action Row - Tabs, Create & Manage */}
                             <div className="flex flex-wrap gap-2 items-center justify-center mb-5 px-4">
+                                {/* Tab Pills */}
                                 {[
                                     {
                                         value: 'rankings',
                                         label: 'Your Rankings',
                                         icon: TrophyIcon,
-                                        count: rankings.length,
-                                        loading: isLoading,
+                                        disabled: false,
                                     },
                                     {
                                         value: 'comments',
                                         label: 'Comments',
                                         icon: ChatBubbleLeftIcon,
-                                        count: userComments.length,
-                                        loading: isLoadingComments,
                                         disabled: isGuest,
                                     },
                                     {
                                         value: 'liked',
                                         label: 'Liked',
                                         icon: HeartIcon,
-                                        count: likedRankings.length,
-                                        loading: isLoadingLiked,
                                         disabled: isGuest,
                                     },
                                 ].map((tab) => {
@@ -296,23 +292,15 @@ export default function RankingsPage() {
                                                 className={`w-4 h-4 ${isSelected ? 'text-black' : ''}`}
                                             />
                                             <span className="relative z-10">{tab.label}</span>
-                                            {!tab.disabled && (
-                                                <span
-                                                    className={`text-xs ${isSelected ? 'text-black/70' : 'text-gray-500'}`}
-                                                >
-                                                    {tab.loading ? '...' : `(${tab.count})`}
-                                                </span>
-                                            )}
                                             {isSelected && !tab.disabled && (
                                                 <div className="absolute inset-0 rounded-full bg-yellow-500 blur-md opacity-15 animate-pulse" />
                                             )}
                                         </button>
                                     )
                                 })}
-                            </div>
 
-                            {/* Action Row - Create & Manage */}
-                            <div className="flex gap-2 items-center mb-5">
+                                {/* Separator */}
+                                <div className="h-8 w-px bg-zinc-700/50 hidden sm:block" />
                                 {/* Create Ranking Button */}
                                 <button
                                     onClick={handleCreateNew}
@@ -369,7 +357,7 @@ export default function RankingsPage() {
 
                             {/* Enhanced Search Bar */}
                             {showSearch && (
-                                <div className="w-full max-w-3xl relative">
+                                <div className="w-full max-w-4xl relative">
                                     <div className="relative group">
                                         <MagnifyingGlassIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 z-10 transition-colors group-focus-within:text-yellow-400" />
                                         <input
