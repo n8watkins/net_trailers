@@ -101,7 +101,7 @@ async function handlePostFeedback(request: NextRequest, userId: string): Promise
         }
 
         console.log(
-            `[Feedback] ${userId} - ${action} content ${contentId} (${mediaType}) on page ${page}`
+            `📊 [Feedback] ${userId} - ${action} content ${contentId} (${mediaType}) on page ${page}`
         )
 
         return NextResponse.json({
@@ -109,7 +109,7 @@ async function handlePostFeedback(request: NextRequest, userId: string): Promise
             feedback,
         })
     } catch (error) {
-        console.error('Failed to log recommendation feedback:', error)
+        console.error('🔥 ❌ Failed to log recommendation feedback:', error)
         return NextResponse.json(
             {
                 success: false,
@@ -160,7 +160,9 @@ async function handleGetFeedback(request: NextRequest, userId: string): Promise<
             feedback.push(doc.data() as RecommendationFeedback)
         })
 
-        console.log(`[Feedback] Retrieved ${feedback.length} feedback entries for user ${userId}`)
+        console.log(
+            `📊 [Feedback] Retrieved ${feedback.length} feedback entries for user ${userId}`
+        )
 
         return NextResponse.json({
             success: true,
@@ -168,7 +170,7 @@ async function handleGetFeedback(request: NextRequest, userId: string): Promise<
             count: feedback.length,
         })
     } catch (error) {
-        console.error('Failed to get recommendation feedback:', error)
+        console.error('🔥 ❌ Failed to get recommendation feedback:', error)
         return NextResponse.json(
             {
                 success: false,
