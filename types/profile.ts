@@ -127,8 +127,7 @@ export const PROFILE_CONSTRAINTS = {
     USERNAME_PATTERN: /^[a-zA-Z0-9_]+$/,
 
     // Display Name (strict pattern to prevent character substitution)
-    // eslint-disable-next-line no-useless-escape
-    DISPLAY_NAME_PATTERN: /^[a-zA-Z0-9\s\-'\.]+$/,
+    DISPLAY_NAME_PATTERN: /^[a-zA-Z0-9\s\-'.]+$/,
 
     // Description
     MAX_DESCRIPTION_LENGTH: 300,
