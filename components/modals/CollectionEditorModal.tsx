@@ -386,8 +386,11 @@ export default function CollectionEditorModal({
 
     const modalContent = (
         <div className="fixed inset-0 z-modal-editor overflow-y-auto">
-            {/* Backdrop */}
-            <div className="fixed inset-0 z-modal-editor-bg bg-black/60 backdrop-blur-none pointer-events-none" />
+            {/* Atmospheric backdrop */}
+            <div className="fixed inset-0 pointer-events-none z-modal-editor-bg">
+                <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-purple-900/20 via-transparent to-transparent opacity-50" />
+            </div>
 
             {/* Modal */}
             <div
@@ -405,13 +408,13 @@ export default function CollectionEditorModal({
                 }}
             >
                 <div
-                    className={`relative z-modal-editor bg-zinc-900 rounded-lg shadow-2xl w-full border border-gray-700 ${
+                    className={`relative z-modal-editor bg-gradient-to-br from-zinc-900/95 via-black/95 to-zinc-900/95 backdrop-blur-xl rounded-2xl shadow-2xl w-full border border-zinc-800/50 ${
                         isSystemCollection ? 'max-w-2xl' : 'max-w-7xl'
                     }`}
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
-                    <div className="flex items-center justify-between p-6 border-b border-gray-700">
+                    <div className="flex items-center justify-between p-6 border-b border-zinc-800/50">
                         <div>
                             <h2 className="text-xl font-bold text-white">Edit Collection</h2>
                         </div>
@@ -923,8 +926,11 @@ export default function CollectionEditorModal({
     // Genre Modal
     const genreModal = showGenreModal && (
         <div className="fixed inset-0 z-modal-editor-inner overflow-y-auto">
-            {/* Backdrop */}
-            <div className="fixed inset-0 z-modal-editor bg-black/60 backdrop-blur-none pointer-events-none" />
+            {/* Atmospheric backdrop */}
+            <div className="fixed inset-0 pointer-events-none z-modal-editor">
+                <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-purple-900/20 via-transparent to-transparent opacity-50" />
+            </div>
 
             {/* Modal */}
             <div
@@ -945,11 +951,11 @@ export default function CollectionEditorModal({
                 }}
             >
                 <div
-                    className="relative z-modal-editor-inner bg-zinc-900 rounded-lg shadow-2xl max-w-4xl w-full border border-gray-700"
+                    className="relative z-modal-editor-inner bg-gradient-to-br from-zinc-900/95 via-black/95 to-zinc-900/95 backdrop-blur-xl rounded-2xl shadow-2xl max-w-4xl w-full border border-zinc-800/50"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
-                    <div className="flex items-center justify-between p-6 border-b border-gray-700">
+                    <div className="flex items-center justify-between p-6 border-b border-zinc-800/50">
                         <div>
                             <h3 className="text-xl font-bold text-white">Edit Genre Collections</h3>
                         </div>
