@@ -387,7 +387,7 @@ export default function CollectionEditorModal({
     const modalContent = (
         <div className="fixed inset-0 z-modal-editor overflow-y-auto">
             {/* Backdrop */}
-            <div className="fixed inset-0 z-modal-editor-bg bg-black/80 backdrop-blur-sm pointer-events-none" />
+            <div className="fixed inset-0 z-modal-editor-bg bg-black/60 backdrop-blur-none pointer-events-none" />
 
             {/* Modal */}
             <div
@@ -405,7 +405,7 @@ export default function CollectionEditorModal({
                 }}
             >
                 <div
-                    className={`relative z-modal-editor bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-lg shadow-2xl w-full border border-gray-700 ${
+                    className={`relative z-modal-editor bg-zinc-900 rounded-lg shadow-2xl w-full border border-gray-700 ${
                         isSystemCollection ? 'max-w-xl' : 'max-w-6xl'
                     }`}
                     onClick={(e) => e.stopPropagation()}
@@ -936,7 +936,7 @@ export default function CollectionEditorModal({
     const genreModal = showGenreModal && (
         <div className="fixed inset-0 z-modal-editor-inner overflow-y-auto">
             {/* Backdrop */}
-            <div className="fixed inset-0 z-modal-editor bg-black/80 backdrop-blur-sm pointer-events-none" />
+            <div className="fixed inset-0 z-modal-editor bg-black/60 backdrop-blur-none pointer-events-none" />
 
             {/* Modal */}
             <div
@@ -957,7 +957,7 @@ export default function CollectionEditorModal({
                 }}
             >
                 <div
-                    className="relative z-modal-editor-inner bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-lg shadow-2xl max-w-4xl w-full border border-gray-700"
+                    className="relative z-modal-editor-inner bg-zinc-900 rounded-lg shadow-2xl max-w-4xl w-full border border-gray-700"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
