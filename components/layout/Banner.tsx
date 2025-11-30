@@ -146,22 +146,6 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
 
     return (
         <>
-            {/* Atmospheric Background Layers - Fixed */}
-            <div className="fixed inset-0 pointer-events-none z-0">
-                <div className="absolute inset-0 bg-black" />
-                {/* Radial spotlight gradient (Netflix red theme) */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-red-900/15 via-transparent to-transparent opacity-50" />
-                {/* Vignette overlay for depth */}
-                <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black opacity-60" />
-                {/* Subtle film grain texture */}
-                <div
-                    className="absolute inset-0 opacity-[0.015]"
-                    style={{
-                        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-                    }}
-                />
-            </div>
-
             {/* AI-Powered Smart Search Overlay - Position varies by variant */}
             {/* Mobile: pushed lower to avoid hero text, Desktop: centered */}
             <div
@@ -196,10 +180,8 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
                             style={{
                                 objectFit: 'cover',
                             }}
-                            className={`select-none transition-all duration-500 ease-out object-[10%_center] sm:object-[15%_center] md:object-center ${
-                                isTransitioning
-                                    ? 'opacity-0 scale-105 blur-sm'
-                                    : 'opacity-100 scale-100 blur-0'
+                            className={`select-none transition-opacity duration-300 object-[10%_center] sm:object-[15%_center] md:object-center ${
+                                isTransitioning ? 'opacity-0' : 'opacity-100'
                             }`}
                             onLoad={() => {
                                 // Ensure callback is called when Next.js Image actually renders
@@ -216,18 +198,14 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
                         />
                     </div>
                 )}
-                {/* Enhanced Bottom Gradient with Vignetting - VARIANT SPECIFIC */}
+                {/* Bottom gradient - VARIANT SPECIFIC */}
                 <div
                     className={`absolute bottom-0 left-0 right-0 pointer-events-none ${
                         variant === 'compact'
-                            ? 'h-[85vh] bg-gradient-to-t from-black via-black 30% via-black/95 45% via-black/70 60% to-transparent 75%'
-                            : 'h-[40rem] bg-gradient-to-t from-black via-black/95 40% via-black/75 60% via-black/50 75% to-transparent'
+                            ? 'h-[85vh] bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a] 30% via-[#0a0a0a]/90 50% via-[#0a0a0a]/50 60% to-transparent 75%'
+                            : 'h-[32rem] bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/80 50% via-[#0a0a0a]/60 70% to-transparent'
                     }`}
-                />
-                {/* Additional edge vignetting for cinematic depth */}
-                <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent 20% to-transparent pointer-events-none" />
-                <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent 25% via-transparent 75% to-black/60 pointer-events-none" />
-                <div className="absolute inset-0 bg-gradient-to-l from-black/40 via-transparent 30% to-transparent pointer-events-none" />
+                ></div>
             </div>
 
             {/* movie info background gradient */}
@@ -240,39 +218,28 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
                 }`}
             >
                 <div
-                    className={`max-w-xl lg:max-w-2xl space-y-3 sm:space-y-4 md:space-y-6 transition-all duration-500 ease-out ${
+                    className={`max-w-xl lg:max-w-2xl space-y-3 sm:space-y-4 md:space-y-6 transition-all duration-300 ease-in-out ${
                         isTransitioning
-                            ? 'opacity-0 transform translate-y-6 scale-95'
-                            : 'opacity-100 transform translate-y-0 scale-100'
+                            ? 'opacity-0 transform translate-y-4'
+                            : 'opacity-100 transform translate-y-0'
                     }`}
                 >
                     {featuredContent ? (
                         <>
-                            {/* Enhanced Title with Gradient and Glow */}
-                            <h1 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl xl:text-6xl font-black leading-tight tracking-tight">
-                                <span className="bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent drop-shadow-[0_4px_12px_rgba(0,0,0,0.7)]">
-                                    {getTitle(featuredContent)}
-                                </span>
-                                {/* Subtle text glow behind title */}
-                                <div className="absolute inset-0 bg-white/5 blur-3xl -z-10" />
+                            <h1 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight">
+                                {getTitle(featuredContent)}
                             </h1>
-
-                            {/* Enhanced Metadata with Glassy Pills */}
                             <div className="flex items-center gap-2 mb-2">
-                                <span className="px-3 py-1 text-xs md:text-sm bg-zinc-900/60 backdrop-blur-md border border-zinc-700/50 rounded-full text-gray-200 font-semibold">
+                                <span className="px-3 py-1.5 text-sm md:text-base bg-zinc-800/70 backdrop-blur-sm border border-zinc-700/50 rounded-full text-gray-200 font-semibold">
                                     {getContentType(featuredContent)}
                                 </span>
-                                <span className="px-3 py-1 text-xs md:text-sm bg-zinc-900/60 backdrop-blur-md border border-zinc-700/50 rounded-full text-gray-200 font-semibold">
+                                <span className="px-3 py-1.5 text-sm md:text-base bg-zinc-800/70 backdrop-blur-sm border border-zinc-700/50 rounded-full text-gray-200 font-semibold">
                                     {getYear(featuredContent)}
                                 </span>
                             </div>
-
-                            {/* Enhanced Description with Background Container */}
-                            <div className="bg-black/30 backdrop-blur-sm rounded-lg p-4 max-w-lg lg:max-w-xl border border-white/5">
-                                <p className="text-xs md:text-base lg:text-lg leading-relaxed text-gray-100 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-                                    {truncateString(featuredContent?.overview)}
-                                </p>
-                            </div>
+                            <p className="text-xs md:text-base lg:text-lg leading-relaxed text-gray-200 max-w-lg lg:max-w-xl">
+                                {truncateString(featuredContent?.overview)}
+                            </p>
                         </>
                     ) : (
                         <>
@@ -289,11 +256,10 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
                         </>
                     )}
 
-                    {/* Premium Buttons with Netflix-Red Theme */}
+                    {/* Buttons*/}
                     <div className="flex gap-2 sm:gap-3 md:gap-4 pt-3 md:pt-4">
-                        {/* Play Button - Netflix Red with Shimmer */}
                         <button
-                            className="group relative bannerButton bg-gradient-to-r from-red-600 via-red-700 to-red-900 text-white font-black transition-all duration-300 hover:scale-105 shadow-[0_0_30px_rgba(220,38,38,0.5)] hover:shadow-[0_0_50px_rgba(220,38,38,0.7)] overflow-hidden border border-red-500/30"
+                            className="bannerButton bg-white text-black hover:bg-white/90 hover:scale-105 transition-all duration-200 font-bold"
                             onClick={() => {
                                 if (featuredContent) {
                                     // Play mode - autoPlay=true, autoPlayWithSound=true (starts with sound)
@@ -301,17 +267,11 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
                                 }
                             }}
                         >
-                            <PlayIcon className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 lg:h-7 lg:w-7 relative z-10" />
-                            <span className="text-xs sm:text-sm md:text-base lg:text-lg relative z-10">
-                                Play
-                            </span>
-                            {/* Shimmer effect */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
+                            <PlayIcon className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 lg:h-7 lg:w-7" />
+                            <span className="text-xs sm:text-sm md:text-base lg:text-lg">Play</span>
                         </button>
-
-                        {/* More Info Button - Glassy */}
                         <button
-                            className="bannerButton bg-zinc-900/60 backdrop-blur-lg border border-zinc-700/50 text-white font-semibold transition-all duration-300 hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:bg-zinc-800/70 hover:border-zinc-600"
+                            className="bannerButton bg-gray-600/70 text-white hover:bg-gray-600/50 transition-all duration-200 font-semibold backdrop-blur-sm"
                             onClick={() => {
                                 if (featuredContent) {
                                     // More info mode - autoPlay=true, autoPlayWithSound=false (starts muted)
@@ -327,7 +287,7 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
                     </div>
                 </div>
 
-                {/* Enhanced Image-based Pagination - Premium Glow Effects */}
+                {/* Image-based pagination - hidden on mobile/tablet, higher on desktop */}
                 {carouselContent.length > 1 && (
                     <div
                         className={`hidden lg:flex absolute right-4 sm:right-6 md:right-8 lg:right-12 space-x-4 z-20 ${
@@ -340,16 +300,16 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
                             <button
                                 key={index}
                                 onClick={() => goToSlide(index)}
-                                className={`group relative transition-all duration-500 ease-out rounded-lg overflow-hidden ${
+                                className={`relative transition-all duration-300 rounded-md overflow-hidden ${
                                     index === currentIndex
-                                        ? 'w-16 h-24 sm:w-20 sm:h-30 md:w-24 md:h-36 ring-2 ring-red-500 shadow-[0_0_20px_rgba(220,38,38,0.6),0_0_40px_rgba(220,38,38,0.3)]'
-                                        : 'w-12 h-18 sm:w-14 sm:h-21 md:w-16 md:h-24 hover:scale-110 shadow-[0_0_12px_rgba(0,0,0,0.5)] hover:shadow-[0_0_20px_rgba(220,38,38,0.2)]'
+                                        ? 'w-16 h-24 sm:w-20 sm:h-30 md:w-24 md:h-36 ring-1 ring-red-500/50 shadow-[0_0_15px_rgba(220,38,38,0.4),0_0_30px_rgba(220,38,38,0.2)]'
+                                        : 'w-12 h-18 sm:w-14 sm:h-21 md:w-16 md:h-24 hover:scale-105 shadow-[0_0_8px_rgba(0,0,0,0.3)]'
                                 }`}
                                 style={{
                                     opacity: isTransitioning && index === currentIndex ? 0.7 : 1,
                                     transform:
                                         index === currentIndex
-                                            ? 'scale(1.15) translateY(-16px)'
+                                            ? 'scale(1.1) translateY(-12px)'
                                             : 'scale(1)',
                                     transformOrigin: 'center center',
                                 }}
@@ -365,17 +325,9 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
                                     sizes="(max-width: 640px) 200px, (max-width: 768px) 200px, 200px"
                                 />
 
-                                {/* Overlay for non-selected items with backdrop blur */}
+                                {/* Overlay for non-selected items */}
                                 {index !== currentIndex && (
-                                    <div className="absolute inset-0 bg-black/70 backdrop-blur-[1px] group-hover:bg-black/50 group-hover:backdrop-blur-0 transition-all duration-300"></div>
-                                )}
-
-                                {/* Active glow pulse effect */}
-                                {index === currentIndex && (
-                                    <>
-                                        <div className="absolute inset-0 ring-2 ring-red-500 rounded-lg animate-pulse" />
-                                        <div className="absolute -inset-1 bg-red-500/20 blur-xl rounded-lg" />
-                                    </>
+                                    <div className="absolute inset-0 bg-black/60 hover:bg-black/40 transition-all duration-300"></div>
                                 )}
                             </button>
                         ))}
