@@ -306,7 +306,7 @@ export default function PollsContent() {
                         </div>
 
                         {/* Enhanced Search Bar */}
-                        <div className="w-full max-w-3xl relative">
+                        <div className="w-full max-w-4xl relative">
                             <div className="relative group">
                                 <MagnifyingGlassIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 z-10 transition-colors group-focus-within:text-pink-400" />
                                 <input

@@ -224,7 +224,7 @@ export default function WatchHistoryPage() {
 
                             {/* Filter Row - Pills on left, Manage on right */}
                             {showFiltersAndSearch && (
-                                <div className="flex flex-col sm:flex-row gap-4 items-center justify-between w-full max-w-3xl mb-5 px-4">
+                                <div className="flex flex-col sm:flex-row gap-4 items-center justify-between w-full max-w-4xl mb-5 px-4">
                                     {/* Date Filter Pills */}
                                     <div className="flex gap-2 items-center flex-wrap justify-center sm:justify-start">
                                         {[
@@ -315,7 +315,7 @@ export default function WatchHistoryPage() {
 
                             {/* Enhanced Search Bar */}
                             {showFiltersAndSearch && (
-                                <div className="w-full max-w-3xl relative">
+                                <div className="w-full max-w-4xl relative">
                                     <div className="relative group">
                                         <MagnifyingGlassIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 z-10 transition-colors group-focus-within:text-purple-400" />
                                         <input

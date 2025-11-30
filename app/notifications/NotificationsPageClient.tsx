@@ -172,7 +172,7 @@ export default function NotificationsPageClient() {
 
                             {/* Action Buttons Row */}
                             {!isLoading && !isGuest && (
-                                <div className="flex flex-col sm:flex-row gap-4 items-center justify-center w-full max-w-3xl mb-5 px-4">
+                                <div className="flex flex-col sm:flex-row gap-4 items-center justify-center w-full max-w-4xl mb-5 px-4">
                                     {/* Left spacer for centering on desktop */}
                                     <div className="hidden sm:block flex-1" />
 

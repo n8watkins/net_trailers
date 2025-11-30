@@ -279,7 +279,7 @@ function RatingsPageContent() {
                         </p>
 
                         {/* Filter Row - Pills on left, Actions on right */}
-                        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between w-full max-w-3xl mb-5 px-4">
+                        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between w-full max-w-4xl mb-5 px-4">
                             {/* Category Pills - Liked/Disliked */}
                             <div className="flex gap-2 items-center">
                                 {[
@@ -387,7 +387,7 @@ function RatingsPageContent() {
                         </div>
 
                         {/* Enhanced Search Bar */}
-                        <div className="w-full max-w-3xl relative">
+                        <div className="w-full max-w-4xl relative">
                             <div className="relative group">
                                 <MagnifyingGlassIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 z-10 transition-colors group-focus-within:text-purple-400" />
                                 <input
