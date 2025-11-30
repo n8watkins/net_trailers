@@ -9,13 +9,14 @@
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import SubPageLayout from '../../components/layout/SubPageLayout'
-import { ClockIcon, CalendarIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { ClockIcon, CalendarIcon, XMarkIcon, MicrophoneIcon } from '@heroicons/react/24/outline'
 import {
     Cog6ToothIcon,
     ChevronDownIcon,
     TrashIcon,
     MagnifyingGlassIcon,
 } from '@heroicons/react/24/solid'
+import { useVoiceInput } from '../../hooks/useVoiceInput'
 import ContentCard from '../../components/common/ContentCard'
 import ContentGridSpacer from '../../components/common/ContentGridSpacer'
 import NetflixLoader from '../../components/common/NetflixLoader'
@@ -31,7 +32,24 @@ export default function WatchHistoryPage() {
     const [searchQuery, setSearchQuery] = useState('')
     const [filter, setFilter] = useState<'all' | 'today' | 'week' | 'month'>('all')
     const [showManageDropdown, setShowManageDropdown] = useState(false)
+    const [isMounted, setIsMounted] = useState(false)
     const manageDropdownRef = useRef<HTMLDivElement>(null)
+
+    // Voice input
+    const { isListening, isSupported, transcript, startListening, stopListening } = useVoiceInput({
+        onResult: (transcript) => {
+            setSearchQuery(transcript)
+        },
+        onError: (error) => {
+            showError(error)
+        },
+        sourceId: 'history-search',
+    })
+
+    // Track client-side mount
+    useEffect(() => {
+        setIsMounted(true)
+    }, [])
 
     useEffect(() => {
         document.title = 'Watch History - NetTrailers'
@@ -153,7 +171,7 @@ export default function WatchHistoryPage() {
                 {/* Content Container */}
                 <div className="relative z-10">
                     {/* Cinematic Hero Header */}
-                    <div className="relative overflow-hidden pt-4">
+                    <div className="relative overflow-hidden pt-12">
                         {/* Animated Background Gradients */}
                         <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900/80 to-black" />
                         <div
@@ -167,7 +185,7 @@ export default function WatchHistoryPage() {
                         <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60" />
 
                         {/* Hero Content */}
-                        <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-6">
+                        <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-4">
                             {/* Title with inline icon */}
                             <div className="flex items-center gap-4 mb-2">
                                 {/* Clock Icon with glow */}
@@ -185,7 +203,7 @@ export default function WatchHistoryPage() {
                             </div>
 
                             {/* Subtitle */}
-                            <p className="text-base sm:text-lg text-gray-300 mb-6 text-center max-w-2xl">
+                            <p className="text-base sm:text-lg text-gray-300 mb-4 text-center max-w-2xl">
                                 Your complete viewing timeline with all watched content.
                             </p>
 
@@ -305,16 +323,42 @@ export default function WatchHistoryPage() {
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
                                             placeholder="Search your history..."
-                                            className="w-full pl-14 pr-14 py-4 bg-zinc-900/40 backdrop-blur-lg border border-zinc-800/50 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:shadow-[0_0_25px_rgba(168,85,247,0.3)] transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700"
+                                            className={`w-full pl-14 ${isMounted && isSupported ? 'pr-24' : 'pr-14'} py-4 bg-zinc-900/40 backdrop-blur-lg border border-zinc-800/50 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:shadow-[0_0_25px_rgba(168,85,247,0.3)] transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700`}
                                         />
-                                        {searchQuery && (
-                                            <button
-                                                onClick={() => setSearchQuery('')}
-                                                className="absolute right-5 top-1/2 -translate-y-1/2 z-10 text-gray-400 hover:text-white transition-colors"
-                                            >
-                                                <XMarkIcon className="w-6 h-6" />
-                                            </button>
-                                        )}
+                                        <div className="absolute right-5 top-1/2 -translate-y-1/2 z-10 flex items-center gap-2">
+                                            {isMounted && isSupported && (
+                                                <button
+                                                    type="button"
+                                                    onClick={async () => {
+                                                        if (isListening) {
+                                                            stopListening()
+                                                        } else {
+                                                            await startListening()
+                                                        }
+                                                    }}
+                                                    className={`p-1.5 rounded-lg transition-all ${
+                                                        isListening
+                                                            ? 'bg-purple-500 text-white animate-pulse'
+                                                            : 'text-gray-400 hover:text-purple-400 hover:bg-purple-500/10'
+                                                    }`}
+                                                    title={
+                                                        isListening
+                                                            ? 'Stop listening'
+                                                            : 'Voice search'
+                                                    }
+                                                >
+                                                    <MicrophoneIcon className="w-5 h-5" />
+                                                </button>
+                                            )}
+                                            {searchQuery && (
+                                                <button
+                                                    onClick={() => setSearchQuery('')}
+                                                    className="text-gray-400 hover:text-white transition-colors"
+                                                >
+                                                    <XMarkIcon className="w-6 h-6" />
+                                                </button>
+                                            )}
+                                        </div>
 
                                         {/* Glowing border effect on focus */}
                                         <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500 to-violet-500 opacity-0 group-focus-within:opacity-20 blur-xl transition-opacity duration-300 -z-10" />
@@ -325,7 +369,7 @@ export default function WatchHistoryPage() {
                     </div>
 
                     {/* Main Content Area */}
-                    <div className="px-6 sm:px-8 lg:px-12 py-8 space-y-6">
+                    <div className="px-6 sm:px-8 lg:px-12 py-4 space-y-6">
                         {/* Loading state */}
                         {isLoading && (
                             <div className="py-16">

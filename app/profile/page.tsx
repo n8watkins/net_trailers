@@ -352,7 +352,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Content Container - with padding for fixed header and sub-nav */}
-            <div className="relative z-10 pt-28 sm:pt-36 md:pt-44">
+            <div className="relative z-10 pt-36 sm:pt-44 md:pt-52">
                 {/* Cinematic Hero Header */}
                 <div className="relative overflow-hidden">
                     {/* Animated Background Gradients */}
