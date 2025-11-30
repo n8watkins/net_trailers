@@ -71,9 +71,7 @@ export function AdvancedFiltersSection({ filters, onChange }: AdvancedFiltersSec
         if (query.trim().length < 2) return []
 
         try {
-            const response = await fetch(
-                `/api/search?query=${encodeURIComponent(query)}&type=person`
-            )
+            const response = await fetch(`/api/search/people?query=${encodeURIComponent(query)}`)
             if (!response.ok) throw new Error('Search failed')
             const data = await response.json()
             return data.results || []
