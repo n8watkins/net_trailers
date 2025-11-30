@@ -3,6 +3,8 @@ import crypto from 'crypto'
 import { getAdminDb } from '@/lib/firebase-admin'
 import { compareTrendingContent, getTrendingTitle } from '@/utils/trendingComparison'
 import { validateAdminRequest } from '@/utils/adminMiddleware'
+import { EmailService } from '@/lib/email/email-service'
+import { Content } from '@/typings'
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY
 const CRON_SECRET = process.env.CRON_SECRET
@@ -93,8 +95,9 @@ export async function GET(req: NextRequest) {
             `📊 [Trending] Found ${newMovies.length} new movies, ${newShows.length} new shows`
         )
 
-        // Create notifications for users
+        // Create notifications and send emails for users (Weekly Digest)
         let notificationCount = 0
+        let emailsSent = 0
         let skippedUsers = 0
 
         if (newMovies.length > 0 || newShows.length > 0) {
@@ -115,14 +118,8 @@ export async function GET(req: NextRequest) {
                     continue
                 }
 
-                // Check if user has logged in since last trending update
-                // Only notify about items that became trending AFTER their last login
-                const lastLoginAt = userData.lastLoginAt || 0
-                if (lastLoginAt >= trendingTimestamp) {
-                    // User already saw the previous trending data, skip
-                    skippedUsers++
-                    continue
-                }
+                // For weekly digest: skip login time check
+                // We want to send emails even if users have been active
 
                 // Check if user has any new trending items in watchlist
                 const matchingMovies = newMovies.filter((movie: any) =>
@@ -137,31 +134,66 @@ export async function GET(req: NextRequest) {
                 // Create notifications for matches (max 3 per user)
                 const totalMatches = [...matchingMovies, ...matchingShows].slice(0, 3)
 
-                for (const item of totalMatches) {
-                    const isMovie = item.title !== undefined
-                    const title = getTrendingTitle(item)
+                if (totalMatches.length > 0) {
+                    // Create in-app notifications
+                    for (const item of totalMatches) {
+                        const isMovie = item.title !== undefined
+                        const title = getTrendingTitle(item)
 
-                    await db.collection(`users/${userDoc.id}/notifications`).add({
-                        type: 'trending_update',
-                        title: 'Now Trending!',
-                        message: `${title} is trending this week`,
-                        contentId: item.id,
-                        mediaType: isMovie ? 'movie' : 'tv',
-                        imageUrl: item.poster_path
-                            ? `https://image.tmdb.org/t/p/w92${item.poster_path}`
-                            : null,
-                        isRead: false,
-                        createdAt: Date.now(),
-                        expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days
-                    })
-                    notificationCount++
+                        await db.collection(`users/${userDoc.id}/notifications`).add({
+                            type: 'trending_update',
+                            title: 'Now Trending!',
+                            message: `${title} is trending this week`,
+                            contentId: item.id,
+                            mediaType: isMovie ? 'movie' : 'tv',
+                            imageUrl: item.poster_path
+                                ? `https://image.tmdb.org/t/p/w92${item.poster_path}`
+                                : null,
+                            isRead: false,
+                            createdAt: Date.now(),
+                            expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days
+                        })
+                        notificationCount++
+                    }
+
+                    // Send weekly digest email if user has opted into email notifications
+                    const emailEnabled = userData.notifications?.email ?? false
+                    if (emailEnabled && userData.email) {
+                        try {
+                            // Prepare trending content for email (top 5 of each)
+                            const trendingMovies = moviesData.results.slice(0, 5).map((m: any) => ({
+                                ...m,
+                                media_type: 'movie' as const,
+                            }))
+                            const trendingShows = tvData.results.slice(0, 5).map((s: any) => ({
+                                ...s,
+                                media_type: 'tv' as const,
+                            }))
+
+                            await EmailService.sendTrendingContent({
+                                to: userData.email,
+                                userName: userData.displayName || userData.email.split('@')[0],
+                                movies: trendingMovies as Content[],
+                                tvShows: trendingShows as Content[],
+                            })
+                            emailsSent++
+                            console.log(
+                                `📧 [Trending] Sent email to ${userData.email} (${totalMatches.length} matches)`
+                            )
+                        } catch (emailError) {
+                            console.error(
+                                `📧 ❌ [Trending] Failed to send email to ${userData.email}:`,
+                                emailError
+                            )
+                        }
+                    }
                 }
             }
         }
 
         console.log(`📊 [Trending] Skipped ${skippedUsers} users (opted out or already seen)`)
-
         console.log(`📊 [Trending] Created ${notificationCount} notifications`)
+        console.log(`📧 [Trending] Sent ${emailsSent} weekly digest emails`)
 
         // Update snapshot
         await db.doc('system/trending').set({
@@ -177,6 +209,7 @@ export async function GET(req: NextRequest) {
             success: true,
             newItems: newMovies.length + newShows.length,
             notifications: notificationCount,
+            emailsSent,
             demoMode: isDemoMode,
         })
     } catch (error) {
