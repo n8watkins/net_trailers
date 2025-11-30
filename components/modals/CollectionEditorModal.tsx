@@ -91,6 +91,7 @@ export default function CollectionEditorModal({
     // Track mousedown location for click-outside detection
     const mouseDownTargetRef = React.useRef<EventTarget | null>(null)
     const genreModalMouseDownTargetRef = React.useRef<EventTarget | null>(null)
+    const identityContainerRef = React.useRef<HTMLDivElement | null>(null)
 
     // Mount the portal after client-side render
     useEffect(() => {
@@ -183,6 +184,23 @@ export default function CollectionEditorModal({
         document.addEventListener('keydown', handleKeyDown)
         return () => document.removeEventListener('keydown', handleKeyDown)
     }, [isOpen, showDeleteModal, showGenreModal, onClose])
+
+    // Handle click-outside for identity edit mode
+    useEffect(() => {
+        if (!isEditingIdentity) return
+
+        const handleClickOutside = (e: MouseEvent) => {
+            if (
+                identityContainerRef.current &&
+                !identityContainerRef.current.contains(e.target as Node)
+            ) {
+                setIsEditingIdentity(false)
+            }
+        }
+
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [isEditingIdentity])
 
     if (!isOpen || !collection) return null
 
@@ -428,6 +446,7 @@ export default function CollectionEditorModal({
                             {/* Collection Identity Section */}
                             {!canOnlyToggle ? (
                                 <div
+                                    ref={identityContainerRef}
                                     className="flex-1 p-4 rounded-xl border-2 transition-all duration-200"
                                     style={{
                                         backgroundColor: `${color}15`,
