@@ -417,24 +417,27 @@ const CollectionPage = ({ params }: CollectionPageProps) => {
 
                             {/* Hero Content */}
                             <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-6">
-                                {/* Icon with glow */}
-                                <div className="relative mb-4">
-                                    <div className="absolute inset-0 bg-blue-500/30 blur-2xl scale-150" />
-                                    {selectedList?.emoji ? (
-                                        <span className="relative text-6xl drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]">
-                                            {selectedList.emoji}
-                                        </span>
-                                    ) : (
-                                        <RectangleStackIcon className="relative w-16 h-16 text-blue-400 drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
-                                    )}
-                                </div>
+                                {/* Title with inline icon */}
+                                <div className="flex items-center gap-4 mb-2">
+                                    {/* Icon with glow */}
+                                    <div className="relative">
+                                        <div className="absolute inset-0 bg-blue-500/30 blur-2xl scale-150" />
+                                        {selectedList?.emoji ? (
+                                            <span className="relative text-5xl sm:text-6xl drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]">
+                                                {selectedList.emoji}
+                                            </span>
+                                        ) : (
+                                            <RectangleStackIcon className="relative w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 text-blue-400 drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
+                                        )}
+                                    </div>
 
-                                {/* Title */}
-                                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-2 text-center tracking-tight">
-                                    <span className="bg-gradient-to-r from-blue-200 via-cyan-100 to-blue-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
-                                        {selectedList?.name || 'Collection'}
-                                    </span>
-                                </h1>
+                                    {/* Title */}
+                                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white text-center tracking-tight">
+                                        <span className="bg-gradient-to-r from-blue-200 via-cyan-100 to-blue-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
+                                            {selectedList?.name || 'Collection'}
+                                        </span>
+                                    </h1>
+                                </div>
 
                                 {/* Subtitle with item count */}
                                 <p className="text-base sm:text-lg text-gray-300 mb-6 text-center max-w-2xl">

@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { PROFILE_CONSTRAINTS } from '@/types/profile'
 import { containsInappropriateContent as checkDisplayNameInappropriate } from './displayNameValidation'
 import { containsInappropriateContent as checkUsernameInappropriate } from './usernameValidation'
+import { validateNoSuspiciousSubstitutions } from './nameNormalization'
 
 /**
  * Display Name Schema
@@ -15,6 +16,8 @@ import { containsInappropriateContent as checkUsernameInappropriate } from './us
  * - Must contain at least one letter or number
  * - Cannot contain excessive whitespace
  * - Strict toxic word filtering (80+ words)
+ * - No character substitution tricks (1->I, 0->O, l->I)
+ * - Only allowed characters: letters, numbers, spaces, hyphens, apostrophes, periods
  */
 export const displayNameSchema = z
     .string()
@@ -30,12 +33,26 @@ export const displayNameSchema = z
     .refine((val) => val.length > 0, {
         message: 'Display name is required',
     })
+    .refine((val) => PROFILE_CONSTRAINTS.DISPLAY_NAME_PATTERN.test(val), {
+        message:
+            'Display name can only contain letters, numbers, spaces, hyphens, apostrophes, and periods',
+    })
     .refine((val) => !/\s{3,}/.test(val), {
         message: 'Display name cannot contain excessive whitespace',
     })
-    .refine((val) => /[a-zA-Z0-9]/.test(val), {
-        message: 'Display name must contain at least one letter or number',
+    .refine((val) => /[a-zA-Z]/.test(val), {
+        message: 'Display name must contain at least one letter',
     })
+    .refine(
+        (val) => {
+            const validation = validateNoSuspiciousSubstitutions(val)
+            return validation.isValid
+        },
+        {
+            message:
+                'Display name contains suspicious character patterns. Avoid mixing numbers with similar-looking letters.',
+        }
+    )
     .refine(
         (val) => {
             const check = checkDisplayNameInappropriate(val)
@@ -52,6 +69,7 @@ export const displayNameSchema = z
  * - Alphanumeric + underscore only
  * - Must start/end with letter or number
  * - Strict toxic word filtering (80+ words)
+ * - No character substitution tricks (1->I, 0->O, l->I)
  */
 export const usernameSchema = z
     .string()
@@ -69,6 +87,16 @@ export const usernameSchema = z
     )
     .regex(/^[a-zA-Z0-9]/, 'Username must start with a letter or number')
     .regex(/[a-zA-Z0-9]$/, 'Username must end with a letter or number')
+    .refine(
+        (val) => {
+            const validation = validateNoSuspiciousSubstitutions(val)
+            return validation.isValid
+        },
+        {
+            message:
+                'Username contains suspicious character patterns. Avoid mixing numbers with similar-looking letters.',
+        }
+    )
     .refine(
         (val) => {
             const check = checkUsernameInappropriate(val)

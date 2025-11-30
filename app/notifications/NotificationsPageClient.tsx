@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState, useRef } from 'react'
-import { BellIcon, CheckIcon } from '@heroicons/react/24/outline'
+import { BellIcon, CheckIcon, MicrophoneIcon } from '@heroicons/react/24/outline'
 import {
     Cog6ToothIcon,
     ChevronDownIcon,
@@ -15,6 +15,8 @@ import NotificationItem from '../../components/notifications/NotificationItem'
 import SubPageLayout from '../../components/layout/SubPageLayout'
 import NetflixLoader from '../../components/common/NetflixLoader'
 import { useRouter } from 'next/navigation'
+import { useVoiceInput } from '../../hooks/useVoiceInput'
+import { useToast } from '../../hooks/useToast'
 
 export default function NotificationsPageClient() {
     const router = useRouter()
@@ -25,7 +27,25 @@ export default function NotificationsPageClient() {
     const isGuest = sessionType === 'guest'
     const [showManageDropdown, setShowManageDropdown] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
+    const [isMounted, setIsMounted] = useState(false)
     const manageDropdownRef = useRef<HTMLDivElement>(null)
+    const { showError } = useToast()
+
+    // Voice input
+    const { isListening, isSupported, transcript, startListening, stopListening } = useVoiceInput({
+        onResult: (transcript) => {
+            setSearchQuery(transcript)
+        },
+        onError: (error) => {
+            showError(error)
+        },
+        sourceId: 'notifications-search',
+    })
+
+    // Track client-side mount
+    useEffect(() => {
+        setIsMounted(true)
+    }, [])
     const {
         notifications: rawNotifications,
         unreadCount,
@@ -124,18 +144,21 @@ export default function NotificationsPageClient() {
 
                         {/* Hero Content */}
                         <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-6">
-                            {/* Bell Icon with glow */}
-                            <div className="relative mb-4">
-                                <div className="absolute inset-0 bg-red-500/30 blur-2xl scale-150" />
-                                <BellIcon className="relative w-16 h-16 text-red-400 drop-shadow-[0_0_20px_rgba(239,68,68,0.5)]" />
-                            </div>
+                            {/* Title with inline icon */}
+                            <div className="flex items-center gap-4 mb-2">
+                                {/* Bell Icon with glow */}
+                                <div className="relative">
+                                    <div className="absolute inset-0 bg-red-500/30 blur-2xl scale-150" />
+                                    <BellIcon className="relative w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 text-red-400 drop-shadow-[0_0_20px_rgba(239,68,68,0.5)]" />
+                                </div>
 
-                            {/* Title */}
-                            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-2 text-center tracking-tight">
-                                <span className="bg-gradient-to-r from-red-200 via-rose-100 to-red-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
-                                    Notifications
-                                </span>
-                            </h1>
+                                {/* Title */}
+                                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white text-center tracking-tight">
+                                    <span className="bg-gradient-to-r from-red-200 via-rose-100 to-red-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
+                                        Notifications
+                                    </span>
+                                </h1>
+                            </div>
 
                             {/* Subtitle with unread count */}
                             <p className="text-base sm:text-lg text-gray-300 mb-6 text-center max-w-2xl">
@@ -232,16 +255,42 @@ export default function NotificationsPageClient() {
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
                                             placeholder="Search notifications..."
-                                            className="w-full pl-14 pr-14 py-4 bg-zinc-900/40 backdrop-blur-lg border border-zinc-800/50 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-red-500 focus:shadow-[0_0_25px_rgba(239,68,68,0.3)] transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700"
+                                            className={`w-full pl-14 ${isMounted && isSupported ? 'pr-24' : 'pr-14'} py-4 bg-zinc-900/40 backdrop-blur-lg border border-zinc-800/50 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-red-500 focus:shadow-[0_0_25px_rgba(239,68,68,0.3)] transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700`}
                                         />
-                                        {searchQuery && (
-                                            <button
-                                                onClick={() => setSearchQuery('')}
-                                                className="absolute right-5 top-1/2 -translate-y-1/2 z-10 text-gray-400 hover:text-white transition-colors"
-                                            >
-                                                <XMarkIcon className="w-6 h-6" />
-                                            </button>
-                                        )}
+                                        <div className="absolute right-5 top-1/2 -translate-y-1/2 z-10 flex items-center gap-2">
+                                            {isMounted && isSupported && (
+                                                <button
+                                                    type="button"
+                                                    onClick={async () => {
+                                                        if (isListening) {
+                                                            stopListening()
+                                                        } else {
+                                                            await startListening()
+                                                        }
+                                                    }}
+                                                    className={`p-1.5 rounded-lg transition-all ${
+                                                        isListening
+                                                            ? 'bg-red-500 text-white animate-pulse'
+                                                            : 'text-gray-400 hover:text-red-400 hover:bg-red-500/10'
+                                                    }`}
+                                                    title={
+                                                        isListening
+                                                            ? 'Stop listening'
+                                                            : 'Voice search'
+                                                    }
+                                                >
+                                                    <MicrophoneIcon className="w-5 h-5" />
+                                                </button>
+                                            )}
+                                            {searchQuery && (
+                                                <button
+                                                    onClick={() => setSearchQuery('')}
+                                                    className="text-gray-400 hover:text-white transition-colors"
+                                                >
+                                                    <XMarkIcon className="w-6 h-6" />
+                                                </button>
+                                            )}
+                                        </div>
 
                                         {/* Glowing border effect on focus */}
                                         <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-red-500 to-rose-500 opacity-0 group-focus-within:opacity-20 blur-xl transition-opacity duration-300 -z-10" />
@@ -252,7 +301,7 @@ export default function NotificationsPageClient() {
                     </div>
 
                     {/* Main Content Area */}
-                    <div className="px-6 sm:px-8 lg:px-12 py-8">
+                    <div className="px-6 sm:px-8 lg:px-12 py-4">
                         <div className="max-w-2xl mx-auto space-y-6">
                             {/* Loading state */}
                             {isLoading && (
