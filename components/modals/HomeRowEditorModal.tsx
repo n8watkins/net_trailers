@@ -134,10 +134,11 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
             displayAsRow: col.displayAsRow,
             createdAt: col.createdAt,
             updatedAt: col.updatedAt,
-            autoUpdateEnabled: col.autoUpdateEnabled,
-            updateFrequency: col.updateFrequency,
-            lastCheckedAt: col.lastCheckedAt,
-            lastUpdateCount: col.lastUpdateCount,
+            // NOTE: Auto-update feature was removed during refactor
+            // autoUpdateEnabled: col.autoUpdateEnabled,
+            // updateFrequency: col.updateFrequency,
+            // lastCheckedAt: col.lastCheckedAt,
+            // lastUpdateCount: col.lastUpdateCount,
             showOnPublicProfile: col.showOnPublicProfile,
         }),
         []

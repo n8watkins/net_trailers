@@ -33,7 +33,6 @@ import { RankingComment, CreateCommentRequest, RANKING_CONSTRAINTS } from '../..
 import { NotFoundError, UnauthorizedError, ValidationError } from './errors'
 import { validateCommentText, validateUserId, validateRankingId } from './validation'
 import { PaginatedResult, createPaginatedResult } from '../../types/pagination'
-import { EmailService } from '../../lib/email/email-service'
 
 const COLLECTIONS = {
     comments: 'ranking_comments',
@@ -157,12 +156,12 @@ export async function createComment(
         })
     })
 
-    // Send email notification after successful comment creation
+    // Create notification for batching (will be sent via daily social digest)
     // Don't await to avoid blocking the comment creation
-    sendCommentEmailNotification(userId, username, comment, request.parentCommentId ?? null).catch(
+    createCommentNotification(userId, username, comment, request.parentCommentId ?? null).catch(
         (error) => {
-            console.error('📧 ❌ Error sending comment email notification:', error)
-            // Don't throw - email failure shouldn't fail comment creation
+            console.error('🔔 ❌ Error creating comment notification:', error)
+            // Don't throw - notification failure shouldn't fail comment creation
         }
     )
 
@@ -170,10 +169,11 @@ export async function createComment(
 }
 
 /**
- * Send email notification for new comment/reply
+ * Create notification for new comment/reply
  * Notifies ranking owner for comments, or parent comment author for replies
+ * Notifications are batched and sent via daily social digest email
  */
-async function sendCommentEmailNotification(
+async function createCommentNotification(
     commenterId: string,
     commenterName: string,
     comment: RankingComment,
@@ -242,24 +242,27 @@ async function sendCommentEmailNotification(
             return
         }
 
-        // Send email using EmailService
-        await EmailService.sendRankingComment({
-            to: email,
-            userName: username,
-            rankingTitle: ranking.title,
+        // Create notification in user's notifications subcollection (will be batched in daily digest)
+        const notificationRef = collection(db, 'users', recipientId, 'notifications')
+        await setDoc(doc(notificationRef), {
+            type: 'ranking_comment',
             rankingId: comment.rankingId,
-            commenterName,
+            rankingTitle: ranking.title,
+            commenterName: commenterName,
             commentText: comment.text,
             commentId: comment.id,
             isReply,
-            parentCommentText,
+            parentCommentText: parentCommentText ?? null,
+            emailSent: false,
+            createdAt: Date.now(),
+            isRead: false,
         })
 
         console.log(
-            `📧 ✅ Sent comment email notification to ${email} for ranking "${ranking.title}"`
+            `🔔 ✅ Created comment notification for user ${recipientId} on ranking "${ranking.title}"`
         )
     } catch (error) {
-        console.error('📧 ❌ Error in sendCommentEmailNotification:', error)
+        console.error('🔔 ❌ Error in createCommentNotification:', error)
         throw error
     }
 }

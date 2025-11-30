@@ -11,6 +11,7 @@ import {
     DocumentTextIcon,
     CircleStackIcon,
     EnvelopeIcon,
+    ClockIcon,
 } from '@heroicons/react/24/outline'
 import { useProfileActions } from '../../hooks/useProfileActions'
 import useUserData from '../../hooks/useUserData'
@@ -805,6 +806,104 @@ export default function DebugControls() {
                                         {sendingEmail === 'Digest (Demo)'
                                             ? 'Running...'
                                             : 'Demo Digest'}
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Cron Jobs Row - Always visible when hovering */}
+                    {showAllControls && (
+                        <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2 px-2 py-1">
+                                <ClockIcon className="w-3.5 h-3.5 text-emerald-500" />
+                                <span className="text-xs font-medium text-gray-400">Cron Jobs</span>
+                            </div>
+                            <div className="flex items-center gap-2 flex-wrap pl-6">
+                                {/* Weekly Trending Digest - Monday 2 AM */}
+                                <button
+                                    onClick={() =>
+                                        handleSendEmail(
+                                            'Trending Cron',
+                                            '/api/cron/update-trending',
+                                            {},
+                                            'GET'
+                                        )
+                                    }
+                                    disabled={sendingEmail !== null}
+                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Run weekly trending digest cron (Mondays 2 AM UTC)"
+                                >
+                                    <ClockIcon className="w-3 h-3" />
+                                    <span className="text-xs">
+                                        {sendingEmail === 'Trending Cron'
+                                            ? 'Running...'
+                                            : 'Trending (Mon)'}
+                                    </span>
+                                </button>
+
+                                {/* Collection Cache Refresh - Sunday 2 AM */}
+                                <button
+                                    onClick={() =>
+                                        handleSendEmail(
+                                            'Cache Cron',
+                                            '/api/cron/refresh-collection-cache',
+                                            {},
+                                            'GET'
+                                        )
+                                    }
+                                    disabled={sendingEmail !== null}
+                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-teal-600/20 text-teal-400 border border-teal-500/30 hover:bg-teal-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Run collection cache refresh cron (Sundays 2 AM UTC)"
+                                >
+                                    <ClockIcon className="w-3 h-3" />
+                                    <span className="text-xs">
+                                        {sendingEmail === 'Cache Cron'
+                                            ? 'Running...'
+                                            : 'Collections (Sun)'}
+                                    </span>
+                                </button>
+
+                                {/* Weekly Social Digest - Wednesday 2 AM */}
+                                <button
+                                    onClick={() =>
+                                        handleSendEmail(
+                                            'Social Cron',
+                                            '/api/cron/social-digest',
+                                            {},
+                                            'GET'
+                                        )
+                                    }
+                                    disabled={sendingEmail !== null}
+                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-purple-600/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Run weekly social digest cron (Wednesdays 2 AM UTC)"
+                                >
+                                    <ClockIcon className="w-3 h-3" />
+                                    <span className="text-xs">
+                                        {sendingEmail === 'Social Cron'
+                                            ? 'Running...'
+                                            : 'Social (Wed)'}
+                                    </span>
+                                </button>
+
+                                {/* Test Social Flow - Creates fake comments/likes then runs digest */}
+                                <button
+                                    onClick={() =>
+                                        handleSendEmail(
+                                            'Test Social',
+                                            '/api/email/test-social-interactions',
+                                            {}
+                                        )
+                                    }
+                                    disabled={sendingEmail !== null || !user?.email}
+                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-pink-600/20 text-pink-400 border border-pink-500/30 hover:bg-pink-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Test full social flow: creates fake comments/likes on your ranking, then runs social digest cron"
+                                >
+                                    <SparklesIcon className="w-3 h-3" />
+                                    <span className="text-xs">
+                                        {sendingEmail === 'Test Social'
+                                            ? 'Testing...'
+                                            : 'Test Social'}
                                     </span>
                                 </button>
                             </div>

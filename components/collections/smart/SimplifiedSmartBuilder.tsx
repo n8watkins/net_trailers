@@ -221,9 +221,9 @@ export function SimplifiedSmartBuilder({
                 advancedFilters: {
                     contentIds: activeMovieIds,
                 },
-                // Auto-update settings are optional and not exposed in this simplified builder
-                autoUpdateEnabled: false,
-                updateFrequency: 'never',
+                // NOTE: Auto-update feature was removed during refactor
+                // autoUpdateEnabled: false,
+                // updateFrequency: 'never',
                 // Include preview content for collection creation
                 previewContent,
                 // Collection visibility and display settings

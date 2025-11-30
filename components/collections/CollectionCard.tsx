@@ -96,15 +96,7 @@ export const CollectionCard = memo(function CollectionCard({
                             <h3 className="text-base font-semibold text-white truncate">
                                 {row.name}
                             </h3>
-                            {!row.isSystemCollection && row.autoUpdateEnabled && (
-                                <span
-                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-blue-600/20 text-blue-400 rounded text-xs font-medium shrink-0"
-                                    title={`Auto-updating ${row.updateFrequency || 'weekly'}`}
-                                >
-                                    <BellIcon className="w-3 h-3" />
-                                    Auto
-                                </span>
-                            )}
+                            {/* Auto-update feature removed - properties no longer exist in type */}
                             {/* Genres Display - Inline with title */}
                             {genreNames.length > 0 && (
                                 <div className="flex items-center gap-1.5 flex-wrap">

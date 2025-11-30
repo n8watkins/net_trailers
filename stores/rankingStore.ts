@@ -86,7 +86,7 @@ interface RankingState {
     deleteRanking: (userId: string | null, rankingId: string) => Promise<void>
 
     // Actions - Engagement
-    likeRanking: (userId: string | null, rankingId: string) => Promise<void>
+    likeRanking: (userId: string | null, rankingId: string, userName: string) => Promise<void>
     unlikeRanking: (userId: string | null, rankingId: string) => Promise<void>
     incrementView: (rankingId: string, userId?: string | null) => Promise<void>
 
@@ -336,7 +336,7 @@ export const useRankingStore = create<RankingState>()(
             },
 
             // Like ranking
-            likeRanking: async (userId: string | null, rankingId: string) => {
+            likeRanking: async (userId: string | null, rankingId: string, userName: string) => {
                 if (!ensureAuthUser(userId, 'like ranking')) {
                     set({ error: 'Authentication required to like rankings' })
                     return
@@ -356,7 +356,7 @@ export const useRankingStore = create<RankingState>()(
                             : null,
                     }))
 
-                    await likeRankingInFirestore(userId, rankingId)
+                    await likeRankingInFirestore(userId, rankingId, userName)
                 } catch (error) {
                     console.error('Error liking ranking:', error)
                     // Rollback on failure

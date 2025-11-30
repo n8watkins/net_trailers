@@ -45,9 +45,12 @@ export interface AdvancedFilters {
 
     // Cast/Crew filters
     withCast?: string[] // Actor display names (for UI)
-    withDirector?: string // Director display name (for UI)
+    withDirector?: string[] // Director display names (for UI) - updated to array for multiple directors
     withCastIds?: number[] // TMDB person IDs for API calls (cascading logic)
-    withDirectorId?: number // TMDB person ID for API calls (cascading logic)
+    withDirectorIds?: number[] // TMDB person IDs for API calls (cascading logic) - updated to array for multiple directors
+
+    // Legacy fields for backward compatibility
+    withDirectorId?: number // Deprecated - use withDirectorIds instead
 
     // Curated content list (Gemini AI recommendations)
     contentIds?: number[] // Specific TMDB IDs for concept-based collections

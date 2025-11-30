@@ -21,6 +21,7 @@ import { HeartIcon, ChatBubbleLeftIcon, EyeIcon, FireIcon } from '@heroicons/rea
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid'
 import { useRankingStore } from '@/stores/rankingStore'
 import { useSessionStore } from '@/stores/sessionStore'
+import useAuth from '@/hooks/useAuth'
 import { formatDistanceToNow } from 'date-fns'
 
 interface RankingCardProps {
@@ -33,6 +34,8 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
     const router = useRouter()
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
+    const { user } = useAuth()
+    const userName = user?.displayName || user?.email?.split('@')[0] || 'Anonymous'
     const { likeRanking, unlikeRanking, likes } = useRankingStore()
 
     // Check if current user liked this ranking
@@ -51,7 +54,7 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
         if (isLiked) {
             await unlikeRanking(userId, ranking.id)
         } else {
-            await likeRanking(userId, ranking.id)
+            await likeRanking(userId, ranking.id, userName)
         }
 
         onLike?.(ranking.id)

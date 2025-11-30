@@ -61,8 +61,9 @@ function CollectionModal() {
                 mediaType: formData.mediaType,
                 displayAsRow: formData.displayAsRow ?? true,
                 advancedFilters: formData.advancedFilters,
-                autoUpdateEnabled: formData.autoUpdateEnabled,
-                updateFrequency: formData.updateFrequency,
+                // NOTE: Auto-update feature was removed during refactor
+                // autoUpdateEnabled: formData.autoUpdateEnabled,
+                // updateFrequency: formData.updateFrequency,
             }
 
             await createList(createRequest)

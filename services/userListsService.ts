@@ -110,9 +110,9 @@ export class UserListsService {
             genreLogic: request.genreLogic,
             mediaType: request.mediaType,
             advancedFilters: request.advancedFilters,
-            // Auto-update settings
-            autoUpdateEnabled: request.autoUpdateEnabled,
-            updateFrequency: request.updateFrequency,
+            // NOTE: Auto-update feature was removed during refactor
+            // autoUpdateEnabled: request.autoUpdateEnabled,
+            // updateFrequency: request.updateFrequency,
             // AI-generated metadata
             originalQuery: request.originalQuery,
             canGenerateMore: request.canGenerateMore,
@@ -192,14 +192,14 @@ export class UserListsService {
             sanitizedUpdates.advancedFilters = request.advancedFilters
         }
 
-        // Auto-update settings
-        if (request.autoUpdateEnabled !== undefined) {
-            sanitizedUpdates.autoUpdateEnabled = request.autoUpdateEnabled
-        }
-
-        if (request.updateFrequency !== undefined) {
-            sanitizedUpdates.updateFrequency = request.updateFrequency
-        }
+        // NOTE: Auto-update feature was removed during refactor
+        // if (request.autoUpdateEnabled !== undefined) {
+        //     sanitizedUpdates.autoUpdateEnabled = request.autoUpdateEnabled
+        // }
+        //
+        // if (request.updateFrequency !== undefined) {
+        //     sanitizedUpdates.updateFrequency = request.updateFrequency
+        // }
 
         // Infinite content toggle
         if (request.canGenerateMore !== undefined) {

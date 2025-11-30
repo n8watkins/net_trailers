@@ -22,6 +22,7 @@ import { getTitle, getPosterPath, getYear } from '@/typings'
 import { CommentSection } from './CommentSection'
 import { useRankingStore } from '@/stores/rankingStore'
 import { useSessionStore } from '@/stores/sessionStore'
+import useAuth from '@/hooks/useAuth'
 import { hasUserLikedRanking } from '@/utils/firestore/rankings'
 import { formatDistanceToNow } from 'date-fns'
 import {
@@ -59,6 +60,8 @@ export function RankingDetail({
 }: RankingDetailProps) {
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
+    const { user } = useAuth()
+    const userName = user?.displayName || user?.email?.split('@')[0] || 'Anonymous'
     const comments = useRankingStore((state) => state.comments)
     const { likeRanking, unlikeRanking, incrementView, loadComments } = useRankingStore()
 
@@ -142,7 +145,7 @@ export function RankingDetail({
             setIsLiked(false)
             setLocalLikes((prev) => prev - 1)
         } else {
-            await likeRanking(userId, ranking.id)
+            await likeRanking(userId, ranking.id, userName)
             setIsLiked(true)
             setLocalLikes((prev) => prev + 1)
         }

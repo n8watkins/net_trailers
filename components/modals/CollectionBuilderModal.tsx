@@ -91,8 +91,9 @@ function CollectionBuilderModal() {
                 color: '#3b82f6', // Default blue color
                 displayAsRow: formData.displayAsRow ?? false,
                 collectionType: mode === 'smart' ? 'ai-generated' : 'manual',
-                autoUpdateEnabled: false, // Collections created here don't auto-update
-                updateFrequency: 'never',
+                // NOTE: Auto-update feature was removed during refactor
+                // autoUpdateEnabled: false,
+                // updateFrequency: 'never',
                 genres: normalizedGenres,
                 genreLogic,
                 mediaType: derivedMediaType,

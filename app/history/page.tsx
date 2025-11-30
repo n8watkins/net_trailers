@@ -25,10 +25,12 @@ import { getTitle } from '../../typings'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import useUserData from '../../hooks/useUserData'
+import { useToast } from '../../hooks/useToast'
 import Link from 'next/link'
 
 export default function WatchHistoryPage() {
     const router = useRouter()
+    const { showError } = useToast()
     const [searchQuery, setSearchQuery] = useState('')
     const [filter, setFilter] = useState<'all' | 'today' | 'week' | 'month'>('all')
     const [showManageDropdown, setShowManageDropdown] = useState(false)

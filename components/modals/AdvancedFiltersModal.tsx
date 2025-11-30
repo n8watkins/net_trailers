@@ -157,24 +157,32 @@ export function AdvancedFiltersModal({
         onChange(newFilters) // Auto-save
     }
 
-    const setDirector = (director: Person) => {
-        const newFilters = {
-            ...localFilters,
-            withDirector: director.name,
-            withDirectorId: director.id,
+    const addDirector = (director: Person) => {
+        const currentDirectors = localFilters.withDirector || []
+        const currentDirectorIds = localFilters.withDirectorIds || []
+        if (!currentDirectors.includes(director.name)) {
+            const newFilters = {
+                ...localFilters,
+                withDirector: [...currentDirectors, director.name],
+                withDirectorIds: [...currentDirectorIds, director.id],
+            }
+            setLocalFilters(newFilters)
+            onChange(newFilters) // Auto-save
         }
-        setLocalFilters(newFilters)
-        onChange(newFilters) // Auto-save
         setDirectorInput('')
         setDirectorSearchResults([])
         setShowDirectorInput(false)
     }
 
-    const removeDirector = () => {
+    const removeDirector = (directorName: string) => {
+        const currentDirectors = localFilters.withDirector || []
+        const currentDirectorIds = localFilters.withDirectorIds || []
+        const directorIndex = currentDirectors.indexOf(directorName)
+
         const newFilters = {
             ...localFilters,
-            withDirector: undefined,
-            withDirectorId: undefined,
+            withDirector: currentDirectors.filter((name) => name !== directorName),
+            withDirectorIds: currentDirectorIds.filter((_, index) => index !== directorIndex),
         }
         setLocalFilters(newFilters)
         onChange(newFilters) // Auto-save
@@ -231,7 +239,7 @@ export function AdvancedFiltersModal({
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
-                    <div className="flex items-center justify-between p-6 border-b border-zinc-800/50">
+                    <div className="relative z-10 flex items-center justify-between p-6 border-b border-zinc-800/50">
                         <div>
                             <h2 className="text-xl font-bold text-white">Advanced Filters</h2>
                             <p className="text-sm text-gray-400 mt-1">
@@ -259,7 +267,7 @@ export function AdvancedFiltersModal({
                                     onChange={(year) => updateFilter('yearMin', year)}
                                     label="From"
                                     placeholder="1990"
-                                    minYear={1900}
+                                    minYear={1880}
                                     maxYear={currentYear}
                                 />
                                 <YearPicker
@@ -267,7 +275,7 @@ export function AdvancedFiltersModal({
                                     onChange={(year) => updateFilter('yearMax', year)}
                                     label="To"
                                     placeholder={currentYear.toString()}
-                                    minYear={1900}
+                                    minYear={1880}
                                     maxYear={currentYear}
                                 />
                             </div>
@@ -275,15 +283,52 @@ export function AdvancedFiltersModal({
 
                         {/* Rating Range */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-200 mb-3">
-                                Rating Range
-                            </label>
-                            <div className="space-y-4">
-                                {/* Min Rating */}
+                            <div className="flex items-center justify-between mb-3">
+                                <label className="text-sm font-medium text-gray-200">
+                                    Rating Range
+                                </label>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="10"
+                                        step="0.1"
+                                        value={localFilters.ratingMin ?? ''}
+                                        onChange={(e) => {
+                                            const val = e.target.value
+                                            updateFilter(
+                                                'ratingMin',
+                                                val === '' ? undefined : parseFloat(val)
+                                            )
+                                        }}
+                                        placeholder="0"
+                                        className="w-16 px-2 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-center text-base focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                                    />
+                                    <span className="text-gray-400">to</span>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="10"
+                                        step="0.1"
+                                        value={localFilters.ratingMax ?? ''}
+                                        onChange={(e) => {
+                                            const val = e.target.value
+                                            updateFilter(
+                                                'ratingMax',
+                                                val === '' ? undefined : parseFloat(val)
+                                            )
+                                        }}
+                                        placeholder="10"
+                                        className="w-16 px-2 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-center text-base focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-3">
+                                {/* Min Rating Slider */}
                                 <div>
                                     <div className="flex justify-between text-xs text-gray-400 mb-2">
-                                        <span>Minimum</span>
-                                        <span className="text-red-400 font-medium">
+                                        <span>Minimum Rating</span>
+                                        <span className="text-red-400 font-semibold text-sm">
                                             {localFilters.ratingMin !== undefined
                                                 ? `${localFilters.ratingMin}/10`
                                                 : 'Any'}
@@ -293,15 +338,15 @@ export function AdvancedFiltersModal({
                                         type="range"
                                         min="0"
                                         max="10"
-                                        step="1"
+                                        step="0.1"
                                         value={localFilters.ratingMin ?? 0}
                                         onChange={(e) =>
                                             updateFilter(
                                                 'ratingMin',
-                                                parseInt(e.target.value) || undefined
+                                                parseFloat(e.target.value) || undefined
                                             )
                                         }
-                                        className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-red-600 [&::-webkit-slider-thumb]:cursor-pointer"
+                                        className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-red-600 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:hover:bg-red-500 [&::-webkit-slider-thumb]:transition-colors"
                                     />
                                     <div className="flex justify-between text-xs text-gray-500 mt-1">
                                         <span>0</span>
@@ -309,11 +354,11 @@ export function AdvancedFiltersModal({
                                     </div>
                                 </div>
 
-                                {/* Max Rating */}
+                                {/* Max Rating Slider */}
                                 <div>
                                     <div className="flex justify-between text-xs text-gray-400 mb-2">
-                                        <span>Maximum</span>
-                                        <span className="text-red-400 font-medium">
+                                        <span>Maximum Rating</span>
+                                        <span className="text-red-400 font-semibold text-sm">
                                             {localFilters.ratingMax !== undefined
                                                 ? `${localFilters.ratingMax}/10`
                                                 : 'Any'}
@@ -323,15 +368,15 @@ export function AdvancedFiltersModal({
                                         type="range"
                                         min="0"
                                         max="10"
-                                        step="1"
+                                        step="0.1"
                                         value={localFilters.ratingMax ?? 10}
                                         onChange={(e) =>
                                             updateFilter(
                                                 'ratingMax',
-                                                parseInt(e.target.value) || undefined
+                                                parseFloat(e.target.value) || undefined
                                             )
                                         }
-                                        className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-red-600 [&::-webkit-slider-thumb]:cursor-pointer"
+                                        className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-red-600 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:hover:bg-red-500 [&::-webkit-slider-thumb]:transition-colors"
                                     />
                                     <div className="flex justify-between text-xs text-gray-500 mt-1">
                                         <span>0</span>
@@ -339,6 +384,160 @@ export function AdvancedFiltersModal({
                                     </div>
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Cast (Actors) */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-200 mb-3">
+                                Cast (Actors)
+                            </label>
+                            {localFilters.withCast && localFilters.withCast.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mb-3">
+                                    {localFilters.withCast.map((actorName, index) => (
+                                        <div
+                                            key={index}
+                                            className="flex items-center gap-2 bg-gray-700 rounded-lg px-3 py-2"
+                                        >
+                                            <span className="text-sm text-white">{actorName}</span>
+                                            <button
+                                                onClick={() => removeActor(actorName)}
+                                                className="text-gray-400 hover:text-red-400 transition-colors"
+                                            >
+                                                <XMarkIcon className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            {!showActorInput && (
+                                <button
+                                    onClick={() => setShowActorInput(true)}
+                                    className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                                >
+                                    <PlusIcon className="w-4 h-4" />
+                                    <span className="text-sm">Add Actor</span>
+                                </button>
+                            )}
+                            {showActorInput && (
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        value={actorInput}
+                                        onChange={(e) => handleActorInputChange(e.target.value)}
+                                        placeholder="Search for an actor..."
+                                        className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                                        autoFocus
+                                    />
+                                    {actorSearchResults.length > 0 && (
+                                        <div className="absolute top-full left-0 right-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl max-h-60 overflow-y-auto z-10">
+                                            {actorSearchResults.map((actor) => (
+                                                <button
+                                                    key={actor.id}
+                                                    onClick={() => addActor(actor)}
+                                                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-700 transition-colors text-left"
+                                                >
+                                                    {actor.profile_path ? (
+                                                        <Image
+                                                            src={`https://image.tmdb.org/t/p/w185${actor.profile_path}`}
+                                                            alt={actor.name}
+                                                            width={40}
+                                                            height={40}
+                                                            className="rounded-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center">
+                                                            <span className="text-gray-400 text-xs">
+                                                                N/A
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    <span className="text-white text-sm">
+                                                        {actor.name}
+                                                    </span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Directors */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-200 mb-3">
+                                Directors
+                            </label>
+                            {localFilters.withDirector && localFilters.withDirector.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mb-3">
+                                    {localFilters.withDirector.map((directorName, index) => (
+                                        <div
+                                            key={index}
+                                            className="flex items-center gap-2 bg-gray-700 rounded-lg px-3 py-2"
+                                        >
+                                            <span className="text-sm text-white">
+                                                {directorName}
+                                            </span>
+                                            <button
+                                                onClick={() => removeDirector(directorName)}
+                                                className="text-gray-400 hover:text-red-400 transition-colors"
+                                            >
+                                                <XMarkIcon className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            {!showDirectorInput && (
+                                <button
+                                    onClick={() => setShowDirectorInput(true)}
+                                    className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                                >
+                                    <PlusIcon className="w-4 h-4" />
+                                    <span className="text-sm">Add Director</span>
+                                </button>
+                            )}
+                            {showDirectorInput && (
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        value={directorInput}
+                                        onChange={(e) => handleDirectorInputChange(e.target.value)}
+                                        placeholder="Search for a director..."
+                                        className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                                        autoFocus
+                                    />
+                                    {directorSearchResults.length > 0 && (
+                                        <div className="absolute top-full left-0 right-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl max-h-60 overflow-y-auto z-10">
+                                            {directorSearchResults.map((director) => (
+                                                <button
+                                                    key={director.id}
+                                                    onClick={() => addDirector(director)}
+                                                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-700 transition-colors text-left"
+                                                >
+                                                    {director.profile_path ? (
+                                                        <Image
+                                                            src={`https://image.tmdb.org/t/p/w185${director.profile_path}`}
+                                                            alt={director.name}
+                                                            width={40}
+                                                            height={40}
+                                                            className="rounded-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center">
+                                                            <span className="text-gray-400 text-xs">
+                                                                N/A
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    <span className="text-white text-sm">
+                                                        {director.name}
+                                                    </span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
 

@@ -373,17 +373,37 @@ export async function deleteRanking(userId: string, rankingId: string): Promise<
 /**
  * Like ranking
  */
-export async function likeRanking(userId: string, rankingId: string): Promise<void> {
+export async function likeRanking(
+    userId: string,
+    rankingId: string,
+    userName: string
+): Promise<void> {
     try {
         const likeId = `${userId}_${rankingId}`
         const likeRef = doc(db, COLLECTIONS.likes, likeId)
         const rankingRef = getRankingDocRef(rankingId)
+
+        let rankingOwnerId: string | null = null
+        let rankingTitle: string | null = null
 
         await runTransaction(db, async (transaction) => {
             // Check if already liked
             const likeDoc = await transaction.get(likeRef)
             if (likeDoc.exists()) {
                 return // Already liked
+            }
+
+            // Get ranking details for notification
+            const rankingDoc = await transaction.get(rankingRef)
+            if (rankingDoc.exists()) {
+                const ranking = rankingDoc.data() as Ranking
+                rankingOwnerId = ranking.userId
+                rankingTitle = ranking.title
+
+                // Don't notify if liking your own ranking
+                if (ranking.userId === userId) {
+                    rankingOwnerId = null
+                }
             }
 
             // Create like record
@@ -399,8 +419,51 @@ export async function likeRanking(userId: string, rankingId: string): Promise<vo
                 likes: increment(1),
             })
         })
+
+        // Create notification for batching (will be sent via daily social digest)
+        if (rankingOwnerId && rankingTitle) {
+            createLikeNotification(rankingOwnerId, userId, userName, rankingId, rankingTitle).catch(
+                (error) => {
+                    console.error('🔔 ❌ Error creating like notification:', error)
+                    // Don't throw - notification failure shouldn't fail like creation
+                }
+            )
+        }
     } catch (error) {
         console.error('Error liking ranking:', error)
+        throw error
+    }
+}
+
+/**
+ * Create notification for new ranking like
+ * Notifications are batched and sent via daily social digest email
+ */
+async function createLikeNotification(
+    rankingOwnerId: string,
+    likerId: string,
+    likerName: string,
+    rankingId: string,
+    rankingTitle: string
+): Promise<void> {
+    try {
+        // Create notification in user's notifications subcollection (will be batched in daily digest)
+        const notificationRef = collection(db, 'users', rankingOwnerId, 'notifications')
+        await setDoc(doc(notificationRef), {
+            type: 'ranking_like',
+            rankingId,
+            rankingTitle,
+            likerNames: [likerName],
+            emailSent: false,
+            createdAt: Date.now(),
+            isRead: false,
+        })
+
+        console.log(
+            `🔔 ✅ Created like notification for user ${rankingOwnerId} on ranking "${rankingTitle}"`
+        )
+    } catch (error) {
+        console.error('🔔 ❌ Error in createLikeNotification:', error)
         throw error
     }
 }
