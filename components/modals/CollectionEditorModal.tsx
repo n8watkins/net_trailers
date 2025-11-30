@@ -447,7 +447,7 @@ export default function CollectionEditorModal({
                             {!canOnlyToggle ? (
                                 <div
                                     ref={identityContainerRef}
-                                    className="flex-1 p-4 rounded-xl border-2 transition-all duration-200 min-h-[100px]"
+                                    className="flex-1 p-4 rounded-xl border-2 transition-all duration-200 min-h-[100px] flex items-center"
                                     style={{
                                         backgroundColor: `${color}15`,
                                         borderColor: `${color}80`,
@@ -455,7 +455,7 @@ export default function CollectionEditorModal({
                                 >
                                     {!isEditingIdentity ? (
                                         /* Display Mode */
-                                        <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-4 w-full">
                                             {/* Emoji Display */}
                                             <div className="text-5xl">{emoji}</div>
                                             {/* Collection Name Display */}
@@ -473,7 +473,7 @@ export default function CollectionEditorModal({
                                         </div>
                                     ) : (
                                         /* Edit Mode - Inside the same colored container */
-                                        <div className="flex items-center space-x-3">
+                                        <div className="flex items-center space-x-3 w-full">
                                             {/* Icon Picker */}
                                             <div className="relative flex-shrink-0">
                                                 <button
