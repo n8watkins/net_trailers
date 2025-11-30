@@ -55,10 +55,6 @@ interface DisplayRow {
     displayAsRow?: boolean
     createdAt?: number
     updatedAt?: number
-    autoUpdateEnabled?: boolean
-    updateFrequency?: 'daily' | 'weekly' | 'never'
-    lastCheckedAt?: number
-    lastUpdateCount?: number
     showOnPublicProfile?: boolean
 }
 

@@ -19,7 +19,7 @@ import { useVoiceInput } from '../../hooks/useVoiceInput'
 import { useToast } from '../../hooks/useToast'
 import { useModalStore } from '../../stores/modalStore'
 
-type FilterValue = 'all' | 'auto' | 'manual' | 'ai'
+type FilterValue = 'all' | 'manual' | 'ai'
 
 const Collections = () => {
     const userData = useUserData()
@@ -59,9 +59,7 @@ const Collections = () => {
         let filtered = allLists
 
         // Apply type filter
-        if (collectionFilter === 'auto') {
-            filtered = filtered.filter((list) => list.autoUpdateEnabled === true)
-        } else if (collectionFilter === 'manual') {
+        if (collectionFilter === 'manual') {
             filtered = filtered.filter((list) => list.collectionType === 'manual')
         } else if (collectionFilter === 'ai') {
             filtered = filtered.filter((list) => list.collectionType === 'ai-generated')
@@ -89,7 +87,6 @@ const Collections = () => {
     const collectionStats = useMemo(() => {
         return {
             total: allLists.length,
-            auto: allLists.filter((list) => list.autoUpdateEnabled === true).length,
             manual: allLists.filter((list) => list.collectionType === 'manual').length,
             ai: allLists.filter((list) => list.collectionType === 'ai-generated').length,
         }
@@ -164,7 +161,6 @@ const Collections = () => {
                             <div className="flex flex-wrap gap-2 items-center justify-center mb-5 overflow-visible pb-2 px-4 min-h-[44px]">
                                 {[
                                     { value: 'all', label: 'All', icon: Squares2X2Icon },
-                                    { value: 'auto', label: 'Auto-Update', icon: SparklesIcon },
                                     { value: 'manual', label: 'Manual', icon: PencilSquareIcon },
                                     {
                                         value: 'ai',

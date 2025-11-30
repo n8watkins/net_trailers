@@ -14,6 +14,7 @@
         "test:watch": "jest --watch",
         "test:coverage": "jest --coverage",
         "test:ci": "jest --ci --coverage --watchAll=false",
+        "test:cron": "node scripts/test-cron.js",
         "test:persistence": "npx tsx test-persistence-flow.ts",
         "test:create-user": "npx tsx scripts/create-test-user.ts",
         "test:verify-user": "npx tsx scripts/create-test-user.ts verify",

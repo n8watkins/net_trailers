@@ -127,7 +127,7 @@ The app handles both movies and TV shows through a unified type system:
 
 **Cron Jobs**:
 
-- `/api/cron/update-collections` - Auto-update collections (daily at 2 AM UTC)
+- `/api/cron/update-trending` - Update trending notifications (daily at 2 AM UTC)
 
 ### Authentication & User Data System
 
@@ -385,8 +385,7 @@ Each unified genre has a `childSafe` flag. When child safety mode is enabled, on
 - **In-app notifications** with bell icon in header
 - **Real-time Firestore listeners** for immediate updates
 - **Notification types**:
-    - Collection updates (new content added via auto-update)
-    - New releases (watchlist items released)
+    - Trending updates (watchlist items trending)
     - System announcements
     - Collection shares
     - Ranking comments and likes
@@ -562,7 +561,6 @@ const showModal = useModalStore((state) => state.modal.isOpen)
 - **Child Safety Mode**: Enable/disable via settings, requires PIN to disable
 - **Improve Recommendations**: Privacy control for interaction tracking
 - **Portfolio Banner**: Toggleable in settings
-- **Auto-update Collections**: Per-collection toggle
 
 ## API Security
 

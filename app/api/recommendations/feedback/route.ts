@@ -6,8 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/firebase'
-import { collection, addDoc, query, where, orderBy, limit, getDocs } from 'firebase/firestore'
+import { getAdminDb } from '@/lib/firebase-admin'
 import { nanoid } from 'nanoid'
 import { withAuth } from '@/lib/auth-middleware'
 import {
@@ -90,9 +89,9 @@ async function handlePostFeedback(request: NextRequest, userId: string): Promise
             source: 'recommended_row',
         }
 
-        // Save to Firestore
-        const feedbackCollection = collection(db, 'recommendation_feedback')
-        const docRef = await addDoc(feedbackCollection, feedbackData)
+        // Save to Firestore using Admin SDK (bypasses security rules)
+        const adminDb = getAdminDb()
+        const docRef = await adminDb.collection('recommendation_feedback').add(feedbackData)
 
         // Create full feedback object with Firestore-generated ID
         const feedback: RecommendationFeedback = {
@@ -144,21 +143,18 @@ async function handleGetFeedback(request: NextRequest, userId: string): Promise<
         const thirtyDaysAgo =
             Date.now() - FEEDBACK_CONSTRAINTS.RECENT_WINDOW_DAYS * 24 * 60 * 60 * 1000
 
-        const feedbackCollection = collection(db, 'recommendation_feedback')
-        const q = query(
-            feedbackCollection,
-            where('userId', '==', userId),
-            where('timestamp', '>=', thirtyDaysAgo),
-            orderBy('timestamp', 'desc'),
-            limit(feedbackLimit)
+        const adminDb = getAdminDb()
+        const querySnapshot = await adminDb
+            .collection('recommendation_feedback')
+            .where('userId', '==', userId)
+            .where('timestamp', '>=', thirtyDaysAgo)
+            .orderBy('timestamp', 'desc')
+            .limit(feedbackLimit)
+            .get()
+
+        const feedback: RecommendationFeedback[] = querySnapshot.docs.map(
+            (doc) => doc.data() as RecommendationFeedback
         )
-
-        const querySnapshot = await getDocs(q)
-        const feedback: RecommendationFeedback[] = []
-
-        querySnapshot.forEach((doc) => {
-            feedback.push(doc.data() as RecommendationFeedback)
-        })
 
         console.log(
             `📊 [Feedback] Retrieved ${feedback.length} feedback entries for user ${userId}`
