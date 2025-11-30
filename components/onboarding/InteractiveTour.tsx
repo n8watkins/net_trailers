@@ -417,12 +417,15 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
                 >
                     <div
                         ref={tooltipRef}
-                        className={`max-w-2xl p-8 bg-zinc-900/98 backdrop-blur-xl border-2 border-orange-500/40 rounded-2xl shadow-2xl shadow-orange-500/20 pointer-events-auto transition-all duration-300 ${
+                        className={`relative max-w-2xl p-8 border-2 border-orange-500/40 rounded-2xl shadow-2xl shadow-orange-500/20 pointer-events-auto transition-all duration-300 overflow-hidden ${
                             transitionType === 'feature' || transitionType === 'none'
                                 ? 'animate-tour-feature-change'
                                 : ''
                         }`}
                     >
+                        {/* Gradient background layers */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-zinc-900 to-black -z-10" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-orange-900/15 via-transparent to-black/30 -z-10" />
                         {/* Content wrapper with animation for pane transitions */}
                         <div
                             key={currentTourStep}
@@ -543,12 +546,15 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
                 <div
                     ref={tooltipRef}
                     style={tooltipStyle}
-                    className={`w-full max-w-md p-6 bg-zinc-900/98 backdrop-blur-xl border-2 border-orange-500/40 rounded-2xl shadow-2xl shadow-orange-500/20 transition-all duration-300 ${
+                    className={`relative w-full max-w-md p-6 border-2 border-orange-500/40 rounded-2xl shadow-2xl shadow-orange-500/20 transition-all duration-300 overflow-hidden ${
                         transitionType === 'feature' || transitionType === 'none'
                             ? 'animate-tour-feature-change'
                             : ''
                     }`}
                 >
+                    {/* Gradient background layers */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-zinc-900 to-black -z-10" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-orange-900/15 via-transparent to-black/30 -z-10" />
                     {/* Content wrapper with animation for pane transitions */}
                     <div
                         key={currentTourStep}
