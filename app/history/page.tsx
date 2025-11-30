@@ -369,7 +369,7 @@ export default function WatchHistoryPage() {
                     </div>
 
                     {/* Main Content Area */}
-                    <div className="px-6 sm:px-8 lg:px-12 py-4 space-y-6">
+                    <div className="px-6 sm:px-8 lg:px-12 py-4 space-y-4">
                         {/* Loading state */}
                         {isLoading && (
                             <div className="py-16">
