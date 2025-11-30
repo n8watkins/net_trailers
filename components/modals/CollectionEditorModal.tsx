@@ -447,7 +447,7 @@ export default function CollectionEditorModal({
                             {!canOnlyToggle ? (
                                 <div
                                     ref={identityContainerRef}
-                                    className="flex-1 p-4 rounded-xl border-2 transition-all duration-200"
+                                    className="flex-1 p-4 rounded-xl border-2 transition-all duration-200 min-h-[100px]"
                                     style={{
                                         backgroundColor: `${color}15`,
                                         borderColor: `${color}80`,
