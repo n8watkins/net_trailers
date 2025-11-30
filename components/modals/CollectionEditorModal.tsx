@@ -24,6 +24,8 @@ import { GenrePills } from '../collections/GenrePills'
 import { getUnifiedGenresByMediaType } from '../../constants/unifiedGenres'
 import { useChildSafety } from '../../hooks/useChildSafety'
 import { useSessionStore } from '../../stores/sessionStore'
+import { AdvancedFiltersSection } from '../collections/AdvancedFiltersSection'
+import { AdvancedFilters } from '../../types/collections'
 
 interface CollectionEditorModalProps {
     collection: UserList | null
@@ -64,6 +66,7 @@ export default function CollectionEditorModal({
     const [mediaType, setMediaType] = useState<'movie' | 'tv' | 'both'>('both')
     const [selectedGenres, setSelectedGenres] = useState<string[]>([])
     const [genreLogic, setGenreLogic] = useState<'AND' | 'OR'>('AND')
+    const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({})
 
     // UI state
     const [showIconPicker, setShowIconPicker] = useState(false)
@@ -119,6 +122,7 @@ export default function CollectionEditorModal({
             setRemovedIds(new Set())
             setSearchFilter('')
             setHighlightMediaType(false)
+            setAdvancedFilters(collection.advancedFilters || {})
         }
     }, [collection, isOpen])
 
@@ -208,6 +212,7 @@ export default function CollectionEditorModal({
         setRemovedIds(new Set())
         setSearchFilter('')
         setHighlightMediaType(false)
+        setAdvancedFilters({})
     }
 
     const handleClose = async (options?: { skipWaitForSave?: boolean }) => {
@@ -276,6 +281,7 @@ export default function CollectionEditorModal({
                     showOnPublicProfile,
                     genres: selectedGenres,
                     genreLogic,
+                    advancedFilters,
                 }
             } else {
                 // For user-created collections
@@ -290,6 +296,7 @@ export default function CollectionEditorModal({
                     genreLogic,
                     mediaType,
                     canGenerateMore: enableInfiniteContent && selectedGenres.length > 0,
+                    advancedFilters,
                 }
             }
 
@@ -841,6 +848,17 @@ export default function CollectionEditorModal({
                                                 </div>
                                             </div>
                                         </div>
+                                    </div>
+
+                                    {/* Advanced Filters Section - Actors & Directors */}
+                                    <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
+                                        <h3 className="text-sm font-medium text-white mb-4">
+                                            Advanced Filters
+                                        </h3>
+                                        <AdvancedFiltersSection
+                                            filters={advancedFilters}
+                                            onChange={setAdvancedFilters}
+                                        />
                                     </div>
                                 </>
                             )}
