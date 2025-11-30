@@ -666,6 +666,7 @@ service cloud.firestore {
 
     // Helper function to validate feedback data structure
     function isValidFeedbackData(data) {
+      // id is optional since Firestore auto-generates it
       return data.keys().hasAll(['userId', 'contentId', 'mediaType', 'recommendationPage', 'feedbackType', 'action', 'timestamp', 'source'])
              && data.userId is string
              && data.contentId is number
@@ -677,7 +678,9 @@ service cloud.firestore {
              && data.action is string
              && data.action in ['viewed', 'dismissed', 'hidden', 'liked', 'watchlisted', 'scrolled_past']
              && data.timestamp is number
-             && data.source == 'recommended_row';
+             && data.source == 'recommended_row'
+             // Optional id field (Firestore auto-generates document IDs)
+             && (!data.keys().hasAny(['id']) || data.id is string);
     }
 
     // Deny all other access
