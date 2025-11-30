@@ -189,20 +189,6 @@ export default function RankingsPage() {
         )
     }, [likedRankings, likedSearch])
 
-    // Get current search value and setter based on active tab
-    const currentSearch =
-        activeTab === 'rankings'
-            ? rankingsSearch
-            : activeTab === 'comments'
-              ? commentsSearch
-              : likedSearch
-    const setCurrentSearch =
-        activeTab === 'rankings'
-            ? setRankingsSearch
-            : activeTab === 'comments'
-              ? setCommentsSearch
-              : setLikedSearch
-
     // Check if we should show search bar
     const showSearch =
         (activeTab === 'rankings' && rankings.length > 0) ||
