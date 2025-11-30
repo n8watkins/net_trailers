@@ -1,8 +1,15 @@
 'use client'
 
-import React from 'react'
-import { CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+import React, { useState } from 'react'
+import {
+    CheckCircleIcon,
+    ExclamationTriangleIcon,
+    EnvelopeIcon,
+    KeyIcon,
+} from '@heroicons/react/24/outline'
 import type { User } from 'firebase/auth'
+
+type TabType = 'email' | 'password'
 
 interface AccountManagementSectionProps {
     user: User | null
@@ -49,6 +56,7 @@ const AccountManagementSection: React.FC<AccountManagementSectionProps> = ({
     isUpdatingPassword,
     onUpdatePassword,
 }) => {
+    const [activeTab, setActiveTab] = useState<TabType>('email')
     const hasEmailRequiredFields = newEmail.trim() && emailPassword.trim()
     const hasPasswordRequiredFields =
         currentPassword.trim() && newPassword.trim() && confirmPassword.trim()
@@ -61,51 +69,95 @@ const AccountManagementSection: React.FC<AccountManagementSectionProps> = ({
                 <p className="text-[#b3b3b3]">Manage your email address and password settings.</p>
             </div>
 
-            {/* Email Verification Status */}
-            <div className="max-w-2xl space-y-4 mb-8">
-                <div className="bg-[#0a0a0a] border border-[#2c2c2c] rounded-lg p-6 flex items-start gap-4">
-                    <div
-                        className={`p-3 rounded-full ${
-                            isEmailVerified
-                                ? 'bg-green-600/10 border-green-600/20'
-                                : 'bg-yellow-600/10 border-yellow-600/20'
-                        } border`}
-                    >
-                        {isEmailVerified ? (
-                            <CheckCircleIcon className="w-6 h-6 text-green-400" />
-                        ) : (
-                            <ExclamationTriangleIcon className="w-6 h-6 text-yellow-400" />
+            {/* Tab Navigation */}
+            {!isGoogleAuth && (
+                <div className="mb-8">
+                    <div className="border-b border-zinc-800">
+                        <nav className="flex gap-8" aria-label="Account settings tabs">
+                            <button
+                                onClick={() => setActiveTab('email')}
+                                className={`relative pb-4 px-1 transition-all duration-200 ${
+                                    activeTab === 'email'
+                                        ? 'text-white'
+                                        : 'text-gray-400 hover:text-gray-300'
+                                }`}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <EnvelopeIcon className="w-5 h-5" />
+                                    <span className="font-medium">Email Settings</span>
+                                </div>
+                                {activeTab === 'email' && (
+                                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-600" />
+                                )}
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('password')}
+                                className={`relative pb-4 px-1 transition-all duration-200 ${
+                                    activeTab === 'password'
+                                        ? 'text-white'
+                                        : 'text-gray-400 hover:text-gray-300'
+                                }`}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <KeyIcon className="w-5 h-5" />
+                                    <span className="font-medium">Password Settings</span>
+                                </div>
+                                {activeTab === 'password' && (
+                                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-600" />
+                                )}
+                            </button>
+                        </nav>
+                    </div>
+                </div>
+            )}
+
+            {/* Email Verification Status - only show on email tab */}
+            {activeTab === 'email' && !isGoogleAuth && (
+                <div className="max-w-2xl space-y-4 mb-8">
+                    <div className="bg-[#0a0a0a] border border-[#2c2c2c] rounded-lg p-6 flex items-start gap-4">
+                        <div
+                            className={`p-3 rounded-full ${
+                                isEmailVerified
+                                    ? 'bg-green-600/10 border-green-600/20'
+                                    : 'bg-yellow-600/10 border-yellow-600/20'
+                            } border`}
+                        >
+                            {isEmailVerified ? (
+                                <CheckCircleIcon className="w-6 h-6 text-green-400" />
+                            ) : (
+                                <ExclamationTriangleIcon className="w-6 h-6 text-yellow-400" />
+                            )}
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="text-white font-semibold mb-1">
+                                {isEmailVerified ? 'Email Verified' : 'Email Verification Pending'}
+                            </h3>
+                            <p className="text-sm text-[#b3b3b3]">
+                                {isEmailVerified
+                                    ? 'Your email is verified. You can update it anytime below.'
+                                    : 'Verify your email to unlock notification emails, account recovery, and security alerts.'}
+                            </p>
+                        </div>
+                        {showVerificationCard && (
+                            <button
+                                onClick={onSendVerification}
+                                disabled={isSendingVerification || isGoogleAuth}
+                                className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                                    isSendingVerification || isGoogleAuth
+                                        ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                                        : 'bg-red-600 text-white hover:bg-red-700'
+                                }`}
+                            >
+                                {isSendingVerification
+                                    ? 'Sending...'
+                                    : isEmailVerified
+                                      ? 'Resend Email'
+                                      : 'Send Verification Email'}
+                            </button>
                         )}
                     </div>
-                    <div className="flex-1">
-                        <h3 className="text-white font-semibold mb-1">
-                            {isEmailVerified ? 'Email Verified' : 'Email Verification Pending'}
-                        </h3>
-                        <p className="text-sm text-[#b3b3b3]">
-                            {isEmailVerified
-                                ? 'Your email is verified. You can update it anytime below.'
-                                : 'Verify your email to unlock notification emails, account recovery, and security alerts.'}
-                        </p>
-                    </div>
-                    {showVerificationCard && (
-                        <button
-                            onClick={onSendVerification}
-                            disabled={isSendingVerification || isGoogleAuth}
-                            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                                isSendingVerification || isGoogleAuth
-                                    ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                                    : 'bg-red-600 text-white hover:bg-red-700'
-                            }`}
-                        >
-                            {isSendingVerification
-                                ? 'Sending...'
-                                : isEmailVerified
-                                  ? 'Resend Email'
-                                  : 'Send Verification Email'}
-                        </button>
-                    )}
                 </div>
-            </div>
+            )}
 
             {isGoogleAuth ? (
                 /* Google Auth Notice */
@@ -155,149 +207,141 @@ const AccountManagementSection: React.FC<AccountManagementSectionProps> = ({
                     </div>
                 </div>
             ) : (
-                /* Email & Password Forms */
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl">
-                    {/* Email Settings */}
-                    <div className="space-y-6">
-                        <div>
-                            <h3 className="text-xl font-semibold text-white mb-4">
-                                Email Settings
-                            </h3>
-                        </div>
+                /* Tabbed Content */
+                <div className="max-w-2xl">
+                    {/* Email Tab Content */}
+                    {activeTab === 'email' && (
+                        <div className="space-y-6">
+                            <div>
+                                <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
+                                    Current Email
+                                </label>
+                                <input
+                                    type="email"
+                                    value={user?.email || ''}
+                                    disabled
+                                    className="inputClass w-full opacity-50 cursor-not-allowed"
+                                />
+                            </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
-                                Current Email
-                            </label>
-                            <input
-                                type="email"
-                                value={user?.email || ''}
-                                disabled
-                                className="inputClass w-full opacity-50 cursor-not-allowed"
-                            />
-                        </div>
+                            <div>
+                                <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
+                                    New Email Address
+                                </label>
+                                <input
+                                    type="email"
+                                    value={newEmail}
+                                    onChange={(e) => setNewEmail(e.target.value)}
+                                    placeholder="Enter new email address"
+                                    className="inputClass w-full"
+                                    disabled={isUpdatingEmail}
+                                />
+                            </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
-                                New Email Address
-                            </label>
-                            <input
-                                type="email"
-                                value={newEmail}
-                                onChange={(e) => setNewEmail(e.target.value)}
-                                placeholder="Enter new email address"
-                                className="inputClass w-full"
-                                disabled={isUpdatingEmail}
-                            />
-                        </div>
+                            <div>
+                                <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
+                                    Confirm Password
+                                </label>
+                                <input
+                                    type="password"
+                                    value={emailPassword}
+                                    onChange={(e) => setEmailPassword(e.target.value)}
+                                    placeholder="Enter your current password"
+                                    className="inputClass w-full"
+                                    disabled={isUpdatingEmail}
+                                />
+                            </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
-                                Confirm Password
-                            </label>
-                            <input
-                                type="password"
-                                value={emailPassword}
-                                onChange={(e) => setEmailPassword(e.target.value)}
-                                placeholder="Enter your current password"
-                                className="inputClass w-full"
-                                disabled={isUpdatingEmail}
-                            />
+                            <div className="pt-4">
+                                <button
+                                    onClick={onUpdateEmail}
+                                    disabled={isUpdatingEmail || !hasEmailRequiredFields}
+                                    className={`bannerButton ${
+                                        isUpdatingEmail || !hasEmailRequiredFields
+                                            ? 'bg-gray-600 cursor-not-allowed opacity-50'
+                                            : 'bg-red-600 hover:bg-red-700'
+                                    } text-white flex items-center justify-center gap-2 w-full`}
+                                >
+                                    {isUpdatingEmail ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                            Updating...
+                                        </>
+                                    ) : (
+                                        'Update Email'
+                                    )}
+                                </button>
+                            </div>
                         </div>
+                    )}
 
-                        <div className="pt-4">
-                            <button
-                                onClick={onUpdateEmail}
-                                disabled={isUpdatingEmail || !hasEmailRequiredFields}
-                                className={`bannerButton ${
-                                    isUpdatingEmail || !hasEmailRequiredFields
-                                        ? 'bg-gray-600 cursor-not-allowed opacity-50'
-                                        : 'bg-red-600 hover:bg-red-700'
-                                } text-white flex items-center justify-center gap-2 w-full`}
-                            >
-                                {isUpdatingEmail ? (
-                                    <>
-                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                        Updating...
-                                    </>
-                                ) : (
-                                    'Update Email'
-                                )}
-                            </button>
-                        </div>
-                    </div>
+                    {/* Password Tab Content */}
+                    {activeTab === 'password' && (
+                        <div className="space-y-6">
+                            <div>
+                                <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
+                                    Current Password
+                                </label>
+                                <input
+                                    type="password"
+                                    value={currentPassword}
+                                    onChange={(e) => setCurrentPassword(e.target.value)}
+                                    placeholder="Enter current password"
+                                    className="inputClass w-full"
+                                    disabled={isUpdatingPassword}
+                                />
+                            </div>
 
-                    {/* Password Settings */}
-                    <div className="space-y-6">
-                        <div>
-                            <h3 className="text-xl font-semibold text-white mb-4">
-                                Password Settings
-                            </h3>
-                        </div>
+                            <div>
+                                <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
+                                    New Password
+                                </label>
+                                <input
+                                    type="password"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    placeholder="Enter new password (min 6 characters)"
+                                    className="inputClass w-full"
+                                    disabled={isUpdatingPassword}
+                                />
+                            </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
-                                Current Password
-                            </label>
-                            <input
-                                type="password"
-                                value={currentPassword}
-                                onChange={(e) => setCurrentPassword(e.target.value)}
-                                placeholder="Enter current password"
-                                className="inputClass w-full"
-                                disabled={isUpdatingPassword}
-                            />
-                        </div>
+                            <div>
+                                <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
+                                    Confirm New Password
+                                </label>
+                                <input
+                                    type="password"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    placeholder="Confirm new password"
+                                    className="inputClass w-full"
+                                    disabled={isUpdatingPassword}
+                                />
+                            </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
-                                New Password
-                            </label>
-                            <input
-                                type="password"
-                                value={newPassword}
-                                onChange={(e) => setNewPassword(e.target.value)}
-                                placeholder="Enter new password (min 6 characters)"
-                                className="inputClass w-full"
-                                disabled={isUpdatingPassword}
-                            />
+                            <div className="pt-4">
+                                <button
+                                    onClick={onUpdatePassword}
+                                    disabled={isUpdatingPassword || !hasPasswordRequiredFields}
+                                    className={`bannerButton ${
+                                        isUpdatingPassword || !hasPasswordRequiredFields
+                                            ? 'bg-gray-600 cursor-not-allowed opacity-50'
+                                            : 'bg-red-600 hover:bg-red-700'
+                                    } text-white flex items-center justify-center gap-2 w-full`}
+                                >
+                                    {isUpdatingPassword ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                            Updating...
+                                        </>
+                                    ) : (
+                                        'Update Password'
+                                    )}
+                                </button>
+                            </div>
                         </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
-                                Confirm New Password
-                            </label>
-                            <input
-                                type="password"
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                placeholder="Confirm new password"
-                                className="inputClass w-full"
-                                disabled={isUpdatingPassword}
-                            />
-                        </div>
-
-                        <div className="pt-4">
-                            <button
-                                onClick={onUpdatePassword}
-                                disabled={isUpdatingPassword || !hasPasswordRequiredFields}
-                                className={`bannerButton ${
-                                    isUpdatingPassword || !hasPasswordRequiredFields
-                                        ? 'bg-gray-600 cursor-not-allowed opacity-50'
-                                        : 'bg-red-600 hover:bg-red-700'
-                                } text-white flex items-center justify-center gap-2 w-full`}
-                            >
-                                {isUpdatingPassword ? (
-                                    <>
-                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                        Updating...
-                                    </>
-                                ) : (
-                                    'Update Password'
-                                )}
-                            </button>
-                        </div>
-                    </div>
+                    )}
                 </div>
             )}
         </div>
