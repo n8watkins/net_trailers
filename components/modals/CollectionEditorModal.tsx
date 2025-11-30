@@ -870,15 +870,83 @@ export default function CollectionEditorModal({
                                         </div>
                                     </div>
 
-                                    {/* Advanced Filters Section - Actors & Directors */}
+                                    {/* Advanced Filters Preview */}
                                     <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
-                                        <h3 className="text-sm font-medium text-white mb-4">
-                                            Advanced Filters
-                                        </h3>
-                                        <AdvancedFiltersSection
-                                            filters={advancedFilters}
-                                            onChange={setAdvancedFilters}
-                                        />
+                                        <div className="flex items-center justify-between mb-3">
+                                            <h3 className="text-sm font-medium text-white">
+                                                Advanced Filters
+                                            </h3>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowAdvancedFiltersModal(true)}
+                                                className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors whitespace-nowrap"
+                                            >
+                                                Edit
+                                            </button>
+                                        </div>
+
+                                        {/* Preview of active filters */}
+                                        <div className="space-y-2 text-xs text-gray-300">
+                                            {advancedFilters.yearMin || advancedFilters.yearMax ? (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-gray-400">Year:</span>
+                                                    <span className="px-2 py-1 bg-gray-700 rounded">
+                                                        {advancedFilters.yearMin || '1900'} -{' '}
+                                                        {advancedFilters.yearMax ||
+                                                            new Date().getFullYear()}
+                                                    </span>
+                                                </div>
+                                            ) : null}
+
+                                            {advancedFilters.ratingMin !== undefined ||
+                                            advancedFilters.ratingMax !== undefined ? (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-gray-400">Rating:</span>
+                                                    <span className="px-2 py-1 bg-gray-700 rounded">
+                                                        {advancedFilters.ratingMin ?? 0}/10 -{' '}
+                                                        {advancedFilters.ratingMax ?? 10}/10
+                                                    </span>
+                                                </div>
+                                            ) : null}
+
+                                            {advancedFilters.withCast &&
+                                            advancedFilters.withCast.length > 0 ? (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-gray-400">Actors:</span>
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {advancedFilters.withCast.map((actor) => (
+                                                            <span
+                                                                key={actor}
+                                                                className="px-2 py-1 bg-blue-600/30 text-blue-200 rounded"
+                                                            >
+                                                                {actor}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ) : null}
+
+                                            {advancedFilters.withDirector ? (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-gray-400">Director:</span>
+                                                    <span className="px-2 py-1 bg-purple-600/30 text-purple-200 rounded">
+                                                        {advancedFilters.withDirector}
+                                                    </span>
+                                                </div>
+                                            ) : null}
+
+                                            {!advancedFilters.yearMin &&
+                                                !advancedFilters.yearMax &&
+                                                advancedFilters.ratingMin === undefined &&
+                                                advancedFilters.ratingMax === undefined &&
+                                                (!advancedFilters.withCast ||
+                                                    advancedFilters.withCast.length === 0) &&
+                                                !advancedFilters.withDirector && (
+                                                    <p className="text-gray-500 italic">
+                                                        No filters applied
+                                                    </p>
+                                                )}
+                                        </div>
                                     </div>
                                 </>
                             )}
@@ -1104,6 +1172,13 @@ export default function CollectionEditorModal({
         <>
             {createPortal(modalContent, document.body)}
             {showGenreModal && createPortal(genreModal, document.body)}
+            {/* Advanced Filters Modal */}
+            <AdvancedFiltersModal
+                isOpen={showAdvancedFiltersModal}
+                filters={advancedFilters}
+                onChange={setAdvancedFilters}
+                onClose={() => setShowAdvancedFiltersModal(false)}
+            />
             {/* Delete Confirmation Modal - uses its own portal */}
             <DeleteConfirmationModal
                 isOpen={showDeleteModal}

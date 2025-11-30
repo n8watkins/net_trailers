@@ -127,12 +127,7 @@ async function createNotification(
 async function createMultipleNotifications(userId: string, count: number = 5): Promise<void> {
     console.log(`\n📝 Creating ${count} test notifications...`)
 
-    const types: NotificationType[] = [
-        'trending_update',
-        'collection_update',
-        'new_release',
-        'system',
-    ]
+    const types: NotificationType[] = ['trending_update', 'new_release', 'system']
 
     for (let i = 0; i < count; i++) {
         const type = types[i % types.length]
@@ -191,7 +186,6 @@ async function main() {
         console.log('  npm run test:notification -- --userId=YOUR_USER_ID --list')
         console.log('\nAvailable types:')
         console.log('  - trending_update')
-        console.log('  - collection_update')
         console.log('  - new_release')
         console.log('  - system')
         process.exit(1)
