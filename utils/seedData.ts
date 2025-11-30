@@ -91,7 +91,7 @@ export const sampleMovies: Movie[] = [
         overview:
             'Imprisoned in the 1940s for the double murder of his wife and her lover, upstanding banker Andy Dufresne begins a new life at the Shawshank prison.',
         poster_path: '/9cqNxx0GxF0bflZmeSMuL5tnGzr.jpg',
-        backdrop_path: '/kXfqcdQKsToO0OUXHcrrNCHDBzO.jpg',
+        backdrop_path: '/zfbjgQE1uSd9wiPTX4VzsLi0rGG.jpg',
         release_date: '1994-09-23',
         vote_average: 8.7,
         vote_count: 24970,
@@ -125,7 +125,7 @@ export const sampleMovies: Movie[] = [
         overview:
             'The true story of how businessman Oskar Schindler saved over a thousand Jewish lives from the Nazis while they worked as slaves in his factory during World War II.',
         poster_path: '/sF1U4EUQS8YHUYjNl3pMGNIQyr0.jpg',
-        backdrop_path: '/loRmRzQXZeqG78TqZuyvSlEQfZb.jpg',
+        backdrop_path: '/zb6fM1CX41D9rF9hdgclu0peUmy.jpg',
         release_date: '1993-12-15',
         vote_average: 8.6,
         vote_count: 14633,
@@ -158,7 +158,7 @@ export const sampleMovies: Movie[] = [
         original_title: 'Inception',
         overview:
             'Cobb, a skilled thief who commits corporate espionage by infiltrating the subconscious of his targets is offered a chance to regain his old life.',
-        poster_path: '/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg',
+        poster_path: '/xlaY2zyzMfkhk0HSC5VUwzoZPU1.jpg',
         backdrop_path: '/s3TBrRGB1iav7gFOCNx3H31MoES.jpg',
         release_date: '2010-07-16',
         vote_average: 8.4,
@@ -176,7 +176,7 @@ export const sampleMovies: Movie[] = [
         overview:
             'A young girl, Chihiro, becomes trapped in a strange new world of spirits. When her parents undergo a mysterious transformation, she must call upon the courage she never knew she had to free her family.',
         poster_path: '/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg',
-        backdrop_path: '/Ab8mkHmkYADjU7wQiOkia9BzGvS.jpg',
+        backdrop_path: '/ukfI9QkU1aIhOhKXYWE9n3z1mFR.jpg',
         release_date: '2001-07-20',
         vote_average: 8.5,
         vote_count: 15000,
@@ -209,8 +209,8 @@ export const sampleMovies: Movie[] = [
         original_title: 'The Green Mile',
         overview:
             "A supernatural tale set on death row in a Southern prison, where gentle giant John Coffey possesses the mysterious power to heal people's ailments.",
-        poster_path: '/velWPhVMQeQKcxggNEU8YmIo52R.jpg',
-        backdrop_path: '/l6hQWH9eDksNJNiXWYRkWqikOdu.jpg',
+        poster_path: '/o0lO84GI7qrG6XFvtsPOSV7CTNa.jpg',
+        backdrop_path: '/b6HWTOxn1xevvyHU2K9ICvaRU6g.jpg',
         release_date: '1999-12-10',
         vote_average: 8.5,
         vote_count: 16000,
@@ -244,7 +244,7 @@ export const sampleMovies: Movie[] = [
         overview:
             'The story of Henry Hill and his life in the mob, covering his relationship with his wife Karen Hill and his mob partners Jimmy Conway and Tommy DeVito.',
         poster_path: '/aKuFiU82s5ISJpGZp7YkIr3kCUd.jpg',
-        backdrop_path: '/sw7mordbZxgITU877yTpZCud90M.jpg',
+        backdrop_path: '/gILte6Zd7m1YneIr6MVhh30S9pr.jpg',
         release_date: '1990-09-12',
         vote_average: 8.5,
         vote_count: 12000,
@@ -278,7 +278,7 @@ export const sampleMovies: Movie[] = [
         overview:
             'As the Avengers and their allies have continued to protect the world from threats too large for any one hero to handle, a new danger has emerged from the cosmic shadows: Thanos.',
         poster_path: '/7WsyChQLEftFiDOVTGkv3hFpyyt.jpg',
-        backdrop_path: '/lmZFxXgJE3vgrciwuDib0N8CfQo.jpg',
+        backdrop_path: '/mDfJG3LC3Dqb67AZ52x3Z0jU0uB.jpg',
         release_date: '2018-04-25',
         vote_average: 8.3,
         vote_count: 27000,
@@ -294,8 +294,8 @@ export const sampleMovies: Movie[] = [
         original_title: 'The Matrix',
         overview:
             'Set in the 22nd century, The Matrix tells the story of a computer hacker who joins a group of underground insurgents fighting the vast and powerful computers who now rule the earth.',
-        poster_path: '/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg',
-        backdrop_path: '/fNG7i7RqMErkcqhohV2a6cV1Ehy.jpg',
+        poster_path: '/p96dm7sCMn4VYAStA6siNz30G1r.jpg',
+        backdrop_path: '/tlm8UkiQsitc8rSuIAscQDCnP8d.jpg',
         release_date: '1999-03-30',
         vote_average: 8.2,
         vote_count: 24000,
@@ -329,7 +329,7 @@ export const sampleMovies: Movie[] = [
         overview:
             'The adventures of a group of explorers who make use of a newly discovered wormhole to surpass the limitations on human space travel and conquer the vast distances involved in an interstellar voyage.',
         poster_path: '/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
-        backdrop_path: '/pbrkL804c8yAv3zBZR4QPEafpAR.jpg',
+        backdrop_path: '/5XNQBqnBwPA9yT0jZ0p3s8bbLh0.jpg',
         release_date: '2014-11-05',
         vote_average: 8.4,
         vote_count: 32000,
@@ -346,7 +346,7 @@ export const sampleMovies: Movie[] = [
         overview:
             'The defense and the prosecution have rested and the jury is filing into the jury room to decide if a young Spanish-American is guilty or innocent of murdering his father.',
         poster_path: '/ow3wq89wM8qd5X7hWKxiRfsFf9C.jpg',
-        backdrop_path: '/qqHQsStV6exghCM7zbObuYBiYxw.jpg',
+        backdrop_path: '/w4bTBXcqXc2TUyS5Fc4h67uWbPn.jpg',
         release_date: '1957-04-10',
         vote_average: 8.5,
         vote_count: 8000,
@@ -379,8 +379,8 @@ export const sampleMovies: Movie[] = [
         original_title: 'Dilwale Dulhania Le Jayenge',
         overview:
             'Raj is a rich, carefree, happy-go-lucky second generation NRI. Simran is the daughter of Chaudhary Baldev Singh.',
-        poster_path: '/lfRkUr7DYdHldAqi3PwdQGBRBPM.jpg',
-        backdrop_path: '/90ez6ArvpO8bvpyIngBuwXOqJm5.jpg',
+        poster_path: '/2CAL2433ZeIihfX1Hb2139CX0pW.jpg',
+        backdrop_path: '/zQDFHYNVVVp9OAYSixYAG1SyX1l.jpg',
         release_date: '1995-10-20',
         vote_average: 8.7,
         vote_count: 4000,
@@ -396,8 +396,8 @@ export const sampleMovies: Movie[] = [
         original_title: 'Seven Samurai',
         overview:
             'A samurai answers a village request for protection after he falls on hard times.',
-        poster_path: '/8OKmBV5BUFzmozIC3pPWKHy17kx.jpg',
-        backdrop_path: '/sJNNMCc6B7KZIY3LH3JMYJJNH5j.jpg',
+        poster_path: '/lOMGc8bnSwQhS4XyE1S99uH8NXf.jpg',
+        backdrop_path: '/qvZ91FwMq6O47VViAr8vZNQz3WI.jpg',
         release_date: '1954-04-26',
         vote_average: 8.5,
         vote_count: 3300,
@@ -450,8 +450,8 @@ export const sampleTVShows: TVShow[] = [
         original_name: 'Breaking Bad',
         overview:
             'A high school chemistry teacher diagnosed with terminal lung cancer teams up with a former student to manufacture and sell crystallized methamphetamine.',
-        poster_path: '/ggFHVNu6YYI5L9pCfOacjizRGt.jpg',
-        backdrop_path: '/tsRy63Mu5cu8etL1X7ZLyf7UP1M.jpg',
+        poster_path: '/ztkUQFLlC19CCMYHW9o1zWhJRNq.jpg',
+        backdrop_path: '/63FA8vwSZnXkGxedrDQwni4JuZN.jpg',
         first_air_date: '2008-01-20',
         vote_average: 8.9,
         vote_count: 12137,
@@ -468,7 +468,7 @@ export const sampleTVShows: TVShow[] = [
         overview:
             'Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war.',
         poster_path: '/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg',
-        backdrop_path: '/2OMB0ynKlyIenMJWI2Dy9IWT4c.jpg',
+        backdrop_path: '/zZqpAXxVSBtxV9qPBcscfXBcL2w.jpg',
         first_air_date: '2011-04-17',
         vote_average: 8.4,
         vote_count: 21916,
@@ -484,8 +484,8 @@ export const sampleTVShows: TVShow[] = [
         original_name: 'Arcane',
         overview:
             'Amid the stark discord of twin cities Piltover and Zaun, two sisters fight on rival sides of a war between magic technologies and clashing convictions.',
-        poster_path: '/fqldf2t8ztc9aiwn3k6mlX3tvRT.jpg',
-        backdrop_path: '/rkB4LyZHo1NHXFEDHl9vSD9r1lI.jpg',
+        poster_path: '/zO5xURaYgMX6WpXolp83zVk03Yh.jpg',
+        backdrop_path: '/sYXLeu5usz6yEz0k00FYvtEdodD.jpg',
         first_air_date: '2021-11-06',
         vote_average: 8.7,
         vote_count: 3382,
@@ -501,8 +501,8 @@ export const sampleTVShows: TVShow[] = [
         original_name: 'Rick and Morty',
         overview:
             'A genius scientist and his grandson go on wild sci-fi adventures across the multiverse.',
-        poster_path: '/gdIrmf2DdY5mgN6ycVP0XlzKzbE.jpg',
-        backdrop_path: '/eV3XnUul4UfIivz3kxgeIozeo50.jpg',
+        poster_path: '/WGRQ8FpjkDTzivQJ43t94bOuY0.jpg',
+        backdrop_path: '/9In9QgVJx7PlFOAgVHCKKSbo605.jpg',
         first_air_date: '2013-12-02',
         vote_average: 8.7,
         vote_count: 9090,
@@ -518,8 +518,8 @@ export const sampleTVShows: TVShow[] = [
         original_name: 'The Mandalorian',
         overview:
             'After the fall of the Empire, a lone gunfighter makes his way through the lawless galaxy.',
-        poster_path: '/eU1i6eHXlzMOlEq0ku1Rzq7Y4wA.jpg',
-        backdrop_path: '/9ijMGlJKqcslswWUzTEwScm82Gs.jpg',
+        poster_path: '/sWgBv7LV2PRoQgkxwlibdGXKz1S.jpg',
+        backdrop_path: '/9zcbqSxdsRMZWHYtyCd1nXPr2xq.jpg',
         first_air_date: '2019-11-12',
         vote_average: 8.4,
         vote_count: 8791,
@@ -535,8 +535,8 @@ export const sampleTVShows: TVShow[] = [
         original_name: 'WandaVision',
         overview:
             'Wanda Maximoff and Vision—two super-powered beings living idealized suburban lives—begin to suspect that everything is not as it seems.',
-        poster_path: '/glKDfE6btIRcVB5zrjspRIs4r52.jpg',
-        backdrop_path: '/57vVjteucIF3bGnZj6PmaoJRScw.jpg',
+        poster_path: '/frobUz2X5Pc8OiVZU8Oo5K3NKMM.jpg',
+        backdrop_path: '/lOr9NKxh4vMweufMOUDJjJhCRHW.jpg',
         first_air_date: '2021-01-15',
         vote_average: 8.2,
         vote_count: 11261,
@@ -553,7 +553,7 @@ export const sampleTVShows: TVShow[] = [
         overview:
             'Six years before Saul Goodman meets Walter White. We meet him when the man who will become Saul Goodman is known as Jimmy McGill.',
         poster_path: '/fC2HDm5t0kHl7mTm7jxMR31b7by.jpg',
-        backdrop_path: '/9faGSFi5jam6pDWGNd0p8JcJgXQ.jpg',
+        backdrop_path: '/t15KHp3iNfHVQBNIaqUGW12xQA4.jpg',
         first_air_date: '2015-02-08',
         vote_average: 8.7,
         vote_count: 4835,
@@ -569,8 +569,8 @@ export const sampleTVShows: TVShow[] = [
         original_name: 'The Last of Us',
         overview:
             'Twenty years after modern civilization has been destroyed, Joel must smuggle Ellie out of an oppressive quarantine zone.',
-        poster_path: '/uKvVjHNqB5VmOrdxqAt2F7J78ED.jpg',
-        backdrop_path: '/uDgy6hyPd82kOHh6I95FLtLnj6p.jpg',
+        poster_path: '/dmo6TYuuJgaYinXBPjrgG9mB5od.jpg',
+        backdrop_path: '/uQ4lG7E7mlyKsGvbASftQ6Hu2IX.jpg',
         first_air_date: '2023-01-15',
         vote_average: 8.6,
         vote_count: 5702,
@@ -688,8 +688,8 @@ export const sampleTVShows: TVShow[] = [
         original_name: 'Stranger Things',
         overview:
             'When a young boy vanishes, a small town uncovers a mystery involving secret experiments, terrifying supernatural forces, and one strange little girl.',
-        poster_path: '/49WJfeN0moxb9IPfGn8AIqMGskD.jpg',
-        backdrop_path: '/56v2KjBlU4XaOv9rVYEQypROD7P.jpg',
+        poster_path: '/ig5sp7GzfQZw2dXgrM8OXUpOPri.jpg',
+        backdrop_path: '/qsnXwGS7KBbX4JLqHvICngtR8qg.jpg',
         first_air_date: '2016-07-15',
         vote_average: 8.6,
         vote_count: 16000,
@@ -706,7 +706,7 @@ export const sampleTVShows: TVShow[] = [
         overview:
             'Years ago, the fearsome Pirate King, Gol D. Roger was executed leaving a huge pile of treasure and the famous "One Piece" behind.',
         poster_path: '/cMD9Ygz11zjJzAovURpO75Qg7rT.jpg',
-        backdrop_path: '/2rmK7mnchw9Xr3XdiTFSxTTLXqv.jpg',
+        backdrop_path: '/oVfucXvhutTpYExG9k06NJqnpT9.jpg',
         first_air_date: '1999-10-20',
         vote_average: 8.7,
         vote_count: 4500,
@@ -757,7 +757,7 @@ export const sampleTVShows: TVShow[] = [
         overview:
             'A gangster family epic set in 1919 Birmingham, England and centered on a gang who sew razor blades in the peaks of their caps.',
         poster_path: '/vUUqzWa2LnHIVqkaKVlVGkVcZIW.jpg',
-        backdrop_path: '/wiE9doxiLwq3WCGamDIOb2PqBqc.jpg',
+        backdrop_path: '/l8v3gJDlASN0lNn51gR8zQJsu5O.jpg',
         first_air_date: '2013-09-12',
         vote_average: 8.5,
         vote_count: 6500,
@@ -774,7 +774,7 @@ export const sampleTVShows: TVShow[] = [
         overview:
             'The true story of one of the worst man-made catastrophes in history: the catastrophic nuclear accident at Chernobyl.',
         poster_path: '/hlLXt2tOPT6RRnjiUmoxyG1LTFi.jpg',
-        backdrop_path: '/900tHlUYUkp7Ol04XFSoAaEIXcT.jpg',
+        backdrop_path: '/3URK0z9PzpVNJrGE7XOuyy6KFzk.jpg',
         first_air_date: '2019-05-06',
         vote_average: 8.7,
         vote_count: 5800,
