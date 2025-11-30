@@ -45,10 +45,10 @@ export interface AdvancedFilters {
 
 ### Collection Types
 
-This feature would work with two collection types:
+This feature would work with collection types:
 
 1. **Manual Collections** - User picks specific actors/directors, content is static
-2. **Auto-Updating Collections** - Collection automatically includes new releases featuring those people
+2. **TMDB Genre Collections** - Collections that fetch content dynamically from TMDB
 
 ### UI Implementation
 
@@ -241,10 +241,6 @@ const isValidPersonFilter = (filter: AdvancedFilters): boolean => {
     - Track most-used actors/directors
     - Identify trending people for featured collections
 
-3. **Auto-Update Value**
-    - Monitor notification engagement for person-based collections
-    - Track retention of person-filtered auto-updating collections
-
 ## Future Enhancements (Out of Scope)
 
 1. **Person Collections Page**
@@ -277,9 +273,9 @@ const isValidPersonFilter = (filter: AdvancedFilters): boolean => {
     - **Recommendation**: Start with single director, add multi-director in v2 if requested
 
 2. **Should person filters work with manual collections?**
-    - Current plan: Works with auto-updating collections
+    - Current plan: Works with TMDB genre collections (dynamic content)
     - Alternative: Manual collections show person picker but only for initial content fetch
-    - **Recommendation**: Support both - manual for static snapshot, auto-update for live tracking
+    - **Recommendation**: Support both - manual for static snapshot, TMDB genre for dynamic content
 
 3. **Should we integrate with existing person page "Create Collection" feature?**
     - See: `docs/future-features/person-collections-feature.md`
@@ -302,10 +298,9 @@ const isValidPersonFilter = (filter: AdvancedFilters): boolean => {
 - Test with various person + genre combinations
 - **Estimate**: 2-3 hours
 
-### Phase 3: Auto-Update Integration
+### Phase 3: Dynamic Content Integration
 
-- Enhance cron job to handle person-based collections
-- Create notifications for new person content
+- Integrate person filters with TMDB genre collections
 - Test with real TMDB person IDs
 - **Estimate**: 1-2 hours
 
