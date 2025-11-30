@@ -615,8 +615,8 @@ export default function CollectionEditorModal({
                             {/* For editable collections, show full or limited UI */}
                             {!canOnlyToggle && (
                                 <>
-                                    {/* Toggle Settings - Two Column Layout */}
-                                    <div className="grid grid-cols-2 gap-3">
+                                    {/* Toggle Settings - Single Column Layout */}
+                                    <div className="space-y-3">
                                         {/* Display on Page Toggle */}
                                         <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
                                             <div className="flex items-center justify-between">
@@ -674,7 +674,7 @@ export default function CollectionEditorModal({
                                         </div>
 
                                         {/* Infinite Content Toggle */}
-                                        <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700 col-span-2">
+                                        <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
                                             <div className="relative flex items-center justify-between">
                                                 <label className="text-sm font-medium text-white flex items-center gap-1.5">
                                                     <span>♾️</span>
@@ -753,7 +753,7 @@ export default function CollectionEditorModal({
                                             }`}
                                         >
                                             <div className="space-y-3">
-                                                <p className="text-base font-semibold text-white">
+                                                <p className="text-lg font-bold text-white">
                                                     Media Type
                                                 </p>
                                                 <div className="space-y-2">
@@ -821,17 +821,17 @@ export default function CollectionEditorModal({
                                         {/* Genres */}
                                         <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
                                             <div className="space-y-3">
-                                                <div className="flex items-center justify-between">
-                                                    <p className="text-base font-semibold text-white">
+                                                <div className="flex items-start justify-between">
+                                                    <p className="text-lg font-bold text-white">
                                                         Genres
                                                     </p>
                                                     {!canOnlyToggle && (
                                                         <button
                                                             type="button"
                                                             onClick={() => setShowGenreModal(true)}
-                                                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 font-medium"
+                                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 text-sm font-medium flex-shrink-0"
                                                         >
-                                                            <PencilIcon className="w-4 h-4" />
+                                                            <PencilIcon className="w-3.5 h-3.5" />
                                                             Edit
                                                         </button>
                                                     )}
@@ -884,9 +884,9 @@ export default function CollectionEditorModal({
                                                     onClick={() =>
                                                         setShowAdvancedFiltersModal(true)
                                                     }
-                                                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 font-medium"
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 text-sm font-medium flex-shrink-0"
                                                 >
-                                                    <PencilIcon className="w-4 h-4" />
+                                                    <PencilIcon className="w-3.5 h-3.5" />
                                                     Edit
                                                 </button>
                                             </div>
@@ -952,9 +952,9 @@ export default function CollectionEditorModal({
                                                     onClick={() =>
                                                         setShowAdvancedFiltersModal(true)
                                                     }
-                                                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 font-medium"
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 text-sm font-medium flex-shrink-0"
                                                 >
-                                                    <PencilIcon className="w-4 h-4" />
+                                                    <PencilIcon className="w-3.5 h-3.5" />
                                                     Edit
                                                 </button>
                                             </div>
@@ -1016,39 +1016,44 @@ export default function CollectionEditorModal({
 
                                     {/* Content Grid */}
                                     <div>
-                                        <h3 className="text-lg font-semibold text-white mb-4">
-                                            Collection Content ({visibleContent.length} titles
-                                            {removedIds.size > 0 && (
-                                                <span className="text-gray-500 ml-2">
-                                                    · {removedIds.size} removed
-                                                </span>
-                                            )}
-                                            )
-                                        </h3>
+                                        {visibleContent.length > 0 && (
+                                            <>
+                                                <h3 className="text-lg font-semibold text-white mb-4">
+                                                    Collection Content ({visibleContent.length}{' '}
+                                                    titles
+                                                    {removedIds.size > 0 && (
+                                                        <span className="text-gray-500 ml-2">
+                                                            · {removedIds.size} removed
+                                                        </span>
+                                                    )}
+                                                    )
+                                                </h3>
 
-                                        {/* Search Filter - Below heading */}
-                                        <div className="mb-4">
-                                            <div className="relative w-96">
-                                                <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                                                <input
-                                                    type="text"
-                                                    placeholder="Filter titles..."
-                                                    value={searchFilter}
-                                                    onChange={(e) =>
-                                                        setSearchFilter(e.target.value)
-                                                    }
-                                                    className="w-full h-12 pl-12 pr-4 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                />
-                                                {searchFilter && (
-                                                    <button
-                                                        onClick={() => setSearchFilter('')}
-                                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-                                                    >
-                                                        <XMarkIcon className="h-5 w-5" />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
+                                                {/* Search Filter - Below heading */}
+                                                <div className="mb-4">
+                                                    <div className="relative w-96">
+                                                        <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Filter titles..."
+                                                            value={searchFilter}
+                                                            onChange={(e) =>
+                                                                setSearchFilter(e.target.value)
+                                                            }
+                                                            className="w-full h-12 pl-12 pr-4 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                        />
+                                                        {searchFilter && (
+                                                            <button
+                                                                onClick={() => setSearchFilter('')}
+                                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                                                            >
+                                                                <XMarkIcon className="h-5 w-5" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
 
                                         {visibleContent.length === 0 ? (
                                             <div className="text-center py-8 text-gray-400">
