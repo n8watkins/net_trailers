@@ -9,6 +9,7 @@ import {
     SparklesIcon,
     PencilSquareIcon,
     Squares2X2Icon,
+    PlusIcon,
 } from '@heroicons/react/24/solid'
 import { XMarkIcon, MicrophoneIcon } from '@heroicons/react/24/outline'
 import NetflixLoader from '../../components/common/NetflixLoader'
@@ -16,6 +17,7 @@ import { useAuthStatus } from '../../hooks/useAuthStatus'
 import CollectionBrowseCard from '../../components/collections/CollectionBrowseCard'
 import { useVoiceInput } from '../../hooks/useVoiceInput'
 import { useToast } from '../../hooks/useToast'
+import { useModalStore } from '../../stores/modalStore'
 
 type FilterValue = 'all' | 'auto' | 'manual' | 'ai'
 
@@ -24,6 +26,7 @@ const Collections = () => {
     const { isLoading } = useAuthStatus()
     const { getAllLists } = userData
     const { showError } = useToast()
+    const openCollectionBuilderModal = useModalStore((state) => state.openCollectionBuilderModal)
 
     // State
     const [searchQuery, setSearchQuery] = useState('')
@@ -145,6 +148,17 @@ const Collections = () => {
                                     </span>
                                 )}
                             </p>
+
+                            {/* Create Collection Button */}
+                            <div className="mb-5">
+                                <button
+                                    onClick={() => openCollectionBuilderModal()}
+                                    className="group relative px-8 py-3 rounded-xl font-bold transition-all duration-300 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:shadow-[0_0_30px_rgba(59,130,246,0.6)] scale-100 hover:scale-105 flex items-center gap-2"
+                                >
+                                    <PlusIcon className="w-5 h-5" />
+                                    Create Collection
+                                </button>
+                            </div>
 
                             {/* Filter Pills */}
                             <div className="flex flex-wrap gap-2 items-center justify-center mb-5 overflow-visible pb-2 px-4 min-h-[44px]">

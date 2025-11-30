@@ -20,7 +20,13 @@ import { getUserComments } from '../../utils/firestore/rankingComments'
 import { getUserLikedRankings } from '../../utils/firestore/rankings'
 import { formatDistanceToNow } from 'date-fns'
 import Link from 'next/link'
-import { TrophyIcon, ChatBubbleLeftIcon, HeartIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import {
+    TrophyIcon,
+    ChatBubbleLeftIcon,
+    HeartIcon,
+    XMarkIcon,
+    MicrophoneIcon,
+} from '@heroicons/react/24/outline'
 import {
     Cog6ToothIcon,
     ChevronDownIcon,
@@ -28,12 +34,15 @@ import {
     PlusIcon,
     MagnifyingGlassIcon,
 } from '@heroicons/react/24/solid'
+import { useVoiceInput } from '../../hooks/useVoiceInput'
+import { useToast } from '../../hooks/useToast'
 
 export default function RankingsPage() {
     const router = useRouter()
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
     const { isGuest, isInitialized } = useAuthStatus()
+    const { showError } = useToast()
 
     const { rankings, isLoading, error, loadUserRankings } = useRankingStore()
 
@@ -47,10 +56,40 @@ export default function RankingsPage() {
     const [rankingsSearch, setRankingsSearch] = useState('')
     const [commentsSearch, setCommentsSearch] = useState('')
     const [likedSearch, setLikedSearch] = useState('')
+    const [isMounted, setIsMounted] = useState(false)
 
     // Manage dropdown state
     const [showManageDropdown, setShowManageDropdown] = useState(false)
     const manageDropdownRef = useRef<HTMLDivElement>(null)
+
+    // Voice input for active search
+    const currentSearch =
+        activeTab === 'rankings'
+            ? rankingsSearch
+            : activeTab === 'comments'
+              ? commentsSearch
+              : likedSearch
+    const setCurrentSearch =
+        activeTab === 'rankings'
+            ? setRankingsSearch
+            : activeTab === 'comments'
+              ? setCommentsSearch
+              : setLikedSearch
+
+    const { isListening, isSupported, transcript, startListening, stopListening } = useVoiceInput({
+        onResult: (transcript) => {
+            setCurrentSearch(transcript)
+        },
+        onError: (error) => {
+            showError(error)
+        },
+        sourceId: `rankings-${activeTab}-search`,
+    })
+
+    // Track client-side mount
+    useEffect(() => {
+        setIsMounted(true)
+    }, [])
 
     // Handle click outside to close dropdown
     useEffect(() => {
@@ -183,7 +222,7 @@ export default function RankingsPage() {
                 {/* Content Container */}
                 <div className="relative z-10">
                     {/* Cinematic Hero Header */}
-                    <div className="relative overflow-hidden pt-4">
+                    <div className="relative overflow-hidden pt-12">
                         {/* Animated Background Gradients */}
                         <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900/80 to-black" />
                         <div
@@ -197,7 +236,7 @@ export default function RankingsPage() {
                         <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60" />
 
                         {/* Hero Content */}
-                        <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-6">
+                        <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-4">
                             {/* Title with inline icon */}
                             <div className="flex items-center gap-4 mb-2">
                                 {/* Trophy Icon with glow */}
@@ -215,7 +254,7 @@ export default function RankingsPage() {
                             </div>
 
                             {/* Subtitle */}
-                            <p className="text-base sm:text-lg text-gray-300 mb-6 text-center max-w-2xl">
+                            <p className="text-base sm:text-lg text-gray-300 mb-4 text-center max-w-2xl">
                                 Create, manage, and share your personalized content rankings
                             </p>
 
@@ -352,16 +391,42 @@ export default function RankingsPage() {
                                             value={currentSearch}
                                             onChange={(e) => setCurrentSearch(e.target.value)}
                                             placeholder={`Search ${activeTab === 'rankings' ? 'your rankings' : activeTab === 'comments' ? 'your comments' : 'liked rankings'}...`}
-                                            className="w-full pl-14 pr-14 py-4 bg-zinc-900/40 backdrop-blur-lg border border-zinc-800/50 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-yellow-500 focus:shadow-[0_0_25px_rgba(234,179,8,0.3)] transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700"
+                                            className={`w-full pl-14 ${isMounted && isSupported ? 'pr-24' : 'pr-14'} py-4 bg-zinc-900/40 backdrop-blur-lg border border-zinc-800/50 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-yellow-500 focus:shadow-[0_0_25px_rgba(234,179,8,0.3)] transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700`}
                                         />
-                                        {currentSearch && (
-                                            <button
-                                                onClick={() => setCurrentSearch('')}
-                                                className="absolute right-5 top-1/2 -translate-y-1/2 z-10 text-gray-400 hover:text-white transition-colors"
-                                            >
-                                                <XMarkIcon className="w-6 h-6" />
-                                            </button>
-                                        )}
+                                        <div className="absolute right-5 top-1/2 -translate-y-1/2 z-10 flex items-center gap-2">
+                                            {isMounted && isSupported && (
+                                                <button
+                                                    type="button"
+                                                    onClick={async () => {
+                                                        if (isListening) {
+                                                            stopListening()
+                                                        } else {
+                                                            await startListening()
+                                                        }
+                                                    }}
+                                                    className={`p-1.5 rounded-lg transition-all ${
+                                                        isListening
+                                                            ? 'bg-yellow-500 text-white animate-pulse'
+                                                            : 'text-gray-400 hover:text-yellow-400 hover:bg-yellow-500/10'
+                                                    }`}
+                                                    title={
+                                                        isListening
+                                                            ? 'Stop listening'
+                                                            : 'Voice search'
+                                                    }
+                                                >
+                                                    <MicrophoneIcon className="w-5 h-5" />
+                                                </button>
+                                            )}
+                                            {currentSearch && (
+                                                <button
+                                                    onClick={() => setCurrentSearch('')}
+                                                    className="text-gray-400 hover:text-white transition-colors"
+                                                >
+                                                    <XMarkIcon className="w-6 h-6" />
+                                                </button>
+                                            )}
+                                        </div>
 
                                         {/* Glowing border effect on focus */}
                                         <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-yellow-500 to-amber-500 opacity-0 group-focus-within:opacity-20 blur-xl transition-opacity duration-300 -z-10" />
@@ -372,7 +437,7 @@ export default function RankingsPage() {
                     </div>
 
                     {/* Main Content Area */}
-                    <div className="px-6 sm:px-8 lg:px-12 py-8 space-y-6">
+                    <div className="px-6 sm:px-8 lg:px-12 py-4 space-y-6">
                         {/* Guest Mode Banner */}
                         {isGuest && (
                             <div className="flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-yellow-600/10 border border-yellow-600/30 max-w-2xl mx-auto">

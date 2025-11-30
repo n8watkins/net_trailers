@@ -12,6 +12,7 @@ import {
     Cog6ToothIcon,
     ChevronDownIcon,
     TrashIcon,
+    PlusIcon,
 } from '@heroicons/react/24/solid'
 import { XMarkIcon, RectangleStackIcon } from '@heroicons/react/24/outline'
 import { Content } from '../../../typings'
@@ -23,6 +24,7 @@ import { UserList } from '../../../types/collections'
 import CollectionEditorModal from '../../../components/modals/CollectionEditorModal'
 import { useChildSafety } from '../../../hooks/useChildSafety'
 import Link from 'next/link'
+import { useModalStore } from '../../../stores/modalStore'
 
 const CollectionPage = () => {
     // Fixed collection ID for Watch Later
@@ -32,6 +34,7 @@ const CollectionPage = () => {
     const { user } = useAuth()
     const { getAllLists } = userData
     const { isEnabled: childSafetyMode } = useChildSafety()
+    const openCollectionBuilderModal = useModalStore((state) => state.openCollectionBuilderModal)
 
     // Infinite scroll state for genre-based collections
     const [additionalContent, setAdditionalContent] = useState<Content[]>([])
@@ -512,8 +515,17 @@ const CollectionPage = () => {
                                         })}
                                 </div>
 
-                                {/* Action Row - Edit & Manage */}
+                                {/* Action Row - Create, Edit & Manage */}
                                 <div className="flex gap-2 items-center mb-5">
+                                    {/* Create Collection Button */}
+                                    <button
+                                        onClick={() => openCollectionBuilderModal()}
+                                        className="group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 bg-blue-500/90 text-white border-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.3)] hover:bg-blue-600 hover:scale-105 hover:shadow-[0_0_15px_rgba(59,130,246,0.4)]"
+                                    >
+                                        <PlusIcon className="w-4 h-4" />
+                                        <span>Create Collection</span>
+                                    </button>
+
                                     {/* Edit Button - Only show for editable collections */}
                                     {selectedList &&
                                         selectedList.id !== 'default-watchlist' &&
