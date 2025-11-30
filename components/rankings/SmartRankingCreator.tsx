@@ -13,6 +13,7 @@ import {
 import { useSessionStore } from '@/stores/sessionStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useGuestStore } from '@/stores/guestStore'
+import { useProfileStore } from '@/stores/profileStore'
 import { useToast } from '@/hooks/useToast'
 import { useRankingStore } from '@/stores/rankingStore'
 import { useSessionData } from '@/hooks/useSessionData'
@@ -206,6 +207,7 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
     const authCollections = useAuthStore((state) => state.userCreatedWatchlists)
     const guestCollections = useGuestStore((state) => state.userCreatedWatchlists)
     const { createRanking, updateRanking } = useRankingStore()
+    const profile = useProfileStore((state) => state.profile)
     const { showSuccess, showError } = useToast()
     const { hiddenMovies } = useSessionData()
 
@@ -622,8 +624,10 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
             return
         }
 
-        const username = currentUser.displayName || 'Unknown User'
-        const avatarUrl = currentUser.photoURL || undefined
+        // Get display name and optional username from profile
+        const displayName = profile?.displayName || currentUser.displayName || 'Unknown User'
+        const username = profile?.username // Optional username for profile URL
+        const avatarUrl = profile?.avatarUrl || currentUser.photoURL || undefined
 
         setIsLoading(true)
         try {
@@ -644,7 +648,13 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                 createRequest.description = description.trim()
             }
 
-            const rankingId = await createRanking(userId, username, avatarUrl, createRequest)
+            const rankingId = await createRanking(
+                userId,
+                displayName,
+                username,
+                avatarUrl,
+                createRequest
+            )
 
             if (rankingId) {
                 // Update with ranked items

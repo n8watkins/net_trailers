@@ -21,6 +21,7 @@ import {
 } from '@/types/rankings'
 import { useRankingStore } from '@/stores/rankingStore'
 import { useSessionStore } from '@/stores/sessionStore'
+import { useProfileStore } from '@/stores/profileStore'
 import { useSearch } from '@/hooks/useSearch'
 import { useToast } from '@/hooks/useToast'
 import { auth } from '@/firebase'
@@ -55,6 +56,7 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
     const { createRanking, updateRanking } = useRankingStore()
+    const profile = useProfileStore((state) => state.profile)
     const { query, updateQuery, results, isLoading: isSearchLoading } = useSearch()
     const { showSuccess, showError } = useToast()
 
@@ -196,8 +198,10 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
             return
         }
 
-        const username = currentUser.displayName || 'Unknown User'
-        const avatarUrl = currentUser.photoURL || undefined
+        // Get display name and optional username from profile
+        const displayName = profile?.displayName || currentUser.displayName || 'Unknown User'
+        const username = profile?.username // Optional username for profile URL
+        const avatarUrl = profile?.avatarUrl || currentUser.photoURL || undefined
 
         // Validate note lengths before submission
         const invalidNotes = rankedItems.filter(
@@ -243,7 +247,13 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                     createRequest.description = description.trim()
                 }
 
-                const rankingId = await createRanking(userId, username, avatarUrl, createRequest)
+                const rankingId = await createRanking(
+                    userId,
+                    displayName,
+                    username,
+                    avatarUrl,
+                    createRequest
+                )
 
                 if (!rankingId) {
                     throw new Error('Failed to create ranking')

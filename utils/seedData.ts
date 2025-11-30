@@ -1809,18 +1809,17 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                 )
 
                 // Step 1: Create the ranking with basic info
-                const rankingId = await useRankingStore
-                    .getState()
-                    .createRanking(
-                        userProfile.id,
-                        userProfile.name,
-                        userProfile.avatar ?? undefined,
-                        {
-                            title: rankingData.title,
-                            description: rankingData.description,
-                            itemCount: rankingData.items.length,
-                        }
-                    )
+                const rankingId = await useRankingStore.getState().createRanking(
+                    userProfile.id,
+                    userProfile.name, // displayName
+                    undefined, // username (optional, not set for seed data)
+                    userProfile.avatar ?? undefined,
+                    {
+                        title: rankingData.title,
+                        description: rankingData.description,
+                        itemCount: rankingData.items.length,
+                    }
+                )
 
                 console.log(`  🆔 Ranking created with ID: ${rankingId}`)
 

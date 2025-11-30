@@ -71,6 +71,8 @@ interface ProfileSectionProps {
     isEmailAuth: boolean
     displayName: string
     setDisplayName: (name: string) => void
+    displayNameError?: string
+    isValidatingDisplayName?: boolean
     isSavingProfile: boolean
     onSaveProfile: () => Promise<void>
     // Username (profile URL slug)
@@ -96,6 +98,8 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
     isEmailAuth,
     displayName,
     setDisplayName,
+    displayNameError,
+    isValidatingDisplayName,
     isSavingProfile,
     onSaveProfile,
     username,
@@ -123,6 +127,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
     }
 
     const hasChanges = displayName.trim() !== (user?.displayName || '')
+    const canSaveDisplayName = hasChanges && !displayNameError && !isValidatingDisplayName
 
     return (
         <div className="p-6 lg:p-8">
@@ -192,14 +197,32 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                             <label className="block text-sm font-medium text-[#e5e5e5] mb-1.5">
                                 Display Name
                             </label>
-                            <input
-                                type="text"
-                                value={displayName}
-                                onChange={(e) => setDisplayName(e.target.value)}
-                                placeholder="Enter your display name"
-                                className="inputClass w-full"
-                                disabled={isSavingProfile}
-                            />
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={displayName}
+                                    onChange={(e) => setDisplayName(e.target.value)}
+                                    placeholder="Enter your display name"
+                                    className={`inputClass w-full pr-10 ${
+                                        displayNameError
+                                            ? 'border-red-500 focus:border-red-500'
+                                            : ''
+                                    }`}
+                                    disabled={isSavingProfile}
+                                />
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                    {isValidatingDisplayName ? (
+                                        <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                                    ) : displayNameError ? (
+                                        <ExclamationCircleIcon className="w-5 h-5 text-red-500" />
+                                    ) : displayName.trim() && displayName !== user?.displayName ? (
+                                        <CheckCircleIcon className="w-5 h-5 text-green-500" />
+                                    ) : null}
+                                </div>
+                            </div>
+                            {displayNameError && (
+                                <p className="text-xs text-red-400 mt-1.5">{displayNameError}</p>
+                            )}
                             <p className="text-xs text-[#888] mt-1.5">
                                 What others see in comments, rankings, and across the site.
                             </p>
@@ -244,9 +267,9 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                         {/* Save Display Name Button */}
                         <button
                             onClick={onSaveProfile}
-                            disabled={isSavingProfile || !hasChanges}
+                            disabled={isSavingProfile || !canSaveDisplayName}
                             className={`w-full py-2.5 px-4 rounded-md font-medium text-sm transition ${
-                                isSavingProfile || !hasChanges
+                                isSavingProfile || !canSaveDisplayName
                                     ? 'bg-gray-700 cursor-not-allowed opacity-50 text-gray-400'
                                     : 'bg-red-600 hover:bg-red-700 text-white'
                             } flex items-center justify-center gap-2`}
