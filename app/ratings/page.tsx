@@ -241,7 +241,7 @@ function RatingsPageContent() {
             {/* Content Container */}
             <div className="relative z-10">
                 {/* Cinematic Hero Header */}
-                <div className="relative overflow-hidden pt-4">
+                <div className="relative overflow-hidden pt-12">
                     {/* Animated Background Gradients */}
                     <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900/80 to-black" />
                     <div
@@ -255,7 +255,7 @@ function RatingsPageContent() {
                     <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60" />
 
                     {/* Hero Content */}
-                    <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-6">
+                    <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-4">
                         {/* Title with inline icon */}
                         <div className="flex items-center gap-4 mb-2">
                             {/* Star Icon with glow */}
@@ -273,7 +273,7 @@ function RatingsPageContent() {
                         </div>
 
                         {/* Subtitle */}
-                        <p className="text-base sm:text-lg text-gray-300 mb-6 text-center max-w-2xl">
+                        <p className="text-base sm:text-lg text-gray-300 mb-4 text-center max-w-2xl">
                             View and manage your content ratings. These ratings help personalize
                             your recommendations.
                         </p>

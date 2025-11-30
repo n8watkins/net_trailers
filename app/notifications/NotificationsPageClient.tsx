@@ -129,7 +129,7 @@ export default function NotificationsPageClient() {
                 {/* Content Container */}
                 <div className="relative z-10">
                     {/* Cinematic Hero Header */}
-                    <div className="relative overflow-hidden pt-4">
+                    <div className="relative overflow-hidden pt-12">
                         {/* Animated Background Gradients */}
                         <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900/80 to-black" />
                         <div
@@ -143,7 +143,7 @@ export default function NotificationsPageClient() {
                         <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60" />
 
                         {/* Hero Content */}
-                        <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-6">
+                        <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-4">
                             {/* Title with inline icon */}
                             <div className="flex items-center gap-4 mb-2">
                                 {/* Bell Icon with glow */}
@@ -161,7 +161,7 @@ export default function NotificationsPageClient() {
                             </div>
 
                             {/* Subtitle with unread count */}
-                            <p className="text-base sm:text-lg text-gray-300 mb-6 text-center max-w-2xl">
+                            <p className="text-base sm:text-lg text-gray-300 mb-4 text-center max-w-2xl">
                                 Stay updated with your personalized notifications
                                 {!isLoading && !isGuest && unreadCount > 0 && (
                                     <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-red-500/20 text-red-400 border border-red-500/30">
