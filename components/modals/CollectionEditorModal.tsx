@@ -85,6 +85,16 @@ export default function CollectionEditorModal({
     const [isMovieEnabled, setIsMovieEnabled] = useState(true)
     const [isTVEnabled, setIsTVEnabled] = useState(true)
 
+    // Cast and director states
+    const [showActorInput, setShowActorInput] = useState(false)
+    const [showDirectorInput, setShowDirectorInput] = useState(false)
+    const [actorInput, setActorInput] = useState('')
+    const [directorInput, setDirectorInput] = useState('')
+    const [actorSearchResults, setActorSearchResults] = useState<any[]>([])
+    const [directorSearchResults, setDirectorSearchResults] = useState<any[]>([])
+    const [isSearchingActors, setIsSearchingActors] = useState(false)
+    const [isSearchingDirector, setIsSearchingDirector] = useState(false)
+
     // Content management
     const [content, setContent] = useState<Content[]>([])
     const [removedIds, setRemovedIds] = useState<Set<number>>(new Set())
@@ -411,6 +421,85 @@ export default function CollectionEditorModal({
         })
 
     const selectedGenreNames = selectedGenres.map((id) => GENRE_LOOKUP.get(id) || `Genre ${id}`)
+
+    // Search for people
+    const searchPeople = async (query: string): Promise<any[]> => {
+        if (query.trim().length < 2) return []
+
+        try {
+            const response = await fetch(`/api/search/people?query=${encodeURIComponent(query)}`)
+            if (!response.ok) throw new Error('Search failed')
+            const data = await response.json()
+            return data.results || []
+        } catch (error) {
+            console.error('Person search error:', error)
+            return []
+        }
+    }
+
+    const handleActorInputChange = async (value: string) => {
+        setActorInput(value)
+
+        if (value.trim().length >= 2) {
+            setIsSearchingActors(true)
+            const results = await searchPeople(value.trim())
+            setActorSearchResults(results.filter((p) => p.known_for_department === 'Acting'))
+            setIsSearchingActors(false)
+        } else {
+            setActorSearchResults([])
+        }
+    }
+
+    const handleDirectorInputChange = async (value: string) => {
+        setDirectorInput(value)
+
+        if (value.trim().length >= 2) {
+            setIsSearchingDirector(true)
+            const results = await searchPeople(value.trim())
+            setDirectorSearchResults(results.filter((p) => p.known_for_department === 'Directing'))
+            setIsSearchingDirector(false)
+        } else {
+            setDirectorSearchResults([])
+        }
+    }
+
+    const addActor = (actor: any) => {
+        const currentActors = advancedFilters.withCast || []
+        if (!currentActors.includes(actor.name)) {
+            setAdvancedFilters({
+                ...advancedFilters,
+                withCast: [...currentActors, actor.name],
+            })
+        }
+        setActorInput('')
+        setActorSearchResults([])
+        setShowActorInput(false)
+    }
+
+    const removeActor = (actorName: string) => {
+        const currentActors = advancedFilters.withCast || []
+        setAdvancedFilters({
+            ...advancedFilters,
+            withCast: currentActors.filter((name) => name !== actorName),
+        })
+    }
+
+    const setDirector = (director: any) => {
+        setAdvancedFilters({
+            ...advancedFilters,
+            withDirector: director.name,
+        })
+        setDirectorInput('')
+        setDirectorSearchResults([])
+        setShowDirectorInput(false)
+    }
+
+    const removeDirector = () => {
+        setAdvancedFilters({
+            ...advancedFilters,
+            withDirector: undefined,
+        })
+    }
 
     const modalContent = (
         <div className="fixed inset-0 z-modal-editor overflow-y-auto">
@@ -752,7 +841,7 @@ export default function CollectionEditorModal({
                                                     : 'border-gray-700'
                                             }`}
                                         >
-                                            <div className="space-y-3">
+                                            <div className="space-y-4">
                                                 <p className="text-lg font-bold text-white">
                                                     Media Type
                                                 </p>
@@ -820,7 +909,7 @@ export default function CollectionEditorModal({
 
                                         {/* Genres */}
                                         <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
-                                            <div className="space-y-3">
+                                            <div className="space-y-4">
                                                 <div className="flex items-start justify-between">
                                                     <p className="text-lg font-bold text-white">
                                                         Genres
@@ -875,7 +964,7 @@ export default function CollectionEditorModal({
                                     <div className="grid grid-cols-2 gap-3">
                                         {/* Cast & Director Section */}
                                         <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
-                                            <div className="flex items-center justify-between mb-3">
+                                            <div className="flex items-center justify-between mb-6">
                                                 <h3 className="text-base font-semibold text-white">
                                                     Cast & Director
                                                 </h3>
@@ -937,15 +1026,11 @@ export default function CollectionEditorModal({
 
                                         {/* Advanced Filters Section */}
                                         <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
-                                            <div className="flex items-center justify-between mb-3">
+                                            <div className="flex items-center justify-between mb-6">
                                                 <div>
                                                     <h3 className="text-base font-semibold text-white">
                                                         Advanced Filters
                                                     </h3>
-                                                    <p className="text-xs text-gray-400 mt-0.5">
-                                                        Filter by year, rating, popularity, and vote
-                                                        count
-                                                    </p>
                                                 </div>
                                                 <button
                                                     type="button"
