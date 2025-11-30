@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import { XMarkIcon, PlusIcon } from '@heroicons/react/24/outline'
 import Image from 'next/image'
 import { AdvancedFilters } from '../../types/collections'
+import { YearPicker } from './YearPicker'
 
 interface Person {
     id: number
@@ -253,46 +254,22 @@ export function AdvancedFiltersModal({
                                 Release Year
                             </label>
                             <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="text-xs text-gray-400 mb-1.5 block">
-                                        From
-                                    </label>
-                                    <input
-                                        type="number"
-                                        min="1900"
-                                        max={currentYear}
-                                        placeholder="1990"
-                                        value={localFilters.yearMin || ''}
-                                        onChange={(e) =>
-                                            updateFilter(
-                                                'yearMin',
-                                                e.target.value
-                                                    ? parseInt(e.target.value)
-                                                    : undefined
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-xs text-gray-400 mb-1.5 block">To</label>
-                                    <input
-                                        type="number"
-                                        min="1900"
-                                        max={currentYear}
-                                        placeholder={currentYear.toString()}
-                                        value={localFilters.yearMax || ''}
-                                        onChange={(e) =>
-                                            updateFilter(
-                                                'yearMax',
-                                                e.target.value
-                                                    ? parseInt(e.target.value)
-                                                    : undefined
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-                                    />
-                                </div>
+                                <YearPicker
+                                    value={localFilters.yearMin}
+                                    onChange={(year) => updateFilter('yearMin', year)}
+                                    label="From"
+                                    placeholder="1990"
+                                    minYear={1900}
+                                    maxYear={currentYear}
+                                />
+                                <YearPicker
+                                    value={localFilters.yearMax}
+                                    onChange={(year) => updateFilter('yearMax', year)}
+                                    label="To"
+                                    placeholder={currentYear.toString()}
+                                    minYear={1900}
+                                    maxYear={currentYear}
+                                />
                             </div>
                         </div>
 

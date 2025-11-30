@@ -133,14 +133,6 @@ export async function GET(req: NextRequest) {
         console.log(`📊 [Trending] Skipped ${skippedUsers} users (opted out or no email)`)
         console.log(`📧 [Trending] Sent ${emailsSent} weekly digest emails`)
 
-        // Update snapshot for reference
-        await db.doc('system/trending').set({
-            moviesSnapshot: moviesData.results,
-            tvSnapshot: tvData.results,
-            lastRun: Date.now(),
-            emailsSent,
-        })
-
         return NextResponse.json({
             success: true,
             emailsSent,
