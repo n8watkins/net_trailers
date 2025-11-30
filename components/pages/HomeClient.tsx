@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Header from '../layout/Header'
 import Banner from '../layout/Banner'
 import { HomeData } from '../../lib/serverData'
@@ -23,7 +24,8 @@ interface HomeClientProps {
 }
 
 export default function HomeClient({ data }: HomeClientProps) {
-    const { modal } = useModalStore()
+    const searchParams = useSearchParams()
+    const { modal, openModal } = useModalStore()
     const showModal = modal.isOpen
     const openHomeRowEditorModal = useModalStore((state) => state.openHomeRowEditorModal)
     const openCollectionBuilderModal = useModalStore((state) => state.openCollectionBuilderModal)
@@ -32,6 +34,31 @@ export default function HomeClient({ data }: HomeClientProps) {
     const isInitialized = useSessionStore((state) => state.isInitialized)
     const userId = getUserId()
     const isGuest = sessionType === 'guest'
+
+    // Handle modal query parameters from email links
+    useEffect(() => {
+        const modalType = searchParams.get('modal')
+        const contentId = searchParams.get('id')
+
+        if (modalType && contentId) {
+            // Fetch content details and open modal
+            const fetchAndOpenModal = async () => {
+                try {
+                    const response = await fetch(
+                        `/api/${modalType}/${contentId}?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY || ''}`
+                    )
+                    if (response.ok) {
+                        const content = await response.json()
+                        content.media_type = modalType
+                        openModal(content, true, false)
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch content for modal:', error)
+                }
+            }
+            fetchAndOpenModal()
+        }
+    }, [searchParams, openModal])
 
     // Track hero image loading state
     const [heroImageLoaded, setHeroImageLoaded] = useState(false)

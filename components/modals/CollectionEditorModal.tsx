@@ -95,6 +95,9 @@ export default function CollectionEditorModal({
     const [directorSearchResults, setDirectorSearchResults] = useState<any[]>([])
     const [isSearchingActors, setIsSearchingActors] = useState(false)
     const [isSearchingDirector, setIsSearchingDirector] = useState(false)
+    const [selectedActorIndex, setSelectedActorIndex] = useState(0)
+    const [selectedDirectorIndex, setSelectedDirectorIndex] = useState(0)
+    const [actorProfileImages, setActorProfileImages] = useState<Record<string, string | null>>({})
 
     // Content management
     const [content, setContent] = useState<Content[]>([])
@@ -445,9 +448,11 @@ export default function CollectionEditorModal({
             setIsSearchingActors(true)
             const results = await searchPeople(value.trim())
             setActorSearchResults(results.filter((p) => p.known_for_department === 'Acting'))
+            setSelectedActorIndex(0)
             setIsSearchingActors(false)
         } else {
             setActorSearchResults([])
+            setSelectedActorIndex(0)
         }
     }
 
@@ -458,9 +463,45 @@ export default function CollectionEditorModal({
             setIsSearchingDirector(true)
             const results = await searchPeople(value.trim())
             setDirectorSearchResults(results.filter((p) => p.known_for_department === 'Directing'))
+            setSelectedDirectorIndex(0)
             setIsSearchingDirector(false)
         } else {
             setDirectorSearchResults([])
+            setSelectedDirectorIndex(0)
+        }
+    }
+
+    const handleActorKeyDown = (e: React.KeyboardEvent) => {
+        if (actorSearchResults.length === 0) return
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault()
+            setSelectedActorIndex((prev) => Math.min(prev + 1, actorSearchResults.length - 1))
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault()
+            setSelectedActorIndex((prev) => Math.max(prev - 1, 0))
+        } else if (e.key === 'Enter') {
+            e.preventDefault()
+            if (actorSearchResults[selectedActorIndex]) {
+                addActor(actorSearchResults[selectedActorIndex])
+            }
+        }
+    }
+
+    const handleDirectorKeyDown = (e: React.KeyboardEvent) => {
+        if (directorSearchResults.length === 0) return
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault()
+            setSelectedDirectorIndex((prev) => Math.min(prev + 1, directorSearchResults.length - 1))
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault()
+            setSelectedDirectorIndex((prev) => Math.max(prev - 1, 0))
+        } else if (e.key === 'Enter') {
+            e.preventDefault()
+            if (directorSearchResults[selectedDirectorIndex]) {
+                setDirector(directorSearchResults[selectedDirectorIndex])
+            }
         }
     }
 
@@ -471,10 +512,16 @@ export default function CollectionEditorModal({
                 ...advancedFilters,
                 withCast: [...currentActors, actor.name],
             })
+            // Store the profile image for this actor
+            setActorProfileImages((prev) => ({
+                ...prev,
+                [actor.name]: actor.profile_path,
+            }))
         }
         setActorInput('')
         setActorSearchResults([])
         setShowActorInput(false)
+        setSelectedActorIndex(0)
     }
 
     const removeActor = (actorName: string) => {
@@ -983,8 +1030,26 @@ export default function CollectionEditorModal({
                                                                 (actorName) => (
                                                                     <div
                                                                         key={actorName}
-                                                                        className="group relative px-3 py-1.5 rounded-full text-xs font-medium bg-blue-600 text-white"
+                                                                        className="group relative flex items-center gap-2 pl-1.5 pr-4 py-1.5 rounded-full text-sm font-medium bg-blue-600 text-white"
                                                                     >
+                                                                        {/* Actor Profile Image */}
+                                                                        <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-700 flex-shrink-0">
+                                                                            {actorProfileImages[
+                                                                                actorName
+                                                                            ] ? (
+                                                                                <Image
+                                                                                    src={`https://image.tmdb.org/t/p/w185${actorProfileImages[actorName]}`}
+                                                                                    alt={actorName}
+                                                                                    width={32}
+                                                                                    height={32}
+                                                                                    className="object-cover"
+                                                                                />
+                                                                            ) : (
+                                                                                <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                                                                                    ?
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
                                                                         {actorName}
                                                                         <button
                                                                             type="button"
@@ -993,10 +1058,10 @@ export default function CollectionEditorModal({
                                                                                     actorName
                                                                                 )
                                                                             }
-                                                                            className="absolute -top-1 -right-1 w-4 h-4 bg-white hover:bg-gray-200 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                                                                            className="absolute -top-1 -right-1 w-5 h-5 bg-white hover:bg-gray-200 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
                                                                             title="Remove actor"
                                                                         >
-                                                                            <XMarkIcon className="w-2.5 h-2.5 text-slate-600" />
+                                                                            <XMarkIcon className="w-3 h-3 text-slate-600" />
                                                                         </button>
                                                                     </div>
                                                                 )
@@ -1025,6 +1090,7 @@ export default function CollectionEditorModal({
                                                                     e.target.value
                                                                 )
                                                             }
+                                                            onKeyDown={handleActorKeyDown}
                                                             autoFocus
                                                             className="w-full px-3 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                                                         />
@@ -1034,14 +1100,19 @@ export default function CollectionEditorModal({
                                                             <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden max-h-48">
                                                                 {actorSearchResults
                                                                     .slice(0, 5)
-                                                                    .map((person) => (
+                                                                    .map((person, index) => (
                                                                         <button
                                                                             key={person.id}
                                                                             type="button"
                                                                             onClick={() =>
                                                                                 addActor(person)
                                                                             }
-                                                                            className="w-full flex items-center gap-2 p-2 transition-colors text-left hover:bg-gray-700"
+                                                                            className={`w-full flex items-center gap-2 p-2 transition-colors text-left ${
+                                                                                index ===
+                                                                                selectedActorIndex
+                                                                                    ? 'bg-blue-600/30'
+                                                                                    : 'hover:bg-gray-700'
+                                                                            }`}
                                                                         >
                                                                             <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-700 flex-shrink-0">
                                                                                 {person.profile_path ? (
@@ -1126,6 +1197,7 @@ export default function CollectionEditorModal({
                                                                         e.target.value
                                                                     )
                                                                 }
+                                                                onKeyDown={handleDirectorKeyDown}
                                                                 autoFocus
                                                                 className="w-full px-3 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                                                             />
@@ -1135,7 +1207,7 @@ export default function CollectionEditorModal({
                                                                 <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden max-h-48">
                                                                     {directorSearchResults
                                                                         .slice(0, 5)
-                                                                        .map((person) => (
+                                                                        .map((person, index) => (
                                                                             <button
                                                                                 key={person.id}
                                                                                 type="button"
@@ -1144,7 +1216,12 @@ export default function CollectionEditorModal({
                                                                                         person
                                                                                     )
                                                                                 }
-                                                                                className="w-full flex items-center gap-2 p-2 transition-colors text-left hover:bg-gray-700"
+                                                                                className={`w-full flex items-center gap-2 p-2 transition-colors text-left ${
+                                                                                    index ===
+                                                                                    selectedDirectorIndex
+                                                                                        ? 'bg-blue-600/30'
+                                                                                        : 'hover:bg-gray-700'
+                                                                                }`}
                                                                             >
                                                                                 <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-700 flex-shrink-0">
                                                                                     {person.profile_path ? (

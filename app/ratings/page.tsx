@@ -272,14 +272,8 @@ function RatingsPageContent() {
                             </h1>
                         </div>
 
-                        {/* Subtitle */}
-                        <p className="text-base sm:text-lg text-gray-300 mb-4 text-center max-w-2xl">
-                            View and manage your content ratings. These ratings help personalize
-                            your recommendations.
-                        </p>
-
                         {/* Filter Row - Pills on left, Actions on right */}
-                        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between w-full max-w-4xl mb-5 px-4">
+                        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between w-full max-w-4xl mb-5 px-4 mt-8">
                             {/* Category Pills - Liked/Disliked */}
                             <div className="flex gap-2 items-center">
                                 {[

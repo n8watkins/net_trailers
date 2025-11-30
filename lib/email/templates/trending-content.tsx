@@ -46,11 +46,8 @@ export const TrendingContentEmail = ({ userName, movies, tvShows }: TrendingCont
         const posterUrl = content.poster_path
             ? `https://image.tmdb.org/t/p/w300${content.poster_path}`
             : ''
-        // Fix 404 error: use proper route format
-        const contentUrl =
-            content.media_type === 'movie'
-                ? `${appUrl}/movie/${content.id}`
-                : `${appUrl}/tv/${content.id}`
+        // Link to homepage with query params to open modal
+        const contentUrl = `${appUrl}/?modal=${content.media_type}&id=${content.id}`
 
         return (
             <tr key={content.id}>
@@ -102,31 +99,13 @@ export const TrendingContentEmail = ({ userName, movies, tvShows }: TrendingCont
                                     padding: '12px 16px',
                                 }}
                             >
-                                {/* Badge - centered */}
-                                <div style={{ marginBottom: '8px' }}>
-                                    <span
-                                        style={{
-                                            backgroundColor: '#E50914',
-                                            color: '#ffffff',
-                                            fontSize: '10px',
-                                            fontWeight: '700',
-                                            letterSpacing: '0.5px',
-                                            padding: '4px 10px',
-                                            borderRadius: '12px',
-                                            display: 'inline-block',
-                                        }}
-                                    >
-                                        {badgeLabel}
-                                    </span>
-                                </div>
-
                                 {/* Title */}
                                 <div
                                     style={{
                                         fontSize: '18px',
                                         fontWeight: '700',
                                         color: '#ffffff',
-                                        marginBottom: '4px',
+                                        marginBottom: '6px',
                                         lineHeight: '1.3',
                                     }}
                                 >
