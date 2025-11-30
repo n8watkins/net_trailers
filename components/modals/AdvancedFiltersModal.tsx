@@ -127,8 +127,15 @@ export function AdvancedFiltersModal({
 
     const addActor = (actor: Person) => {
         const currentActors = localFilters.withCast || []
+        const currentActorIds = localFilters.withCastIds || []
         if (!currentActors.includes(actor.name)) {
-            updateFilter('withCast', [...currentActors, actor.name])
+            const newFilters = {
+                ...localFilters,
+                withCast: [...currentActors, actor.name],
+                withCastIds: [...currentActorIds, actor.id],
+            }
+            setLocalFilters(newFilters)
+            onChange(newFilters) // Auto-save
         }
         setActorInput('')
         setActorSearchResults([])
@@ -137,37 +144,55 @@ export function AdvancedFiltersModal({
 
     const removeActor = (actorName: string) => {
         const currentActors = localFilters.withCast || []
-        updateFilter(
-            'withCast',
-            currentActors.filter((name) => name !== actorName)
-        )
+        const currentActorIds = localFilters.withCastIds || []
+        const actorIndex = currentActors.indexOf(actorName)
+
+        const newFilters = {
+            ...localFilters,
+            withCast: currentActors.filter((name) => name !== actorName),
+            withCastIds: currentActorIds.filter((_, index) => index !== actorIndex),
+        }
+        setLocalFilters(newFilters)
+        onChange(newFilters) // Auto-save
     }
 
     const setDirector = (director: Person) => {
-        updateFilter('withDirector', director.name)
+        const newFilters = {
+            ...localFilters,
+            withDirector: director.name,
+            withDirectorId: director.id,
+        }
+        setLocalFilters(newFilters)
+        onChange(newFilters) // Auto-save
         setDirectorInput('')
         setDirectorSearchResults([])
         setShowDirectorInput(false)
     }
 
     const removeDirector = () => {
-        updateFilter('withDirector', undefined)
+        const newFilters = {
+            ...localFilters,
+            withDirector: undefined,
+            withDirectorId: undefined,
+        }
+        setLocalFilters(newFilters)
+        onChange(newFilters) // Auto-save
     }
 
     const updateFilter = (key: keyof AdvancedFilters, value: any) => {
-        setLocalFilters({
+        const newFilters = {
             ...localFilters,
             [key]: value,
-        })
-    }
-
-    const handleSave = () => {
-        onChange(localFilters)
-        onClose()
+        }
+        setLocalFilters(newFilters)
+        // Auto-save: immediately propagate changes to parent
+        onChange(newFilters)
     }
 
     const handleClearAll = () => {
         setLocalFilters({})
+        // Auto-save: immediately propagate cleared filters to parent
+        onChange({})
     }
 
     const hasActiveFilters =
@@ -351,14 +376,9 @@ export function AdvancedFiltersModal({
                                     : 'bg-gray-800 text-gray-500 cursor-not-allowed'
                             }`}
                         >
-                            Clear All
+                            Clear Advanced Filters
                         </button>
-                        <button
-                            onClick={handleSave}
-                            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
-                        >
-                            Done
-                        </button>
+                        <div className="text-xs text-gray-400 italic">Changes auto-save</div>
                     </div>
                 </div>
             </div>

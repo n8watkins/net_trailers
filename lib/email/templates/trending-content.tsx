@@ -86,7 +86,11 @@ export const TrendingContentEmail = ({
                                 {posterUrl && (
                                     <a
                                         href={contentUrl}
-                                        style={{ textDecoration: 'none', display: 'block' }}
+                                        style={{
+                                            textDecoration: 'none',
+                                            display: 'block',
+                                            height: '100%',
+                                        }}
                                     >
                                         <img
                                             src={posterUrl}
@@ -96,7 +100,6 @@ export const TrendingContentEmail = ({
                                                 display: 'block',
                                                 width: '100px',
                                                 height: '100%',
-                                                minHeight: '150px',
                                                 objectFit: 'cover',
                                                 borderRadius: '8px 0 0 8px',
                                             }}
@@ -178,7 +181,7 @@ export const TrendingContentEmail = ({
                                             style={{
                                                 backgroundColor: '#E50914',
                                                 borderRadius: '4px',
-                                                padding: '8px 16px',
+                                                padding: '6px 12px',
                                             }}
                                         >
                                             <a
@@ -186,12 +189,12 @@ export const TrendingContentEmail = ({
                                                 style={{
                                                     color: '#ffffff',
                                                     textDecoration: 'none',
-                                                    fontSize: '13px',
+                                                    fontSize: '12px',
                                                     fontWeight: '600',
                                                     display: 'inline-block',
                                                 }}
                                             >
-                                                View on NetTrailers →
+                                                Watch on NetTrailers →
                                             </a>
                                         </td>
                                     </tr>
@@ -310,7 +313,7 @@ export const TrendingContentEmail = ({
                                                 lineHeight: '1.2',
                                             }}
                                         >
-                                            This Week's Hottest Picks 🔥
+                                            Check Out What's Trending! 🔥
                                         </h1>
 
                                         {/* Subheadline */}
@@ -322,8 +325,8 @@ export const TrendingContentEmail = ({
                                                 lineHeight: '1.5',
                                             }}
                                         >
-                                            Everyone's binge-watching these right now. Don't miss
-                                            out — your queue is calling!
+                                            Here's what everyone's talking about this week. Some
+                                            real gems in here you won't want to miss!
                                         </p>
                                     </td>
                                 </tr>
