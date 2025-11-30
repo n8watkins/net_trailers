@@ -600,7 +600,7 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
 
                 <div
                     ref={modalContainerRef}
-                    className="relative bg-gradient-to-br from-zinc-900/95 via-black/95 to-zinc-900/95 backdrop-blur-xl rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl border border-zinc-800/50"
+                    className="relative bg-gradient-to-br from-zinc-900/95 via-black/95 to-zinc-900/95 backdrop-blur-xl rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl border border-zinc-800/50"
                 >
                     {/* Cinematic Header */}
                     <div className="relative overflow-hidden">
@@ -621,7 +621,7 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
                                 </div>
                                 <h2
                                     id="row-editor-modal-title"
-                                    className="text-2xl font-black text-white"
+                                    className="text-xl font-black text-white"
                                 >
                                     <span className="bg-gradient-to-r from-purple-200 via-violet-100 to-purple-200 bg-clip-text text-transparent">
                                         Edit Displayed Collections
@@ -633,7 +633,7 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
                                 {!isGuest && (
                                     <button
                                         onClick={handleCreate}
-                                        className="group relative flex items-center gap-2 px-4 py-2.5 bg-purple-600/90 hover:bg-purple-500 text-white rounded-xl transition-all duration-300 text-sm font-bold shadow-[0_0_10px_rgba(168,85,247,0.3)] hover:shadow-[0_0_15px_rgba(168,85,247,0.5)] hover:scale-105"
+                                        className="group relative flex items-center gap-2 px-4 py-2.5 bg-purple-600/90 hover:bg-purple-500 text-white rounded-xl transition-all duration-300 text-xs font-bold shadow-[0_0_10px_rgba(168,85,247,0.3)] hover:shadow-[0_0_15px_rgba(168,85,247,0.5)] hover:scale-105"
                                     >
                                         <PlusIcon className="w-4 h-4" />
                                         Create Collection
@@ -642,17 +642,10 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
                                 )}
                                 <button
                                     onClick={handleResetDefaultRows}
-                                    className="flex items-center gap-2 px-4 py-2.5 bg-zinc-800/60 hover:bg-zinc-700/80 text-white rounded-xl transition-all duration-300 text-sm font-bold border border-zinc-700/50 hover:border-zinc-600 hover:scale-105"
+                                    className="flex items-center gap-2 px-4 py-2.5 bg-zinc-800/60 hover:bg-zinc-700/80 text-white rounded-xl transition-all duration-300 text-xs font-bold border border-zinc-700/50 hover:border-zinc-600 hover:scale-105"
                                 >
                                     <ArrowPathIcon className="w-4 h-4" />
                                     Reset Defaults
-                                </button>
-                                <button
-                                    onClick={onClose}
-                                    className="flex items-center justify-center w-10 h-10 bg-zinc-800/60 hover:bg-zinc-700/80 text-white rounded-xl transition-all duration-300 border border-zinc-700/50 hover:border-zinc-600 hover:scale-105"
-                                    aria-label="Close modal"
-                                >
-                                    <XMarkIcon className="w-5 h-5" />
                                 </button>
                             </div>
                         </div>
