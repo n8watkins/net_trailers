@@ -27,13 +27,32 @@ On **localhost**, you must manually trigger the endpoint using the test script.
 
 ## Testing the Cron Job
 
-### Method 1: NPM Script (Recommended)
+### Method 1: Quick Test (Recommended)
 
 ```bash
 npm run test:cron
 ```
 
-This runs the Node.js test script at `scripts/test-cron.js`.
+This runs the Node.js test script at `scripts/test-cron.js`. Good for quick verification that the cron endpoint is working.
+
+### Method 2: Full Notification Test (Comprehensive)
+
+```bash
+npm run test:trending-notifications
+```
+
+This creates test users with different scenarios and verifies notification generation:
+
+- **User 1**: Has trending notifications enabled, last login 7 days ago → WILL receive notifications
+- **User 2**: Has trending notifications enabled, last login 3 days ago → WILL receive notifications
+- **User 3**: Has trending notifications **disabled** → WILL NOT receive notifications
+- **User 4**: Logged in recently (30 min ago) → WILL NOT receive notifications
+
+After testing, cleanup with:
+
+```bash
+npm run test:trending-notifications -- --cleanup
+```
 
 **Example output:**
 
@@ -62,7 +81,7 @@ Response:
 ========================================
 ```
 
-### Method 2: Bash Script
+### Method 3: Bash Script
 
 ```bash
 ./scripts/test-cron-local.sh
@@ -70,7 +89,7 @@ Response:
 
 Requires `curl` and `jq` (for JSON formatting).
 
-### Method 3: Manual cURL
+### Method 4: Manual cURL
 
 ```bash
 curl -H "Authorization: Bearer YOUR_CRON_SECRET" \
