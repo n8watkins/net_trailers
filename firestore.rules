@@ -666,8 +666,7 @@ service cloud.firestore {
 
     // Helper function to validate feedback data structure
     function isValidFeedbackData(data) {
-      return data.keys().hasAll(['id', 'userId', 'contentId', 'mediaType', 'recommendationPage', 'feedbackType', 'action', 'timestamp', 'source'])
-             && data.id is string
+      return data.keys().hasAll(['userId', 'contentId', 'mediaType', 'recommendationPage', 'feedbackType', 'action', 'timestamp', 'source'])
              && data.userId is string
              && data.contentId is number
              && data.mediaType is string
