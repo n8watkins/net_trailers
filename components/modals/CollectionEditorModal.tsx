@@ -576,7 +576,7 @@ export default function CollectionEditorModal({
                     </div>
 
                     {/* Content */}
-                    <div className="p-6 max-h-[calc(90vh-200px)] overflow-y-auto">
+                    <div className="p-6 max-h-[calc(90vh-200px)] overflow-y-auto modal-scrollbar">
                         <div className="space-y-6">
                             {/* For non-editable system collections, show minimal UI */}
                             {canOnlyToggle && (
@@ -615,8 +615,8 @@ export default function CollectionEditorModal({
                             {/* For editable collections, show full or limited UI */}
                             {!canOnlyToggle && (
                                 <>
-                                    {/* Toggle Settings Row - Display on Page, Show on Public Profile, and Infinite Content */}
-                                    <div className="grid grid-cols-3 gap-3">
+                                    {/* Toggle Settings - Single Column Layout */}
+                                    <div className="space-y-3">
                                         {/* Display on Page Toggle */}
                                         <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
                                             <div className="flex items-center justify-between">
@@ -742,8 +742,8 @@ export default function CollectionEditorModal({
                                         </div>
                                     </div>
 
-                                    {/* Media Type and Genres - Side by side */}
-                                    <div className="grid grid-cols-2 gap-3">
+                                    {/* Media Type and Genres - Single Column */}
+                                    <div className="space-y-3">
                                         {/* Media Type Selection */}
                                         <div
                                             className={`bg-gray-800/50 rounded-lg border p-4 transition-all duration-500 ${
@@ -829,8 +829,9 @@ export default function CollectionEditorModal({
                                                         <button
                                                             type="button"
                                                             onClick={() => setShowGenreModal(true)}
-                                                            className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors whitespace-nowrap"
+                                                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 font-medium"
                                                         >
+                                                            <PencilIcon className="w-4 h-4" />
                                                             Edit
                                                         </button>
                                                     )}
@@ -879,8 +880,9 @@ export default function CollectionEditorModal({
                                             <button
                                                 type="button"
                                                 onClick={() => setShowAdvancedFiltersModal(true)}
-                                                className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors whitespace-nowrap"
+                                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 font-medium"
                                             >
+                                                <PencilIcon className="w-4 h-4" />
                                                 Edit
                                             </button>
                                         </div>
@@ -938,8 +940,9 @@ export default function CollectionEditorModal({
                                             <button
                                                 type="button"
                                                 onClick={() => setShowAdvancedFiltersModal(true)}
-                                                className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors whitespace-nowrap"
+                                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 font-medium"
                                             >
+                                                <PencilIcon className="w-4 h-4" />
                                                 Edit
                                             </button>
                                         </div>
@@ -1150,7 +1153,7 @@ export default function CollectionEditorModal({
                     </div>
 
                     {/* Content */}
-                    <div className="p-6 max-h-[calc(90vh-200px)] overflow-y-auto">
+                    <div className="p-6 max-h-[calc(90vh-200px)] overflow-y-auto modal-scrollbar">
                         {/* Genre Pills */}
                         <div>
                             <div className="mb-3">
