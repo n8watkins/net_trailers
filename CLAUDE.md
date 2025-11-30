@@ -575,25 +575,42 @@ const showModal = useModalStore((state) => state.modal.isOpen)
 
 ### CSRF Protection
 
-> **Note**: Next.js 16+ uses `proxy.ts` instead of `middleware.ts`. See `docs/reference/NEXTJS_PROXY_REFERENCE.md` for full documentation on this change.
+> **Documentation**: See `docs/security/CSRF_STATUS.md` for full details and `docs/security/SECURITY_CHANGELOG.md` for evolution history.
 
-Global CSRF protection is implemented in `proxy.ts` (Next.js 16+ convention):
+Global CSRF protection is implemented in `proxy.ts`:
 
 - **Protected methods**: POST, PUT, DELETE, PATCH requests to `/api/*`
 - **Safe methods**: GET, HEAD, OPTIONS are skipped (read-only)
-- **Validation**: Checks Origin/Referer headers against allowed origins
-- **Exempt paths**: `/api/cron/` (uses CRON_SECRET authentication instead)
+- **Validation**: Exact origin matching via `new URL().origin` (prevents subdomain/prefix attacks)
+- **Cron routes**: `/api/cron/*` requires valid CRON_SECRET (not path-based exemption)
 
 **Key files:**
 
 - `proxy.ts` - Global proxy with CSRF protection
-- `lib/csrfProtection.ts` - CSRF validation logic
+- `lib/csrfProtection.ts` - Origin validation logic, `validateServerActionOrigin()` helper
 
-**How it works:**
+**Server Actions:**
 
-1. State-changing requests must have valid Origin or Referer from allowed domains
-2. Server-to-server calls (cron jobs) bypass CSRF by providing valid `CRON_SECRET`
-3. User authentication (Firebase ID tokens) is handled separately by `withAuth()` middleware
+Server actions bypass `proxy.ts` and must call `validateServerActionOrigin()` directly:
+
+```typescript
+'use server'
+import { headers } from 'next/headers'
+import { validateServerActionOrigin } from '@/lib/csrfProtection'
+
+export async function myAction() {
+    const headersList = await headers()
+    if (!validateServerActionOrigin(headersList)) {
+        throw new Error('CSRF validation failed')
+    }
+    // ... action logic
+}
+```
+
+**Automated Guards** (63 tests):
+
+- `__tests__/security/serverActionCsrf.test.ts` - Scans for unprotected server actions
+- `__tests__/security/routeHandlerCsrf.test.ts` - Ensures mutations are under `/api/*`
 
 **IMPORTANT**: The CSRF bypass only trusts verified `CRON_SECRET`, not unverified JWT tokens. This prevents attackers from bypassing CSRF by sending fake Authorization headers.
 

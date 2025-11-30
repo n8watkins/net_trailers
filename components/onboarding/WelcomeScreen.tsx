@@ -108,13 +108,14 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                     {/* Quick Start Option */}
                     <button
                         ref={firstButtonRef}
-                        onClick={() => {
+                        onClick={async () => {
                             onClose()
                             // Navigate to home page first, then start tour after navigation
-                            router.push('/')
+                            await router.push('/')
+                            // Wait for navigation and page render
                             setTimeout(() => {
                                 onStartTour()
-                            }, 400)
+                            }, 600)
                         }}
                         className="group relative bg-zinc-800/60 backdrop-blur-lg border-2 border-orange-500/30 rounded-xl p-6 transition-all duration-300 hover:scale-105 hover:border-orange-500/60 hover:shadow-xl hover:shadow-orange-500/20"
                         aria-label="Quick Start: 60-second interactive tour (Recommended)"

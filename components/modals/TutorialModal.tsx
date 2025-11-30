@@ -454,13 +454,14 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartT
                                             </p>
                                         </div>
                                         <button
-                                            onClick={() => {
+                                            onClick={async () => {
                                                 onClose()
                                                 // Navigate to home page first, then start tour after navigation
-                                                router.push('/')
+                                                await router.push('/')
+                                                // Wait for navigation and page render
                                                 setTimeout(() => {
                                                     onStartTour()
-                                                }, 400)
+                                                }, 600)
                                             }}
                                             className="flex-shrink-0 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold rounded-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-lg hover:shadow-orange-500/50 hover:scale-105"
                                         >
