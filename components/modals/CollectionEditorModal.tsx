@@ -406,39 +406,27 @@ export default function CollectionEditorModal({
             >
                 <div
                     className={`relative z-modal-editor bg-zinc-900 rounded-lg shadow-2xl w-full border border-gray-700 ${
-                        isSystemCollection ? 'max-w-xl' : 'max-w-6xl'
+                        isSystemCollection ? 'max-w-2xl' : 'max-w-7xl'
                     }`}
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
                     <div className="flex items-center justify-between p-6 border-b border-gray-700">
                         <div>
-                            <h2 className="text-2xl font-bold text-white">Edit Collection</h2>
+                            <h2 className="text-xl font-bold text-white">Edit Collection</h2>
                         </div>
 
-                        <div className="flex items-center gap-3">
-                            {/* Delete button - show for user collections and deletable system collections */}
-                            {(canEditFull ||
-                                (isSystemCollection && collection.canDelete === true)) && (
-                                <button
-                                    onClick={() => setShowDeleteModal(true)}
-                                    className="px-3 py-2 bg-red-600/20 border border-red-600 text-red-400 rounded-lg font-medium transition-all duration-200 hover:bg-red-600/30 hover:text-red-300 flex items-center gap-2"
-                                    title="Delete collection"
-                                >
-                                    <TrashIcon className="w-5 h-5" />
-                                    <span className="hidden sm:inline">Delete</span>
-                                </button>
-                            )}
-
-                            {/* Close button */}
+                        {/* Delete button - show for user collections and deletable system collections */}
+                        {(canEditFull || (isSystemCollection && collection.canDelete === true)) && (
                             <button
-                                type="button"
-                                onClick={() => handleClose()}
-                                className="text-gray-400 hover:text-white transition-colors"
+                                onClick={() => setShowDeleteModal(true)}
+                                className="px-3 py-2 bg-red-600/20 border border-red-600 text-red-400 rounded-lg font-medium transition-all duration-200 hover:bg-red-600/30 hover:text-red-300 flex items-center gap-2"
+                                title="Delete collection"
                             >
-                                <XMarkIcon className="w-6 h-6" />
+                                <TrashIcon className="w-5 h-5" />
+                                <span className="hidden sm:inline">Delete</span>
                             </button>
-                        </div>
+                        )}
                     </div>
 
                     {/* Content */}
@@ -556,7 +544,7 @@ export default function CollectionEditorModal({
                                         {/* Display on Page Toggle */}
                                         <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
                                             <div className="flex items-center justify-between">
-                                                <label className="text-sm font-medium text-white flex items-center gap-1.5">
+                                                <label className="text-xs font-medium text-white flex items-center gap-1.5">
                                                     <span>🏠</span>
                                                     Display on Page
                                                 </label>
@@ -583,7 +571,7 @@ export default function CollectionEditorModal({
                                         {/* Show on Public Profile Toggle */}
                                         <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
                                             <div className="flex items-center justify-between">
-                                                <label className="text-sm font-medium text-white flex items-center gap-1.5">
+                                                <label className="text-xs font-medium text-white flex items-center gap-1.5">
                                                     <span>👁️</span>
                                                     Public Profile
                                                 </label>
@@ -612,7 +600,7 @@ export default function CollectionEditorModal({
                                         {/* Infinite Content Toggle */}
                                         <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
                                             <div className="relative flex items-center justify-between">
-                                                <label className="text-sm font-medium text-white flex items-center gap-1.5">
+                                                <label className="text-xs font-medium text-white flex items-center gap-1.5">
                                                     <span>♾️</span>
                                                     Infinite Content
                                                     <button
@@ -689,13 +677,13 @@ export default function CollectionEditorModal({
                                             }`}
                                         >
                                             <div className="space-y-3">
-                                                <p className="text-sm font-medium text-white">
+                                                <p className="text-xs font-medium text-white">
                                                     Media Type
                                                 </p>
                                                 <div className="space-y-2">
                                                     {/* Movies Toggle */}
                                                     <div className="flex items-center justify-between">
-                                                        <label className="text-sm font-medium text-white flex items-center gap-2">
+                                                        <label className="text-xs font-medium text-white flex items-center gap-2">
                                                             <FilmIcon className="w-4 h-4" />
                                                             Movies
                                                         </label>
@@ -724,7 +712,7 @@ export default function CollectionEditorModal({
 
                                                     {/* TV Shows Toggle */}
                                                     <div className="flex items-center justify-between">
-                                                        <label className="text-sm font-medium text-white flex items-center gap-2">
+                                                        <label className="text-xs font-medium text-white flex items-center gap-2">
                                                             <TvIcon className="w-4 h-4" />
                                                             TV Shows
                                                         </label>
@@ -758,7 +746,7 @@ export default function CollectionEditorModal({
                                         <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
                                             <div className="space-y-3">
                                                 <div className="flex items-center justify-between">
-                                                    <p className="text-sm font-medium text-white">
+                                                    <p className="text-xs font-medium text-white">
                                                         Genres
                                                     </p>
                                                     {!canOnlyToggle && (
