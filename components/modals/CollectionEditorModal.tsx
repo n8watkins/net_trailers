@@ -615,8 +615,8 @@ export default function CollectionEditorModal({
                             {/* For editable collections, show full or limited UI */}
                             {!canOnlyToggle && (
                                 <>
-                                    {/* Toggle Settings - Single Column Layout */}
-                                    <div className="space-y-3">
+                                    {/* Toggle Settings - Two Column Layout */}
+                                    <div className="grid grid-cols-2 gap-3">
                                         {/* Display on Page Toggle */}
                                         <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
                                             <div className="flex items-center justify-between">
@@ -674,7 +674,7 @@ export default function CollectionEditorModal({
                                         </div>
 
                                         {/* Infinite Content Toggle */}
-                                        <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+                                        <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700 col-span-2">
                                             <div className="relative flex items-center justify-between">
                                                 <label className="text-sm font-medium text-white flex items-center gap-1.5">
                                                     <span>♾️</span>
@@ -742,8 +742,8 @@ export default function CollectionEditorModal({
                                         </div>
                                     </div>
 
-                                    {/* Media Type and Genres - Single Column */}
-                                    <div className="space-y-3">
+                                    {/* Media Type and Genres - Two Column */}
+                                    <div className="grid grid-cols-2 gap-3">
                                         {/* Media Type Selection */}
                                         <div
                                             className={`bg-gray-800/50 rounded-lg border p-4 transition-all duration-500 ${
@@ -871,114 +871,130 @@ export default function CollectionEditorModal({
                                         </div>
                                     </div>
 
-                                    {/* Cast & Director Section */}
-                                    <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
-                                        <div className="flex items-center justify-between mb-3">
-                                            <h3 className="text-sm font-medium text-white">
-                                                Cast & Director
-                                            </h3>
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowAdvancedFiltersModal(true)}
-                                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 font-medium"
-                                            >
-                                                <PencilIcon className="w-4 h-4" />
-                                                Edit
-                                            </button>
-                                        </div>
-
-                                        {/* Preview of cast and director */}
-                                        <div className="space-y-2 text-xs text-gray-300">
-                                            {advancedFilters.withCast &&
-                                            advancedFilters.withCast.length > 0 ? (
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-gray-400">Actors:</span>
-                                                    <div className="flex flex-wrap gap-1">
-                                                        {advancedFilters.withCast.map((actor) => (
-                                                            <span
-                                                                key={actor}
-                                                                className="px-2 py-1 bg-blue-600/30 text-blue-200 rounded"
-                                                            >
-                                                                {actor}
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            ) : null}
-
-                                            {advancedFilters.withDirector ? (
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-gray-400">Director:</span>
-                                                    <span className="px-2 py-1 bg-purple-600/30 text-purple-200 rounded">
-                                                        {advancedFilters.withDirector}
-                                                    </span>
-                                                </div>
-                                            ) : null}
-
-                                            {(!advancedFilters.withCast ||
-                                                advancedFilters.withCast.length === 0) &&
-                                                !advancedFilters.withDirector && (
-                                                    <p className="text-gray-500 italic">
-                                                        No cast or director specified
-                                                    </p>
-                                                )}
-                                        </div>
-                                    </div>
-
-                                    {/* Advanced Filters Section */}
-                                    <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
-                                        <div className="flex items-center justify-between mb-3">
-                                            <div>
+                                    {/* Cast & Director and Advanced Filters - Two Column */}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {/* Cast & Director Section */}
+                                        <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
+                                            <div className="flex items-center justify-between mb-3">
                                                 <h3 className="text-sm font-medium text-white">
-                                                    Advanced Filters
+                                                    Cast & Director
                                                 </h3>
-                                                <p className="text-xs text-gray-400 mt-0.5">
-                                                    Filter by year, rating, popularity, and vote
-                                                    count
-                                                </p>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setShowAdvancedFiltersModal(true)
+                                                    }
+                                                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 font-medium"
+                                                >
+                                                    <PencilIcon className="w-4 h-4" />
+                                                    Edit
+                                                </button>
                                             </div>
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowAdvancedFiltersModal(true)}
-                                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 font-medium"
-                                            >
-                                                <PencilIcon className="w-4 h-4" />
-                                                Edit
-                                            </button>
+
+                                            {/* Preview of cast and director */}
+                                            <div className="space-y-2 text-xs text-gray-300">
+                                                {advancedFilters.withCast &&
+                                                advancedFilters.withCast.length > 0 ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-gray-400">
+                                                            Actors:
+                                                        </span>
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {advancedFilters.withCast.map(
+                                                                (actor) => (
+                                                                    <span
+                                                                        key={actor}
+                                                                        className="px-2 py-1 bg-blue-600/30 text-blue-200 rounded"
+                                                                    >
+                                                                        {actor}
+                                                                    </span>
+                                                                )
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ) : null}
+
+                                                {advancedFilters.withDirector ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-gray-400">
+                                                            Director:
+                                                        </span>
+                                                        <span className="px-2 py-1 bg-purple-600/30 text-purple-200 rounded">
+                                                            {advancedFilters.withDirector}
+                                                        </span>
+                                                    </div>
+                                                ) : null}
+
+                                                {(!advancedFilters.withCast ||
+                                                    advancedFilters.withCast.length === 0) &&
+                                                    !advancedFilters.withDirector && (
+                                                        <p className="text-gray-500 italic">
+                                                            No cast or director specified
+                                                        </p>
+                                                    )}
+                                            </div>
                                         </div>
 
-                                        {/* Preview of advanced filters */}
-                                        <div className="space-y-2 text-xs text-gray-300">
-                                            {advancedFilters.yearMin || advancedFilters.yearMax ? (
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-gray-400">Year:</span>
-                                                    <span className="px-2 py-1 bg-gray-700 rounded">
-                                                        {advancedFilters.yearMin || '1900'} -{' '}
-                                                        {advancedFilters.yearMax ||
-                                                            new Date().getFullYear()}
-                                                    </span>
-                                                </div>
-                                            ) : null}
-
-                                            {advancedFilters.ratingMin !== undefined ||
-                                            advancedFilters.ratingMax !== undefined ? (
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-gray-400">Rating:</span>
-                                                    <span className="px-2 py-1 bg-gray-700 rounded">
-                                                        {advancedFilters.ratingMin ?? 0}/10 -{' '}
-                                                        {advancedFilters.ratingMax ?? 10}/10
-                                                    </span>
-                                                </div>
-                                            ) : null}
-
-                                            {!advancedFilters.yearMin &&
-                                                !advancedFilters.yearMax &&
-                                                advancedFilters.ratingMin === undefined &&
-                                                advancedFilters.ratingMax === undefined && (
-                                                    <p className="text-gray-500 italic">
-                                                        No advanced filters applied
+                                        {/* Advanced Filters Section */}
+                                        <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <div>
+                                                    <h3 className="text-sm font-medium text-white">
+                                                        Advanced Filters
+                                                    </h3>
+                                                    <p className="text-xs text-gray-400 mt-0.5">
+                                                        Filter by year, rating, popularity, and vote
+                                                        count
                                                     </p>
-                                                )}
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setShowAdvancedFiltersModal(true)
+                                                    }
+                                                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 font-medium"
+                                                >
+                                                    <PencilIcon className="w-4 h-4" />
+                                                    Edit
+                                                </button>
+                                            </div>
+
+                                            {/* Preview of advanced filters */}
+                                            <div className="space-y-2 text-xs text-gray-300">
+                                                {advancedFilters.yearMin ||
+                                                advancedFilters.yearMax ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-gray-400">Year:</span>
+                                                        <span className="px-2 py-1 bg-gray-700 rounded">
+                                                            {advancedFilters.yearMin || '1900'} -{' '}
+                                                            {advancedFilters.yearMax ||
+                                                                new Date().getFullYear()}
+                                                        </span>
+                                                    </div>
+                                                ) : null}
+
+                                                {advancedFilters.ratingMin !== undefined ||
+                                                advancedFilters.ratingMax !== undefined ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-gray-400">
+                                                            Rating:
+                                                        </span>
+                                                        <span className="px-2 py-1 bg-gray-700 rounded">
+                                                            {advancedFilters.ratingMin ?? 0}/10 -{' '}
+                                                            {advancedFilters.ratingMax ?? 10}/10
+                                                        </span>
+                                                    </div>
+                                                ) : null}
+
+                                                {!advancedFilters.yearMin &&
+                                                    !advancedFilters.yearMax &&
+                                                    advancedFilters.ratingMin === undefined &&
+                                                    advancedFilters.ratingMax === undefined && (
+                                                        <p className="text-gray-500 italic">
+                                                            No advanced filters applied
+                                                        </p>
+                                                    )}
+                                            </div>
                                         </div>
                                     </div>
                                 </>
