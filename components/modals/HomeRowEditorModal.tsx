@@ -657,7 +657,7 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
                         <div className="flex gap-2 mb-6">
                             <button
                                 onClick={() => setDisplayFilter('all')}
-                                className={`group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border ${
+                                className={`group relative rounded-full px-5 py-2.5 text-xs font-bold transition-all duration-300 backdrop-blur-md border ${
                                     displayFilter === 'all'
                                         ? 'bg-purple-500/90 text-white border-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.3)] scale-105'
                                         : 'bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105'
@@ -670,7 +670,7 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
                             </button>
                             <button
                                 onClick={() => setDisplayFilter('shown')}
-                                className={`group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border ${
+                                className={`group relative rounded-full px-5 py-2.5 text-xs font-bold transition-all duration-300 backdrop-blur-md border ${
                                     displayFilter === 'shown'
                                         ? 'bg-green-500/90 text-white border-green-400 shadow-[0_0_10px_rgba(34,197,94,0.3)] scale-105'
                                         : 'bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105'
@@ -683,7 +683,7 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
                             </button>
                             <button
                                 onClick={() => setDisplayFilter('hidden')}
-                                className={`group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border ${
+                                className={`group relative rounded-full px-5 py-2.5 text-xs font-bold transition-all duration-300 backdrop-blur-md border ${
                                     displayFilter === 'hidden'
                                         ? 'bg-zinc-600/90 text-white border-zinc-500 shadow-[0_0_10px_rgba(113,113,122,0.3)] scale-105'
                                         : 'bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105'
