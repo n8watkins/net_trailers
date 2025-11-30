@@ -5,7 +5,7 @@ import {
     PlayCircleIcon,
     XMarkIcon,
 } from '@heroicons/react/24/outline'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 
 interface WelcomeScreenProps {
     isOpen: boolean
@@ -23,8 +23,10 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     onWatchDemo,
 }) => {
     const router = useRouter()
+    const pathname = usePathname()
     const modalRef = useRef<HTMLDivElement>(null)
     const firstButtonRef = useRef<HTMLButtonElement>(null)
+    const waitingToStartTourRef = useRef<boolean>(false)
 
     // Handle Escape key to close modal
     useEffect(() => {
@@ -46,6 +48,17 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
             firstButtonRef.current.focus()
         }
     }, [isOpen])
+
+    // Start tour when we reach home page (if waiting)
+    useEffect(() => {
+        if (waitingToStartTourRef.current && pathname === '/') {
+            waitingToStartTourRef.current = false
+            // Small delay to ensure page is fully rendered
+            setTimeout(() => {
+                onStartTour()
+            }, 300)
+        }
+    }, [pathname, onStartTour])
 
     if (!isOpen) return null
 
@@ -108,14 +121,19 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                     {/* Quick Start Option */}
                     <button
                         ref={firstButtonRef}
-                        onClick={async () => {
+                        onClick={() => {
                             onClose()
-                            // Navigate to home page first, then start tour after navigation
-                            await router.push('/')
-                            // Wait for navigation and page render
-                            setTimeout(() => {
-                                onStartTour()
-                            }, 600)
+
+                            // If already on home page, start tour immediately
+                            if (pathname === '/') {
+                                setTimeout(() => {
+                                    onStartTour()
+                                }, 300)
+                            } else {
+                                // Navigate to home page, useEffect will start tour when we arrive
+                                waitingToStartTourRef.current = true
+                                router.push('/')
+                            }
                         }}
                         className="group relative bg-zinc-800/60 backdrop-blur-lg border-2 border-orange-500/30 rounded-xl p-6 transition-all duration-300 hover:scale-105 hover:border-orange-500/60 hover:shadow-xl hover:shadow-orange-500/20"
                         aria-label="Quick Start: 60-second interactive tour (Recommended)"
