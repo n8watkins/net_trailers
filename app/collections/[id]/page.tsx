@@ -13,7 +13,9 @@ import {
     ChevronDownIcon,
     TrashIcon,
 } from '@heroicons/react/24/solid'
-import { XMarkIcon, RectangleStackIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, RectangleStackIcon, MicrophoneIcon } from '@heroicons/react/24/outline'
+import { useVoiceInput } from '../../../hooks/useVoiceInput'
+import { useToast } from '../../../hooks/useToast'
 import { Content } from '../../../typings'
 import { getTitle } from '../../../typings'
 import ContentCard from '../../../components/common/ContentCard'
@@ -55,7 +57,25 @@ const CollectionPage = ({ params }: CollectionPageProps) => {
     const [showEditor, setShowEditor] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
     const [showManageDropdown, setShowManageDropdown] = useState(false)
+    const [isMounted, setIsMounted] = useState(false)
     const manageDropdownRef = useRef<HTMLDivElement>(null)
+    const { showError } = useToast()
+
+    // Voice input
+    const { isListening, isSupported, transcript, startListening, stopListening } = useVoiceInput({
+        onResult: (transcript) => {
+            setSearchQuery(transcript)
+        },
+        onError: (error) => {
+            showError(error)
+        },
+        sourceId: 'collection-search',
+    })
+
+    // Track client-side mount
+    useEffect(() => {
+        setIsMounted(true)
+    }, [])
 
     // Handle click outside to close dropdown
     useEffect(() => {

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -14,12 +14,15 @@ import {
     SparklesIcon,
     MagnifyingGlassIcon,
     ShieldCheckIcon,
+    MicrophoneIcon,
 } from '@heroicons/react/24/outline'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import SubPageLayout from '../../components/layout/SubPageLayout'
 import NetflixLoader from '../../components/common/NetflixLoader'
 import { useSessionStore } from '../../stores/sessionStore'
+import { useVoiceInput } from '../../hooks/useVoiceInput'
+import { useToast } from '../../hooks/useToast'
 
 type SettingsSection =
     | 'profile'
@@ -54,6 +57,24 @@ const SettingsLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
     // Search state
     const [searchQuery, setSearchQuery] = useState('')
+    const [isMounted, setIsMounted] = useState(false)
+    const { showError } = useToast()
+
+    // Voice input
+    const { isListening, isSupported, transcript, startListening, stopListening } = useVoiceInput({
+        onResult: (transcript) => {
+            setSearchQuery(transcript)
+        },
+        onError: (error) => {
+            showError(error)
+        },
+        sourceId: 'settings-search',
+    })
+
+    // Track client-side mount
+    useEffect(() => {
+        setIsMounted(true)
+    }, [])
 
     // Define all possible sidebar items
     const allSidebarItems: SidebarItem[] = [
@@ -331,16 +352,40 @@ const SettingsLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         placeholder="Search settings..."
-                                        className="w-full pl-14 pr-14 py-4 bg-zinc-900/40 backdrop-blur-lg border border-zinc-800/50 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-gray-500 focus:shadow-[0_0_25px_rgba(156,163,175,0.3)] transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700"
+                                        className={`w-full pl-14 ${isMounted && isSupported ? 'pr-24' : 'pr-14'} py-4 bg-zinc-900/40 backdrop-blur-lg border border-zinc-800/50 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-gray-500 focus:shadow-[0_0_25px_rgba(156,163,175,0.3)] transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700`}
                                     />
-                                    {searchQuery && (
-                                        <button
-                                            onClick={() => setSearchQuery('')}
-                                            className="absolute right-5 top-1/2 -translate-y-1/2 z-10 text-gray-400 hover:text-white transition-colors"
-                                        >
-                                            <XMarkIcon className="w-6 h-6" />
-                                        </button>
-                                    )}
+                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 z-10 flex items-center gap-2">
+                                        {isMounted && isSupported && (
+                                            <button
+                                                type="button"
+                                                onClick={async () => {
+                                                    if (isListening) {
+                                                        stopListening()
+                                                    } else {
+                                                        await startListening()
+                                                    }
+                                                }}
+                                                className={`p-1.5 rounded-lg transition-all ${
+                                                    isListening
+                                                        ? 'bg-gray-500 text-white animate-pulse'
+                                                        : 'text-gray-400 hover:text-gray-300 hover:bg-gray-500/10'
+                                                }`}
+                                                title={
+                                                    isListening ? 'Stop listening' : 'Voice search'
+                                                }
+                                            >
+                                                <MicrophoneIcon className="w-5 h-5" />
+                                            </button>
+                                        )}
+                                        {searchQuery && (
+                                            <button
+                                                onClick={() => setSearchQuery('')}
+                                                className="text-gray-400 hover:text-white transition-colors"
+                                            >
+                                                <XMarkIcon className="w-6 h-6" />
+                                            </button>
+                                        )}
+                                    </div>
 
                                     {/* Glowing border effect on focus */}
                                     <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-gray-500 to-slate-500 opacity-0 group-focus-within:opacity-20 blur-xl transition-opacity duration-300 -z-10" />
