@@ -39,18 +39,22 @@ export const TrendingContentEmail = ({ userName, movies, tvShows }: TrendingCont
         const runtime = formatRuntime(content)
         const badgeLabel = getBadgeLabel(content)
         const description = content.overview
-            ? content.overview.length > 140
-                ? `${content.overview.substring(0, 140)}...`
+            ? content.overview.length > 100
+                ? `${content.overview.substring(0, 100)}...`
                 : content.overview
             : ''
         const posterUrl = content.poster_path
             ? `https://image.tmdb.org/t/p/w300${content.poster_path}`
             : ''
-        const contentUrl = `${appUrl}/${content.media_type}/${content.id}`
+        // Fix 404 error: use proper route format
+        const contentUrl =
+            content.media_type === 'movie'
+                ? `${appUrl}/movie/${content.id}`
+                : `${appUrl}/tv/${content.id}`
 
         return (
             <tr key={content.id}>
-                <td style={{ padding: '0 0 16px 0' }}>
+                <td style={{ padding: '0 0 12px 0' }}>
                     <table
                         cellPadding="0"
                         cellSpacing="0"
@@ -60,31 +64,33 @@ export const TrendingContentEmail = ({ userName, movies, tvShows }: TrendingCont
                             backgroundColor: '#181818',
                             borderRadius: '8px',
                             border: '1px solid #2a2a2a',
-                            overflow: 'hidden',
                         }}
                     >
                         <tr>
-                            {/* Desktop layout: two columns */}
+                            {/* Poster column - fixed width */}
                             <td
                                 style={{
-                                    width: '120px',
+                                    width: '100px',
                                     verticalAlign: 'top',
                                     padding: '0',
                                 }}
                             >
                                 {posterUrl && (
-                                    <a href={contentUrl} style={{ textDecoration: 'none' }}>
+                                    <a
+                                        href={contentUrl}
+                                        style={{ textDecoration: 'none', display: 'block' }}
+                                    >
                                         <img
                                             src={posterUrl}
                                             alt={`${title} poster`}
-                                            width="120"
-                                            height="180"
+                                            width="100"
                                             style={{
                                                 display: 'block',
-                                                width: '120px',
-                                                height: '180px',
+                                                width: '100px',
+                                                height: '100%',
+                                                minHeight: '150px',
                                                 objectFit: 'cover',
-                                                borderRadius: '4px 0 0 4px',
+                                                borderRadius: '8px 0 0 8px',
                                             }}
                                         />
                                     </a>
@@ -93,37 +99,34 @@ export const TrendingContentEmail = ({ userName, movies, tvShows }: TrendingCont
                             <td
                                 style={{
                                     verticalAlign: 'top',
-                                    padding: '16px 20px',
+                                    padding: '12px 16px',
                                 }}
                             >
-                                {/* Badge */}
-                                <table cellPadding="0" cellSpacing="0" border={0}>
-                                    <tr>
-                                        <td
-                                            style={{
-                                                backgroundColor: '#E50914',
-                                                color: '#ffffff',
-                                                fontSize: '11px',
-                                                fontWeight: '700',
-                                                letterSpacing: '0.5px',
-                                                padding: '4px 10px',
-                                                borderRadius: '12px',
-                                                display: 'inline-block',
-                                                marginBottom: '12px',
-                                            }}
-                                        >
-                                            {badgeLabel}
-                                        </td>
-                                    </tr>
-                                </table>
+                                {/* Badge - centered */}
+                                <div style={{ marginBottom: '8px' }}>
+                                    <span
+                                        style={{
+                                            backgroundColor: '#E50914',
+                                            color: '#ffffff',
+                                            fontSize: '10px',
+                                            fontWeight: '700',
+                                            letterSpacing: '0.5px',
+                                            padding: '4px 10px',
+                                            borderRadius: '12px',
+                                            display: 'inline-block',
+                                        }}
+                                    >
+                                        {badgeLabel}
+                                    </span>
+                                </div>
 
                                 {/* Title */}
                                 <div
                                     style={{
-                                        fontSize: '20px',
+                                        fontSize: '18px',
                                         fontWeight: '700',
                                         color: '#ffffff',
-                                        marginBottom: '6px',
+                                        marginBottom: '4px',
                                         lineHeight: '1.3',
                                     }}
                                 >
@@ -141,9 +144,9 @@ export const TrendingContentEmail = ({ userName, movies, tvShows }: TrendingCont
                                 {/* Meta info */}
                                 <div
                                     style={{
-                                        fontSize: '13px',
+                                        fontSize: '12px',
                                         color: '#8c8c8c',
-                                        marginBottom: '10px',
+                                        marginBottom: '8px',
                                         fontWeight: '500',
                                     }}
                                 >
@@ -168,10 +171,10 @@ export const TrendingContentEmail = ({ userName, movies, tvShows }: TrendingCont
                                 {description && (
                                     <div
                                         style={{
-                                            fontSize: '14px',
+                                            fontSize: '13px',
                                             color: '#b3b3b3',
-                                            lineHeight: '1.5',
-                                            marginBottom: '14px',
+                                            lineHeight: '1.4',
+                                            marginBottom: '10px',
                                         }}
                                     >
                                         {description}
@@ -185,7 +188,7 @@ export const TrendingContentEmail = ({ userName, movies, tvShows }: TrendingCont
                                             style={{
                                                 backgroundColor: '#E50914',
                                                 borderRadius: '4px',
-                                                padding: '10px 20px',
+                                                padding: '8px 16px',
                                             }}
                                         >
                                             <a
@@ -193,7 +196,7 @@ export const TrendingContentEmail = ({ userName, movies, tvShows }: TrendingCont
                                                 style={{
                                                     color: '#ffffff',
                                                     textDecoration: 'none',
-                                                    fontSize: '14px',
+                                                    fontSize: '13px',
                                                     fontWeight: '600',
                                                     display: 'inline-block',
                                                 }}
@@ -252,16 +255,19 @@ export const TrendingContentEmail = ({ userName, movies, tvShows }: TrendingCont
                                     <td
                                         align="right"
                                         style={{
-                                            fontSize: '12px',
-                                            color: '#666666',
+                                            fontSize: '13px',
                                             paddingBottom: '20px',
                                         }}
                                     >
                                         <a
                                             href={appUrl}
-                                            style={{ color: '#666666', textDecoration: 'none' }}
+                                            style={{
+                                                color: '#E50914',
+                                                textDecoration: 'none',
+                                                fontWeight: '600',
+                                            }}
                                         >
-                                            View in browser
+                                            View in browser →
                                         </a>
                                     </td>
                                 </tr>
@@ -291,43 +297,43 @@ export const TrendingContentEmail = ({ userName, movies, tvShows }: TrendingCont
 
                                 {/* Hero Section */}
                                 <tr>
-                                    <td style={{ padding: '40px 0 32px 0' }}>
+                                    <td style={{ padding: '32px 0 24px 0' }}>
                                         {/* Greeting */}
                                         <div
                                             style={{
                                                 fontSize: '18px',
                                                 color: '#b3b3b3',
-                                                marginBottom: '12px',
+                                                marginBottom: '10px',
                                                 fontWeight: '500',
                                             }}
                                         >
-                                            Hello, {userName} 👋
+                                            Hey {userName}! 👋
                                         </div>
 
                                         {/* Main Headline */}
                                         <h1
                                             style={{
-                                                fontSize: '32px',
+                                                fontSize: '28px',
                                                 fontWeight: '900',
                                                 color: '#ffffff',
-                                                margin: '0 0 16px 0',
+                                                margin: '0 0 12px 0',
                                                 lineHeight: '1.2',
                                             }}
                                         >
-                                            Your Weekly NetTrailers Lineup 🍿
+                                            This Week's Hottest Picks 🔥
                                         </h1>
 
                                         {/* Subheadline */}
                                         <p
                                             style={{
-                                                fontSize: '16px',
+                                                fontSize: '15px',
                                                 color: '#b3b3b3',
                                                 margin: '0',
                                                 lineHeight: '1.5',
                                             }}
                                         >
-                                            Here's what everyone's watching this week. Your
-                                            watchlist called — it wants these added ASAP.
+                                            Everyone's binge-watching these right now. Don't miss
+                                            out — your queue is calling!
                                         </p>
                                     </td>
                                 </tr>
@@ -418,20 +424,19 @@ export const TrendingContentEmail = ({ userName, movies, tvShows }: TrendingCont
                                     <td
                                         align="center"
                                         style={{
-                                            padding: '48px 0 32px 0',
+                                            padding: '36px 0 28px 0',
                                             borderTop: '1px solid #2a2a2a',
-                                            marginTop: '32px',
                                         }}
                                     >
                                         <div
                                             style={{
-                                                fontSize: '20px',
+                                                fontSize: '18px',
                                                 fontWeight: '700',
                                                 color: '#ffffff',
-                                                marginBottom: '16px',
+                                                marginBottom: '14px',
                                             }}
                                         >
-                                            Ready for more?
+                                            Want the full scoop?
                                         </div>
                                         <table cellPadding="0" cellSpacing="0" border={0}>
                                             <tr>
@@ -439,7 +444,7 @@ export const TrendingContentEmail = ({ userName, movies, tvShows }: TrendingCont
                                                     style={{
                                                         backgroundColor: '#E50914',
                                                         borderRadius: '9999px',
-                                                        padding: '16px 40px',
+                                                        padding: '14px 36px',
                                                     }}
                                                 >
                                                     <a
@@ -447,26 +452,26 @@ export const TrendingContentEmail = ({ userName, movies, tvShows }: TrendingCont
                                                         style={{
                                                             color: '#ffffff',
                                                             textDecoration: 'none',
-                                                            fontSize: '16px',
+                                                            fontSize: '15px',
                                                             fontWeight: '700',
                                                             display: 'inline-block',
                                                         }}
                                                     >
-                                                        Explore More on NetTrailers
+                                                        Explore NetTrailers Now
                                                     </a>
                                                 </td>
                                             </tr>
                                         </table>
                                         <div
                                             style={{
-                                                fontSize: '14px',
+                                                fontSize: '13px',
                                                 color: '#8c8c8c',
-                                                marginTop: '14px',
+                                                marginTop: '12px',
                                                 lineHeight: '1.5',
                                             }}
                                         >
-                                            See your full personalized lineup and keep your
-                                            watchlist up to date.
+                                            Dive into personalized recommendations and manage your
+                                            watchlist
                                         </div>
                                     </td>
                                 </tr>

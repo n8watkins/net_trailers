@@ -176,9 +176,7 @@ export function AdvancedFiltersModal({
         localFilters.ratingMin !== undefined ||
         localFilters.ratingMax !== undefined ||
         localFilters.popularity ||
-        localFilters.voteCount ||
-        (localFilters.withCast && localFilters.withCast.length > 0) ||
-        localFilters.withDirector
+        localFilters.voteCount
 
     const modalContent = (
         <div className="fixed inset-0 z-modal-editor-inner overflow-y-auto">
@@ -203,7 +201,7 @@ export function AdvancedFiltersModal({
                 }}
             >
                 <div
-                    className="relative bg-gradient-to-br from-zinc-900/95 via-black/95 to-zinc-900/95 backdrop-blur-xl rounded-2xl shadow-2xl max-w-3xl w-full border border-zinc-800/50"
+                    className="relative bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-2xl shadow-2xl max-w-3xl w-full border border-gray-700"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
@@ -339,206 +337,6 @@ export function AdvancedFiltersModal({
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        {/* Actors */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-200 mb-3">
-                                Actors
-                            </label>
-
-                            {/* Actor Pills */}
-                            {localFilters.withCast && localFilters.withCast.length > 0 && (
-                                <div className="flex flex-wrap gap-2 mb-3">
-                                    {localFilters.withCast.map((actorName) => (
-                                        <div
-                                            key={actorName}
-                                            className="group relative px-4 py-2 rounded-full text-sm font-medium bg-blue-600 text-white"
-                                        >
-                                            {actorName}
-                                            <button
-                                                type="button"
-                                                onClick={() => removeActor(actorName)}
-                                                className="absolute -top-1 -right-1 w-5 h-5 bg-white hover:bg-gray-200 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
-                                                title="Remove actor"
-                                            >
-                                                <XMarkIcon className="w-3 h-3 text-slate-600" />
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-
-                            {/* Add Actor Button / Input */}
-                            {!showActorInput ? (
-                                <button
-                                    type="button"
-                                    onClick={() => setShowActorInput(true)}
-                                    className="flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white hover:bg-gray-700 transition-colors"
-                                >
-                                    <PlusIcon className="w-4 h-4" />
-                                    Add Actor
-                                </button>
-                            ) : (
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        placeholder="Search for an actor..."
-                                        value={actorInput}
-                                        onChange={(e) => handleActorInputChange(e.target.value)}
-                                        autoFocus
-                                        className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-                                    />
-
-                                    {/* Actor Search Results */}
-                                    {actorSearchResults.length > 0 && (
-                                        <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden max-h-64">
-                                            {actorSearchResults.slice(0, 5).map((person, index) => (
-                                                <button
-                                                    key={person.id}
-                                                    type="button"
-                                                    onClick={() => addActor(person)}
-                                                    className={`w-full flex items-center gap-3 p-3 transition-colors text-left ${
-                                                        index === selectedActorIndex
-                                                            ? 'bg-red-600/20'
-                                                            : 'hover:bg-gray-700'
-                                                    }`}
-                                                >
-                                                    <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-700 flex-shrink-0">
-                                                        {person.profile_path ? (
-                                                            <Image
-                                                                src={`https://image.tmdb.org/t/p/w185${person.profile_path}`}
-                                                                alt={person.name}
-                                                                width={40}
-                                                                height={40}
-                                                                className="object-cover"
-                                                            />
-                                                        ) : (
-                                                            <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs">
-                                                                ?
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="text-white font-medium truncate">
-                                                            {person.name}
-                                                        </p>
-                                                        <p className="text-xs text-gray-400">
-                                                            Actor
-                                                        </p>
-                                                    </div>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    {isSearchingActors && (
-                                        <div className="absolute right-3 top-2.5">
-                                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-600"></div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Director */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-200 mb-3">
-                                Director
-                            </label>
-
-                            {/* Director Pill */}
-                            {localFilters.withDirector && (
-                                <div className="flex flex-wrap gap-2 mb-3">
-                                    <div className="group relative px-4 py-2 rounded-full text-sm font-medium bg-purple-600 text-white">
-                                        {localFilters.withDirector}
-                                        <button
-                                            type="button"
-                                            onClick={removeDirector}
-                                            className="absolute -top-1 -right-1 w-5 h-5 bg-white hover:bg-gray-200 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
-                                            title="Remove director"
-                                        >
-                                            <XMarkIcon className="w-3 h-3 text-slate-600" />
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Add Director Button / Input */}
-                            {!localFilters.withDirector &&
-                                (!showDirectorInput ? (
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowDirectorInput(true)}
-                                        className="flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white hover:bg-gray-700 transition-colors"
-                                    >
-                                        <PlusIcon className="w-4 h-4" />
-                                        Add Director
-                                    </button>
-                                ) : (
-                                    <div className="relative">
-                                        <input
-                                            type="text"
-                                            placeholder="Search for a director..."
-                                            value={directorInput}
-                                            onChange={(e) =>
-                                                handleDirectorInputChange(e.target.value)
-                                            }
-                                            autoFocus
-                                            className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-                                        />
-
-                                        {/* Director Search Results */}
-                                        {directorSearchResults.length > 0 && (
-                                            <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden max-h-64">
-                                                {directorSearchResults
-                                                    .slice(0, 5)
-                                                    .map((person, index) => (
-                                                        <button
-                                                            key={person.id}
-                                                            type="button"
-                                                            onClick={() => setDirector(person)}
-                                                            className={`w-full flex items-center gap-3 p-3 transition-colors text-left ${
-                                                                index === selectedDirectorIndex
-                                                                    ? 'bg-red-600/20'
-                                                                    : 'hover:bg-gray-700'
-                                                            }`}
-                                                        >
-                                                            <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-700 flex-shrink-0">
-                                                                {person.profile_path ? (
-                                                                    <Image
-                                                                        src={`https://image.tmdb.org/t/p/w185${person.profile_path}`}
-                                                                        alt={person.name}
-                                                                        width={40}
-                                                                        height={40}
-                                                                        className="object-cover"
-                                                                    />
-                                                                ) : (
-                                                                    <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs">
-                                                                        ?
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <p className="text-white font-medium truncate">
-                                                                    {person.name}
-                                                                </p>
-                                                                <p className="text-xs text-gray-400">
-                                                                    Director
-                                                                </p>
-                                                            </div>
-                                                        </button>
-                                                    ))}
-                                            </div>
-                                        )}
-
-                                        {isSearchingDirector && (
-                                            <div className="absolute right-3 top-2.5">
-                                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-600"></div>
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
                         </div>
                     </div>
 

@@ -11,6 +11,7 @@ import {
     TvIcon,
     TrashIcon,
     PencilIcon,
+    PlusIcon,
 } from '@heroicons/react/24/outline'
 import { DeleteConfirmationModal } from './DeleteConfirmationModal'
 import { UserList } from '../../types/collections'
@@ -964,63 +965,227 @@ export default function CollectionEditorModal({
                                     <div className="grid grid-cols-2 gap-3">
                                         {/* Cast & Director Section */}
                                         <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
-                                            <div className="flex items-center justify-between mb-6">
-                                                <h3 className="text-base font-semibold text-white">
-                                                    Cast & Director
-                                                </h3>
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        setShowAdvancedFiltersModal(true)
-                                                    }
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 text-sm font-medium flex-shrink-0"
-                                                >
-                                                    <PencilIcon className="w-3.5 h-3.5" />
-                                                    Edit
-                                                </button>
-                                            </div>
+                                            <h3 className="text-base font-semibold text-white mb-3">
+                                                Cast & Director
+                                            </h3>
 
-                                            {/* Preview of cast and director */}
-                                            <div className="space-y-2 text-xs text-gray-300">
+                                            {/* Actors Section */}
+                                            <div className="mb-4">
+                                                <label className="block text-sm font-medium text-gray-200 mb-2">
+                                                    Actors
+                                                </label>
+
+                                                {/* Actor Pills */}
                                                 {advancedFilters.withCast &&
-                                                advancedFilters.withCast.length > 0 ? (
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-gray-400">
-                                                            Actors:
-                                                        </span>
-                                                        <div className="flex flex-wrap gap-1">
+                                                    advancedFilters.withCast.length > 0 && (
+                                                        <div className="flex flex-wrap gap-2 mb-2">
                                                             {advancedFilters.withCast.map(
-                                                                (actor) => (
-                                                                    <span
-                                                                        key={actor}
-                                                                        className="px-2 py-1 bg-blue-600/30 text-blue-200 rounded"
+                                                                (actorName) => (
+                                                                    <div
+                                                                        key={actorName}
+                                                                        className="group relative px-3 py-1.5 rounded-full text-xs font-medium bg-blue-600 text-white"
                                                                     >
-                                                                        {actor}
-                                                                    </span>
+                                                                        {actorName}
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                removeActor(
+                                                                                    actorName
+                                                                                )
+                                                                            }
+                                                                            className="absolute -top-1 -right-1 w-4 h-4 bg-white hover:bg-gray-200 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                                                                            title="Remove actor"
+                                                                        >
+                                                                            <XMarkIcon className="w-2.5 h-2.5 text-slate-600" />
+                                                                        </button>
+                                                                    </div>
                                                                 )
                                                             )}
                                                         </div>
-                                                    </div>
-                                                ) : null}
-
-                                                {advancedFilters.withDirector ? (
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-gray-400">
-                                                            Director:
-                                                        </span>
-                                                        <span className="px-2 py-1 bg-purple-600/30 text-purple-200 rounded">
-                                                            {advancedFilters.withDirector}
-                                                        </span>
-                                                    </div>
-                                                ) : null}
-
-                                                {(!advancedFilters.withCast ||
-                                                    advancedFilters.withCast.length === 0) &&
-                                                    !advancedFilters.withDirector && (
-                                                        <p className="text-gray-500 italic">
-                                                            No cast or director specified
-                                                        </p>
                                                     )}
+
+                                                {/* Add Actor Button / Input */}
+                                                {!showActorInput ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowActorInput(true)}
+                                                        className="flex items-center gap-2 px-3 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-xs hover:bg-gray-600 transition-colors"
+                                                    >
+                                                        <PlusIcon className="w-3.5 h-3.5" />
+                                                        Add Actor
+                                                    </button>
+                                                ) : (
+                                                    <div className="relative">
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Search for an actor..."
+                                                            value={actorInput}
+                                                            onChange={(e) =>
+                                                                handleActorInputChange(
+                                                                    e.target.value
+                                                                )
+                                                            }
+                                                            autoFocus
+                                                            className="w-full px-3 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                        />
+
+                                                        {/* Actor Search Results */}
+                                                        {actorSearchResults.length > 0 && (
+                                                            <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden max-h-48">
+                                                                {actorSearchResults
+                                                                    .slice(0, 5)
+                                                                    .map((person) => (
+                                                                        <button
+                                                                            key={person.id}
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                addActor(person)
+                                                                            }
+                                                                            className="w-full flex items-center gap-2 p-2 transition-colors text-left hover:bg-gray-700"
+                                                                        >
+                                                                            <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-700 flex-shrink-0">
+                                                                                {person.profile_path ? (
+                                                                                    <Image
+                                                                                        src={`https://image.tmdb.org/t/p/w185${person.profile_path}`}
+                                                                                        alt={
+                                                                                            person.name
+                                                                                        }
+                                                                                        width={32}
+                                                                                        height={32}
+                                                                                        className="object-cover"
+                                                                                    />
+                                                                                ) : (
+                                                                                    <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs">
+                                                                                        ?
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <p className="text-white text-sm font-medium truncate">
+                                                                                    {person.name}
+                                                                                </p>
+                                                                            </div>
+                                                                        </button>
+                                                                    ))}
+                                                            </div>
+                                                        )}
+
+                                                        {isSearchingActors && (
+                                                            <div className="absolute right-3 top-2">
+                                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Director Section */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-200 mb-2">
+                                                    Director
+                                                </label>
+
+                                                {/* Director Pill */}
+                                                {advancedFilters.withDirector && (
+                                                    <div className="flex flex-wrap gap-2 mb-2">
+                                                        <div className="group relative px-3 py-1.5 rounded-full text-xs font-medium bg-purple-600 text-white">
+                                                            {advancedFilters.withDirector}
+                                                            <button
+                                                                type="button"
+                                                                onClick={removeDirector}
+                                                                className="absolute -top-1 -right-1 w-4 h-4 bg-white hover:bg-gray-200 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                                                                title="Remove director"
+                                                            >
+                                                                <XMarkIcon className="w-2.5 h-2.5 text-slate-600" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Add Director Button / Input */}
+                                                {!advancedFilters.withDirector &&
+                                                    (!showDirectorInput ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setShowDirectorInput(true)
+                                                            }
+                                                            className="flex items-center gap-2 px-3 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-xs hover:bg-gray-600 transition-colors"
+                                                        >
+                                                            <PlusIcon className="w-3.5 h-3.5" />
+                                                            Add Director
+                                                        </button>
+                                                    ) : (
+                                                        <div className="relative">
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Search for a director..."
+                                                                value={directorInput}
+                                                                onChange={(e) =>
+                                                                    handleDirectorInputChange(
+                                                                        e.target.value
+                                                                    )
+                                                                }
+                                                                autoFocus
+                                                                className="w-full px-3 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                            />
+
+                                                            {/* Director Search Results */}
+                                                            {directorSearchResults.length > 0 && (
+                                                                <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden max-h-48">
+                                                                    {directorSearchResults
+                                                                        .slice(0, 5)
+                                                                        .map((person) => (
+                                                                            <button
+                                                                                key={person.id}
+                                                                                type="button"
+                                                                                onClick={() =>
+                                                                                    setDirector(
+                                                                                        person
+                                                                                    )
+                                                                                }
+                                                                                className="w-full flex items-center gap-2 p-2 transition-colors text-left hover:bg-gray-700"
+                                                                            >
+                                                                                <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-700 flex-shrink-0">
+                                                                                    {person.profile_path ? (
+                                                                                        <Image
+                                                                                            src={`https://image.tmdb.org/t/p/w185${person.profile_path}`}
+                                                                                            alt={
+                                                                                                person.name
+                                                                                            }
+                                                                                            width={
+                                                                                                32
+                                                                                            }
+                                                                                            height={
+                                                                                                32
+                                                                                            }
+                                                                                            className="object-cover"
+                                                                                        />
+                                                                                    ) : (
+                                                                                        <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs">
+                                                                                            ?
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                                <div className="flex-1 min-w-0">
+                                                                                    <p className="text-white text-sm font-medium truncate">
+                                                                                        {
+                                                                                            person.name
+                                                                                        }
+                                                                                    </p>
+                                                                                </div>
+                                                                            </button>
+                                                                        ))}
+                                                                </div>
+                                                            )}
+
+                                                            {isSearchingDirector && (
+                                                                <div className="absolute right-3 top-2">
+                                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ))}
                                             </div>
                                         </div>
 
@@ -1242,7 +1407,7 @@ export default function CollectionEditorModal({
                 }}
             >
                 <div
-                    className="relative z-modal-editor-inner bg-gradient-to-br from-zinc-900/95 via-black/95 to-zinc-900/95 backdrop-blur-xl rounded-2xl shadow-2xl max-w-4xl w-full border border-zinc-800/50"
+                    className="relative z-modal-editor-inner bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-2xl shadow-2xl max-w-4xl w-full border border-gray-700"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
