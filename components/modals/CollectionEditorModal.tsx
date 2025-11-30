@@ -753,7 +753,7 @@ export default function CollectionEditorModal({
                                             }`}
                                         >
                                             <div className="space-y-3">
-                                                <p className="text-sm font-medium text-white">
+                                                <p className="text-base font-semibold text-white">
                                                     Media Type
                                                 </p>
                                                 <div className="space-y-2">
@@ -822,7 +822,7 @@ export default function CollectionEditorModal({
                                         <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
                                             <div className="space-y-3">
                                                 <div className="flex items-center justify-between">
-                                                    <p className="text-sm font-medium text-white">
+                                                    <p className="text-base font-semibold text-white">
                                                         Genres
                                                     </p>
                                                     {!canOnlyToggle && (
@@ -876,7 +876,7 @@ export default function CollectionEditorModal({
                                         {/* Cast & Director Section */}
                                         <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
                                             <div className="flex items-center justify-between mb-3">
-                                                <h3 className="text-sm font-medium text-white">
+                                                <h3 className="text-base font-semibold text-white">
                                                     Cast & Director
                                                 </h3>
                                                 <button
@@ -939,7 +939,7 @@ export default function CollectionEditorModal({
                                         <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
                                             <div className="flex items-center justify-between mb-3">
                                                 <div>
-                                                    <h3 className="text-sm font-medium text-white">
+                                                    <h3 className="text-base font-semibold text-white">
                                                         Advanced Filters
                                                     </h3>
                                                     <p className="text-xs text-gray-400 mt-0.5">
