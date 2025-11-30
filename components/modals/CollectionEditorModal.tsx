@@ -24,8 +24,8 @@ import { GenrePills } from '../collections/GenrePills'
 import { getUnifiedGenresByMediaType } from '../../constants/unifiedGenres'
 import { useChildSafety } from '../../hooks/useChildSafety'
 import { useSessionStore } from '../../stores/sessionStore'
-import { AdvancedFiltersSection } from '../collections/AdvancedFiltersSection'
 import { AdvancedFilters } from '../../types/collections'
+import { AdvancedFiltersModal } from './AdvancedFiltersModal'
 
 interface CollectionEditorModalProps {
     collection: UserList | null
@@ -73,6 +73,7 @@ export default function CollectionEditorModal({
     const [showColorPicker, setShowColorPicker] = useState(false)
     const [showInfiniteTooltip, setShowInfiniteTooltip] = useState(false)
     const [showGenreModal, setShowGenreModal] = useState(false)
+    const [showAdvancedFiltersModal, setShowAdvancedFiltersModal] = useState(false)
     const [showDeleteModal, setShowDeleteModal] = useState(false)
     const [searchFilter, setSearchFilter] = useState('')
     const [_isSaving, _setIsSaving] = useState(false)
@@ -568,7 +569,7 @@ export default function CollectionEditorModal({
                                     title="Delete collection"
                                 >
                                     <TrashIcon className="w-5 h-5" />
-                                    <span className="hidden sm:inline">Delete</span>
+                                    <span className="hidden sm:inline">Delete Collection</span>
                                 </button>
                             )}
                         </div>
@@ -619,7 +620,7 @@ export default function CollectionEditorModal({
                                         {/* Display on Page Toggle */}
                                         <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
                                             <div className="flex items-center justify-between">
-                                                <label className="text-xs font-medium text-white flex items-center gap-1.5">
+                                                <label className="text-sm font-medium text-white flex items-center gap-1.5">
                                                     <span>🏠</span>
                                                     Display on Page
                                                 </label>
@@ -646,7 +647,7 @@ export default function CollectionEditorModal({
                                         {/* Show on Public Profile Toggle */}
                                         <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
                                             <div className="flex items-center justify-between">
-                                                <label className="text-xs font-medium text-white flex items-center gap-1.5">
+                                                <label className="text-sm font-medium text-white flex items-center gap-1.5">
                                                     <span>👁️</span>
                                                     Public Profile
                                                 </label>
@@ -675,7 +676,7 @@ export default function CollectionEditorModal({
                                         {/* Infinite Content Toggle */}
                                         <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
                                             <div className="relative flex items-center justify-between">
-                                                <label className="text-xs font-medium text-white flex items-center gap-1.5">
+                                                <label className="text-sm font-medium text-white flex items-center gap-1.5">
                                                     <span>♾️</span>
                                                     Infinite Content
                                                     <button
@@ -752,13 +753,13 @@ export default function CollectionEditorModal({
                                             }`}
                                         >
                                             <div className="space-y-3">
-                                                <p className="text-xs font-medium text-white">
+                                                <p className="text-sm font-medium text-white">
                                                     Media Type
                                                 </p>
                                                 <div className="space-y-2">
                                                     {/* Movies Toggle */}
                                                     <div className="flex items-center justify-between">
-                                                        <label className="text-xs font-medium text-white flex items-center gap-2">
+                                                        <label className="text-sm font-medium text-white flex items-center gap-2">
                                                             <FilmIcon className="w-4 h-4" />
                                                             Movies
                                                         </label>
@@ -787,7 +788,7 @@ export default function CollectionEditorModal({
 
                                                     {/* TV Shows Toggle */}
                                                     <div className="flex items-center justify-between">
-                                                        <label className="text-xs font-medium text-white flex items-center gap-2">
+                                                        <label className="text-sm font-medium text-white flex items-center gap-2">
                                                             <TvIcon className="w-4 h-4" />
                                                             TV Shows
                                                         </label>
@@ -821,7 +822,7 @@ export default function CollectionEditorModal({
                                         <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
                                             <div className="space-y-3">
                                                 <div className="flex items-center justify-between">
-                                                    <p className="text-xs font-medium text-white">
+                                                    <p className="text-sm font-medium text-white">
                                                         Genres
                                                     </p>
                                                     {!canOnlyToggle && (
