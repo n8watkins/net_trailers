@@ -117,7 +117,7 @@ export default function NotificationItem({ notification }: NotificationItemProps
             'System:',
         ]
 
-        let title = notification.title
+        let title = notification.title || ''
         for (const prefix of prefixes) {
             if (title.startsWith(prefix)) {
                 title = title.replace(prefix, '').trim()
