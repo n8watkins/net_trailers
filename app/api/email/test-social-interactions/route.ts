@@ -121,11 +121,13 @@ export async function POST(req: NextRequest) {
                 })
 
             // Create notification for user (this is what the normal flow does)
+            // Use unique ID based on timestamp and comment to prevent duplicates
+            const notificationId = `test_comment_${commentId}_${now - i * 60000}`
             await db
                 .collection('users')
                 .doc(userId)
                 .collection('notifications')
-                .doc()
+                .doc(notificationId)
                 .set({
                     type: 'ranking_comment',
                     rankingId: rankingId,
@@ -175,11 +177,13 @@ export async function POST(req: NextRequest) {
         }
 
         // Create a single batched notification for all likes
+        // Use unique ID based on timestamp to prevent duplicates
+        const likeNotificationId = `test_likes_${rankingId}_${now}`
         await db
             .collection('users')
             .doc(userId)
             .collection('notifications')
-            .doc()
+            .doc(likeNotificationId)
             .set({
                 type: 'ranking_like',
                 rankingId: rankingId,
