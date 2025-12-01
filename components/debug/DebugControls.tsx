@@ -364,6 +364,11 @@ export default function DebugControls() {
                     'showNotifTester',
                     'showChildSafetyDebug',
                 ]
+            case 'data':
+            case 'email':
+            case 'cron':
+                // These categories don't have settings toggles, only action buttons
+                return []
         }
     }
 
