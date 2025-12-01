@@ -243,9 +243,16 @@ async function createCommentNotification(
         }
 
         // Create notification in user's notifications subcollection (will be batched in daily digest)
-        const notificationRef = collection(db, 'users', recipientId, 'notifications')
-        await setDoc(doc(notificationRef), {
+        const notificationId = nanoid(12)
+        const notificationRef = doc(db, 'users', recipientId, 'notifications', notificationId)
+        await setDoc(notificationRef, {
+            id: notificationId,
+            userId: recipientId,
             type: 'ranking_comment',
+            title: isReply
+                ? `${commenterName} replied to your comment`
+                : `${commenterName} commented on your ranking`,
+            message: ranking.title,
             rankingId: comment.rankingId,
             rankingTitle: ranking.title,
             commenterName: commenterName,

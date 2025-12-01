@@ -101,6 +101,10 @@ export default function NotificationItem({ notification }: NotificationItemProps
                 return 'Collection Update'
             case 'system':
                 return 'System'
+            case 'ranking_comment':
+                return 'Comment'
+            case 'ranking_like':
+                return 'Like'
             default:
                 return 'Notification'
         }

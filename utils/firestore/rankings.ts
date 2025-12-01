@@ -448,9 +448,14 @@ async function createLikeNotification(
 ): Promise<void> {
     try {
         // Create notification in user's notifications subcollection (will be batched in daily digest)
-        const notificationRef = collection(db, 'users', rankingOwnerId, 'notifications')
-        await setDoc(doc(notificationRef), {
+        const notificationId = nanoid(12)
+        const notificationRef = doc(db, 'users', rankingOwnerId, 'notifications', notificationId)
+        await setDoc(notificationRef, {
+            id: notificationId,
+            userId: rankingOwnerId,
             type: 'ranking_like',
+            title: `${likerName} liked your ranking`,
+            message: rankingTitle,
             rankingId,
             rankingTitle,
             likerNames: [likerName],

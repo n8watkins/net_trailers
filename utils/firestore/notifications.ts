@@ -355,6 +355,8 @@ export async function getNotificationStats(userId: string): Promise<Notification
                 new_release: notifications.filter((n) => n.type === 'new_release').length,
                 trending_update: notifications.filter((n) => n.type === 'trending_update').length,
                 system: notifications.filter((n) => n.type === 'system').length,
+                ranking_comment: notifications.filter((n) => n.type === 'ranking_comment').length,
+                ranking_like: notifications.filter((n) => n.type === 'ranking_like').length,
             },
             mostRecent: notifications.length > 0 ? notifications[0] : undefined,
         }
@@ -370,6 +372,8 @@ export async function getNotificationStats(userId: string): Promise<Notification
                 new_release: 0,
                 trending_update: 0,
                 system: 0,
+                ranking_comment: 0,
+                ranking_like: 0,
             },
         }
     }

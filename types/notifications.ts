@@ -13,6 +13,8 @@ export type NotificationType =
     | 'new_release' // Movie/show from watchlist released
     | 'trending_update' // New content entered trending
     | 'system' // App updates, announcements
+    | 'ranking_comment' // Comment on user's ranking
+    | 'ranking_like' // Like on user's ranking
 
 /**
  * Notification
@@ -96,6 +98,8 @@ export interface NotificationStats {
         new_release: number
         trending_update: number
         system: number
+        ranking_comment: number
+        ranking_like: number
     }
 
     /** Most recent notification */
@@ -183,5 +187,15 @@ export const NOTIFICATION_META = {
         icon: 'BellIcon',
         color: 'text-gray-500',
         bgColor: 'bg-gray-600/20',
+    },
+    ranking_comment: {
+        icon: 'ChatBubbleLeftIcon',
+        color: 'text-green-500',
+        bgColor: 'bg-green-600/20',
+    },
+    ranking_like: {
+        icon: 'HeartIcon',
+        color: 'text-red-500',
+        bgColor: 'bg-red-600/20',
     },
 } as const
