@@ -5,6 +5,41 @@ All notable changes to NetTrailer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-11-30 - Bug Fixes & Stability Improvements
+
+### Fixed (November 30, 2025)
+
+- **Admin Page Authentication Fix**
+    - Resolved redirect loop issue where admin users were incorrectly redirected to home page
+    - Separated admin check logic from redirect logic using independent useEffect hooks
+    - Fixed Firebase Auth timing issues with proper async/await handling
+    - Added useRef to prevent duplicate admin verification checks
+    - Enhanced console logging for improved debugging of authentication flow
+
+- **TypeScript Error Resolution** (45 errors fixed)
+    - Fixed useAuth import issues in RankingCard and RankingDetail components
+    - Corrected likeRanking function signature to include required userName parameter
+    - Removed references to deprecated autoUpdateEnabled feature across multiple files
+    - Fixed RecommendationFeedback source type with "as const" assertion
+    - Corrected genre translation for "both" media type in unified genre system
+    - Fixed optional chaining issues in contentDiscovery.ts for safer property access
+
+### Changed (November 30, 2025)
+
+- **UI Improvements**
+    - Removed description text from /ratings page for cleaner interface
+    - Increased spacing (mt-8) between section headers and content for better visual hierarchy
+
+### Security (November 30, 2025)
+
+- **Environment Variable Security Enhancement**
+    - Moved ADMIN_UID from client-side (NEXT_PUBLIC_ADMIN_UID) to server-side only
+    - Moved ADMIN_TOKEN from client-side (NEXT_PUBLIC_ADMIN_TOKEN) to server-side only
+    - Admin credentials no longer exposed in client bundles
+    - Enhanced security posture by limiting admin credential access to server environment
+
+---
+
 ## [Unreleased] - 2025-11-28 - UI Polish & Cinematic Styling
 
 ### User Interface (November 2025)

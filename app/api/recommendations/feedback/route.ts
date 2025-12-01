@@ -86,7 +86,7 @@ async function handlePostFeedback(request: NextRequest, userId: string): Promise
             feedbackType,
             action,
             timestamp: Date.now(),
-            source: 'recommended_row',
+            source: 'recommended_row' as const,
         }
 
         // Save to Firestore using Admin SDK (bypasses security rules)

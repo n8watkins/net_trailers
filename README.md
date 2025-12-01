@@ -347,11 +347,13 @@ _Experience all features or continue as guest to explore the platform_
 
     # Admin Portal (Required for admin access - SERVER-SIDE ONLY)
     # Get your Firebase UID from: Firebase Console > Authentication > Users > Copy UID
-    # NOTE: This is intentionally NOT prefixed with NEXT_PUBLIC_ to keep it server-side only
+    # IMPORTANT: This is intentionally NOT prefixed with NEXT_PUBLIC_ to keep it server-side only
+    # Admin credentials are never exposed to client bundles for security
     ADMIN_UID=your_firebase_uid_here
 
     # Firebase Admin SDK (Required for admin API endpoints)
     # Get from: Firebase Console > Project Settings > Service Accounts > Generate new private key
+    # These credentials allow server-side admin operations
     FIREBASE_ADMIN_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
     FIREBASE_ADMIN_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
 

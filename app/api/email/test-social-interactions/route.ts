@@ -197,8 +197,27 @@ export async function POST(req: NextRequest) {
         console.log(`🧪 [Test Social]   - Total likes: 3`)
         console.log(`🧪 [Test Social]   - Total notifications: 3 (2 comment + 1 like batch)`)
 
-        // Step 4: Now run the social digest cron job
-        console.log('🧪 [Test Social] Step 4: Triggering social digest cron...')
+        // Step 4: Temporarily enable email notifications for testing
+        console.log('🧪 [Test Social] Step 4: Enabling email notifications for test...')
+        const userRef = db.collection('users').doc(userId)
+        const userDoc = await userRef.get()
+        const currentNotifications = userDoc.data()?.notifications || {}
+
+        // Store original settings
+        const originalEmailEnabled = currentNotifications.email
+        const originalSocialEnabled = currentNotifications.types?.social_interactions
+
+        // Temporarily enable both
+        await userRef.update({
+            'notifications.email': true,
+            'notifications.types.social_interactions': true,
+        })
+        console.log(
+            `🧪 [Test Social] ✅ Temporarily enabled email notifications (will restore after test)`
+        )
+
+        // Step 5: Now run the social digest cron job
+        console.log('🧪 [Test Social] Step 5: Triggering social digest cron...')
 
         const cronUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/cron/social-digest`
         console.log(`🧪 [Test Social] Calling: ${cronUrl}`)
@@ -216,6 +235,14 @@ export async function POST(req: NextRequest) {
 
         console.log('🧪 [Test Social] ✅ Social digest cron completed')
         console.log('🧪 [Test Social] Cron result:', JSON.stringify(cronResult, null, 2))
+
+        // Step 6: Restore original notification settings
+        console.log('🧪 [Test Social] Step 6: Restoring original notification settings...')
+        await userRef.update({
+            'notifications.email': originalEmailEnabled ?? false,
+            'notifications.types.social_interactions': originalSocialEnabled ?? true,
+        })
+        console.log('🧪 [Test Social] ✅ Original settings restored')
 
         const response = {
             success: true,

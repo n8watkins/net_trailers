@@ -4,6 +4,39 @@ This document tracks the evolution of security improvements in NetTrailers.
 
 ---
 
+## November 30, 2025 - Admin Credential Security Enhancement
+
+### Security Improvements
+
+1. **Server-Side Admin Credentials**
+    - Moved `ADMIN_UID` from `NEXT_PUBLIC_ADMIN_UID` to server-side only
+    - Moved `ADMIN_TOKEN` from `NEXT_PUBLIC_ADMIN_TOKEN` to server-side only
+    - Admin credentials no longer bundled with client JavaScript
+    - Reduces attack surface by limiting credential exposure
+
+2. **Admin Authentication Hardening**
+    - Fixed redirect loop in admin page authentication flow
+    - Separated admin verification logic from routing logic
+    - Added proper async/await handling for Firebase Auth timing
+    - Implemented useRef to prevent duplicate verification checks
+    - Enhanced logging for authentication debugging
+
+### Impact
+
+- **Before**: Admin UIDs were visible in client bundles and browser DevTools
+- **After**: Admin verification happens server-side via `/api/admin/check` endpoint
+- **Risk Reduction**: Attackers cannot discover admin UIDs through static analysis
+
+### Files Changed
+
+| File                 | Change                                       |
+| -------------------- | -------------------------------------------- |
+| `.env.example`       | Updated to show ADMIN_UID (server-side only) |
+| `app/admin/page.tsx` | Fixed authentication flow and redirect logic |
+| Multiple admin pages | Enhanced error handling and state management |
+
+---
+
 ## November 29, 2025 - CSRF Hardening Complete
 
 ### Fixes Applied

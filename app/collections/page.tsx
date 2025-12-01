@@ -277,7 +277,7 @@ const Collections = () => {
                                     {searchQuery
                                         ? 'No collections match your search'
                                         : collectionFilter !== 'all'
-                                          ? `No ${collectionFilter === 'auto' ? 'auto-updating' : collectionFilter === 'ai' ? 'AI-generated' : 'manual'} collections`
+                                          ? `No ${collectionFilter === 'ai' ? 'AI-generated' : 'manual'} collections`
                                           : 'No collections yet'}
                                 </h3>
                                 <p className="text-gray-400 mb-8 max-w-md text-lg">

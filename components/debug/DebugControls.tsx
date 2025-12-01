@@ -157,6 +157,9 @@ export default function DebugControls() {
 
     // Email sending state
     const { user } = useAuth()
+
+    // Check if current user is admin
+    const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID
     const { showSuccess, showError } = useToast()
     const [sendingEmail, setSendingEmail] = useState<string | null>(null)
 
@@ -741,13 +744,13 @@ export default function DebugControls() {
                         </div>
                     )}
 
-                    {/* Email Testing Row - Always visible when hovering */}
-                    {showAllControls && (
+                    {/* Email Testing Row - Only visible for admin users */}
+                    {showAllControls && isAdmin && (
                         <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-2 px-2 py-1">
                                 <EnvelopeIcon className="w-3.5 h-3.5 text-sky-500" />
                                 <span className="text-xs font-medium text-gray-400">
-                                    Email Testing
+                                    Email Testing (Admin Only)
                                 </span>
                             </div>
                             <div className="flex items-center gap-2 flex-wrap pl-6">
@@ -812,12 +815,14 @@ export default function DebugControls() {
                         </div>
                     )}
 
-                    {/* Cron Jobs Row - Always visible when hovering */}
-                    {showAllControls && (
+                    {/* Cron Jobs Row - Only visible for admin users */}
+                    {showAllControls && isAdmin && (
                         <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-2 px-2 py-1">
                                 <ClockIcon className="w-3.5 h-3.5 text-emerald-500" />
-                                <span className="text-xs font-medium text-gray-400">Cron Jobs</span>
+                                <span className="text-xs font-medium text-gray-400">
+                                    Cron Jobs (Admin Only)
+                                </span>
                             </div>
                             <div className="flex items-center gap-2 flex-wrap pl-6">
                                 {/* Weekly Trending Digest - Monday 2 AM */}
@@ -825,19 +830,18 @@ export default function DebugControls() {
                                     onClick={() =>
                                         handleSendEmail(
                                             'Trending Cron',
-                                            '/api/cron/update-trending',
-                                            {},
-                                            'GET'
+                                            '/api/email/test-weekly-digest',
+                                            { demoMode: false }
                                         )
                                     }
                                     disabled={sendingEmail !== null}
                                     className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    title="Run weekly trending digest cron (Mondays 2 AM UTC)"
+                                    title="Test trending digest email (sends to admin only)"
                                 >
                                     <ClockIcon className="w-3 h-3" />
                                     <span className="text-xs">
                                         {sendingEmail === 'Trending Cron'
-                                            ? 'Running...'
+                                            ? 'Sending...'
                                             : 'Trending (Mon)'}
                                     </span>
                                 </button>
@@ -868,42 +872,20 @@ export default function DebugControls() {
                                 <button
                                     onClick={() =>
                                         handleSendEmail(
-                                            'Social Cron',
-                                            '/api/cron/social-digest',
-                                            {},
-                                            'GET'
-                                        )
-                                    }
-                                    disabled={sendingEmail !== null}
-                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-purple-600/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    title="Run weekly social digest cron (Wednesdays 2 AM UTC)"
-                                >
-                                    <ClockIcon className="w-3 h-3" />
-                                    <span className="text-xs">
-                                        {sendingEmail === 'Social Cron'
-                                            ? 'Running...'
-                                            : 'Social (Wed)'}
-                                    </span>
-                                </button>
-
-                                {/* Test Social Flow - Creates fake comments/likes then runs digest */}
-                                <button
-                                    onClick={() =>
-                                        handleSendEmail(
                                             'Test Social',
                                             '/api/email/test-social-interactions',
                                             {}
                                         )
                                     }
-                                    disabled={sendingEmail !== null || !user?.email}
-                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-pink-600/20 text-pink-400 border border-pink-500/30 hover:bg-pink-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    title="Test full social flow: creates fake comments/likes on your ranking, then runs social digest cron"
+                                    disabled={sendingEmail !== null}
+                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-purple-600/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Test social digest: creates fake comments/likes then sends email (admin only)"
                                 >
-                                    <SparklesIcon className="w-3 h-3" />
+                                    <ClockIcon className="w-3 h-3" />
                                     <span className="text-xs">
                                         {sendingEmail === 'Test Social'
                                             ? 'Testing...'
-                                            : 'Test Social'}
+                                            : 'Social (Wed)'}
                                     </span>
                                 </button>
                             </div>

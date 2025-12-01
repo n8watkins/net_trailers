@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { auth } from '@/firebase'
 import { useSessionStore } from '@/stores/sessionStore'
@@ -28,45 +28,98 @@ export default function AdminDashboard() {
     const [statsLoading, setStatsLoading] = useState(true)
     const [lastTrendingRun, setLastTrendingRun] = useState<Date | null>(null)
     const [isAdminUser, setIsAdminUser] = useState<boolean | null>(null)
+    const hasCheckedRef = useRef(false)
 
     // Check admin status via server-side API
     useEffect(() => {
         const checkAdminStatus = async () => {
-            if (!isInitialized || !isAuth || !userId) {
-                setIsAdminUser(false)
-                router.push('/')
+            console.log('🔍 Admin page - Check status:', {
+                isInitialized,
+                isAuth,
+                userId,
+                sessionType,
+                isAdminUser,
+                hasChecked: hasCheckedRef.current,
+            })
+
+            // Don't re-check if already checked
+            if (hasCheckedRef.current) {
+                console.log('🔍 Already checked admin status, skipping')
                 return
             }
 
+            if (!isInitialized) {
+                console.log('🔍 Waiting for session to initialize...')
+                return
+            }
+
+            if (!isAuth || !userId) {
+                console.log('🔍 Not authenticated, marking as not admin')
+                setIsAdminUser(false)
+                hasCheckedRef.current = true
+                return
+            }
+
+            // Mark as checked to prevent re-runs
+            hasCheckedRef.current = true
+
             try {
-                const user = auth.currentUser
+                console.log('🔍 Getting Firebase user...')
+
+                // Wait for Firebase Auth to be ready
+                let user = auth.currentUser
                 if (!user) {
+                    console.log('🔍 Firebase user not ready, waiting for auth state...')
+                    // Wait for auth state to settle
+                    user = await new Promise((resolve) => {
+                        const unsubscribe = auth.onAuthStateChanged((user) => {
+                            unsubscribe()
+                            resolve(user)
+                        })
+                    })
+                }
+
+                if (!user) {
+                    console.log('🔍 No Firebase user found')
                     setIsAdminUser(false)
-                    router.push('/')
                     return
                 }
 
+                console.log('🔍 Firebase user found:', user.uid)
+
+                console.log('🔍 Getting ID token...')
                 const idToken = await user.getIdToken()
+                console.log('🔍 Calling /api/admin/check...')
                 const response = await fetch('/api/admin/check', {
                     headers: { Authorization: `Bearer ${idToken}` },
                 })
 
+                console.log('🔍 Admin check response:', response.status)
                 const data = await response.json()
+                console.log('🔍 Admin check data:', data)
                 setIsAdminUser(data.isAdmin === true)
 
                 if (!data.isAdmin) {
-                    console.log('Admin check failed: User is not an admin')
-                    router.push('/')
+                    console.log('🔍 Admin check failed: User is not an admin')
+                } else {
+                    console.log('🔍 Admin check passed!')
                 }
             } catch (error) {
-                console.error('Admin check error:', error)
+                console.error('🔍 Admin check error:', error)
                 setIsAdminUser(false)
-                router.push('/')
             }
         }
 
         checkAdminStatus()
-    }, [isAuth, userId, isInitialized, router])
+    }, [isAuth, userId, isInitialized, sessionType])
+
+    // Redirect if not admin (only after check completes)
+    useEffect(() => {
+        if (isAdminUser === false) {
+            console.log('🔍 Redirecting to home - not admin')
+            router.push('/')
+        }
+    }, [isAdminUser, router])
 
     // Load stats - wait for admin check to complete
     useEffect(() => {
@@ -80,7 +133,7 @@ export default function AdminDashboard() {
         })
 
         return () => unsubscribe()
-    }, [isAuth, userId])
+    }, [isAuth, userId, isAdminUser])
 
     const loadAllStats = async () => {
         setStatsLoading(true)
@@ -259,8 +312,18 @@ export default function AdminDashboard() {
         }
     }
 
-    // Show loading while session initializes or stats are loading
-    if (!isInitialized || statsLoading) {
+    // Debug render state
+    console.log('🎨 Render state:', {
+        isInitialized,
+        isAdminUser,
+        isAuth,
+        userId: userId?.substring(0, 10),
+        statsLoading,
+    })
+
+    // Show loading while session initializes or admin check is pending
+    if (!isInitialized || isAdminUser === null) {
+        console.log('🎨 Showing loading screen (admin check pending)')
         return (
             <div className="min-h-screen bg-gray-900 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
@@ -273,12 +336,28 @@ export default function AdminDashboard() {
 
     // Show unauthorized if not admin (admin check done server-side)
     if (!isAuth || !userId || isAdminUser === false) {
+        console.log('🎨 Showing unauthorized screen')
         return (
             <div className="min-h-screen bg-gray-900 flex items-center justify-center">
                 <div className="text-white text-xl">Unauthorized</div>
             </div>
         )
     }
+
+    // Show loading while stats are loading (but admin is confirmed)
+    if (statsLoading) {
+        console.log('🎨 Showing stats loading screen')
+        return (
+            <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                    <div className="text-white text-xl">Loading statistics...</div>
+                </div>
+            </div>
+        )
+    }
+
+    console.log('🎨 Showing admin dashboard!')
 
     return (
         <div className="min-h-screen bg-gray-900 p-8">

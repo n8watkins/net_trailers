@@ -55,14 +55,30 @@ export async function GET(req: NextRequest) {
         const lastWeek = now - 7 * 24 * 60 * 60 * 1000
 
         // Get all pending notifications from the past 7 days
-        const notificationsSnapshot = await db
+        // Split into two queries to avoid needing a complex index with 'IN' operator
+        console.log('📧 [Social Digest] Querying for comment notifications...')
+        const commentNotificationsSnapshot = await db
             .collectionGroup('notifications')
-            .where('type', 'in', ['ranking_comment', 'ranking_like'])
+            .where('type', '==', 'ranking_comment')
             .where('createdAt', '>=', lastWeek)
             .where('emailSent', '==', false)
             .get()
 
-        console.log(`📧 [Social Digest] Found ${notificationsSnapshot.size} pending notifications`)
+        console.log('📧 [Social Digest] Querying for like notifications...')
+        const likeNotificationsSnapshot = await db
+            .collectionGroup('notifications')
+            .where('type', '==', 'ranking_like')
+            .where('createdAt', '>=', lastWeek)
+            .where('emailSent', '==', false)
+            .get()
+
+        // Combine results
+        const allDocs = [...commentNotificationsSnapshot.docs, ...likeNotificationsSnapshot.docs]
+        const notificationsSnapshot = { size: allDocs.length, docs: allDocs }
+
+        console.log(
+            `📧 [Social Digest] Found ${notificationsSnapshot.size} pending notifications (${commentNotificationsSnapshot.size} comments + ${likeNotificationsSnapshot.size} likes)`
+        )
 
         // Group notifications by userId
         const userNotifications = new Map<

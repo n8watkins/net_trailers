@@ -101,7 +101,11 @@ async function buildTMDBParams(
 
     // Genre filtering
     const currentGenres = config.genres.slice(0, tier.genreCount)
-    const tmdbGenreIds = translateToTMDBGenres(currentGenres, config.mediaType)
+    // Handle 'both' mediaType by defaulting to 'movie' for genre translation
+    // (When fetching 'both', we make separate calls for movies and TV anyway)
+    const mediaTypeForGenres: 'movie' | 'tv' =
+        config.mediaType === 'both' ? 'movie' : config.mediaType
+    const tmdbGenreIds = translateToTMDBGenres(currentGenres, mediaTypeForGenres)
 
     if (tmdbGenreIds.length > 0) {
         params.with_genres =

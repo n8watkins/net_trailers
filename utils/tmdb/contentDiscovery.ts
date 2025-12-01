@@ -38,7 +38,8 @@ export async function checkForNewContent(collection: CustomRow): Promise<number[
     // Special handling for curated collections (contentIds-based)
     if (
         collection.advancedFilters?.contentIds &&
-        collection.advancedFilters.contentIds.length > 0
+        Array.isArray(collection.advancedFilters!.contentIds) &&
+        collection.advancedFilters!.contentIds!.length > 0
     ) {
         // Curated collections don't auto-update from TMDB
         // They're manually curated, so no new content to discover
@@ -225,10 +226,11 @@ function applyAdvancedFilters(
         }
     }
 
-    if (filters.withDirector) {
-        // Only use if it's a numeric ID
-        if (!isNaN(Number(filters.withDirector))) {
-            params.with_crew = filters.withDirector
+    if (filters.withDirector && filters.withDirector.length > 0) {
+        // Use first director if it's a numeric ID
+        const firstDirector = filters.withDirector[0]
+        if (!isNaN(Number(firstDirector))) {
+            params.with_crew = firstDirector
         }
     }
 }
@@ -337,13 +339,14 @@ export function canAutoUpdate(collection: CustomRow): boolean {
     // Can't auto-update curated collections (manually selected content)
     if (
         collection.advancedFilters?.contentIds &&
-        collection.advancedFilters.contentIds.length > 0
+        Array.isArray(collection.advancedFilters!.contentIds) &&
+        collection.advancedFilters!.contentIds!.length > 0
     ) {
         // Exception: If it has other filters too, it might be discoverable
         const hasOtherFilters =
             collection.genres.length > 0 ||
-            collection.advancedFilters.yearMin !== undefined ||
-            collection.advancedFilters.ratingMin !== undefined
+            collection.advancedFilters?.yearMin !== undefined ||
+            collection.advancedFilters?.ratingMin !== undefined
 
         if (!hasOtherFilters) {
             return false
