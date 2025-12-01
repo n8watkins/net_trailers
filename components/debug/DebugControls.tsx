@@ -49,9 +49,12 @@ interface CategoryState {
     firebase: boolean
     ui: boolean
     features: boolean
+    data: boolean
+    email: boolean
+    cron: boolean
 }
 
-type DebugCategory = 'firebase' | 'ui' | 'features'
+type DebugCategory = 'firebase' | 'ui' | 'features' | 'data' | 'email' | 'cron'
 
 // Static color map for Tailwind - dynamic class names don't work with Tailwind's purge
 const COLOR_CLASSES: Record<string, { enabled: string; disabled: string }> = {
@@ -171,6 +174,9 @@ export default function DebugControls() {
         firebase: true,
         ui: true,
         features: true,
+        data: true,
+        email: true,
+        cron: true,
     })
 
     // Drag state - default position is a bit to the left (initialized after mount)
@@ -675,16 +681,13 @@ export default function DebugControls() {
                         </>
                     )}
 
-                    {/* Data Actions Row - Always visible when hovering */}
-                    {showAllControls && (
-                        <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2 px-2 py-1">
-                                <CircleStackIcon className="w-3.5 h-3.5 text-emerald-500" />
-                                <span className="text-xs font-medium text-gray-400">
-                                    Data Actions
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-2 flex-wrap pl-6">
+                    {/* Data Actions Category - Collapsible */}
+                    {showAllControls &&
+                        renderCategory(
+                            'data',
+                            'Data Actions',
+                            <CircleStackIcon className="w-3.5 h-3.5 text-emerald-500" />,
+                            <>
                                 {/* Seed Data Button */}
                                 <button
                                     onClick={handleSeedData}
@@ -740,20 +743,17 @@ export default function DebugControls() {
                                     <DocumentTextIcon className="w-3 h-3" />
                                     <span className="text-xs">Docs</span>
                                 </a>
-                            </div>
-                        </div>
-                    )}
+                            </>
+                        )}
 
-                    {/* Email Testing Row - Only visible for admin users */}
-                    {showAllControls && isAdmin && (
-                        <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2 px-2 py-1">
-                                <EnvelopeIcon className="w-3.5 h-3.5 text-sky-500" />
-                                <span className="text-xs font-medium text-gray-400">
-                                    Email Testing (Admin Only)
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-2 flex-wrap pl-6">
+                    {/* Email Testing Category - Only visible for admin users */}
+                    {showAllControls &&
+                        isAdmin &&
+                        renderCategory(
+                            'email',
+                            'Email Testing (Admin)',
+                            <EnvelopeIcon className="w-3.5 h-3.5 text-sky-500" />,
+                            <>
                                 {/* Trending Content Email */}
                                 <button
                                     onClick={() =>
@@ -811,20 +811,17 @@ export default function DebugControls() {
                                             : 'Demo Digest'}
                                     </span>
                                 </button>
-                            </div>
-                        </div>
-                    )}
+                            </>
+                        )}
 
-                    {/* Cron Jobs Row - Only visible for admin users */}
-                    {showAllControls && isAdmin && (
-                        <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2 px-2 py-1">
-                                <ClockIcon className="w-3.5 h-3.5 text-emerald-500" />
-                                <span className="text-xs font-medium text-gray-400">
-                                    Cron Jobs (Admin Only)
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-2 flex-wrap pl-6">
+                    {/* Cron Jobs Category - Only visible for admin users */}
+                    {showAllControls &&
+                        isAdmin &&
+                        renderCategory(
+                            'cron',
+                            'Cron Jobs (Admin)',
+                            <ClockIcon className="w-3.5 h-3.5 text-emerald-500" />,
+                            <>
                                 {/* Weekly Trending Digest - Monday 2 AM */}
                                 <button
                                     onClick={() =>
@@ -888,9 +885,8 @@ export default function DebugControls() {
                                             : 'Social (Wed)'}
                                     </span>
                                 </button>
-                            </div>
-                        </div>
-                    )}
+                            </>
+                        )}
                 </div>
             </div>
         </div>
