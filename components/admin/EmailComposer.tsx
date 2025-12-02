@@ -120,7 +120,7 @@ export default function EmailComposer() {
                         Select Email Template
                     </label>
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                        {templates.map((template) => (
+                        {EMAIL_TEMPLATES.map((template) => (
                             <button
                                 key={template.id}
                                 onClick={() => setSelectedTemplate(template.id)}
