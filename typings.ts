@@ -161,8 +161,26 @@ export function getYear(content: Content): string {
     return 'Unknown'
 }
 
+/**
+ * Sanitize poster_path to remove any size parameters that may have been incorrectly included
+ * Ensures poster_path always starts with / followed by the file path (e.g. /abc123.jpg)
+ */
+export function sanitizePosterPath(path: string | null | undefined): string | null {
+    if (!path) return null
+
+    // If path already includes a size parameter like /w500/ or /original/, extract just the filename
+    // Match patterns like: /w500/file.jpg, /original/file.jpg, w500/file.jpg, etc.
+    const sizeMatch = path.match(/\/(w\d+|original)\/(.+)/)
+    if (sizeMatch) {
+        return `/${sizeMatch[2]}`
+    }
+
+    // Ensure path starts with /
+    return path.startsWith('/') ? path : `/${path}`
+}
+
 export function getPosterPath(content: Content): string {
-    const posterPath = content.poster_path
+    const posterPath = sanitizePosterPath(content.poster_path)
     if (posterPath) {
         return `https://image.tmdb.org/t/p/w500${posterPath}`
     }

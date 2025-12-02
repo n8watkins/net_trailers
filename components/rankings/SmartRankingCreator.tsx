@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Content } from '@/typings'
+import { Content, sanitizePosterPath } from '@/typings'
 import { UserList } from '@/types/collections'
 import {
     RankedItem,
@@ -288,7 +288,7 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                 id: movie.tmdbId,
                 title: movie.title,
                 release_date: movie.year ? `${movie.year}-01-01` : '',
-                poster_path: movie.posterPath,
+                poster_path: sanitizePosterPath(movie.posterPath),
                 vote_average: movie.rating,
                 media_type: data.mediaType === 'tv' ? 'tv' : 'movie',
                 overview: movie.reason || '',
@@ -450,7 +450,7 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                     id: movie.tmdbId,
                     title: movie.title,
                     release_date: movie.year ? `${movie.year}-01-01` : '',
-                    poster_path: movie.posterPath,
+                    poster_path: sanitizePosterPath(movie.posterPath),
                     vote_average: movie.rating,
                     media_type: data.mediaType === 'tv' ? 'tv' : 'movie',
                     overview: movie.reason || '',
@@ -548,7 +548,12 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                 const age = Date.now() - draft.savedAt
                 if (age < 7 * 24 * 60 * 60 * 1000) {
                     setLastSearchQuery(draft.query || '')
-                    setSelectedItems(draft.selectedItems || [])
+                    // Sanitize poster_path values in loaded draft data to fix any corrupted paths
+                    const sanitizedItems = (draft.selectedItems || []).map((item: Content) => ({
+                        ...item,
+                        poster_path: sanitizePosterPath(item.poster_path),
+                    }))
+                    setSelectedItems(sanitizedItems)
                     setItemNotes(draft.itemNotes || {})
                     setTitle(draft.title || '')
                     setDescription(draft.description || '')

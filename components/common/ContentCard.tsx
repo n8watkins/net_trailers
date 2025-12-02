@@ -1,5 +1,12 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react'
-import { Content, getTitle, getYear, getContentType, isMovie } from '../../typings'
+import {
+    Content,
+    getTitle,
+    getYear,
+    getContentType,
+    isMovie,
+    sanitizePosterPath,
+} from '../../typings'
 import Image from 'next/image'
 import {
     PlayIcon,
@@ -46,12 +53,12 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
     const [likeAnimationIteration, setLikeAnimationIteration] = useState(0)
     const likeAnimationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-    // Determine which image to use
+    // Determine which image to use (sanitize paths to remove any size parameters)
     const imageToUse =
         !posterError && posterImage
-            ? `https://image.tmdb.org/t/p/w500${posterImage}`
+            ? `https://image.tmdb.org/t/p/w500${sanitizePosterPath(posterImage)}`
             : !backdropError && backdropImage
-              ? `https://image.tmdb.org/t/p/w500${backdropImage}`
+              ? `https://image.tmdb.org/t/p/w500${sanitizePosterPath(backdropImage)}`
               : !alternateError && alternateImage
                 ? alternateImage
                 : null
