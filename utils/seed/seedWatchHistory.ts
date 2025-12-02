@@ -186,13 +186,11 @@ export async function seedWatchHistoryContent(options: SeedWatchHistoryOptions):
     console.log(`     Total entries: ${finalHistory.length}`)
     console.log(`     Unique dates: ${dateGroups.size}`)
     console.log(`     Entries per date (first 10):`)
-    let count = 0
-    for (const [date, entries] of dateGroups.entries()) {
-        if (count < 10) {
+    Array.from(dateGroups.entries())
+        .slice(0, 10)
+        .forEach(([date, entries]) => {
             console.log(`       ${date}: ${entries} entries`)
-            count++
-        }
-    }
+        })
 
     console.log('  ✅ Watch history saved')
 }

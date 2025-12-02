@@ -36,7 +36,7 @@ export function useProfileActions() {
                 likedCount: 15,
                 hiddenCount: 8,
                 watchLaterCount: 12,
-                watchHistoryCount: 20,
+                watchHistoryCount: 75,
                 createCollections: true,
                 notificationCount: 8,
                 threadCount: 5, // Seed forum threads
@@ -92,7 +92,7 @@ export function useProfileActions() {
                         likedCount: 15,
                         hiddenCount: 8,
                         watchLaterCount: 12,
-                        watchHistoryCount: 20,
+                        watchHistoryCount: 75,
                         createCollections: true,
                         rankingCount: 3,
                         notificationCount: 8,
