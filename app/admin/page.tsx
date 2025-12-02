@@ -9,6 +9,7 @@ import { Users, Settings, PlayCircle, RefreshCw, CalendarDays, Eye } from 'lucid
 import { useToast } from '@/hooks/useToast'
 import type { AdminStats, ActivityStats, ActiveUser } from '@/types/admin'
 import CronJobsPanel from '@/components/admin/CronJobsPanel'
+import EmailComposer from '@/components/admin/EmailComposer'
 
 // Admin check is done server-side via API routes
 // Client-side verification happens through API calls, not exposed UIDs
@@ -612,6 +613,11 @@ export default function AdminDashboard() {
                     ) : (
                         <p className="text-gray-400">No user activity recorded this month</p>
                     )}
+                </div>
+
+                {/* Email Management */}
+                <div className="mt-8 bg-gray-800 rounded-xl p-6">
+                    <EmailComposer />
                 </div>
 
                 {/* Cron Jobs Management */}
