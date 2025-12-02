@@ -47,6 +47,10 @@ export async function seedWatchHistoryContent(options: SeedWatchHistoryOptions):
     const content = getContentSlice(startIndex, count, shuffledContent)
     const now = Date.now()
 
+    console.log('  📊 SEED DEBUG: Starting watch history seed')
+    console.log(`     Total content items: ${content.length}`)
+    console.log(`     Current time: ${new Date(now).toLocaleString()}`)
+
     // Create realistic watch history with MULTIPLE entries per day
     // Strategy: Group entries by specific calendar days, then assign random times within each day
 
@@ -82,10 +86,13 @@ export async function seedWatchHistoryContent(options: SeedWatchHistoryOptions):
         }
     })
 
+    console.log(`     Scheduled entries from viewingSchedule: ${scheduledEntries.length}`)
+
     // Add remaining entries as scattered older content
     const totalScheduled = scheduledEntries.length
     if (content.length > totalScheduled) {
         const remaining = content.length - totalScheduled
+        console.log(`     Adding ${remaining} scattered entries for older dates`)
         for (let i = 0; i < remaining; i++) {
             // Scatter across older dates (60-120 days ago)
             const daysAgo = 60 + Math.floor(Math.random() * 60)
@@ -93,7 +100,10 @@ export async function seedWatchHistoryContent(options: SeedWatchHistoryOptions):
         }
     }
 
+    console.log(`     Total scheduled entries: ${scheduledEntries.length}`)
+
     // Process all content with assigned timestamps
+    console.log('  🔄 Processing entries and assigning timestamps...')
     for (let i = 0; i < content.length; i++) {
         const item = content[i]
         useWatchHistoryStore.getState().addWatchEntry(item.id, item.media_type, item)
@@ -137,7 +147,16 @@ export async function seedWatchHistoryContent(options: SeedWatchHistoryOptions):
                         entry.id === justAddedEntry.id ? { ...entry, watchedAt } : entry
                     ),
                 })
+
+                // Log every 10th entry to avoid spam
+                if (i % 10 === 0 || i < 10) {
+                    console.log(
+                        `     Entry ${i}: ${daysAgo} days ago, index ${entryIndex}/${schedule.entriesCount} → ${new Date(watchedAt).toLocaleString()}`
+                    )
+                }
             }
+        } else if (i === 0) {
+            console.log(`     Entry 0: Using current time (${new Date(now).toLocaleString()})`)
         }
     }
 
@@ -154,6 +173,26 @@ export async function seedWatchHistoryContent(options: SeedWatchHistoryOptions):
         lastSyncedAt: Date.now(),
         syncError: null,
     })
+
+    // Verify final state - group by date to confirm multiple entries per day
+    const finalHistory = useWatchHistoryStore.getState().history
+    const dateGroups = new Map<string, number>()
+    finalHistory.forEach((entry) => {
+        const date = new Date(entry.watchedAt).toLocaleDateString('en-US')
+        dateGroups.set(date, (dateGroups.get(date) || 0) + 1)
+    })
+
+    console.log('  📊 FINAL VERIFICATION:')
+    console.log(`     Total entries: ${finalHistory.length}`)
+    console.log(`     Unique dates: ${dateGroups.size}`)
+    console.log(`     Entries per date (first 10):`)
+    let count = 0
+    for (const [date, entries] of dateGroups.entries()) {
+        if (count < 10) {
+            console.log(`       ${date}: ${entries} entries`)
+            count++
+        }
+    }
 
     console.log('  ✅ Watch history saved')
 }
