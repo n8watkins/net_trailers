@@ -260,6 +260,7 @@ async function createCommentNotification(
             commentId: comment.id,
             isReply,
             parentCommentText: parentCommentText ?? null,
+            actionUrl: `/rankings/${comment.rankingId}#comment-${comment.id}`, // Link to ranking with comment anchor
             emailSent: false,
             createdAt: Date.now(),
             isRead: false,

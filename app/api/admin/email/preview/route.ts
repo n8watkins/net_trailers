@@ -32,11 +32,13 @@ async function handlePreviewEmail(request: NextRequest, userId: string): Promise
             userId: targetUserId,
             subject,
             customMessage,
+            customHtmlContent,
         }: {
             template: 'trending' | 'social' | 'announcement' | 'custom'
             userId: string
             subject?: string
             customMessage?: string
+            customHtmlContent?: string
         } = body
 
         if (!template || !targetUserId) {
@@ -107,9 +109,9 @@ async function handlePreviewEmail(request: NextRequest, userId: string): Promise
             }
 
             case 'custom': {
-                if (!subject || !customMessage) {
+                if (!subject || !customHtmlContent) {
                     return NextResponse.json(
-                        { error: 'Subject and customMessage required for custom preview' },
+                        { error: 'Subject and customHtmlContent required for custom preview' },
                         { status: 400 }
                     )
                 }
@@ -117,7 +119,7 @@ async function handlePreviewEmail(request: NextRequest, userId: string): Promise
                 html = await renderCustomPreview({
                     userName,
                     subject,
-                    message: customMessage,
+                    htmlContent: customHtmlContent,
                 })
                 break
             }

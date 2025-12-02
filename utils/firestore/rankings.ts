@@ -500,6 +500,7 @@ async function createLikeNotification(
                 rankingId,
                 rankingTitle,
                 likerNames: [likerName],
+                actionUrl: `/rankings/${rankingId}`, // Link to ranking detail page
                 emailSent: false,
                 createdAt: Date.now(),
                 isRead: false,

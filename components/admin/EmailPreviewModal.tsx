@@ -12,6 +12,7 @@ interface EmailPreviewModalProps {
     userIds: string[]
     subject?: string
     customMessage?: string
+    customHtmlContent?: string
 }
 
 type ViewMode = 'desktop' | 'mobile'
@@ -23,6 +24,7 @@ export default function EmailPreviewModal({
     userIds,
     subject,
     customMessage,
+    customHtmlContent,
 }: EmailPreviewModalProps) {
     const [loading, setLoading] = useState(false)
     const [html, setHtml] = useState('')
@@ -39,7 +41,7 @@ export default function EmailPreviewModal({
         if (isOpen && userIds.length > 0) {
             loadPreview()
         }
-    }, [isOpen, template, userIds, subject, customMessage])
+    }, [isOpen, template, userIds, subject, customMessage, customHtmlContent])
 
     const loadPreview = async () => {
         setLoading(true)
@@ -57,6 +59,7 @@ export default function EmailPreviewModal({
                     userId: targetUserId,
                     subject,
                     customMessage,
+                    customHtmlContent,
                 }),
             })
 
