@@ -1296,11 +1296,11 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
             }
 
             const history = useWatchHistoryStore.getState().history
-            const lastEntry = history[history.length - 1]
-            if (lastEntry) {
+            const justAddedEntry = history[0] // New entries are added to the START of the array
+            if (justAddedEntry) {
                 useWatchHistoryStore.setState({
                     history: history.map((entry) =>
-                        entry.id === lastEntry.id ? { ...entry, watchedAt } : entry
+                        entry.id === justAddedEntry.id ? { ...entry, watchedAt } : entry
                     ),
                 })
             }
@@ -1309,11 +1309,11 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
             const daysAgo = 15 + i
             const watchedAt = now - daysAgo * 24 * 60 * 60 * 1000
             const history = useWatchHistoryStore.getState().history
-            const lastEntry = history[history.length - 1]
-            if (lastEntry) {
+            const justAddedEntry = history[0] // New entries are added to the START of the array
+            if (justAddedEntry) {
                 useWatchHistoryStore.setState({
                     history: history.map((entry) =>
-                        entry.id === lastEntry.id ? { ...entry, watchedAt } : entry
+                        entry.id === justAddedEntry.id ? { ...entry, watchedAt } : entry
                     ),
                 })
             }

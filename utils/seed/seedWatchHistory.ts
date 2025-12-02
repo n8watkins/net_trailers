@@ -128,13 +128,13 @@ export async function seedWatchHistoryContent(options: SeedWatchHistoryOptions):
                 watchedAt = dayStart + hour * 60 * 60 * 1000 + minutes * 60 * 1000
             }
 
-            // Update the timestamp
+            // Update the timestamp of the entry we just added (at index 0)
             const history = useWatchHistoryStore.getState().history
-            const lastEntry = history[history.length - 1]
-            if (lastEntry) {
+            const justAddedEntry = history[0] // New entries are added to the START of the array
+            if (justAddedEntry) {
                 useWatchHistoryStore.setState({
                     history: history.map((entry) =>
-                        entry.id === lastEntry.id ? { ...entry, watchedAt } : entry
+                        entry.id === justAddedEntry.id ? { ...entry, watchedAt } : entry
                     ),
                 })
             }
