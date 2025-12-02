@@ -20,52 +20,7 @@ export default function AnnouncementEmail({
     unsubscribeToken,
 }: AnnouncementEmailProps) {
     return (
-        <BaseEmail previewText={`📢 ${subject}`} unsubscribeToken={unsubscribeToken}>
-            {/* Header */}
-            <table width="100%" cellPadding="0" cellSpacing="0" style={{ marginBottom: '32px' }}>
-                <tr>
-                    <td style={{ textAlign: 'center' }}>
-                        <div
-                            style={{
-                                fontSize: '48px',
-                                marginBottom: '16px',
-                            }}
-                        >
-                            📢
-                        </div>
-                        <h1
-                            style={{
-                                color: '#ffffff',
-                                fontSize: '28px',
-                                fontWeight: 'bold',
-                                margin: '0',
-                                lineHeight: '1.3',
-                            }}
-                        >
-                            {subject}
-                        </h1>
-                    </td>
-                </tr>
-            </table>
-
-            {/* Greeting */}
-            <table width="100%" cellPadding="0" cellSpacing="0" style={{ marginBottom: '24px' }}>
-                <tr>
-                    <td>
-                        <p
-                            style={{
-                                color: '#cccccc',
-                                fontSize: '16px',
-                                lineHeight: '1.6',
-                                margin: '0',
-                            }}
-                        >
-                            Hello {userName},
-                        </p>
-                    </td>
-                </tr>
-            </table>
-
+        <BaseEmail title={`📢 ${subject}`} userName={userName} unsubscribeToken={unsubscribeToken}>
             {/* Message Content */}
             <table width="100%" cellPadding="0" cellSpacing="0" style={{ marginBottom: '32px' }}>
                 <tr>

@@ -139,7 +139,7 @@ function CollectionBuilderModal() {
             onMouseUp={handleBackdropMouseUp}
         >
             {/* Backdrop */}
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
 
             {/* Modal Container */}
             <div className="relative min-h-screen flex items-center justify-center p-4">

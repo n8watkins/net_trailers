@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/useToast'
 import type { AdminStats, ActivityStats, ActiveUser } from '@/types/admin'
 import CronJobsPanel from '@/components/admin/CronJobsPanel'
 import EmailComposer from '@/components/admin/EmailComposer'
+import EmailHistory from '@/components/admin/EmailHistory'
 
 // Admin check is done server-side via API routes
 // Client-side verification happens through API calls, not exposed UIDs
@@ -618,6 +619,11 @@ export default function AdminDashboard() {
                 {/* Email Management */}
                 <div className="mt-8 bg-gray-800 rounded-xl p-6">
                     <EmailComposer />
+                </div>
+
+                {/* Email History */}
+                <div className="mt-8 bg-gray-800 rounded-xl p-6">
+                    <EmailHistory />
                 </div>
 
                 {/* Cron Jobs Management */}

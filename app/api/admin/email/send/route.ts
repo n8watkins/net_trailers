@@ -27,11 +27,13 @@ async function handleSendEmail(request: NextRequest, userId: string): Promise<Ne
             userIds,
             subject,
             customMessage,
+            customHtmlContent,
         }: {
             template: 'trending' | 'social' | 'announcement' | 'custom'
             userIds: string[]
             subject?: string
             customMessage?: string
+            customHtmlContent?: string
         } = body
 
         if (!template || !userIds || userIds.length === 0) {
@@ -41,23 +43,21 @@ async function handleSendEmail(request: NextRequest, userId: string): Promise<Ne
             )
         }
 
-        if (template === 'announcement' && !subject) {
+        if (template === 'announcement' && (!subject || !customMessage)) {
             return NextResponse.json(
-                { error: 'Subject is required for announcement emails' },
+                { error: 'Subject and message are required for announcement emails' },
                 { status: 400 }
             )
         }
 
-        if (template === 'custom' && (!subject || !customMessage)) {
+        if (template === 'custom' && (!subject || !customHtmlContent)) {
             return NextResponse.json(
-                { error: 'Subject and customMessage are required for custom emails' },
+                { error: 'Subject and customHtmlContent are required for custom emails' },
                 { status: 400 }
             )
         }
 
-        console.log(
-            `📧 [AdminEmailSend] Sending ${template} emails to ${userIds.length} user(s)`
-        )
+        console.log(`📧 [AdminEmailSend] Sending ${template} emails to ${userIds.length} user(s)`)
 
         let emailsSent = 0
         const errors: string[] = []
@@ -106,9 +106,7 @@ async function handleSendEmail(request: NextRequest, userId: string): Promise<Ne
                             console.log(
                                 `[AdminEmailSend] User ${user.userId} has not opted in to trending emails, skipping`
                             )
-                            errors.push(
-                                `User ${user.email} has not opted in to trending emails`
-                            )
+                            errors.push(`User ${user.email} has not opted in to trending emails`)
                             continue
                         }
 
@@ -181,10 +179,8 @@ async function handleSendEmail(request: NextRequest, userId: string): Promise<Ne
                 break
             }
 
-            case 'announcement':
-            case 'custom': {
-                // For now, send individual emails for announcement and custom types
-                // TODO: Create proper React email templates for these
+            case 'announcement': {
+                // Send announcement emails
                 for (const user of users) {
                     try {
                         if (!user.email) {
@@ -192,18 +188,49 @@ async function handleSendEmail(request: NextRequest, userId: string): Promise<Ne
                             continue
                         }
 
-                        // Use Resend directly for simple HTML emails
-                        // (This is a simplified implementation - ideally create proper React templates)
-                        console.log(
-                            `[AdminEmailSend] ${template} emails not yet implemented with React templates`
-                        )
-                        errors.push(
-                            `${template} emails require React template implementation (see Phase 3 of plan)`
-                        )
-                        break // Exit after first user to avoid duplicate errors
+                        await EmailService.sendAnnouncement({
+                            to: user.email,
+                            userName: user.displayName || 'there',
+                            subject: subject!,
+                            message: customMessage!,
+                        })
+
+                        emailsSent++
+                        console.log(`[AdminEmailSend] Sent announcement to ${user.email}`)
                     } catch (error) {
                         console.error(
-                            `[AdminEmailSend] Failed to send ${template} email to ${user.email}:`,
+                            `[AdminEmailSend] Failed to send announcement to ${user.email}:`,
+                            error
+                        )
+                        errors.push(
+                            `Failed to send to ${user.email}: ${error instanceof Error ? error.message : 'Unknown error'}`
+                        )
+                    }
+                }
+                break
+            }
+
+            case 'custom': {
+                // Send custom emails
+                for (const user of users) {
+                    try {
+                        if (!user.email) {
+                            errors.push(`Missing email for user: ${user.userId}`)
+                            continue
+                        }
+
+                        await EmailService.sendCustomEmail({
+                            to: user.email,
+                            userName: user.displayName || 'there',
+                            subject: subject!,
+                            htmlContent: customHtmlContent!,
+                        })
+
+                        emailsSent++
+                        console.log(`[AdminEmailSend] Sent custom email to ${user.email}`)
+                    } catch (error) {
+                        console.error(
+                            `[AdminEmailSend] Failed to send custom email to ${user.email}:`,
                             error
                         )
                         errors.push(
@@ -218,9 +245,36 @@ async function handleSendEmail(request: NextRequest, userId: string): Promise<Ne
                 return NextResponse.json({ error: 'Invalid template type' }, { status: 400 })
         }
 
-        console.log(
-            `📧 [AdminEmailSend] Completed: ${emailsSent} sent, ${errors.length} errors`
-        )
+        console.log(`📧 [AdminEmailSend] Completed: ${emailsSent} sent, ${errors.length} errors`)
+
+        // Create email history record
+        try {
+            const historyRecord = {
+                template,
+                subject: subject || `${template} email`,
+                recipientCount: userIds.length,
+                successCount: emailsSent,
+                failureCount: errors.length,
+                recipients: users.map((u) => ({
+                    userId: u.userId,
+                    email: u.email || '',
+                    displayName: u.displayName,
+                })),
+                errors: errors.length > 0 ? errors : [],
+                sentBy: userId,
+                sentAt: Date.now(),
+                metadata: {
+                    customMessage: customMessage || null,
+                    customHtmlContent: customHtmlContent || null,
+                },
+            }
+
+            await db.collection('admin_emails').add(historyRecord)
+            console.log(`📧 [AdminEmailSend] History record created`)
+        } catch (historyError) {
+            console.error('[AdminEmailSend] Failed to create history record:', historyError)
+            // Don't fail the request if history fails
+        }
 
         return NextResponse.json({
             success: true,

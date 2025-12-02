@@ -273,7 +273,7 @@ export function SimplifiedSmartBuilder({
                     <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black opacity-60" />
                 </div>
 
-                <div className="relative z-10 p-6 bg-zinc-900/40 backdrop-blur-lg">
+                <div className="relative z-10 p-6 bg-blue-950/50 backdrop-blur-lg">
                     <WizardStep4Confirmation
                         rowName={generatedRow.rowName}
                         onViewHomepage={onClose}
@@ -374,7 +374,7 @@ export function SimplifiedSmartBuilder({
                 </div>
 
                 {/* Content */}
-                <div className="p-6 min-h-[600px] flex flex-col relative bg-zinc-900/40 backdrop-blur-lg">
+                <div className="p-6 min-h-[600px] flex flex-col relative bg-blue-950/50 backdrop-blur-lg">
                     {/* Query Input - Centered and Hero-style */}
                     <div
                         className={`mb-6 transition-all duration-700 ease-out ${!generatedRow && !isGenerating ? 'w-full mx-auto mt-32' : 'mt-0'}`}
@@ -449,7 +449,7 @@ export function SimplifiedSmartBuilder({
                             </div>
 
                             {/* Toggle Settings */}
-                            <div className="relative p-4 bg-zinc-900/60 backdrop-blur-lg rounded-lg border border-zinc-800/50 space-y-3">
+                            <div className="relative p-4 bg-blue-900/40 backdrop-blur-lg rounded-lg border border-blue-800/50 space-y-3">
                                 {/* Infinite Content Toggle */}
                                 <div className="flex items-center justify-between">
                                     <label className="text-sm font-medium text-white flex items-center gap-1.5">
@@ -487,7 +487,7 @@ export function SimplifiedSmartBuilder({
                                 </div>
                                 {/* Tooltip */}
                                 {showInfiniteTooltip && (
-                                    <div className="absolute z-10 top-full left-0 mt-1 p-2 bg-zinc-900/95 backdrop-blur-lg border border-zinc-700/50 rounded-md shadow-xl max-w-xs">
+                                    <div className="absolute z-10 top-full left-0 mt-1 p-2 bg-blue-900/95 backdrop-blur-lg border border-blue-700/50 rounded-md shadow-xl max-w-xs">
                                         <p className="text-xs text-gray-300">
                                             After these {generatedRow.movies.length} curated titles,
                                             show more similar content based on genres
@@ -518,13 +518,13 @@ export function SimplifiedSmartBuilder({
                             </div>
 
                             {/* Movie Grid */}
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-red-600 hover:scrollbar-thumb-red-500 scrollbar-thumb-rounded-full scrollbar-track-rounded-full p-3 bg-black/30 rounded-lg">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-red-600 hover:scrollbar-thumb-red-500 scrollbar-thumb-rounded-full scrollbar-track-rounded-full p-3 bg-blue-950/40 rounded-lg">
                                 {generatedRow.movies
                                     .filter((movie) => !removedIds.has(movie.tmdbId))
                                     .map((movie) => (
                                         <div
                                             key={movie.tmdbId}
-                                            className="group relative rounded-lg overflow-hidden bg-zinc-900/60 backdrop-blur-lg hover:ring-2 hover:ring-blue-500 hover:shadow-[0_0_15px_rgba(59,130,246,0.4)] transition-all duration-300"
+                                            className="group relative rounded-lg overflow-hidden bg-blue-900/60 backdrop-blur-lg hover:ring-2 hover:ring-blue-500 hover:shadow-[0_0_15px_rgba(59,130,246,0.4)] transition-all duration-300"
                                         >
                                             {/* Remove Button - Top center */}
                                             <button

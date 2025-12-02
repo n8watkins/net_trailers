@@ -5,6 +5,8 @@ import {
     EmailChangeEmail,
     TrendingContentEmail,
     SocialDigestEmail,
+    AnnouncementEmail,
+    CustomEmail,
 } from './templates'
 import { Content } from '../../typings'
 
@@ -148,6 +150,54 @@ export class EmailService {
                 userName: params.userName,
                 movies: params.movies,
                 tvShows: params.tvShows,
+                unsubscribeToken: params.unsubscribeToken,
+            }),
+        })
+    }
+
+    /**
+     * Send announcement email
+     */
+    static async sendAnnouncement(params: {
+        to: string
+        userName: string
+        subject: string
+        message: string
+        unsubscribeToken?: string
+    }) {
+        if (!this.isAvailable()) return null
+        return await resend!.emails.send({
+            from: `${APP_NAME} <${SENDER_EMAIL}>`,
+            to: params.to,
+            subject: params.subject,
+            react: AnnouncementEmail({
+                userName: params.userName,
+                subject: params.subject,
+                message: params.message,
+                unsubscribeToken: params.unsubscribeToken,
+            }),
+        })
+    }
+
+    /**
+     * Send custom email with rich HTML content
+     */
+    static async sendCustomEmail(params: {
+        to: string
+        userName: string
+        subject: string
+        htmlContent: string
+        unsubscribeToken?: string
+    }) {
+        if (!this.isAvailable()) return null
+        return await resend!.emails.send({
+            from: `${APP_NAME} <${SENDER_EMAIL}>`,
+            to: params.to,
+            subject: params.subject,
+            react: CustomEmail({
+                userName: params.userName,
+                subject: params.subject,
+                htmlContent: params.htmlContent,
                 unsubscribeToken: params.unsubscribeToken,
             }),
         })
