@@ -109,10 +109,10 @@ export async function POST(request: NextRequest) {
  */
 async function seedUserDataServerSide(userId: string, options: SeedOptions): Promise<void> {
     const {
-        likedCount = 10,
-        hiddenCount = 5,
+        likedCount = 15, // Match client-side
+        hiddenCount = 8, // Match client-side
         watchLaterCount = 12,
-        watchHistoryCount = 15,
+        watchHistoryCount = 20, // Match client-side
         createCollections = true,
         rankingCount = 3,
         notificationCount = 8,
@@ -182,8 +182,7 @@ async function seedUserDataServerSide(userId: string, options: SeedOptions): Pro
     // 5. Seed collections (if requested)
     if (createCollections) {
         console.log('  📂 Creating sample collections...')
-        // Add basic collections logic here if needed
-        // For now, skip to keep the seed fast
+        await seedCollectionsServerSide(adminDb, userId)
     }
 
     // 6. Seed rankings (if requested)
@@ -211,6 +210,119 @@ async function seedUserDataServerSide(userId: string, options: SeedOptions): Pro
     }
 
     console.log('✨ Server-side seed complete for user:', userId)
+}
+
+/**
+ * Seed collections using Admin SDK
+ */
+async function seedCollectionsServerSide(adminDb: any, userId: string): Promise<void> {
+    const { nanoid } = await import('nanoid')
+
+    const collectionTemplates = [
+        {
+            name: 'Epic Sci-Fi Adventures',
+            emoji: '🚀',
+            color: '#3B82F6',
+            genres: ['scifi', 'adventure'],
+            movieIndices: [8, 16, 18],
+            tvIndices: [3],
+            displayAsRow: true,
+        },
+        {
+            name: 'Mind-Bending Thrillers',
+            emoji: '🧠',
+            color: '#8B5CF6',
+            genres: ['thriller', 'drama'],
+            movieIndices: [0, 1, 20, 19],
+            tvIndices: [],
+            displayAsRow: true,
+        },
+        {
+            name: 'Animated Masterpieces',
+            emoji: '🎨',
+            color: '#EC4899',
+            genres: ['animation', 'fantasy'],
+            movieIndices: [7, 9],
+            tvIndices: [2, 3, 15],
+            displayAsRow: true,
+        },
+        {
+            name: 'Crime & Drama Classics',
+            emoji: '🎭',
+            color: '#EF4444',
+            genres: ['crime', 'drama'],
+            movieIndices: [5, 4, 13],
+            tvIndices: [0],
+            displayAsRow: false,
+        },
+        {
+            name: 'Epic Fantasy Sagas',
+            emoji: '⚔️',
+            color: '#10B981',
+            genres: ['fantasy', 'adventure'],
+            movieIndices: [10, 17],
+            tvIndices: [1, 17],
+            displayAsRow: false,
+        },
+        {
+            name: 'Marvel Universe',
+            emoji: '🦸',
+            color: '#F59E0B',
+            genres: ['action', 'scifi'],
+            movieIndices: [14, 15],
+            tvIndices: [5, 4],
+            displayAsRow: false,
+        },
+        {
+            name: 'Comfort Classics',
+            emoji: '☕',
+            color: '#06B6D4',
+            genres: ['drama', 'comedy'],
+            movieIndices: [2, 12],
+            tvIndices: [9, 14],
+            displayAsRow: false,
+        },
+        {
+            name: 'Dark & Mysterious',
+            emoji: '🌙',
+            color: '#6366F1',
+            genres: ['mystery', 'horror'],
+            movieIndices: [],
+            tvIndices: [8, 11, 16, 14],
+            displayAsRow: false,
+        },
+    ]
+
+    const userRef = adminDb.collection('users').doc(userId)
+
+    for (const template of collectionTemplates) {
+        const collectionId = nanoid(12)
+
+        // Get items from sample content
+        const items = [
+            ...template.movieIndices.map((i) => sampleMovies[i]).filter(Boolean),
+            ...template.tvIndices.map((i) => sampleTVShows[i]).filter(Boolean),
+        ]
+
+        const collection = {
+            id: collectionId,
+            name: template.name,
+            emoji: template.emoji,
+            color: template.color,
+            collectionType: 'manual',
+            genres: template.genres,
+            mediaType: 'both',
+            displayAsRow: template.displayAsRow,
+            canGenerateMore: true,
+            items,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        }
+
+        // Store in subcollection
+        await userRef.collection('customRows').doc(collectionId).set(collection)
+        console.log(`    ✅ Created collection: ${collection.name} (${items.length} items)`)
+    }
 }
 
 /**
