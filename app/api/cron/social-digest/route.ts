@@ -124,8 +124,19 @@ export async function GET(req: NextRequest) {
 
         console.log(`📧 [Social Digest] Processing ${userNotifications.size} users`)
 
+        // Check if admin-only mode is enabled via query parameter
+        const { searchParams } = new URL(req.url)
+        const adminOnlyParam = searchParams.get('adminOnly')
+        const adminOnly = adminOnlyParam === 'true' || adminOnlyParam === null // Default to admin-only for safety
+
         // Get admin UID from environment variable
         const ADMIN_UID = process.env.NEXT_PUBLIC_ADMIN_UID
+
+        if (adminOnly) {
+            console.log(`📧 [Social Digest] Running in ADMIN-ONLY mode`)
+        } else {
+            console.log(`📧 [Social Digest] Running in ALL USERS mode`)
+        }
 
         let emailsSent = 0
         let skippedUsers = 0
@@ -133,8 +144,8 @@ export async function GET(req: NextRequest) {
         // Send digest email to each user with pending notifications
         for (const [userId, notifications] of userNotifications.entries()) {
             try {
-                // ADMIN ONLY: Skip all users except admin
-                if (!ADMIN_UID || userId !== ADMIN_UID) {
+                // ADMIN ONLY MODE: Skip all users except admin
+                if (adminOnly && (!ADMIN_UID || userId !== ADMIN_UID)) {
                     console.log(`📧 [Social Digest] Skipping non-admin user: ${userId}`)
                     skippedUsers++
                     continue

@@ -265,225 +265,274 @@ export function SimplifiedSmartBuilder({
     // Step 2: Success confirmation
     if (currentStep === 2 && generatedRow) {
         return (
-            <div className="p-6">
-                <WizardStep4Confirmation
-                    rowName={generatedRow.rowName}
-                    onViewHomepage={onClose}
-                    onCreateAnother={handleReset}
-                    type="collection"
-                />
+            <div className="relative">
+                {/* Atmospheric Background */}
+                <div className="fixed inset-0 pointer-events-none">
+                    <div className="absolute inset-0 bg-black" />
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-yellow-900/20 via-transparent to-transparent opacity-50" />
+                    <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black opacity-60" />
+                </div>
+
+                <div className="relative z-10 p-6 bg-zinc-900/40 backdrop-blur-lg">
+                    <WizardStep4Confirmation
+                        rowName={generatedRow.rowName}
+                        onViewHomepage={onClose}
+                        onCreateAnother={handleReset}
+                        type="collection"
+                    />
+                </div>
             </div>
         )
     }
 
     // Step 1: Input + Preview
     return (
-        <>
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-700">
-                <div className="flex-1">
-                    <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                        <SparklesIcon className="w-6 h-6 text-yellow-400" />
-                        Collection Builder
-                    </h2>
-                    <p className="text-gray-400 text-sm mt-1">Build your collection step by step</p>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    {/* Mode Toggle */}
-                    {onModeChange && (
-                        <div className="bg-gray-800 border border-gray-700 rounded-lg p-1 shadow-lg">
-                            <div className="flex gap-1">
-                                <button
-                                    onClick={() => onModeChange('smart')}
-                                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                                        mode === 'smart'
-                                            ? 'bg-red-600 text-white'
-                                            : 'text-gray-400 hover:text-white hover:bg-gray-700'
-                                    }`}
-                                >
-                                    ✨ Smart
-                                </button>
-                                <button
-                                    onClick={() => onModeChange('traditional')}
-                                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                                        mode === 'traditional'
-                                            ? 'bg-red-600 text-white'
-                                            : 'text-gray-400 hover:text-white hover:bg-gray-700'
-                                    }`}
-                                >
-                                    🔧 Traditional
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Close button */}
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="text-gray-400 hover:text-white transition-colors"
-                    >
-                        <XMarkIcon className="w-6 h-6" />
-                    </button>
-                </div>
+        <div className="relative">
+            {/* Atmospheric Background */}
+            <div className="fixed inset-0 pointer-events-none">
+                <div className="absolute inset-0 bg-black" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-yellow-900/20 via-transparent to-transparent opacity-50" />
+                <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black opacity-60" />
             </div>
 
-            {/* Content */}
-            <div className="p-6 min-h-[600px] flex flex-col relative">
-                {/* Query Input - Centered and Hero-style */}
-                <div
-                    className={`mb-6 transition-all duration-700 ease-out ${!generatedRow && !isGenerating ? 'w-full mx-auto mt-32' : 'mt-0'}`}
-                    style={{
-                        opacity: 1,
-                        transform: 'translateY(0)',
-                    }}
-                >
-                    <label
-                        className={`block text-sm font-medium text-gray-300 mb-4 transition-all duration-500 ${!generatedRow && !isGenerating ? 'text-center' : ''}`}
-                    >
-                        What do you want to watch?
-                    </label>
-                    <SmartInput
-                        value={query}
-                        onChange={handleQueryChange}
-                        onSubmit={handleQuerySubmit}
-                        disabled={isGenerating}
-                        placeholder='e.g., "dark scifi thriller", "best denzel movies", "comedy of errors"'
-                        size="large"
-                        variant="solid"
-                        showSurpriseMe={true}
-                        showTypewriter={true}
-                        shimmer="wave"
-                        surpriseQueryType="collection"
+            <div className="relative z-10">
+                {/* Cinematic Hero Header */}
+                <div className="relative overflow-hidden">
+                    {/* Animated Background Gradients */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900/80 to-black" />
+                    <div
+                        className="absolute inset-0 bg-gradient-to-t from-yellow-900/20 via-amber-900/10 to-black/50 animate-pulse"
+                        style={{ animationDuration: '4s' }}
                     />
+                    <div className="absolute inset-0 bg-gradient-radial from-yellow-500/10 via-yellow-900/5 to-transparent" />
 
-                    {error && (
-                        <p className="mt-3 text-center text-sm text-red-400 flex items-center justify-center gap-1">
-                            <span>⚠️</span>
-                            {error}
-                        </p>
-                    )}
-                </div>
+                    {/* Soft edge vignetting */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/80" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60" />
 
-                {/* Preview */}
-                {generatedRow && (
-                    <div className="space-y-4">
-                        {/* Row Name */}
-                        <div className="flex items-center justify-between">
+                    {/* Header Content */}
+                    <div className="relative z-10 flex items-center justify-between px-6 py-4 border-b border-zinc-800/50">
+                        <div className="flex items-center gap-3">
+                            {/* Icon with glow */}
+                            <div className="relative">
+                                <div className="absolute inset-0 bg-yellow-500/30 blur-2xl scale-150" />
+                                <SparklesIcon className="relative w-8 h-8 text-yellow-400 drop-shadow-[0_0_20px_rgba(234,179,8,0.5)]" />
+                            </div>
+
+                            {/* Title */}
                             <div>
-                                <h3 className="text-xl font-bold text-white">
-                                    {generatedRow.rowName}
-                                </h3>
-                                <p className="text-sm text-gray-400">
-                                    {
-                                        generatedRow.movies.filter((m) => !removedIds.has(m.tmdbId))
-                                            .length
-                                    }{' '}
-                                    titles •{' '}
-                                    {generatedRow.mediaType === 'both'
-                                        ? 'Movies & TV'
-                                        : generatedRow.mediaType === 'tv'
-                                          ? 'TV Shows'
-                                          : 'Movies'}
-                                    {removedIds.size > 0 && (
-                                        <span className="text-gray-500 ml-2">
-                                            ({removedIds.size} removed)
-                                        </span>
-                                    )}
+                                <h2 className="text-2xl font-bold text-white">
+                                    <span className="bg-gradient-to-r from-yellow-200 via-amber-100 to-yellow-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
+                                        Collection Builder
+                                    </span>
+                                </h2>
+                                <p className="text-gray-400 text-sm mt-0.5">
+                                    Build your collection step by step
                                 </p>
                             </div>
-                            <button
-                                onClick={handleGenerate}
-                                disabled={isGenerating}
-                                className="flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
-                            >
-                                <SparklesIcon className="w-4 h-4" />
-                                {isGenerating ? 'Generating...' : 'Generate More'}
-                            </button>
                         </div>
 
-                        {/* Toggle Settings */}
-                        <div className="relative p-3 bg-gray-800/50 rounded-lg border border-gray-700 space-y-3">
-                            {/* Infinite Content Toggle */}
-                            <div className="flex items-center justify-between">
-                                <label className="text-sm font-medium text-white flex items-center gap-1.5">
-                                    <span>♾️</span>
-                                    Infinite Content
-                                    <button
-                                        type="button"
-                                        onMouseEnter={() => setShowInfiniteTooltip(true)}
-                                        onMouseLeave={() => setShowInfiniteTooltip(false)}
-                                        onClick={() => setShowInfiniteTooltip(!showInfiniteTooltip)}
-                                        className="text-gray-400 hover:text-white"
-                                    >
-                                        <QuestionMarkCircleIcon className="w-4 h-4" />
-                                    </button>
-                                </label>
-                                <button
-                                    type="button"
-                                    onClick={() => setEnableInfiniteContent(!enableInfiniteContent)}
-                                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                        enableInfiniteContent ? 'bg-red-600' : 'bg-gray-600'
-                                    }`}
-                                >
-                                    <span
-                                        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                                            enableInfiniteContent
-                                                ? 'translate-x-5'
-                                                : 'translate-x-0.5'
-                                        }`}
-                                    />
-                                </button>
-                            </div>
-                            {/* Tooltip */}
-                            {showInfiniteTooltip && (
-                                <div className="absolute z-10 top-full left-0 mt-1 p-2 bg-gray-900 border border-gray-700 rounded-md shadow-xl max-w-xs">
-                                    <p className="text-xs text-gray-300">
-                                        After these {generatedRow.movies.length} curated titles,
-                                        show more similar content based on genres
-                                    </p>
+                        <div className="flex items-center gap-3">
+                            {/* Mode Toggle */}
+                            {onModeChange && (
+                                <div className="bg-zinc-900/60 border border-zinc-700/50 rounded-lg p-1 shadow-lg backdrop-blur-md">
+                                    <div className="flex gap-1">
+                                        <button
+                                            onClick={() => onModeChange('smart')}
+                                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-300 ${
+                                                mode === 'smart'
+                                                    ? 'bg-yellow-500/90 text-black shadow-[0_0_10px_rgba(234,179,8,0.3)] scale-105'
+                                                    : 'text-gray-400 hover:text-white hover:bg-zinc-800/60 hover:scale-105'
+                                            }`}
+                                        >
+                                            ✨ Smart
+                                        </button>
+                                        <button
+                                            onClick={() => onModeChange('traditional')}
+                                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-300 ${
+                                                mode === 'traditional'
+                                                    ? 'bg-yellow-500/90 text-black shadow-[0_0_10px_rgba(234,179,8,0.3)] scale-105'
+                                                    : 'text-gray-400 hover:text-white hover:bg-zinc-800/60 hover:scale-105'
+                                            }`}
+                                        >
+                                            🔧 Traditional
+                                        </button>
+                                    </div>
                                 </div>
                             )}
 
-                            {/* Display as Row Toggle */}
+                            {/* Close button */}
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="text-gray-400 hover:text-white transition-colors"
+                            >
+                                <XMarkIcon className="w-6 h-6" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Content */}
+                <div className="p-6 min-h-[600px] flex flex-col relative bg-zinc-900/40 backdrop-blur-lg">
+                    {/* Query Input - Centered and Hero-style */}
+                    <div
+                        className={`mb-6 transition-all duration-700 ease-out ${!generatedRow && !isGenerating ? 'w-full mx-auto mt-32' : 'mt-0'}`}
+                        style={{
+                            opacity: 1,
+                            transform: 'translateY(0)',
+                        }}
+                    >
+                        <label
+                            className={`block text-sm font-medium text-gray-300 mb-4 transition-all duration-500 ${!generatedRow && !isGenerating ? 'text-center' : ''}`}
+                        >
+                            What do you want to watch?
+                        </label>
+                        <SmartInput
+                            value={query}
+                            onChange={handleQueryChange}
+                            onSubmit={handleQuerySubmit}
+                            disabled={isGenerating}
+                            placeholder='e.g., "dark scifi thriller", "best denzel movies", "comedy of errors"'
+                            size="large"
+                            variant="solid"
+                            showSurpriseMe={true}
+                            showTypewriter={true}
+                            shimmer="wave"
+                            surpriseQueryType="collection"
+                        />
+
+                        {error && (
+                            <p className="mt-3 text-center text-sm text-red-400 flex items-center justify-center gap-1">
+                                <span>⚠️</span>
+                                {error}
+                            </p>
+                        )}
+                    </div>
+
+                    {/* Preview */}
+                    {generatedRow && (
+                        <div className="space-y-4">
+                            {/* Row Name */}
                             <div className="flex items-center justify-between">
-                                <label className="text-sm font-medium text-white flex items-center gap-1.5">
-                                    <span>🏠</span>
-                                    Display as Row
-                                </label>
+                                <div>
+                                    <h3 className="text-xl font-bold text-white">
+                                        {generatedRow.rowName}
+                                    </h3>
+                                    <p className="text-sm text-gray-400">
+                                        {
+                                            generatedRow.movies.filter(
+                                                (m) => !removedIds.has(m.tmdbId)
+                                            ).length
+                                        }{' '}
+                                        titles •{' '}
+                                        {generatedRow.mediaType === 'both'
+                                            ? 'Movies & TV'
+                                            : generatedRow.mediaType === 'tv'
+                                              ? 'TV Shows'
+                                              : 'Movies'}
+                                        {removedIds.size > 0 && (
+                                            <span className="text-gray-500 ml-2">
+                                                ({removedIds.size} removed)
+                                            </span>
+                                        )}
+                                    </p>
+                                </div>
                                 <button
-                                    type="button"
-                                    onClick={() => setDisplayAsRow(!displayAsRow)}
-                                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                        displayAsRow ? 'bg-blue-600' : 'bg-gray-600'
-                                    }`}
+                                    onClick={handleGenerate}
+                                    disabled={isGenerating}
+                                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-semibold rounded-lg shadow-[0_0_15px_rgba(234,179,8,0.2)] hover:shadow-[0_0_25px_rgba(234,179,8,0.3)] hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-300 text-sm"
                                 >
-                                    <span
-                                        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                                            displayAsRow ? 'translate-x-5' : 'translate-x-0.5'
-                                        }`}
-                                    />
+                                    <SparklesIcon className="w-4 h-4" />
+                                    {isGenerating ? 'Generating...' : 'Generate More'}
                                 </button>
                             </div>
-                        </div>
 
-                        {/* Movie Grid */}
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-[400px] overflow-y-auto p-2">
-                            {generatedRow.movies
-                                .filter((movie) => !removedIds.has(movie.tmdbId))
-                                .map((movie) => (
-                                    <div
-                                        key={movie.tmdbId}
-                                        className="group relative rounded-lg overflow-hidden bg-gray-800 hover:ring-2 hover:ring-red-600 transition-all"
-                                    >
-                                        {/* Remove Button - Top center */}
+                            {/* Toggle Settings */}
+                            <div className="relative p-4 bg-zinc-900/60 backdrop-blur-lg rounded-lg border border-zinc-800/50 space-y-3">
+                                {/* Infinite Content Toggle */}
+                                <div className="flex items-center justify-between">
+                                    <label className="text-sm font-medium text-white flex items-center gap-1.5">
+                                        <span>♾️</span>
+                                        Infinite Content
                                         <button
-                                            onClick={(e) => {
-                                                e.stopPropagation()
-                                                handleRemoveMovie(movie.tmdbId)
-                                            }}
-                                            className="
+                                            type="button"
+                                            onMouseEnter={() => setShowInfiniteTooltip(true)}
+                                            onMouseLeave={() => setShowInfiniteTooltip(false)}
+                                            onClick={() =>
+                                                setShowInfiniteTooltip(!showInfiniteTooltip)
+                                            }
+                                            className="text-gray-400 hover:text-white transition-colors"
+                                        >
+                                            <QuestionMarkCircleIcon className="w-4 h-4" />
+                                        </button>
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setEnableInfiniteContent(!enableInfiniteContent)
+                                        }
+                                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-all duration-300 ${
+                                            enableInfiniteContent ? 'bg-yellow-600' : 'bg-zinc-600'
+                                        }`}
+                                    >
+                                        <span
+                                            className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                                                enableInfiniteContent
+                                                    ? 'translate-x-5'
+                                                    : 'translate-x-0.5'
+                                            }`}
+                                        />
+                                    </button>
+                                </div>
+                                {/* Tooltip */}
+                                {showInfiniteTooltip && (
+                                    <div className="absolute z-10 top-full left-0 mt-1 p-2 bg-zinc-900/95 backdrop-blur-lg border border-zinc-700/50 rounded-md shadow-xl max-w-xs">
+                                        <p className="text-xs text-gray-300">
+                                            After these {generatedRow.movies.length} curated titles,
+                                            show more similar content based on genres
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Display as Row Toggle */}
+                                <div className="flex items-center justify-between">
+                                    <label className="text-sm font-medium text-white flex items-center gap-1.5">
+                                        <span>🏠</span>
+                                        Display as Row
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setDisplayAsRow(!displayAsRow)}
+                                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-all duration-300 ${
+                                            displayAsRow ? 'bg-yellow-600' : 'bg-zinc-600'
+                                        }`}
+                                    >
+                                        <span
+                                            className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                                                displayAsRow ? 'translate-x-5' : 'translate-x-0.5'
+                                            }`}
+                                        />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Movie Grid */}
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-red-600 hover:scrollbar-thumb-red-500 scrollbar-thumb-rounded-full scrollbar-track-rounded-full p-2">
+                                {generatedRow.movies
+                                    .filter((movie) => !removedIds.has(movie.tmdbId))
+                                    .map((movie) => (
+                                        <div
+                                            key={movie.tmdbId}
+                                            className="group relative rounded-lg overflow-hidden bg-zinc-900/60 backdrop-blur-lg hover:ring-2 hover:ring-yellow-500 hover:shadow-[0_0_15px_rgba(234,179,8,0.3)] transition-all duration-300"
+                                        >
+                                            {/* Remove Button - Top center */}
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    handleRemoveMovie(movie.tmdbId)
+                                                }}
+                                                className="
                                                         absolute top-2 left-1/2 -translate-x-1/2 z-50
                                                         w-8 h-8 rounded-full
                                                         bg-white shadow-lg
@@ -493,70 +542,75 @@ export function SimplifiedSmartBuilder({
                                                         hover:scale-110
                                                         flex items-center justify-center
                                                     "
-                                            aria-label="Remove from collection"
-                                        >
-                                            <XMarkIcon className="h-5 w-5 text-black" />
-                                        </button>
+                                                aria-label="Remove from collection"
+                                            >
+                                                <XMarkIcon className="h-5 w-5 text-black" />
+                                            </button>
 
-                                        {/* Poster */}
-                                        <div className="aspect-[2/3] relative">
-                                            {movie.posterPath ? (
-                                                <Image
-                                                    src={`https://image.tmdb.org/t/p/w342${movie.posterPath}`}
-                                                    alt={movie.title}
-                                                    fill
-                                                    className="object-cover"
-                                                    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
-                                                />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center bg-gray-700 text-gray-500 text-xs p-2 text-center">
+                                            {/* Poster */}
+                                            <div className="aspect-[2/3] relative">
+                                                {movie.posterPath ? (
+                                                    <Image
+                                                        src={`https://image.tmdb.org/t/p/w342${movie.posterPath}`}
+                                                        alt={movie.title}
+                                                        fill
+                                                        className="object-cover"
+                                                        sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center bg-gray-700 text-gray-500 text-xs p-2 text-center">
+                                                        {movie.title}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Hover overlay with info */}
+                                            <div className="absolute inset-0 bg-black/90 opacity-0 group-hover:opacity-100 transition-opacity p-2 flex flex-col justify-end">
+                                                <p className="text-white text-sm font-semibold line-clamp-2">
                                                     {movie.title}
-                                                </div>
-                                            )}
+                                                </p>
+                                                <p className="text-gray-400 text-xs">
+                                                    {movie.year} • ⭐ {movie.rating.toFixed(1)}
+                                                </p>
+                                                <p className="text-gray-300 text-xs mt-1 line-clamp-2">
+                                                    {movie.reason}
+                                                </p>
+                                            </div>
                                         </div>
+                                    ))}
+                            </div>
 
-                                        {/* Hover overlay with info */}
-                                        <div className="absolute inset-0 bg-black/90 opacity-0 group-hover:opacity-100 transition-opacity p-2 flex flex-col justify-end">
-                                            <p className="text-white text-sm font-semibold line-clamp-2">
-                                                {movie.title}
-                                            </p>
-                                            <p className="text-gray-400 text-xs">
-                                                {movie.year} • ⭐ {movie.rating.toFixed(1)}
-                                            </p>
-                                            <p className="text-gray-300 text-xs mt-1 line-clamp-2">
-                                                {movie.reason}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ))}
+                            {/* Actions */}
+                            <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-700/50">
+                                <button
+                                    onClick={onClose}
+                                    className="px-6 py-2 bg-zinc-900/60 backdrop-blur-lg border border-zinc-700/50 text-white rounded-lg hover:bg-zinc-800/80 hover:border-zinc-600 transition-all duration-300"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleCreate}
+                                    disabled={isCreating}
+                                    className="relative px-6 py-2 bg-gradient-to-r from-yellow-500 via-amber-500 to-yellow-600 text-black font-bold rounded-lg shadow-[0_0_20px_rgba(234,179,8,0.3)] hover:shadow-[0_0_30px_rgba(234,179,8,0.4)] hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-300"
+                                >
+                                    {isCreating ? 'Creating...' : 'Create Collection'}
+                                </button>
+                            </div>
                         </div>
+                    )}
 
-                        {/* Actions */}
-                        <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-700">
-                            <button
-                                onClick={onClose}
-                                className="px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleCreate}
-                                disabled={isCreating}
-                                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            >
-                                {isCreating ? 'Creating...' : 'Create Collection'}
-                            </button>
+                    {/* Loading state */}
+                    {isGenerating && (
+                        <div className="absolute top-20 left-0 right-0 flex justify-center">
+                            <NetflixLoader
+                                inline
+                                slowCounter
+                                message="Building your collection..."
+                            />
                         </div>
-                    </div>
-                )}
-
-                {/* Loading state */}
-                {isGenerating && (
-                    <div className="absolute top-20 left-0 right-0 flex justify-center">
-                        <NetflixLoader inline slowCounter message="Building your collection..." />
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
-        </>
+        </div>
     )
 }

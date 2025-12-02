@@ -435,7 +435,16 @@ export default function DebugControls() {
 
         setSendingEmail(emailType)
         try {
-            const response = await authenticatedFetch(endpoint, {
+            // Build URL with query params for GET requests
+            let url = endpoint
+            if (method === 'GET' && Object.keys(body).length > 0) {
+                const params = new URLSearchParams(
+                    Object.entries(body).map(([k, v]) => [k, String(v)])
+                )
+                url = `${endpoint}?${params.toString()}`
+            }
+
+            const response = await authenticatedFetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: method === 'POST' ? JSON.stringify(body) : undefined,
@@ -447,8 +456,24 @@ export default function DebugControls() {
                 throw new Error(data.error || `Failed to send ${emailType}`)
             }
 
-            // Show detailed success message for digest emails
-            if (emailType.includes('Digest')) {
+            // Show detailed success message for cron jobs
+            if (
+                emailType.includes('Trending') ||
+                emailType.includes('Cache') ||
+                emailType.includes('Social')
+            ) {
+                const details: string[] = []
+                if (data.emailsSent !== undefined) details.push(`${data.emailsSent} emails sent`)
+                if (data.collectionsUpdated !== undefined)
+                    details.push(`${data.collectionsUpdated} collections updated`)
+                if (data.notificationsCreated !== undefined)
+                    details.push(`${data.notificationsCreated} notifications`)
+                if (data.totalUsers !== undefined)
+                    details.push(`${data.totalUsers} users processed`)
+
+                const detailsStr = details.length > 0 ? details.join(', ') : 'Completed'
+                showSuccess(`${emailType} complete! ${detailsStr}`)
+            } else if (emailType.includes('Digest')) {
                 const details = `${data.newItems || 0} new items, ${data.notifications || 0} notifications, ${data.emailsSent || 0} emails sent`
                 showSuccess(`${emailType} complete! ${details}`)
             } else {
@@ -827,32 +852,114 @@ export default function DebugControls() {
                             'Cron Jobs (Admin)',
                             <ClockIcon className="w-3.5 h-3.5 text-emerald-500" />,
                             <>
-                                {/* Weekly Trending Digest - Monday 2 AM */}
+                                {/* ADMIN-ONLY TRIGGERS (Single User) */}
+                                <div className="w-full flex items-center gap-2 pt-1">
+                                    <div className="h-px flex-1 bg-gray-700" />
+                                    <span className="text-[10px] text-gray-500 uppercase tracking-wide">
+                                        Admin Only (You)
+                                    </span>
+                                    <div className="h-px flex-1 bg-gray-700" />
+                                </div>
+
+                                {/* Admin-Only Trending */}
                                 <button
                                     onClick={() =>
                                         handleSendEmail(
-                                            'Trending Cron',
-                                            '/api/email/test-weekly-digest',
-                                            { demoMode: false }
+                                            'Trending (Admin)',
+                                            '/api/cron/update-trending',
+                                            { adminOnly: true },
+                                            'GET'
                                         )
                                     }
                                     disabled={sendingEmail !== null || !isAdmin}
                                     className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    title="Test trending digest email (sends to admin only) - Admin only"
+                                    title="Test trending digest - admin only (just you)"
                                 >
                                     <ClockIcon className="w-3 h-3" />
                                     <span className="text-xs">
-                                        {sendingEmail === 'Trending Cron'
-                                            ? 'Sending...'
-                                            : 'Trending (Mon)'}
+                                        {sendingEmail === 'Trending (Admin)'
+                                            ? 'Running...'
+                                            : 'Trending'}
                                     </span>
                                 </button>
 
-                                {/* Collection Cache Refresh - Sunday 2 AM */}
+                                {/* Admin-Only Collections */}
                                 <button
                                     onClick={() =>
                                         handleSendEmail(
-                                            'Cache Cron',
+                                            'Cache (Admin)',
+                                            '/api/cron/refresh-collection-cache',
+                                            { adminOnly: true },
+                                            'GET'
+                                        )
+                                    }
+                                    disabled={sendingEmail !== null || !isAdmin}
+                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-teal-600/20 text-teal-400 border border-teal-500/30 hover:bg-teal-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Refresh collection cache - admin only (just your collections)"
+                                >
+                                    <ClockIcon className="w-3 h-3" />
+                                    <span className="text-xs">
+                                        {sendingEmail === 'Cache (Admin)' ? 'Running...' : 'Cache'}
+                                    </span>
+                                </button>
+
+                                {/* Admin-Only Social Digest */}
+                                <button
+                                    onClick={() =>
+                                        handleSendEmail(
+                                            'Social (Admin)',
+                                            '/api/email/test-social-interactions',
+                                            {}
+                                        )
+                                    }
+                                    disabled={sendingEmail !== null || !isAdmin}
+                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-purple-600/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Test social digest - admin only (creates fake interactions for your rankings)"
+                                >
+                                    <ClockIcon className="w-3 h-3" />
+                                    <span className="text-xs">
+                                        {sendingEmail === 'Social (Admin)'
+                                            ? 'Testing...'
+                                            : 'Social'}
+                                    </span>
+                                </button>
+
+                                {/* ALL USERS TRIGGERS (Production) */}
+                                <div className="w-full flex items-center gap-2 pt-2">
+                                    <div className="h-px flex-1 bg-gray-700" />
+                                    <span className="text-[10px] text-gray-500 uppercase tracking-wide">
+                                        All Users (Production)
+                                    </span>
+                                    <div className="h-px flex-1 bg-gray-700" />
+                                </div>
+
+                                {/* All Users Trending */}
+                                <button
+                                    onClick={() =>
+                                        handleSendEmail(
+                                            'Trending (All)',
+                                            '/api/cron/update-trending',
+                                            {},
+                                            'GET'
+                                        )
+                                    }
+                                    disabled={sendingEmail !== null || !isAdmin}
+                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Run trending digest for ALL users (production behavior)"
+                                >
+                                    <ClockIcon className="w-3 h-3" />
+                                    <span className="text-xs">
+                                        {sendingEmail === 'Trending (All)'
+                                            ? 'Running...'
+                                            : 'Trending (All)'}
+                                    </span>
+                                </button>
+
+                                {/* All Users Collections */}
+                                <button
+                                    onClick={() =>
+                                        handleSendEmail(
+                                            'Cache (All)',
                                             '/api/cron/refresh-collection-cache',
                                             {},
                                             'GET'
@@ -860,34 +967,35 @@ export default function DebugControls() {
                                     }
                                     disabled={sendingEmail !== null || !isAdmin}
                                     className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-teal-600/20 text-teal-400 border border-teal-500/30 hover:bg-teal-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    title="Run collection cache refresh cron (Sundays 2 AM UTC) - Admin only"
+                                    title="Refresh collection cache for ALL users (production behavior)"
                                 >
                                     <ClockIcon className="w-3 h-3" />
                                     <span className="text-xs">
-                                        {sendingEmail === 'Cache Cron'
+                                        {sendingEmail === 'Cache (All)'
                                             ? 'Running...'
-                                            : 'Collections (Sun)'}
+                                            : 'Cache (All)'}
                                     </span>
                                 </button>
 
-                                {/* Weekly Social Digest - Wednesday 2 AM */}
+                                {/* All Users Social Digest */}
                                 <button
                                     onClick={() =>
                                         handleSendEmail(
-                                            'Test Social',
-                                            '/api/email/test-social-interactions',
-                                            {}
+                                            'Social (All)',
+                                            '/api/cron/social-digest',
+                                            { adminOnly: false },
+                                            'GET'
                                         )
                                     }
                                     disabled={sendingEmail !== null || !isAdmin}
                                     className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-purple-600/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    title="Test social digest: creates fake comments/likes then sends email (admin only)"
+                                    title="Run social digest for ALL users (production behavior - sends real notifications)"
                                 >
                                     <ClockIcon className="w-3 h-3" />
                                     <span className="text-xs">
-                                        {sendingEmail === 'Test Social'
-                                            ? 'Testing...'
-                                            : 'Social (Wed)'}
+                                        {sendingEmail === 'Social (All)'
+                                            ? 'Running...'
+                                            : 'Social (All)'}
                                     </span>
                                 </button>
                             </>
