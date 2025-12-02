@@ -47,17 +47,63 @@ export async function seedWatchHistoryContent(options: SeedWatchHistoryOptions):
     const content = getContentSlice(startIndex, count, shuffledContent)
     const now = Date.now()
 
+    // Create more realistic watch history with multiple entries per day
+    // Distribution: More recent activity, with varied times throughout each day
     for (let i = 0; i < content.length; i++) {
         const item = content[i]
-        const progress = Math.random() > 0.5 ? 100 : Math.floor(Math.random() * 90) + 10
+
+        // Realistic watch progress distribution
+        // 40% fully watched, 30% nearly done (80-99%), 20% half-watched, 10% barely started
+        const rand = Math.random()
+        let progress: number
+        if (rand < 0.4) {
+            progress = 100 // Fully watched
+        } else if (rand < 0.7) {
+            progress = Math.floor(Math.random() * 20) + 80 // 80-99%
+        } else if (rand < 0.9) {
+            progress = Math.floor(Math.random() * 40) + 40 // 40-79%
+        } else {
+            progress = Math.floor(Math.random() * 30) + 5 // 5-34%
+        }
 
         useWatchHistoryStore
             .getState()
             .addWatchEntry(item.id, item.media_type, item, progress, undefined, undefined)
 
-        // Spread entries over days
+        // Create realistic timestamp distribution
+        // More entries in recent days, with multiple views per day
         if (i > 0) {
-            const watchedAt = now - i * 24 * 60 * 60 * 1000
+            let watchedAt: number
+
+            // Distribution strategy:
+            // - First 20%: Today (spread throughout the day)
+            // - Next 30%: Last 3 days (2-4 entries per day)
+            // - Next 30%: Last 2 weeks (1-2 entries per day)
+            // - Last 20%: Last 2 months (scattered)
+
+            const percentile = i / content.length
+
+            if (percentile < 0.2) {
+                // Today - spread throughout the day (morning to now)
+                const hoursAgo = Math.random() * 16 // 0-16 hours ago
+                watchedAt = now - hoursAgo * 60 * 60 * 1000
+            } else if (percentile < 0.5) {
+                // Last 3 days - multiple entries per day
+                const daysAgo = 1 + Math.random() * 2 // 1-3 days ago
+                const hourOfDay = Math.floor(Math.random() * 16) + 8 // 8am-11pm
+                watchedAt = now - daysAgo * 24 * 60 * 60 * 1000 + hourOfDay * 60 * 60 * 1000
+            } else if (percentile < 0.8) {
+                // Last 2 weeks
+                const daysAgo = 3 + Math.random() * 11 // 3-14 days ago
+                const hourOfDay = Math.floor(Math.random() * 14) + 10 // 10am-11pm
+                watchedAt = now - daysAgo * 24 * 60 * 60 * 1000 + hourOfDay * 60 * 60 * 1000
+            } else {
+                // Last 2 months - scattered
+                const daysAgo = 14 + Math.random() * 46 // 14-60 days ago
+                const hourOfDay = Math.floor(Math.random() * 12) + 10 // 10am-9pm
+                watchedAt = now - daysAgo * 24 * 60 * 60 * 1000 + hourOfDay * 60 * 60 * 1000
+            }
+
             const history = useWatchHistoryStore.getState().history
             const lastEntry = history[history.length - 1]
             if (lastEntry) {
