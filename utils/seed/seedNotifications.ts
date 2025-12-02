@@ -137,6 +137,7 @@ export async function seedHistoricalTrending(userId: string): Promise<void> {
                 contentId: item.id,
                 mediaType: item.type,
                 imageUrl: `https://image.tmdb.org/t/p/w92${item.posterPath}`,
+                actionUrl: `/${item.type}/${item.id}`,
                 isRead: false,
                 createdAt: yesterday,
                 expiresAt: Date.now() + 29 * 24 * 60 * 60 * 1000,
