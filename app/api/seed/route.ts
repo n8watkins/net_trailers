@@ -305,6 +305,13 @@ async function seedCollectionsServerSide(adminDb: any, userId: string): Promise<
     const newCollections = []
 
     for (const template of collectionTemplates) {
+        // Check if collection with this title already exists
+        const existingCollection = existingCollections.find((c: any) => c.name === template.name)
+        if (existingCollection) {
+            console.log(`    ⏭️  Skipping existing collection: ${template.name}`)
+            continue
+        }
+
         const collectionId = nanoid(12)
 
         // Get items from sample content
@@ -362,6 +369,21 @@ async function seedRankingsServerSide(
     ]
 
     for (let i = 0; i < count && i < rankingTitles.length; i++) {
+        const title = rankingTitles[i]
+
+        // Check if ranking with this title already exists for this user
+        const existingRanking = await adminDb
+            .collection('rankings')
+            .where('userId', '==', userId)
+            .where('title', '==', title)
+            .limit(1)
+            .get()
+
+        if (!existingRanking.empty) {
+            console.log(`    ⏭️  Skipping existing ranking: ${title}`)
+            continue
+        }
+
         const rankingId = nanoid(12)
         const now = Date.now()
 
@@ -379,8 +401,8 @@ async function seedRankingsServerSide(
             userName,
             userUsername: userName.toLowerCase().replace(/\s+/g, '_'),
             userAvatar: userAvatar || null,
-            title: rankingTitles[i],
-            description: `My personal ranking of ${rankingTitles[i].toLowerCase()}`,
+            title: title,
+            description: `My personal ranking of ${title.toLowerCase()}`,
             rankedItems,
             isPublic: true,
             itemCount: rankedItems.length,
@@ -434,8 +456,26 @@ async function seedNotificationsServerSide(
 
     const userNotificationsRef = adminDb.collection('users').doc(userId).collection('notifications')
 
+    // Get existing notifications to avoid duplicates
+    const existingNotifications = await userNotificationsRef.get()
+    const existingNotificationKeys = new Set(
+        existingNotifications.docs.map((doc) => {
+            const data = doc.data()
+            return `${data.type}:${data.title}`
+        })
+    )
+
+    let createdCount = 0
     for (let i = 0; i < count; i++) {
         const notifType = notificationTypes[i % notificationTypes.length]
+        const notificationKey = `${notifType.type}:${notifType.title}`
+
+        // Check if notification with this type and title already exists
+        if (existingNotificationKeys.has(notificationKey)) {
+            console.log(`    ⏭️  Skipping existing notification: ${notifType.title}`)
+            continue
+        }
+
         const notificationId = nanoid(12)
         const now = Date.now()
 
@@ -450,8 +490,10 @@ async function seedNotificationsServerSide(
         }
 
         await userNotificationsRef.doc(notificationId).set(notification)
+        existingNotificationKeys.add(notificationKey) // Track this to avoid duplicates in same batch
+        createdCount++
     }
-    console.log(`    ✅ Created ${count} notifications`)
+    console.log(`    ✅ Created ${createdCount} notifications`)
 }
 
 /**
@@ -496,6 +538,20 @@ async function seedForumThreadsServerSide(
 
     for (let i = 0; i < count && i < threadTemplates.length; i++) {
         const template = threadTemplates[i]
+
+        // Check if thread with this title already exists for this user
+        const existingThread = await adminDb
+            .collection('threads')
+            .where('userId', '==', userId)
+            .where('title', '==', template.title)
+            .limit(1)
+            .get()
+
+        if (!existingThread.empty) {
+            console.log(`    ⏭️  Skipping existing thread: ${template.title}`)
+            continue
+        }
+
         const threadId = nanoid(12)
         const now = Date.now()
 
@@ -569,6 +625,20 @@ async function seedForumPollsServerSide(
 
     for (let i = 0; i < count && i < pollTemplates.length; i++) {
         const template = pollTemplates[i]
+
+        // Check if poll with this title already exists for this user
+        const existingPoll = await adminDb
+            .collection('polls')
+            .where('userId', '==', userId)
+            .where('title', '==', template.title)
+            .limit(1)
+            .get()
+
+        if (!existingPoll.empty) {
+            console.log(`    ⏭️  Skipping existing poll: ${template.title}`)
+            continue
+        }
+
         const pollId = nanoid(12)
         const now = Date.now()
 
