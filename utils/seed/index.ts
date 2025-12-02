@@ -23,6 +23,13 @@ export {
     type SeedDemoProfilesOptions,
     DEMO_PROFILES,
 } from './seedProfiles'
+export {
+    seedRankingComments,
+    seedRankingLikes,
+    type SeedCommentsOptions,
+    COMMENT_TEMPLATES,
+    SHORT_COMMENTS,
+} from './seedRankingComments'
 
 // Re-export sample content
 export { sampleMovies, sampleTVShows, getShuffledContent, getContentSlice } from './sampleContent'

@@ -99,7 +99,7 @@ async function createDemoProfile(profileData: DemoProfile, userId: string): Prom
 }
 
 /**
- * Seed demo profiles with content
+ * Seed demo profiles with content and interconnected interactions
  */
 export async function seedDemoProfiles(options: SeedDemoProfilesOptions = {}): Promise<string[]> {
     const {
@@ -118,13 +118,25 @@ export async function seedDemoProfiles(options: SeedDemoProfilesOptions = {}): P
     console.log(`  - Polls: ${withForumPosts ? pollsPerProfile : 'none'}`)
 
     const createdUserIds: string[] = []
+    const createdProfiles: Array<{
+        userId: string
+        userName: string
+        userAvatar: string
+    }> = []
     const profilesToCreate = DEMO_PROFILES.slice(0, Math.min(count, DEMO_PROFILES.length))
 
+    // PHASE 1: Create all profiles and their content
+    console.log('\n📝 Phase 1: Creating profiles and content...')
     for (const profileData of profilesToCreate) {
         try {
             const userId = generateDemoUserId(profileData.displayName)
             const profile = await createDemoProfile(profileData, userId)
             createdUserIds.push(userId)
+            createdProfiles.push({
+                userId,
+                userName: profile.displayName,
+                userAvatar: profile.avatarUrl,
+            })
 
             // Create rankings for this profile
             if (withRankings && rankingsPerProfile > 0) {
@@ -184,8 +196,56 @@ export async function seedDemoProfiles(options: SeedDemoProfilesOptions = {}): P
         }
     }
 
+    // PHASE 2: Create cross-profile interactions (comments, likes)
+    if (withRankings && createdProfiles.length > 1) {
+        console.log('\n💬 Phase 2: Creating cross-profile interactions...')
+        console.log('  Adding comments and likes between profiles...')
+
+        const { seedRankingComments, seedRankingLikes } = await import('./seedRankingComments')
+        const { useRankingStore } = await import('../../stores/rankingStore')
+
+        // Load all rankings from all created profiles
+        for (const profile of createdProfiles) {
+            await useRankingStore.getState().loadUserRankings(profile.userId)
+        }
+
+        const allRankings = useRankingStore.getState().rankings
+
+        // For each ranking, add comments and likes from other profiles
+        for (const ranking of allRankings) {
+            // Only add interactions to rankings from our demo profiles
+            if (!createdUserIds.includes(ranking.userId)) {
+                continue
+            }
+
+            console.log(`\n  🎯 Adding interactions to "${ranking.title}" by ${ranking.userName}`)
+
+            try {
+                // Add comments (2-4 comments per ranking)
+                await seedRankingComments({
+                    rankingId: ranking.id,
+                    rankingOwnerId: ranking.userId,
+                    commentingProfiles: createdProfiles,
+                    commentCount: Math.floor(Math.random() * 3) + 2, // 2-4 comments
+                })
+
+                // Add likes (60-80% of other profiles like each ranking)
+                await seedRankingLikes({
+                    rankingId: ranking.id,
+                    rankingOwnerId: ranking.userId,
+                    likingProfiles: createdProfiles,
+                })
+
+                // Small delay between rankings
+                await new Promise((resolve) => setTimeout(resolve, 300))
+            } catch (error) {
+                console.error(`    ❌ Failed to add interactions to ranking ${ranking.id}:`, error)
+            }
+        }
+    }
+
     console.log(`\n🎉 Demo profile seeding complete!`)
-    console.log(`  Created ${createdUserIds.length} profiles`)
+    console.log(`  Created ${createdUserIds.length} profiles with interconnected data`)
     console.log(`  User IDs:`, createdUserIds)
 
     return createdUserIds
