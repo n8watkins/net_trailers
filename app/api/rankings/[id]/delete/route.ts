@@ -70,89 +70,159 @@ export async function DELETE(
         // Start deletion process (use Admin SDK - bypasses security rules)
         console.log('  📝 Verified ownership, starting deletion...')
 
-        // Get all comments for this ranking
-        const commentsSnapshot = await adminDb
-            .collection('ranking_comments')
-            .where('rankingId', '==', rankingId)
-            .get()
-
-        const commentIds = commentsSnapshot.docs.map((doc) => doc.id)
-        console.log(`  📊 Found ${commentIds.length} comments to delete`)
+        // STEP 1: Get all comments for this ranking
+        console.log('  📊 STEP 1: Querying comments...')
+        let commentsSnapshot
+        try {
+            commentsSnapshot = await adminDb
+                .collection('ranking_comments')
+                .where('rankingId', '==', rankingId)
+                .get()
+            const commentIds = commentsSnapshot.docs.map((doc) => doc.id)
+            console.log(`    ✅ Found ${commentIds.length} comments:`, commentIds)
+        } catch (error) {
+            console.error('    ❌ ERROR querying comments:', error)
+            throw new Error(
+                `Failed to query comments: ${error instanceof Error ? error.message : 'Unknown error'}`
+            )
+        }
 
         // Create batches (Firestore batch limit is 500)
         let batch = adminDb.batch()
         let operations = 0
 
-        // Delete ranking likes
-        console.log('  🗑️ Deleting ranking likes...')
-        const rankingLikesSnapshot = await adminDb
-            .collection('ranking_likes')
-            .where('rankingId', '==', rankingId)
-            .get()
+        // STEP 2: Delete ranking likes
+        console.log('  📊 STEP 2: Querying and deleting ranking likes...')
+        let rankingLikesSnapshot
+        try {
+            rankingLikesSnapshot = await adminDb
+                .collection('ranking_likes')
+                .where('rankingId', '==', rankingId)
+                .get()
+            console.log(`    ℹ️  Found ${rankingLikesSnapshot.size} ranking likes`)
 
-        for (const doc of rankingLikesSnapshot.docs) {
-            batch.delete(doc.ref)
-            operations++
+            for (const doc of rankingLikesSnapshot.docs) {
+                try {
+                    batch.delete(doc.ref)
+                    operations++
+                    console.log(`      → Deleting ranking_like: ${doc.id}`)
 
-            if (operations >= 450) {
+                    if (operations >= 450) {
+                        console.log(`      💾 Committing batch (${operations} operations)...`)
+                        await batch.commit()
+                        console.log(`      ✅ Batch committed successfully`)
+                        batch = adminDb.batch()
+                        operations = 0
+                    }
+                } catch (error) {
+                    console.error(`    ❌ ERROR deleting ranking_like ${doc.id}:`, error)
+                    throw error
+                }
+            }
+            console.log(`    ✅ Deleted ${rankingLikesSnapshot.size} ranking likes`)
+        } catch (error) {
+            console.error('    ❌ ERROR in ranking likes deletion:', error)
+            throw new Error(
+                `Failed to delete ranking likes: ${error instanceof Error ? error.message : 'Unknown error'}`
+            )
+        }
+
+        // STEP 3: Delete comment likes
+        console.log('  📊 STEP 3: Querying and deleting comment likes...')
+        let commentLikesDeleted = 0
+        const commentIds = commentsSnapshot.docs.map((doc) => doc.id)
+        try {
+            for (const commentId of commentIds) {
+                console.log(`    ℹ️  Processing comment ${commentId}...`)
+                const commentLikesSnapshot = await adminDb
+                    .collection('comment_likes')
+                    .where('commentId', '==', commentId)
+                    .get()
+                console.log(`      → Found ${commentLikesSnapshot.size} likes for this comment`)
+
+                for (const doc of commentLikesSnapshot.docs) {
+                    try {
+                        batch.delete(doc.ref)
+                        operations++
+                        commentLikesDeleted++
+                        console.log(`      → Deleting comment_like: ${doc.id}`)
+
+                        if (operations >= 450) {
+                            console.log(`      💾 Committing batch (${operations} operations)...`)
+                            await batch.commit()
+                            console.log(`      ✅ Batch committed successfully`)
+                            batch = adminDb.batch()
+                            operations = 0
+                        }
+                    } catch (error) {
+                        console.error(`    ❌ ERROR deleting comment_like ${doc.id}:`, error)
+                        throw error
+                    }
+                }
+            }
+            console.log(`    ✅ Deleted ${commentLikesDeleted} comment likes`)
+        } catch (error) {
+            console.error('    ❌ ERROR in comment likes deletion:', error)
+            throw new Error(
+                `Failed to delete comment likes: ${error instanceof Error ? error.message : 'Unknown error'}`
+            )
+        }
+
+        // Commit any pending operations
+        if (operations > 0) {
+            console.log(`  💾 Committing pending batch (${operations} operations)...`)
+            try {
                 await batch.commit()
+                console.log(`  ✅ Pending batch committed successfully`)
                 batch = adminDb.batch()
                 operations = 0
+            } catch (error) {
+                console.error('  ❌ ERROR committing pending batch:', error)
+                throw error
             }
         }
-        console.log(`    ✅ Deleted ${rankingLikesSnapshot.size} ranking likes`)
 
-        // Delete comment likes
-        console.log('  🗑️ Deleting comment likes...')
-        let commentLikesDeleted = 0
-        for (const commentId of commentIds) {
-            const commentLikesSnapshot = await adminDb
-                .collection('comment_likes')
-                .where('commentId', '==', commentId)
-                .get()
-
-            for (const doc of commentLikesSnapshot.docs) {
+        // STEP 4: Delete comments
+        console.log('  📊 STEP 4: Deleting comments...')
+        try {
+            for (const doc of commentsSnapshot.docs) {
                 batch.delete(doc.ref)
                 operations++
-                commentLikesDeleted++
+                console.log(`    → Deleting comment: ${doc.id}`)
 
                 if (operations >= 450) {
+                    console.log(`    💾 Committing batch (${operations} operations)...`)
                     await batch.commit()
+                    console.log(`    ✅ Batch committed successfully`)
                     batch = adminDb.batch()
                     operations = 0
                 }
             }
-        }
-        console.log(`    ✅ Deleted ${commentLikesDeleted} comment likes`)
-
-        // Commit any pending operations
-        if (operations > 0) {
-            await batch.commit()
-            batch = adminDb.batch()
-            operations = 0
+            console.log(`    ✅ Deleted ${commentsSnapshot.size} comments`)
+        } catch (error) {
+            console.error('    ❌ ERROR in comments deletion:', error)
+            throw new Error(
+                `Failed to delete comments: ${error instanceof Error ? error.message : 'Unknown error'}`
+            )
         }
 
-        // Delete comments
-        console.log('  🗑️ Deleting comments...')
-        for (const doc of commentsSnapshot.docs) {
-            batch.delete(doc.ref)
+        // STEP 5: Delete the ranking itself
+        console.log('  📊 STEP 5: Deleting ranking document...')
+        try {
+            batch.delete(rankingRef)
             operations++
+            console.log(`    → Deleting ranking: ${rankingId}`)
 
-            if (operations >= 450) {
-                await batch.commit()
-                batch = adminDb.batch()
-                operations = 0
-            }
+            // Final commit
+            console.log(`  💾 Final commit (${operations} operations)...`)
+            await batch.commit()
+            console.log(`  ✅ Final batch committed successfully`)
+        } catch (error) {
+            console.error('    ❌ ERROR deleting ranking:', error)
+            throw new Error(
+                `Failed to delete ranking: ${error instanceof Error ? error.message : 'Unknown error'}`
+            )
         }
-        console.log(`    ✅ Deleted ${commentsSnapshot.size} comments`)
-
-        // Delete the ranking itself
-        console.log('  🗑️ Deleting ranking...')
-        batch.delete(rankingRef)
-        operations++
-
-        // Final commit
-        await batch.commit()
 
         console.log(`  ✅ Successfully deleted ranking ${rankingId} and all associated data`)
 
