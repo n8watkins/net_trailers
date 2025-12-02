@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     console.log('🧪 [Test Social] === STARTING TEST SOCIAL INTERACTIONS ===')
 
     try {
-        // Auth check - allow any authenticated user (not just admins)
+        // Auth check - admin only
         console.log('🧪 [Test Social] Step 1: Checking authentication...')
         const authHeader = req.headers.get('authorization')
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -41,7 +41,17 @@ export async function POST(req: NextRequest) {
 
         const userId = decodedToken.uid
 
-        console.log('🧪 [Test Social] ✅ Authenticated as user:', userId)
+        // ADMIN ONLY: Check if user is admin
+        const ADMIN_UID = process.env.NEXT_PUBLIC_ADMIN_UID
+        if (!ADMIN_UID || userId !== ADMIN_UID) {
+            console.error('🧪 ❌ [Test Social] User is not admin:', userId)
+            return NextResponse.json(
+                { error: 'Forbidden - Admin access required' },
+                { status: 403 }
+            )
+        }
+
+        console.log('🧪 [Test Social] ✅ Authenticated as admin user:', userId)
 
         const db = getAdminDb()
 

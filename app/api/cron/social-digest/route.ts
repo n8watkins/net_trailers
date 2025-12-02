@@ -124,12 +124,22 @@ export async function GET(req: NextRequest) {
 
         console.log(`📧 [Social Digest] Processing ${userNotifications.size} users`)
 
+        // Get admin UID from environment variable
+        const ADMIN_UID = process.env.NEXT_PUBLIC_ADMIN_UID
+
         let emailsSent = 0
         let skippedUsers = 0
 
         // Send digest email to each user with pending notifications
         for (const [userId, notifications] of userNotifications.entries()) {
             try {
+                // ADMIN ONLY: Skip all users except admin
+                if (!ADMIN_UID || userId !== ADMIN_UID) {
+                    console.log(`📧 [Social Digest] Skipping non-admin user: ${userId}`)
+                    skippedUsers++
+                    continue
+                }
+
                 // Get user data
                 const userDoc = await db.collection('users').doc(userId).get()
                 if (!userDoc.exists) {
