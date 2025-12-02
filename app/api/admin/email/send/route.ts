@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { withAuth } from '../../../../../lib/auth-middleware'
 import { getAdminDb } from '../../../../../lib/firebase-admin'
 import { EmailService } from '../../../../../lib/email/email-service'
+import { validateEmailTemplate } from '../../../../../lib/email/email-validation'
+import DOMPurify from 'isomorphic-dompurify'
 
 /**
  * POST /api/admin/email/send
@@ -43,19 +45,41 @@ async function handleSendEmail(request: NextRequest, userId: string): Promise<Ne
             )
         }
 
-        if (template === 'announcement' && (!subject || !customMessage)) {
-            return NextResponse.json(
-                { error: 'Subject and message are required for announcement emails' },
-                { status: 400 }
-            )
+        // Validate template-specific requirements
+        const validation = validateEmailTemplate({
+            template,
+            subject,
+            customMessage,
+            customHtmlContent,
+        })
+        if (!validation.valid) {
+            return NextResponse.json({ error: validation.error }, { status: 400 })
         }
 
-        if (template === 'custom' && (!subject || !customHtmlContent)) {
-            return NextResponse.json(
-                { error: 'Subject and customHtmlContent are required for custom emails' },
-                { status: 400 }
-            )
-        }
+        // Sanitize custom HTML content to prevent XSS attacks
+        const sanitizedHtmlContent =
+            template === 'custom' && customHtmlContent
+                ? DOMPurify.sanitize(customHtmlContent, {
+                      ALLOWED_TAGS: [
+                          'p',
+                          'br',
+                          'strong',
+                          'em',
+                          'u',
+                          'h1',
+                          'h2',
+                          'h3',
+                          'ul',
+                          'ol',
+                          'li',
+                          'a',
+                          'span',
+                          'div',
+                      ],
+                      ALLOWED_ATTR: ['href', 'style', 'class'],
+                      ALLOWED_URI_REGEXP: /^https?:\/\//,
+                  })
+                : customHtmlContent
 
         console.log(`📧 [AdminEmailSend] Sending ${template} emails to ${userIds.length} user(s)`)
 
@@ -83,7 +107,9 @@ async function handleSendEmail(request: NextRequest, userId: string): Promise<Ne
                 }
             } catch (error) {
                 console.error(`[AdminEmailSend] Error fetching user ${uid}:`, error)
-                errors.push(`Error fetching user: ${uid}`)
+                errors.push(
+                    `Error fetching user ${uid}: ${error instanceof Error ? error.message : 'Unknown error'}`
+                )
                 return null
             }
         })
@@ -211,7 +237,7 @@ async function handleSendEmail(request: NextRequest, userId: string): Promise<Ne
             }
 
             case 'custom': {
-                // Send custom emails
+                // Send custom emails with sanitized HTML
                 for (const user of users) {
                     try {
                         if (!user.email) {
@@ -223,7 +249,7 @@ async function handleSendEmail(request: NextRequest, userId: string): Promise<Ne
                             to: user.email,
                             userName: user.displayName || 'there',
                             subject: subject!,
-                            htmlContent: customHtmlContent!,
+                            htmlContent: sanitizedHtmlContent!,
                         })
 
                         emailsSent++
@@ -265,7 +291,7 @@ async function handleSendEmail(request: NextRequest, userId: string): Promise<Ne
                 sentAt: Date.now(),
                 metadata: {
                     customMessage: customMessage || null,
-                    customHtmlContent: customHtmlContent || null,
+                    customHtmlContent: sanitizedHtmlContent || null,
                 },
             }
 

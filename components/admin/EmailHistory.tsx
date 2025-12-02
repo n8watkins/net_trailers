@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useToast } from '@/hooks/useToast'
+import { getTemplateEmoji, getTemplateName } from '@/lib/email/email-templates-config'
 import { ClockIcon, CheckCircleIcon, XCircleIcon, EnvelopeIcon } from '@heroicons/react/24/outline'
 import { auth } from '@/firebase'
 
@@ -56,36 +57,6 @@ export default function EmailHistory() {
             showError(error instanceof Error ? error.message : 'Failed to load email history')
         } finally {
             setLoading(false)
-        }
-    }
-
-    const getTemplateEmoji = (template: string) => {
-        switch (template) {
-            case 'trending':
-                return '📈'
-            case 'social':
-                return '💬'
-            case 'announcement':
-                return '📢'
-            case 'custom':
-                return '✉️'
-            default:
-                return '📧'
-        }
-    }
-
-    const getTemplateName = (template: string) => {
-        switch (template) {
-            case 'trending':
-                return 'Trending Content'
-            case 'social':
-                return 'Social Digest'
-            case 'announcement':
-                return 'Announcement'
-            case 'custom':
-                return 'Custom Email'
-            default:
-                return template
         }
     }
 

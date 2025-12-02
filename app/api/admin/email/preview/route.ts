@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withAuth } from '../../../../../lib/auth-middleware'
 import { getAdminDb } from '../../../../../lib/firebase-admin'
+import { validateEmailTemplate } from '../../../../../lib/email/email-validation'
 import {
     renderTrendingPreview,
     renderSocialPreview,
@@ -48,6 +49,17 @@ async function handlePreviewEmail(request: NextRequest, userId: string): Promise
             )
         }
 
+        // Validate template-specific requirements
+        const validation = validateEmailTemplate({
+            template,
+            subject,
+            customMessage,
+            customHtmlContent,
+        })
+        if (!validation.valid) {
+            return NextResponse.json({ error: validation.error }, { status: 400 })
+        }
+
         console.log(
             `👁️ [AdminEmailPreview] Generating ${template} preview for user: ${targetUserId}`
         )
@@ -93,33 +105,19 @@ async function handlePreviewEmail(request: NextRequest, userId: string): Promise
             }
 
             case 'announcement': {
-                if (!subject || !customMessage) {
-                    return NextResponse.json(
-                        { error: 'Subject and customMessage required for announcement preview' },
-                        { status: 400 }
-                    )
-                }
-
                 html = await renderAnnouncementPreview({
                     userName,
-                    subject,
-                    message: customMessage,
+                    subject: subject!,
+                    message: customMessage!,
                 })
                 break
             }
 
             case 'custom': {
-                if (!subject || !customHtmlContent) {
-                    return NextResponse.json(
-                        { error: 'Subject and customHtmlContent required for custom preview' },
-                        { status: 400 }
-                    )
-                }
-
                 html = await renderCustomPreview({
                     userName,
-                    subject,
-                    htmlContent: customHtmlContent,
+                    subject: subject!,
+                    htmlContent: customHtmlContent!,
                 })
                 break
             }

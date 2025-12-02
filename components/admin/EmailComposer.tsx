@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/useToast'
 import UserSelector from './UserSelector'
 import EmailPreviewModal from './EmailPreviewModal'
 import RichTextEditor from './RichTextEditor'
+import { EMAIL_TEMPLATES } from '@/lib/email/email-templates-config'
 import { EnvelopeIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline'
 
 export type EmailTemplate = 'trending' | 'social' | 'announcement' | 'custom'
@@ -19,33 +20,6 @@ export default function EmailComposer() {
     const [showPreview, setShowPreview] = useState(false)
 
     const { showSuccess, showError } = useToast()
-
-    const templates = [
-        {
-            id: 'trending' as EmailTemplate,
-            name: 'Trending Content',
-            description: 'Weekly trending movies and TV shows from watchlists',
-            icon: '📈',
-        },
-        {
-            id: 'social' as EmailTemplate,
-            name: 'Social Digest',
-            description: 'Batched comments and likes on rankings',
-            icon: '💬',
-        },
-        {
-            id: 'announcement' as EmailTemplate,
-            name: 'Announcement',
-            description: 'System announcements or important updates',
-            icon: '📢',
-        },
-        {
-            id: 'custom' as EmailTemplate,
-            name: 'Custom Email',
-            description: 'Fully custom email with rich text editor',
-            icon: '✉️',
-        },
-    ]
 
     const handleSendEmail = async () => {
         if (selectedUserIds.length === 0) {
@@ -99,6 +73,7 @@ export default function EmailComposer() {
             setSelectedUserIds([])
             setSubject('')
             setCustomMessage('')
+            setCustomHtmlContent('')
         } catch (error) {
             console.error('Failed to send emails:', error)
             showError(error instanceof Error ? error.message : 'Failed to send emails')

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useToast } from '@/hooks/useToast'
 import { UserIcon, MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline'
 import type { EmailTemplate } from './EmailComposer'
@@ -37,6 +37,20 @@ export default function UserSelector({
     const [selectedFilter, setSelectedFilter] = useState<FilterType>('all')
 
     const { showError } = useToast()
+
+    // Memoize filter counts to avoid recalculating on every render
+    const filterCounts = useMemo(() => {
+        const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
+        const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000
+
+        return {
+            all: users.length,
+            trending: users.filter((u) => u.emailNotifications?.trending === true).length,
+            social: users.filter((u) => u.emailNotifications?.social === true).length,
+            recent: users.filter((u) => (u.lastActive || 0) > sevenDaysAgo).length,
+            inactive: users.filter((u) => (u.lastActive || 0) < thirtyDaysAgo).length,
+        }
+    }, [users]) // Only recompute when users array changes
 
     useEffect(() => {
         fetchUsers()
@@ -138,30 +152,26 @@ export default function UserSelector({
     }
 
     const filters = [
-        { id: 'all' as FilterType, label: 'All Users', count: users.length },
+        { id: 'all' as FilterType, label: 'All Users', count: filterCounts.all },
         {
             id: 'trending' as FilterType,
             label: 'Trending Opt-in',
-            count: users.filter((u) => u.emailNotifications?.trending === true).length,
+            count: filterCounts.trending,
         },
         {
             id: 'social' as FilterType,
             label: 'Social Opt-in',
-            count: users.filter((u) => u.emailNotifications?.social === true).length,
+            count: filterCounts.social,
         },
         {
             id: 'recent' as FilterType,
             label: 'Recently Active',
-            count: users.filter(
-                (u) => (u.lastActive || 0) > Date.now() - 7 * 24 * 60 * 60 * 1000
-            ).length,
+            count: filterCounts.recent,
         },
         {
             id: 'inactive' as FilterType,
             label: 'Inactive (30d+)',
-            count: users.filter(
-                (u) => (u.lastActive || 0) < Date.now() - 30 * 24 * 60 * 60 * 1000
-            ).length,
+            count: filterCounts.inactive,
         },
     ]
 
@@ -213,8 +223,7 @@ export default function UserSelector({
                                 : 'bg-gray-800 text-gray-300 hover:bg-gray-750'
                         } disabled:cursor-not-allowed disabled:opacity-50`}
                     >
-                        {filter.label}{' '}
-                        <span className="ml-1 opacity-60">({filter.count})</span>
+                        {filter.label} <span className="ml-1 opacity-60">({filter.count})</span>
                     </button>
                 ))}
             </div>
