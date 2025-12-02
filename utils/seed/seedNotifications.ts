@@ -17,6 +17,7 @@ const SAMPLE_NOTIFICATIONS: CreateNotificationRequest[] = [
         contentId: 155,
         mediaType: 'movie',
         imageUrl: 'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg',
+        actionUrl: '/movie/155',
     },
     {
         type: 'trending_update',
@@ -25,6 +26,7 @@ const SAMPLE_NOTIFICATIONS: CreateNotificationRequest[] = [
         contentId: 1396,
         mediaType: 'tv',
         imageUrl: 'https://image.tmdb.org/t/p/w500/ggFHVNu6YYI5L9pCfOacjizRGt.jpg',
+        actionUrl: '/tv/1396',
     },
     {
         type: 'new_release',
@@ -33,6 +35,7 @@ const SAMPLE_NOTIFICATIONS: CreateNotificationRequest[] = [
         contentId: 61889,
         mediaType: 'tv',
         imageUrl: 'https://image.tmdb.org/t/p/w500/49WJfeN0moxb9IPfGn8AIqMGskD.jpg',
+        actionUrl: '/tv/61889',
     },
     {
         type: 'trending_update',
@@ -41,6 +44,7 @@ const SAMPLE_NOTIFICATIONS: CreateNotificationRequest[] = [
         contentId: 27205,
         mediaType: 'movie',
         imageUrl: 'https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg',
+        actionUrl: '/movie/27205',
     },
     {
         type: 'new_release',
@@ -49,6 +53,7 @@ const SAMPLE_NOTIFICATIONS: CreateNotificationRequest[] = [
         contentId: 157336,
         mediaType: 'movie',
         imageUrl: 'https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
+        actionUrl: '/movie/157336',
     },
     {
         type: 'trending_update',
@@ -57,6 +62,7 @@ const SAMPLE_NOTIFICATIONS: CreateNotificationRequest[] = [
         contentId: 94605,
         mediaType: 'tv',
         imageUrl: 'https://image.tmdb.org/t/p/w500/fqldf2t8ztc9aiwn3k6mlX3tvRT.jpg',
+        actionUrl: '/tv/94605',
     },
     {
         type: 'new_release',
@@ -65,6 +71,7 @@ const SAMPLE_NOTIFICATIONS: CreateNotificationRequest[] = [
         contentId: 603,
         mediaType: 'movie',
         imageUrl: 'https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg',
+        actionUrl: '/movie/603',
     },
 ]
 
