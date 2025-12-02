@@ -1,5 +1,5 @@
 import React from 'react'
-import BaseEmail from './base-email'
+import { BaseEmail } from './base-email'
 
 interface AnnouncementEmailProps {
     userName: string
