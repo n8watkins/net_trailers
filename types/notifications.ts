@@ -64,6 +64,34 @@ export interface Notification {
 
     /** Expiration timestamp (auto-delete old notifications) */
     expiresAt?: number
+
+    // Social notification fields (ranking_comment and ranking_like)
+    /** Ranking ID for social notifications */
+    rankingId?: string
+
+    /** Ranking title for social notifications */
+    rankingTitle?: string
+
+    /** Commenter name for ranking_comment notifications */
+    commenterName?: string
+
+    /** Comment text for ranking_comment notifications */
+    commentText?: string
+
+    /** Comment ID for ranking_comment notifications */
+    commentId?: string
+
+    /** Whether comment is a reply for ranking_comment notifications */
+    isReply?: boolean
+
+    /** Parent comment text for reply notifications */
+    parentCommentText?: string
+
+    /** Array of liker names for ranking_like notifications */
+    likerNames?: string[]
+
+    /** Whether email has been sent for this notification */
+    emailSent?: boolean
 }
 
 /**

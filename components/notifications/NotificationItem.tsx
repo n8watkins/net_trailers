@@ -41,9 +41,12 @@ export default function NotificationItem({ notification }: NotificationItemProps
         return 'Just now'
     }
 
-    // Check if notification is clickable (has content or action URL)
+    // Check if notification is clickable (has content, action URL, or ranking)
     const isClickable =
-        !!(notification.contentId && notification.mediaType) || !!notification.actionUrl
+        !!(notification.contentId && notification.mediaType) ||
+        !!notification.actionUrl ||
+        (!!(notification.type === 'ranking_comment' || notification.type === 'ranking_like') &&
+            notification.rankingId)
 
     // Handle notification click
     const handleClick = async () => {
@@ -52,6 +55,16 @@ export default function NotificationItem({ notification }: NotificationItemProps
         // Mark as read if unread (don't await - let it happen in background)
         if (!notification.isRead) {
             markNotificationAsRead(userId, notification.id).catch(console.error)
+        }
+
+        // Handle social notifications - navigate to ranking detail page
+        if (
+            (notification.type === 'ranking_comment' || notification.type === 'ranking_like') &&
+            notification.rankingId
+        ) {
+            closePanel()
+            router.push(`/community/ranking/${notification.rankingId}`)
+            return
         }
 
         // If notification has contentId and mediaType, open the content modal
@@ -114,7 +127,6 @@ export default function NotificationItem({ notification }: NotificationItemProps
     const getContentTitle = () => {
         // For social notifications, use the ranking title
         if (notification.type === 'ranking_comment' || notification.type === 'ranking_like') {
-            // @ts-ignore - rankingTitle exists for social notifications
             return notification.rankingTitle || notification.title || 'Your Ranking'
         }
 
@@ -141,22 +153,24 @@ export default function NotificationItem({ notification }: NotificationItemProps
     // Get social notification details
     const getSocialDetails = () => {
         if (notification.type === 'ranking_comment') {
-            // @ts-ignore - these fields exist for ranking_comment notifications
             const commenterName = notification.commenterName
-            // @ts-ignore
             const commentText = notification.commentText
-            // @ts-ignore
             const isReply = notification.isReply
 
-            if (isReply) {
+            if (isReply && commenterName) {
                 return `${commenterName} replied to a comment on your ranking`
             }
-            return commentText || `${commenterName} commented on your ranking`
+            if (commentText) {
+                return `"${commentText}"`
+            }
+            if (commenterName) {
+                return `${commenterName} commented on your ranking`
+            }
+            return 'Someone commented on your ranking'
         }
 
         if (notification.type === 'ranking_like') {
-            // @ts-ignore - likerNames exists for ranking_like notifications
-            const likerNames = notification.likerNames as string[] | undefined
+            const likerNames = notification.likerNames
 
             if (likerNames && likerNames.length > 0) {
                 if (likerNames.length === 1) {
