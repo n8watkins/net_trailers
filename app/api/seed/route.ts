@@ -21,6 +21,9 @@ interface SeedOptions {
     watchLaterCount?: number
     watchHistoryCount?: number
     createCollections?: boolean
+    rankingCount?: number
+    userName?: string
+    userAvatar?: string
 }
 
 /**
@@ -108,6 +111,9 @@ async function seedUserDataServerSide(userId: string, options: SeedOptions): Pro
         watchLaterCount = 12,
         watchHistoryCount = 15,
         createCollections = true,
+        rankingCount = 3,
+        userName = 'User',
+        userAvatar,
     } = options
 
     const adminDb = getAdminDb()
@@ -174,5 +180,72 @@ async function seedUserDataServerSide(userId: string, options: SeedOptions): Pro
         // For now, skip to keep the seed fast
     }
 
+    // 6. Seed rankings (if requested)
+    if (rankingCount > 0) {
+        console.log(`  🏆 Creating ${rankingCount} sample rankings...`)
+        await seedRankingsServerSide(adminDb, userId, userName, userAvatar, rankingCount)
+    }
+
     console.log('✨ Server-side seed complete for user:', userId)
+}
+
+/**
+ * Seed rankings using Admin SDK
+ */
+async function seedRankingsServerSide(
+    adminDb: any,
+    userId: string,
+    userName: string,
+    userAvatar: string | undefined,
+    count: number
+): Promise<void> {
+    const { nanoid } = await import('nanoid')
+
+    const rankingTitles = [
+        'Top 10 Action Movies of All Time',
+        'Best Sci-Fi TV Series',
+        'Underrated Thriller Movies',
+        'Top 5 Comedy Shows',
+        'Most Emotional Dramas',
+    ]
+
+    for (let i = 0; i < count && i < rankingTitles.length; i++) {
+        const rankingId = nanoid(12)
+        const now = Date.now()
+
+        // Get sample content for this ranking
+        const rankedItems = getShuffledContentSlice(i * 5, 5).map((content, index) => ({
+            content,
+            position: index + 1,
+            score: 10 - index, // Descending scores
+            notes: `Great ${content.media_type}!`,
+        }))
+
+        const ranking = {
+            id: rankingId,
+            userId,
+            userName,
+            userUsername: userName.toLowerCase().replace(/\s+/g, '_'),
+            userAvatar: userAvatar || null,
+            title: rankingTitles[i],
+            description: `My personal ranking of ${rankingTitles[i].toLowerCase()}`,
+            rankedItems,
+            isPublic: true,
+            itemCount: rankedItems.length,
+            createdAt: now - i * 86400000, // Spread over days
+            updatedAt: now - i * 86400000,
+            likes: 0,
+            comments: 0,
+            views: 0,
+            contentIds: rankedItems.map((item) => item.content.id),
+            contentTitles: rankedItems.map((item) =>
+                'title' in item.content
+                    ? item.content.title.toLowerCase()
+                    : item.content.name.toLowerCase()
+            ),
+        }
+
+        await adminDb.collection('rankings').doc(rankingId).set(ranking)
+        console.log(`    ✅ Created ranking: ${ranking.title}`)
+    }
 }

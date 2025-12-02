@@ -79,6 +79,10 @@ export function useProfileActions() {
 
         setSeeding(true)
         try {
+            // Get profile data for seeding rankings
+            const { useProfileStore } = await import('../stores/profileStore')
+            const profile = useProfileStore.getState().profile
+
             const response = await fetch('/api/seed', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -90,6 +94,9 @@ export function useProfileActions() {
                         watchLaterCount: 12,
                         watchHistoryCount: 20,
                         createCollections: true,
+                        rankingCount: 3,
+                        userName: profile?.displayName || 'User',
+                        userAvatar: profile?.avatarUrl,
                     },
                 }),
             })
@@ -109,7 +116,7 @@ export function useProfileActions() {
             setTimeout(() => {
                 console.log('[useProfileActions] Reloading data to show seeded content...')
                 window.location.reload()
-            }, 3000)
+            }, 5000) // Increased to 5s to give rankings time to seed
         } catch (error) {
             console.error('[useProfileActions] Failed to start server-side seed:', error)
             setSeeding(false)
