@@ -111,42 +111,18 @@ export default function WatchHistoryPage() {
           })
         : filteredHistory
 
-    // Group by date - format changes based on filter
+    // Group by calendar date (not relative dates like "Today")
     const groupedHistory = searchFilteredHistory.reduce(
         (groups, item) => {
-            let date: string
             const itemDate = new Date(item.watchedAt)
 
-            // Format date based on current filter
-            switch (filter) {
-                case 'today':
-                    // Show just the time for today
-                    date = 'Today'
-                    break
-                case 'week':
-                    // Show weekday for this week
-                    date = itemDate.toLocaleDateString('en-US', {
-                        weekday: 'long',
-                        month: 'long',
-                        day: 'numeric',
-                    })
-                    break
-                case 'month':
-                    // Show week grouping for this month
-                    date = itemDate.toLocaleDateString('en-US', {
-                        month: 'long',
-                        day: 'numeric',
-                    })
-                    break
-                default:
-                    // Show full date for all time
-                    date = itemDate.toLocaleDateString('en-US', {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                    })
-            }
+            // Always use actual calendar date format
+            const date = itemDate.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+            })
 
             if (!groups[date]) {
                 groups[date] = []
@@ -437,12 +413,15 @@ export default function WatchHistoryPage() {
                             <div className="space-y-8">
                                 {Object.entries(groupedHistory).map(([date, items]) => (
                                     <div key={date} className="space-y-4">
-                                        {/* Date Header */}
+                                        {/* Date Header with count */}
                                         <div className="flex items-center gap-3 sticky top-24 bg-gradient-to-r from-black to-transparent py-3 z-10">
                                             <CalendarIcon className="w-5 h-5 text-purple-400" />
                                             <h3 className="text-lg font-semibold text-white">
                                                 {date}
                                             </h3>
+                                            <span className="text-sm text-gray-400 bg-zinc-800/50 px-2 py-0.5 rounded-full">
+                                                {items.length}
+                                            </span>
                                             <div className="flex-1 h-px bg-gradient-to-r from-gray-700 to-transparent" />
                                         </div>
 
@@ -458,14 +437,6 @@ export default function WatchHistoryPage() {
                                                     }}
                                                 >
                                                     <ContentCard content={item.content} />
-                                                    <div className="mt-2 text-xs text-gray-400">
-                                                        {new Date(
-                                                            item.watchedAt
-                                                        ).toLocaleTimeString('en-US', {
-                                                            hour: 'numeric',
-                                                            minute: '2-digit',
-                                                        })}
-                                                    </div>
                                                 </div>
                                             ))}
                                             <ContentGridSpacer />
