@@ -28,6 +28,20 @@ export async function GET(request: NextRequest) {
 
         const db = getAdminDb()
 
+        // Check if admin-only mode is enabled via query parameter
+        const { searchParams } = new URL(request.url)
+        const adminOnlyParam = searchParams.get('adminOnly')
+        const adminOnly = adminOnlyParam === 'true'
+
+        // Get admin UID from environment variable
+        const ADMIN_UID = process.env.NEXT_PUBLIC_ADMIN_UID
+
+        if (adminOnly) {
+            console.log(`🔄 [Collection Cache] Running in ADMIN-ONLY mode`)
+        } else {
+            console.log(`🔄 [Collection Cache] Running in ALL USERS mode`)
+        }
+
         let collectionsChecked = 0
         let collectionsUpdated = 0
         let notificationsCreated = 0
@@ -37,6 +51,12 @@ export async function GET(request: NextRequest) {
 
         for (const userDoc of usersSnapshot.docs) {
             const userId = userDoc.id
+
+            // ADMIN ONLY MODE: Skip all users except admin
+            if (adminOnly && (!ADMIN_UID || userId !== ADMIN_UID)) {
+                console.log(`🔄 [Collection Cache] Skipping non-admin user: ${userId}`)
+                continue
+            }
 
             // Get user's custom collections
             const collectionsSnapshot = await db

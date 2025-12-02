@@ -218,10 +218,11 @@ const ProfilePage: React.FC = () => {
                 updates = {
                     enablePublicProfile: checked,
                     showLikedContent: checked,
-                    showWatchLater: checked,
+                    showWatchHistory: checked,
                     showRankings: checked,
                     showCollections: checked,
                     showThreads: checked,
+                    showThreadsVoted: checked,
                     showPollsCreated: checked,
                     showPollsVoted: checked,
                 }
@@ -255,7 +256,7 @@ const ProfilePage: React.FC = () => {
                         const labelMap: Record<keyof ProfileVisibility, string> = {
                             enablePublicProfile: 'Public Profile',
                             showLikedContent: 'Liked Content',
-                            showWatchLater: 'Watch Later',
+                            showWatchHistory: 'Watch History',
                             showRankings: 'Rankings',
                             showCollections: 'Collections',
                             showThreads: 'Forum Threads',

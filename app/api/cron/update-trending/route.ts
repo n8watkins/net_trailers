@@ -71,6 +71,20 @@ export async function GET(req: NextRequest) {
             `📊 [Trending] Fetched ${moviesData.results.length} movies, ${tvData.results.length} TV shows`
         )
 
+        // Check if admin-only mode is enabled via query parameter
+        const { searchParams } = new URL(req.url)
+        const adminOnlyParam = searchParams.get('adminOnly')
+        const adminOnly = adminOnlyParam === 'true'
+
+        // Get admin UID from environment variable
+        const ADMIN_UID = process.env.NEXT_PUBLIC_ADMIN_UID
+
+        if (adminOnly) {
+            console.log(`📊 [Trending] Running in ADMIN-ONLY mode`)
+        } else {
+            console.log(`📊 [Trending] Running in ALL USERS mode`)
+        }
+
         // Send weekly digest emails to all opted-in users
         let emailsSent = 0
         let skippedUsers = 0
@@ -80,6 +94,14 @@ export async function GET(req: NextRequest) {
 
         for (const userDoc of usersSnapshot.docs) {
             const userData = userDoc.data()
+            const userId = userDoc.id
+
+            // ADMIN ONLY MODE: Skip all users except admin
+            if (adminOnly && (!ADMIN_UID || userId !== ADMIN_UID)) {
+                console.log(`📊 [Trending] Skipping non-admin user: ${userId}`)
+                skippedUsers++
+                continue
+            }
 
             // Check if user has opted into trending notifications AND email
             const trendingEnabled = userData.notifications?.types?.trending_update ?? false

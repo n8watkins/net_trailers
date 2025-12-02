@@ -577,12 +577,12 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                                                 }
                                             />
                                             <VisibilityToggle
-                                                id="showWatchLater"
-                                                label="Watch Later"
+                                                id="showWatchHistory"
+                                                label="Watch History"
                                                 icon={ClockIcon}
                                                 checked={
                                                     visibility.enablePublicProfile &&
-                                                    visibility.showWatchLater
+                                                    visibility.showWatchHistory
                                                 }
                                                 onChange={onVisibilityChange}
                                                 disabled={
@@ -625,6 +625,20 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                                                 checked={
                                                     visibility.enablePublicProfile &&
                                                     visibility.showThreads
+                                                }
+                                                onChange={onVisibilityChange}
+                                                disabled={
+                                                    isSavingVisibility ||
+                                                    !visibility.enablePublicProfile
+                                                }
+                                            />
+                                            <VisibilityToggle
+                                                id="showThreadsVoted"
+                                                label="Threads Voted"
+                                                icon={HandThumbUpIcon}
+                                                checked={
+                                                    visibility.enablePublicProfile &&
+                                                    visibility.showThreadsVoted
                                                 }
                                                 onChange={onVisibilityChange}
                                                 disabled={
