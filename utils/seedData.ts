@@ -1271,9 +1271,9 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
         // Add to watch history via the watch history store
         useWatchHistoryStore.getState().addWatchEntry(item.id, item.media_type, item)
 
-        // Assign timestamps based on viewing schedule
-        if (i > 0 && i < scheduledEntries.length) {
-            const schedule = scheduledEntries[i]
+        // Assign timestamps based on viewing schedule (skip first entry which uses 'now')
+        if (i > 0 && i <= scheduledEntries.length) {
+            const schedule = scheduledEntries[i - 1] // Adjust index since we skip i=0
             const daysAgo = schedule.daysAgo
             const entryIndex = schedule.entryIndex
 
