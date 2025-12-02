@@ -139,13 +139,13 @@ function CollectionBuilderModal() {
             onMouseUp={handleBackdropMouseUp}
         >
             {/* Backdrop */}
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" />
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
 
             {/* Modal Container */}
             <div className="relative min-h-screen flex items-center justify-center p-4">
                 <div
                     data-modal-content
-                    className="relative bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-lg shadow-2xl max-w-6xl w-full border border-gray-700"
+                    className="relative bg-gradient-to-br from-blue-950/40 via-blue-900/30 to-blue-950/40 rounded-lg shadow-2xl max-w-6xl w-full border border-zinc-700/50"
                 >
                     {/* Render selected mode content */}
                     {mode === 'smart' ? (

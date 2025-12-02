@@ -269,7 +269,7 @@ export function SimplifiedSmartBuilder({
                 {/* Atmospheric Background */}
                 <div className="fixed inset-0 pointer-events-none">
                     <div className="absolute inset-0 bg-black" />
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-yellow-900/20 via-transparent to-transparent opacity-50" />
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-blue-900/20 via-transparent to-transparent opacity-50" />
                     <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black opacity-60" />
                 </div>
 
@@ -291,7 +291,7 @@ export function SimplifiedSmartBuilder({
             {/* Atmospheric Background */}
             <div className="fixed inset-0 pointer-events-none">
                 <div className="absolute inset-0 bg-black" />
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-yellow-900/20 via-transparent to-transparent opacity-50" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-blue-900/20 via-transparent to-transparent opacity-50" />
                 <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black opacity-60" />
             </div>
 
@@ -301,10 +301,10 @@ export function SimplifiedSmartBuilder({
                     {/* Animated Background Gradients */}
                     <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900/80 to-black" />
                     <div
-                        className="absolute inset-0 bg-gradient-to-t from-yellow-900/20 via-amber-900/10 to-black/50 animate-pulse"
+                        className="absolute inset-0 bg-gradient-to-t from-blue-900/20 via-blue-900/10 to-black/50 animate-pulse"
                         style={{ animationDuration: '4s' }}
                     />
-                    <div className="absolute inset-0 bg-gradient-radial from-yellow-500/10 via-yellow-900/5 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-radial from-blue-500/10 via-blue-900/5 to-transparent" />
 
                     {/* Soft edge vignetting */}
                     <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/80" />
@@ -315,14 +315,14 @@ export function SimplifiedSmartBuilder({
                         <div className="flex items-center gap-3">
                             {/* Icon with glow */}
                             <div className="relative">
-                                <div className="absolute inset-0 bg-yellow-500/30 blur-2xl scale-150" />
-                                <SparklesIcon className="relative w-8 h-8 text-yellow-400 drop-shadow-[0_0_20px_rgba(234,179,8,0.5)]" />
+                                <div className="absolute inset-0 bg-blue-500/30 blur-2xl scale-150" />
+                                <SparklesIcon className="relative w-8 h-8 text-blue-400 drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
                             </div>
 
                             {/* Title */}
                             <div>
                                 <h2 className="text-2xl font-bold text-white">
-                                    <span className="bg-gradient-to-r from-yellow-200 via-amber-100 to-yellow-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
+                                    <span className="bg-gradient-to-r from-blue-200 via-blue-100 to-blue-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
                                         Collection Builder
                                     </span>
                                 </h2>
@@ -341,7 +341,7 @@ export function SimplifiedSmartBuilder({
                                             onClick={() => onModeChange('smart')}
                                             className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-300 ${
                                                 mode === 'smart'
-                                                    ? 'bg-yellow-500/90 text-black shadow-[0_0_10px_rgba(234,179,8,0.3)] scale-105'
+                                                    ? 'bg-blue-600 text-white shadow-[0_0_10px_rgba(37,99,235,0.4)] scale-105'
                                                     : 'text-gray-400 hover:text-white hover:bg-zinc-800/60 hover:scale-105'
                                             }`}
                                         >
@@ -351,7 +351,7 @@ export function SimplifiedSmartBuilder({
                                             onClick={() => onModeChange('traditional')}
                                             className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-300 ${
                                                 mode === 'traditional'
-                                                    ? 'bg-yellow-500/90 text-black shadow-[0_0_10px_rgba(234,179,8,0.3)] scale-105'
+                                                    ? 'bg-blue-600 text-white shadow-[0_0_10px_rgba(37,99,235,0.4)] scale-105'
                                                     : 'text-gray-400 hover:text-white hover:bg-zinc-800/60 hover:scale-105'
                                             }`}
                                         >
@@ -441,7 +441,7 @@ export function SimplifiedSmartBuilder({
                                 <button
                                     onClick={handleGenerate}
                                     disabled={isGenerating}
-                                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-semibold rounded-lg shadow-[0_0_15px_rgba(234,179,8,0.2)] hover:shadow-[0_0_25px_rgba(234,179,8,0.3)] hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-300 text-sm"
+                                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-[0_0_15px_rgba(37,99,235,0.3)] hover:bg-blue-700 hover:shadow-[0_0_25px_rgba(37,99,235,0.4)] hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-300 text-sm"
                                 >
                                     <SparklesIcon className="w-4 h-4" />
                                     {isGenerating ? 'Generating...' : 'Generate More'}
@@ -473,7 +473,7 @@ export function SimplifiedSmartBuilder({
                                             setEnableInfiniteContent(!enableInfiniteContent)
                                         }
                                         className={`relative inline-flex h-5 w-9 items-center rounded-full transition-all duration-300 ${
-                                            enableInfiniteContent ? 'bg-yellow-600' : 'bg-zinc-600'
+                                            enableInfiniteContent ? 'bg-blue-600' : 'bg-zinc-600'
                                         }`}
                                     >
                                         <span
@@ -505,7 +505,7 @@ export function SimplifiedSmartBuilder({
                                         type="button"
                                         onClick={() => setDisplayAsRow(!displayAsRow)}
                                         className={`relative inline-flex h-5 w-9 items-center rounded-full transition-all duration-300 ${
-                                            displayAsRow ? 'bg-yellow-600' : 'bg-zinc-600'
+                                            displayAsRow ? 'bg-blue-600' : 'bg-zinc-600'
                                         }`}
                                     >
                                         <span
@@ -518,13 +518,13 @@ export function SimplifiedSmartBuilder({
                             </div>
 
                             {/* Movie Grid */}
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-red-600 hover:scrollbar-thumb-red-500 scrollbar-thumb-rounded-full scrollbar-track-rounded-full p-2">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-red-600 hover:scrollbar-thumb-red-500 scrollbar-thumb-rounded-full scrollbar-track-rounded-full p-3 bg-black/30 rounded-lg">
                                 {generatedRow.movies
                                     .filter((movie) => !removedIds.has(movie.tmdbId))
                                     .map((movie) => (
                                         <div
                                             key={movie.tmdbId}
-                                            className="group relative rounded-lg overflow-hidden bg-zinc-900/60 backdrop-blur-lg hover:ring-2 hover:ring-yellow-500 hover:shadow-[0_0_15px_rgba(234,179,8,0.3)] transition-all duration-300"
+                                            className="group relative rounded-lg overflow-hidden bg-zinc-900/60 backdrop-blur-lg hover:ring-2 hover:ring-blue-500 hover:shadow-[0_0_15px_rgba(59,130,246,0.4)] transition-all duration-300"
                                         >
                                             {/* Remove Button - Top center */}
                                             <button
@@ -591,7 +591,7 @@ export function SimplifiedSmartBuilder({
                                 <button
                                     onClick={handleCreate}
                                     disabled={isCreating}
-                                    className="relative px-6 py-2 bg-gradient-to-r from-yellow-500 via-amber-500 to-yellow-600 text-black font-bold rounded-lg shadow-[0_0_20px_rgba(234,179,8,0.3)] hover:shadow-[0_0_30px_rgba(234,179,8,0.4)] hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-300"
+                                    className="relative px-6 py-2 bg-blue-600 text-white font-bold rounded-lg shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:bg-blue-700 hover:shadow-[0_0_30px_rgba(37,99,235,0.5)] hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-300"
                                 >
                                     {isCreating ? 'Creating...' : 'Create Collection'}
                                 </button>
