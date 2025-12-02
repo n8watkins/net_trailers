@@ -249,6 +249,27 @@ export const useProfileStore = create<ProfileState>()(
 
                     await updateProfileInFirestore(userId, request)
 
+                    // Update denormalized usernames in rankings and comments if display name changed
+                    if (request.displayName) {
+                        console.log(
+                            `[ProfileStore] Updating denormalized display names to: ${request.displayName}`
+                        )
+                        // Update rankings in parallel (fire and forget for performance)
+                        updateRankingsUsername(userId, request.displayName).catch((error) =>
+                            console.error(
+                                '[ProfileStore] Failed to update rankings username:',
+                                error
+                            )
+                        )
+                        // Update comments in parallel (fire and forget for performance)
+                        updateRankingCommentsUsername(userId, request.displayName).catch((error) =>
+                            console.error(
+                                '[ProfileStore] Failed to update comments username:',
+                                error
+                            )
+                        )
+                    }
+
                     // Update local state (exclude visibility from spread to avoid type issues)
                     const { visibility: _visibility, ...restRequest } = request
                     set((state) => {

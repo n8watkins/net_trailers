@@ -98,8 +98,9 @@ export async function seedWatchHistoryContent(options: SeedWatchHistoryOptions):
         const item = content[i]
         useWatchHistoryStore.getState().addWatchEntry(item.id, item.media_type, item)
 
-        if (i > 0 && i < scheduledEntries.length) {
-            const schedule = scheduledEntries[i]
+        // ALL entries need timestamps (skip only the very first one which uses 'now')
+        if (i > 0 && i <= scheduledEntries.length) {
+            const schedule = scheduledEntries[i - 1] // Adjust index since we skip i=0
             const daysAgo = schedule.daysAgo
             const entryIndex = schedule.entryIndex
 
