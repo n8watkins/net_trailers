@@ -344,10 +344,7 @@ export default function useUserData() {
                 accountCreated: new Date(), // This would come from Firebase auth
             }),
             clearAccountData: async () => {
-                const { auth, db } = await import('../firebase')
-                const { doc, setDoc, collection, query, where, getDocs } = await import(
-                    'firebase/firestore'
-                )
+                const { auth } = await import('../firebase')
 
                 if (!auth.currentUser) {
                     throw new Error('No authenticated user found')
@@ -356,130 +353,72 @@ export default function useUserData() {
                 const userId = auth.currentUser.uid
 
                 console.log('[useUserData] 🗑️ Starting clearAccountData for user:', userId)
+                console.log('[useUserData] Using server-side API with Admin SDK...')
 
-                // Clear Firestore data first
                 try {
-                    const userDocRef = doc(db, 'users', userId)
-                    // Use setDoc with merge to handle non-existent documents
-                    // Only use NEW SCHEMA fields (no deprecated customRows/userLists/ratings)
-                    await setDoc(
-                        userDocRef,
-                        {
-                            defaultWatchlist: [],
-                            likedMovies: [],
-                            hiddenMovies: [],
-                            userCreatedWatchlists: [],
-                            lastActive: Date.now(),
+                    // Get Firebase auth token
+                    const idToken = await auth.currentUser.getIdToken()
+
+                    // Call server-side clear data API (uses Admin SDK, bypasses security rules)
+                    const response = await fetch('/api/user/clear-data', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${idToken}`,
                         },
-                        { merge: true }
-                    )
-                    console.log('[useUserData] ✅ Cleared collections and ratings from Firestore')
+                    })
 
-                    // Also clear watch history document
-                    const watchHistoryDocRef = doc(db, 'users', userId, 'data', 'watchHistory')
-                    await setDoc(
-                        watchHistoryDocRef,
-                        {
-                            history: [],
-                            updatedAt: Date.now(),
-                        },
-                        { merge: true }
-                    )
-                    console.log('[useUserData] ✅ Cleared watch history from Firestore')
-                } catch (firestoreError) {
-                    authError('Error clearing Firestore data:', firestoreError)
-                    throw new Error('Failed to clear data from server. Please try again.')
-                }
+                    const data = await response.json()
 
-                // Clear local watch history store
-                const { useWatchHistoryStore } = await import('../stores/watchHistoryStore')
-                const watchHistoryStore = useWatchHistoryStore.getState()
-                const historyCountBefore = watchHistoryStore.history.length
-                watchHistoryStore.clearHistory()
-                console.log(
-                    `[useUserData] ✅ Cleared ${historyCountBefore} watch history entries from store`
-                )
-
-                // Restore session ID after clearing (clearHistory sets it to null)
-                // Set lastSyncedAt to now so it doesn't try to reload from Firestore
-                useWatchHistoryStore.setState({
-                    currentSessionId: userId,
-                    lastSyncedAt: Date.now(),
-                    syncError: null,
-                })
-
-                // Clear notifications from store and Firestore
-                const { useNotificationStore } = await import('../stores/notificationStore')
-                console.log('[useUserData] 🗑️ Clearing notifications...')
-                const notifCountBefore = useNotificationStore.getState().notifications.length
-                await useNotificationStore.getState().deleteAllNotifications(userId)
-                console.log(
-                    `[useUserData] ✅ Cleared ${notifCountBefore} notifications from Firestore`
-                )
-
-                // Clear rankings from store and Firestore
-                const { useRankingStore } = await import('../stores/rankingStore')
-                console.log('[useUserData] 🗑️ Clearing user rankings...')
-
-                // First load user rankings to ensure we have them
-                await useRankingStore.getState().loadUserRankings(userId)
-                const userRankings = useRankingStore.getState().rankings
-                console.log(`[useUserData] Found ${userRankings.length} rankings to delete`)
-
-                for (const ranking of userRankings) {
-                    try {
-                        await useRankingStore.getState().deleteRanking(userId, ranking.id)
-                        console.log(`[useUserData] ✅ Deleted ranking: ${ranking.title}`)
-                    } catch (error) {
-                        console.error(
-                            `[useUserData] Failed to delete ranking ${ranking.id}:`,
-                            error
-                        )
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Failed to clear user data')
                     }
+
+                    console.log('[useUserData] ✅ Server-side data clearing completed:', data.deleted)
+
+                    // Clear local stores
+                    const { useWatchHistoryStore } = await import('../stores/watchHistoryStore')
+                    const { useNotificationStore } = await import('../stores/notificationStore')
+                    const { useRankingStore } = await import('../stores/rankingStore')
+                    const { useForumStore } = await import('../stores/forumStore')
+
+                    // Clear watch history store
+                    useWatchHistoryStore.getState().clearHistory()
+                    useWatchHistoryStore.setState({
+                        currentSessionId: userId,
+                        lastSyncedAt: Date.now(),
+                        syncError: null,
+                    })
+
+                    // Clear notification store
+                    useNotificationStore.setState({
+                        notifications: [],
+                        unreadCount: 0,
+                    })
+
+                    // Clear ranking store
+                    useRankingStore.setState({
+                        rankings: [],
+                        currentRanking: null,
+                        comments: [],
+                    })
+
+                    // Clear forum store
+                    useForumStore.setState({
+                        threads: [],
+                        polls: [],
+                    })
+
+                    // Clear local cache
+                    sessionData.clearLocalCache()
+
+                    console.log('[useUserData] ✅ clearAccountData completed')
+                } catch (error) {
+                    console.error('[useUserData] ❌ Error clearing account data:', error)
+                    throw error instanceof Error
+                        ? error
+                        : new Error('Failed to clear account data')
                 }
-                console.log('[useUserData] ✅ Cleared all rankings from Firestore')
-
-                // Clear forum threads and polls
-                const { useForumStore } = await import('../stores/forumStore')
-                console.log('[useUserData] 🗑️ Clearing forum threads and polls...')
-
-                const threadsRef = collection(db, 'threads')
-                const threadSnapshot = await getDocs(
-                    query(threadsRef, where('userId', '==', userId))
-                )
-                for (const threadDoc of threadSnapshot.docs) {
-                    try {
-                        await useForumStore.getState().deleteThread(userId, threadDoc.id)
-                        console.log(`[useUserData] ✅ Deleted thread ${threadDoc.id}`)
-                    } catch (error) {
-                        console.error(
-                            `[useUserData] Failed to delete thread ${threadDoc.id}:`,
-                            error
-                        )
-                    }
-                }
-
-                const pollsRef = collection(db, 'polls')
-                const pollSnapshot = await getDocs(query(pollsRef, where('userId', '==', userId)))
-                for (const pollDoc of pollSnapshot.docs) {
-                    try {
-                        await useForumStore.getState().deletePoll(userId, pollDoc.id)
-                        console.log(`[useUserData] ✅ Deleted poll ${pollDoc.id}`)
-                    } catch (error) {
-                        console.error(`[useUserData] Failed to delete poll ${pollDoc.id}:`, error)
-                    }
-                }
-
-                useForumStore.setState((state) => ({
-                    threads: state.threads.filter((thread) => thread.userId !== userId),
-                    polls: state.polls.filter((poll) => poll.userId !== userId),
-                }))
-                console.log('[useUserData] ✅ Cleared forum data from store')
-
-                // Then clear local cache
-                sessionData.clearLocalCache()
-
-                console.log('[useUserData] ✅ clearAccountData completed')
             },
             exportAccountData: async () => ({
                 defaultWatchlist: sessionData.defaultWatchlist,

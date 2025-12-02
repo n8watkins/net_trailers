@@ -3,20 +3,18 @@
 import { useState } from 'react'
 import { useToast } from '@/hooks/useToast'
 import UserSelector from './UserSelector'
+import EmailPreviewModal from './EmailPreviewModal'
 import { EnvelopeIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline'
 
 export type EmailTemplate = 'trending' | 'social' | 'announcement' | 'custom'
 
-interface EmailComposerProps {
-    onPreview?: (template: EmailTemplate, userIds: string[]) => void
-}
-
-export default function EmailComposer({ onPreview }: EmailComposerProps) {
+export default function EmailComposer() {
     const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate>('trending')
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([])
     const [subject, setSubject] = useState('')
     const [customMessage, setCustomMessage] = useState('')
     const [sending, setSending] = useState(false)
+    const [showPreview, setShowPreview] = useState(false)
 
     const { showSuccess, showError } = useToast()
 
@@ -102,8 +100,8 @@ export default function EmailComposer({ onPreview }: EmailComposerProps) {
     }
 
     const handlePreview = () => {
-        if (onPreview && selectedUserIds.length > 0) {
-            onPreview(selectedTemplate, selectedUserIds)
+        if (selectedUserIds.length > 0) {
+            setShowPreview(true)
         }
     }
 
@@ -111,7 +109,17 @@ export default function EmailComposer({ onPreview }: EmailComposerProps) {
     const showMessageField = selectedTemplate === 'custom'
 
     return (
-        <div className="space-y-6">
+        <>
+            <EmailPreviewModal
+                isOpen={showPreview}
+                onClose={() => setShowPreview(false)}
+                template={selectedTemplate}
+                userIds={selectedUserIds}
+                subject={subject}
+                customMessage={customMessage}
+            />
+
+            <div className="space-y-6">
             {/* Header */}
             <div className="flex items-center gap-3">
                 <EnvelopeIcon className="h-8 w-8 text-blue-500" />
@@ -230,5 +238,6 @@ export default function EmailComposer({ onPreview }: EmailComposerProps) {
                 </button>
             </div>
         </div>
+        </>
     )
 }
