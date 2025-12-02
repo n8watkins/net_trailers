@@ -344,115 +344,42 @@ export async function updateRanking(
 
 /**
  * Delete ranking and all associated data (comments, likes, views)
+ *
+ * Uses server-side API with Firebase Admin SDK to avoid client-side
+ * security rule issues with nested get() calls.
  */
 export async function deleteRanking(userId: string, rankingId: string): Promise<void> {
     validateUserId(userId)
     validateRankingId(rankingId)
 
-    // First verify ownership and get ranking data
-    const rankingRef = getRankingDocRef(rankingId)
-    const rankingDoc = await getDoc(rankingRef)
+    console.log(`🗑️ Deleting ranking ${rankingId} via server API...`)
 
-    if (!rankingDoc.exists()) {
-        throw new NotFoundError('Ranking', rankingId)
+    // Get Firebase auth token
+    const { auth } = await import('../../firebase')
+    const currentUser = auth.currentUser
+
+    if (!currentUser) {
+        throw new UnauthorizedError('delete this ranking - not authenticated')
     }
 
-    const ranking = rankingDoc.data() as Ranking
-    if (ranking.userId !== userId) {
-        throw new UnauthorizedError('delete this ranking')
+    const idToken = await currentUser.getIdToken()
+
+    // Call server-side delete API (uses Admin SDK, bypasses security rules)
+    const response = await fetch(`/api/rankings/${rankingId}/delete`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${idToken}`,
+        },
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete ranking')
     }
 
-    // Delete all comments associated with this ranking
-    const commentsRef = collection(db, COLLECTIONS.comments)
-    const commentsQuery = query(commentsRef, where('rankingId', '==', rankingId))
-    const commentsSnapshot = await getDocs(commentsQuery)
-
-    // Delete in the correct order to satisfy Firestore security rules:
-    // 1. Delete ranking likes (depends on ranking existing)
-    // 2. Delete comment likes (depends on comment + ranking existing)
-    // 3. Delete comments (depends on ranking existing)
-    // 4. Delete ranking itself
-
-    let batch = writeBatch(db)
-    let operations = 0
-
-    // Step 1: Delete all ranking likes first
-    console.log('  🗑️ Deleting ranking likes...')
-    const likesQuery = query(collection(db, COLLECTIONS.likes), where('rankingId', '==', rankingId))
-    const likesSnapshot = await getDocs(likesQuery)
-    for (const likeDoc of likesSnapshot.docs) {
-        batch.delete(likeDoc.ref)
-        operations++
-
-        if (operations >= 450) {
-            await batch.commit()
-            batch = writeBatch(db)
-            operations = 0
-        }
-    }
-
-    // Commit ranking likes batch if there are operations
-    if (operations > 0) {
-        await batch.commit()
-        batch = writeBatch(db)
-        operations = 0
-    }
-
-    // Step 2: Delete all comment likes (must happen before comments are deleted)
-    console.log('  🗑️ Deleting comment likes...')
-    for (const commentDoc of commentsSnapshot.docs) {
-        const commentId = commentDoc.id
-        const commentLikesQuery = query(
-            collection(db, COLLECTIONS.commentLikes),
-            where('commentId', '==', commentId)
-        )
-        const commentLikesSnapshot = await getDocs(commentLikesQuery)
-
-        for (const likeDoc of commentLikesSnapshot.docs) {
-            batch.delete(likeDoc.ref)
-            operations++
-
-            if (operations >= 450) {
-                await batch.commit()
-                batch = writeBatch(db)
-                operations = 0
-            }
-        }
-    }
-
-    // Commit comment likes batch if there are operations
-    if (operations > 0) {
-        await batch.commit()
-        batch = writeBatch(db)
-        operations = 0
-    }
-
-    // Step 3: Delete all comments (now that likes are gone)
-    console.log('  🗑️ Deleting comments...')
-    for (const commentDoc of commentsSnapshot.docs) {
-        batch.delete(commentDoc.ref)
-        operations++
-
-        if (operations >= 450) {
-            await batch.commit()
-            batch = writeBatch(db)
-            operations = 0
-        }
-    }
-
-    // Commit comments batch if there are operations
-    if (operations > 0) {
-        await batch.commit()
-        batch = writeBatch(db)
-        operations = 0
-    }
-
-    // Step 4: Finally delete the ranking itself
-    console.log('  🗑️ Deleting ranking...')
-    batch.delete(rankingRef)
-    await batch.commit()
-
-    console.log('  ✅ Ranking and all associated data deleted successfully')
+    console.log('✅ Ranking deleted successfully:', data.deleted)
 }
 
 /**
