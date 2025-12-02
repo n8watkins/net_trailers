@@ -368,13 +368,24 @@ export default function useUserData() {
                         },
                     })
 
-                    const data = await response.json()
-
                     if (!response.ok) {
-                        throw new Error(data.error || 'Failed to clear user data')
+                        // Try to parse error, but handle cases where response has no body
+                        let errorMessage = 'Failed to clear user data'
+                        try {
+                            const errorData = await response.json()
+                            errorMessage = errorData.error || errorMessage
+                        } catch {
+                            // Response has no JSON body, use status text
+                            errorMessage = `${errorMessage}: ${response.status} ${response.statusText}`
+                        }
+                        throw new Error(errorMessage)
                     }
 
-                    console.log('[useUserData] ✅ Server-side data clearing completed:', data.deleted)
+                    const data = await response.json()
+                    console.log(
+                        '[useUserData] ✅ Server-side data clearing completed:',
+                        data.deleted
+                    )
 
                     // Clear local stores
                     const { useWatchHistoryStore } = await import('../stores/watchHistoryStore')
@@ -415,9 +426,7 @@ export default function useUserData() {
                     console.log('[useUserData] ✅ clearAccountData completed')
                 } catch (error) {
                     console.error('[useUserData] ❌ Error clearing account data:', error)
-                    throw error instanceof Error
-                        ? error
-                        : new Error('Failed to clear account data')
+                    throw error instanceof Error ? error : new Error('Failed to clear account data')
                 }
             },
             exportAccountData: async () => ({

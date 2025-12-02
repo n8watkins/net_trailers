@@ -20,22 +20,26 @@ import { verifyIdToken } from '../../../../lib/firebase-admin'
 import { getAdminDb } from '../../../../lib/firebase-admin'
 
 export async function POST(request: NextRequest) {
-    // CSRF protection
-    const headersList = await headers()
-    if (!validateOrigin(headersList)) {
-        return NextResponse.json({ error: 'Invalid origin' }, { status: 403 })
-    }
-
-    console.log('\n🗑️ === SERVER-SIDE USER DATA CLEARING ===\n')
-
     try {
+        // CSRF protection
+        const headersList = await headers()
+        if (!validateOrigin(headersList)) {
+            console.error('[ClearData] ❌ CSRF validation failed')
+            return NextResponse.json({ error: 'Invalid origin' }, { status: 403 })
+        }
+
+        console.log('\n🗑️ === SERVER-SIDE USER DATA CLEARING ===\n')
+
         // Verify authentication
         const authHeader = headersList.get('authorization')
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            console.error('[ClearData] ❌ Missing or invalid authorization header')
             return NextResponse.json({ error: 'Missing or invalid authorization' }, { status: 401 })
         }
 
         const idToken = authHeader.substring(7)
+        console.log('[ClearData] 🔐 Verifying ID token...')
+
         const decodedToken = await verifyIdToken(idToken)
         const userId = decodedToken.uid
 
