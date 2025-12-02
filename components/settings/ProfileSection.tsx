@@ -580,10 +580,10 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                                                 id="showWatchHistory"
                                                 label="Watch History"
                                                 icon={ClockIcon}
-                                                checked={
+                                                checked={Boolean(
                                                     visibility.enablePublicProfile &&
-                                                    visibility.showWatchHistory
-                                                }
+                                                        visibility.showWatchHistory
+                                                )}
                                                 onChange={onVisibilityChange}
                                                 disabled={
                                                     isSavingVisibility ||

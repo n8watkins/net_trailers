@@ -473,10 +473,19 @@ export async function getProfileVisibility(userId: string): Promise<ProfileVisib
             return { ...DEFAULT_PROFILE_VISIBILITY }
         }
 
+        const visibility = profile.visibility ?? {}
+
+        // Backward compatibility: migrate showWatchLater to showWatchHistory
+        // @ts-ignore - checking for old field
+        if ('showWatchLater' in visibility && !('showWatchHistory' in visibility)) {
+            // @ts-ignore - accessing old field
+            visibility.showWatchHistory = visibility.showWatchLater
+        }
+
         // Merge with defaults to ensure all fields are present
         return {
             ...DEFAULT_PROFILE_VISIBILITY,
-            ...(profile.visibility ?? {}),
+            ...visibility,
         }
     } catch (error) {
         console.error('🔥 ❌ Error getting profile visibility:', error)

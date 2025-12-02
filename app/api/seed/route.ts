@@ -22,6 +22,9 @@ interface SeedOptions {
     watchHistoryCount?: number
     createCollections?: boolean
     rankingCount?: number
+    notificationCount?: number
+    threadCount?: number
+    pollCount?: number
     userName?: string
     userAvatar?: string
 }
@@ -112,6 +115,9 @@ async function seedUserDataServerSide(userId: string, options: SeedOptions): Pro
         watchHistoryCount = 15,
         createCollections = true,
         rankingCount = 3,
+        notificationCount = 8,
+        threadCount = 5,
+        pollCount = 4,
         userName = 'User',
         userAvatar,
     } = options
@@ -186,6 +192,24 @@ async function seedUserDataServerSide(userId: string, options: SeedOptions): Pro
         await seedRankingsServerSide(adminDb, userId, userName, userAvatar, rankingCount)
     }
 
+    // 7. Seed notifications (if requested)
+    if (notificationCount > 0) {
+        console.log(`  🔔 Creating ${notificationCount} sample notifications...`)
+        await seedNotificationsServerSide(adminDb, userId, notificationCount)
+    }
+
+    // 8. Seed forum threads (if requested)
+    if (threadCount > 0) {
+        console.log(`  💬 Creating ${threadCount} sample forum threads...`)
+        await seedForumThreadsServerSide(adminDb, userId, userName, userAvatar, threadCount)
+    }
+
+    // 9. Seed forum polls (if requested)
+    if (pollCount > 0) {
+        console.log(`  📊 Creating ${pollCount} sample forum polls...`)
+        await seedForumPollsServerSide(adminDb, userId, userName, userAvatar, pollCount)
+    }
+
     console.log('✨ Server-side seed complete for user:', userId)
 }
 
@@ -247,5 +271,199 @@ async function seedRankingsServerSide(
 
         await adminDb.collection('rankings').doc(rankingId).set(ranking)
         console.log(`    ✅ Created ranking: ${ranking.title}`)
+    }
+}
+
+/**
+ * Seed notifications using Admin SDK
+ */
+async function seedNotificationsServerSide(
+    adminDb: any,
+    userId: string,
+    count: number
+): Promise<void> {
+    const { nanoid } = await import('nanoid')
+
+    const notificationTypes = [
+        {
+            type: 'trending',
+            title: 'Content Trending',
+            message: 'A movie in your watchlist is trending!',
+        },
+        { type: 'system', title: 'New Feature', message: 'Check out our new ranking system!' },
+        {
+            type: 'collection_shared',
+            title: 'Collection Shared',
+            message: 'Someone shared a collection with you',
+        },
+        {
+            type: 'ranking_comment',
+            title: 'New Comment',
+            message: 'Someone commented on your ranking',
+        },
+        { type: 'ranking_like', title: 'New Like', message: 'Someone liked your ranking' },
+    ]
+
+    const userNotificationsRef = adminDb.collection('users').doc(userId).collection('notifications')
+
+    for (let i = 0; i < count; i++) {
+        const notifType = notificationTypes[i % notificationTypes.length]
+        const notificationId = nanoid(12)
+        const now = Date.now()
+
+        const notification = {
+            id: notificationId,
+            type: notifType.type,
+            title: notifType.title,
+            message: notifType.message,
+            read: i > count / 2, // First half unread, second half read
+            createdAt: now - i * 3600000, // Spread over hours
+            dismissedAt: null,
+        }
+
+        await userNotificationsRef.doc(notificationId).set(notification)
+    }
+    console.log(`    ✅ Created ${count} notifications`)
+}
+
+/**
+ * Seed forum threads using Admin SDK
+ */
+async function seedForumThreadsServerSide(
+    adminDb: any,
+    userId: string,
+    userName: string,
+    userAvatar: string | undefined,
+    count: number
+): Promise<void> {
+    const { nanoid } = await import('nanoid')
+
+    const threadTemplates = [
+        {
+            category: 'General',
+            title: 'Welcome to the Community!',
+            content: "Hey everyone! Let's discuss our favorite movies and TV shows here.",
+        },
+        {
+            category: 'Movies',
+            title: 'Best Action Movies of 2024',
+            content: 'What are your top action movies this year? I loved the latest blockbusters!',
+        },
+        {
+            category: 'TV Shows',
+            title: 'Recommend me a new series',
+            content: 'I just finished Stranger Things. What should I watch next?',
+        },
+        {
+            category: 'Recommendations',
+            title: 'Hidden Gems You Must Watch',
+            content: 'Share those underrated movies that deserve more attention!',
+        },
+        {
+            category: 'Rankings',
+            title: 'How do you create your rankings?',
+            content: "What's your process for ranking movies? Do you use specific criteria?",
+        },
+    ]
+
+    for (let i = 0; i < count && i < threadTemplates.length; i++) {
+        const template = threadTemplates[i]
+        const threadId = nanoid(12)
+        const now = Date.now()
+
+        const thread = {
+            id: threadId,
+            userId,
+            userName,
+            userAvatar: userAvatar || null,
+            category: template.category,
+            title: template.title,
+            content: template.content,
+            likes: Math.floor(Math.random() * 20),
+            replyCount: Math.floor(Math.random() * 10),
+            views: Math.floor(Math.random() * 100),
+            isPinned: i === 0, // Pin the first thread
+            createdAt: now - i * 86400000, // Spread over days
+            updatedAt: now - i * 86400000,
+        }
+
+        await adminDb.collection('threads').doc(threadId).set(thread)
+        console.log(`    ✅ Created thread: ${thread.title}`)
+    }
+}
+
+/**
+ * Seed forum polls using Admin SDK
+ */
+async function seedForumPollsServerSide(
+    adminDb: any,
+    userId: string,
+    userName: string,
+    userAvatar: string | undefined,
+    count: number
+): Promise<void> {
+    const { nanoid } = await import('nanoid')
+
+    const pollTemplates = [
+        {
+            category: 'General',
+            title: 'Favorite movie genre?',
+            options: ['Action', 'Comedy', 'Drama', 'Sci-Fi', 'Horror'],
+        },
+        {
+            category: 'Movies',
+            title: 'Best superhero movie?',
+            options: [
+                'The Dark Knight',
+                'Avengers: Endgame',
+                'Spider-Man',
+                'Iron Man',
+                'Black Panther',
+            ],
+        },
+        {
+            category: 'TV Shows',
+            title: 'Best TV series of all time?',
+            options: ['Breaking Bad', 'Game of Thrones', 'The Sopranos', 'The Wire', 'Friends'],
+        },
+        {
+            category: 'Recommendations',
+            title: 'What should we watch this weekend?',
+            options: [
+                'New Release',
+                'Classic Movie',
+                'TV Series Marathon',
+                'Documentary',
+                'Indie Film',
+            ],
+        },
+    ]
+
+    for (let i = 0; i < count && i < pollTemplates.length; i++) {
+        const template = pollTemplates[i]
+        const pollId = nanoid(12)
+        const now = Date.now()
+
+        const poll = {
+            id: pollId,
+            userId,
+            userName,
+            userAvatar: userAvatar || null,
+            category: template.category,
+            title: template.title,
+            options: template.options.map((option, idx) => ({
+                id: `option_${idx}`,
+                text: option,
+                votes: Math.floor(Math.random() * 50), // Random vote counts
+            })),
+            totalVotes: Math.floor(Math.random() * 200),
+            allowMultipleChoices: false,
+            expiresAt: null,
+            createdAt: now - i * 86400000, // Spread over days
+            updatedAt: now - i * 86400000,
+        }
+
+        await adminDb.collection('polls').doc(pollId).set(poll)
+        console.log(`    ✅ Created poll: ${poll.title}`)
     }
 }

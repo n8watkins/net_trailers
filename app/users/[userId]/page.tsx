@@ -128,6 +128,7 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
             const watchHistorySnap = await getDocs(
                 query(
                     collection(db, 'users', userId, 'watchHistory'),
+                    orderBy('watchedAt', 'desc'),
                     limit(PROFILE_CONFIG.WATCH_LATER_PREVIEW_LIMIT)
                 )
             )
