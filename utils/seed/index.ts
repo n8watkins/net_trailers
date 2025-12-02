@@ -149,6 +149,8 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
     // 6. Seed notifications (auth users only)
     if (!isGuest && notificationCount > 0) {
         await seedNotifications({ userId, count: notificationCount })
+        // Also seed 1-2 historical trending notifications for added realism
+        await seedHistoricalTrending(userId)
     }
 
     // 7. Seed rankings (auth users only)
@@ -344,6 +346,6 @@ import { seedHiddenContent } from './seedHidden'
 import { seedWatchLaterContent } from './seedWatchLater'
 import { seedWatchHistoryContent } from './seedWatchHistory'
 import { seedCollections } from './seedCollections'
-import { seedNotifications } from './seedNotifications'
+import { seedNotifications, seedHistoricalTrending } from './seedNotifications'
 import { seedRankings } from './seedRankings'
 import { seedForumThreads, seedForumPolls } from './seedForum'
