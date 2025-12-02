@@ -11,6 +11,10 @@ import { useDebugOperationsStore } from '../stores/debugOperationsStore'
 export function useProfileActions() {
     const { isSeeding, setSeeding, canStartSeeding } = useDebugOperationsStore()
 
+    /**
+     * Client-side seed (original behavior)
+     * This will be interrupted if user navigates away
+     */
     const handleSeedData = async () => {
         // Check if we can start seeding (mutual exclusion with clearing)
         if (!canStartSeeding()) {
@@ -45,8 +49,76 @@ export function useProfileActions() {
         }
     }
 
+    /**
+     * Server-side seed (background)
+     * Continues running even if user navigates away
+     * Only works for authenticated users (not guests)
+     */
+    const handleSeedDataServerSide = async () => {
+        // Check if we can start seeding (mutual exclusion with clearing)
+        if (!canStartSeeding()) {
+            console.warn('[useProfileActions] Cannot seed data - operation already in progress')
+            return
+        }
+
+        const getUserId = useSessionStore.getState().getUserId
+        const userId = getUserId()
+        const sessionType = useSessionStore.getState().sessionType
+
+        if (!userId) {
+            console.error('[useProfileActions] No user ID found')
+            return
+        }
+
+        // Only authenticated users can use server-side seeding
+        if (sessionType === 'guest' || userId.startsWith('guest_')) {
+            console.warn('[useProfileActions] Guest users must use client-side seeding')
+            // Fall back to client-side seeding for guests
+            return handleSeedData()
+        }
+
+        setSeeding(true)
+        try {
+            const response = await fetch('/api/seed', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId,
+                    options: {
+                        likedCount: 15,
+                        hiddenCount: 8,
+                        watchLaterCount: 12,
+                        watchHistoryCount: 20,
+                        createCollections: true,
+                    },
+                }),
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to start seed')
+            }
+
+            console.log('[useProfileActions] Server-side seed started:', data.message)
+
+            // Set seeding to false immediately since it's running in background
+            setSeeding(false)
+
+            // Reload data after a delay to show the seeded data
+            setTimeout(() => {
+                console.log('[useProfileActions] Reloading data to show seeded content...')
+                window.location.reload()
+            }, 3000)
+        } catch (error) {
+            console.error('[useProfileActions] Failed to start server-side seed:', error)
+            setSeeding(false)
+        }
+    }
+
     return {
         isSeeding,
-        handleSeedData,
+        handleSeedData, // Client-side (can be interrupted)
+        handleSeedDataServerSide, // Server-side (continues in background)
     }
 }

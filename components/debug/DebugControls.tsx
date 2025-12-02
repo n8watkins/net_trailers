@@ -150,7 +150,7 @@ export default function DebugControls() {
     })
 
     // Profile actions for seed
-    const { isSeeding, handleSeedData } = useProfileActions()
+    const { isSeeding, handleSeedDataServerSide } = useProfileActions()
 
     // Debug operations store for mutual exclusion
     const { isClearing, setClearing, canStartClearing } = useDebugOperationsStore()
@@ -695,13 +695,13 @@ export default function DebugControls() {
                             <>
                                 {/* Seed Data Button */}
                                 <button
-                                    onClick={handleSeedData}
+                                    onClick={handleSeedDataServerSide}
                                     disabled={isSeeding || isClearing}
                                     className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-purple-600/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
                                     title={
                                         isClearing
                                             ? 'Cannot seed while clearing data'
-                                            : 'Seed test data (15 liked, 8 hidden, 12 watch later, 20 watch history, 8 collections)'
+                                            : 'Seed test data in background (15 liked, 8 hidden, 12 watch later, 20 watch history) - continues even if you navigate away'
                                     }
                                 >
                                     <SparklesIcon className="w-3 h-3" />
