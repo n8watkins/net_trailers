@@ -1241,15 +1241,68 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
         throw new Error('Session isolation violation: Session changed during data seeding')
     }
 
+    // Define viewing schedule with multiple entries per day
+    const viewingSchedule: Array<{ daysAgo: number; entriesCount: number }> = [
+        { daysAgo: 0, entriesCount: 8 }, // Today
+        { daysAgo: 1, entriesCount: 6 }, // Yesterday
+        { daysAgo: 2, entriesCount: 5 }, // 2 days ago
+        { daysAgo: 3, entriesCount: 4 }, // 3 days ago
+        { daysAgo: 5, entriesCount: 3 }, // 5 days ago
+        { daysAgo: 7, entriesCount: 3 }, // 1 week ago
+        { daysAgo: 10, entriesCount: 2 }, // 10 days ago
+        { daysAgo: 14, entriesCount: 2 }, // 2 weeks ago
+    ]
+
+    const scheduledEntries: Array<{ daysAgo: number; entryIndex: number }> = []
+    viewingSchedule.forEach((day) => {
+        for (let i = 0; i < day.entriesCount; i++) {
+            scheduledEntries.push({ daysAgo: day.daysAgo, entryIndex: i })
+        }
+    })
+
     for (let i = 0; i < watchContent.length; i++) {
         const item = watchContent[i]
 
         // Add to watch history via the watch history store
         useWatchHistoryStore.getState().addWatchEntry(item.id, item.media_type, item)
 
-        // Manually update watchedAt for older entries to spread them over days
-        if (i > 0) {
-            const watchedAt = now - i * 24 * 60 * 60 * 1000
+        // Assign timestamps based on viewing schedule
+        if (i > 0 && i < scheduledEntries.length) {
+            const schedule = scheduledEntries[i]
+            const daysAgo = schedule.daysAgo
+            const entryIndex = schedule.entryIndex
+
+            const startOfDay = new Date(now)
+            startOfDay.setHours(0, 0, 0, 0)
+            const dayStart = startOfDay.getTime() - daysAgo * 24 * 60 * 60 * 1000
+
+            let watchedAt: number
+            if (daysAgo === 0) {
+                const morningStart = dayStart + 8 * 60 * 60 * 1000
+                const timeRange = now - morningStart
+                const segment = timeRange / 8
+                watchedAt = morningStart + segment * entryIndex + Math.random() * segment
+            } else {
+                const wakingHours = 15
+                const segment = wakingHours / Math.max(schedule.entriesCount || 1, 1)
+                const hour = 8 + segment * entryIndex + Math.random() * segment
+                const minutes = Math.floor(Math.random() * 60)
+                watchedAt = dayStart + hour * 60 * 60 * 1000 + minutes * 60 * 1000
+            }
+
+            const history = useWatchHistoryStore.getState().history
+            const lastEntry = history[history.length - 1]
+            if (lastEntry) {
+                useWatchHistoryStore.setState({
+                    history: history.map((entry) =>
+                        entry.id === lastEntry.id ? { ...entry, watchedAt } : entry
+                    ),
+                })
+            }
+        } else if (i >= scheduledEntries.length) {
+            // Older scattered entries
+            const daysAgo = 15 + i
+            const watchedAt = now - daysAgo * 24 * 60 * 60 * 1000
             const history = useWatchHistoryStore.getState().history
             const lastEntry = history[history.length - 1]
             if (lastEntry) {
