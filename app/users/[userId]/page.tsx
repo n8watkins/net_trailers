@@ -23,7 +23,7 @@ import type { UserList } from '../../../types/collections'
 import type { Ranking } from '../../../types/rankings'
 import type { ThreadSummary, PollSummary, PollOptionSummary } from '../../../types/forum'
 import { LikedContentSection } from '../../../components/profile/LikedContentSection'
-import { WatchLaterSection } from '../../../components/profile/WatchLaterSection'
+import { WatchHistorySection } from '../../../components/profile/WatchHistorySection'
 import { RankingsSection } from '../../../components/profile/RankingsSection'
 import { CollectionsSection } from '../../../components/profile/CollectionsSection'
 import { ForumActivitySection } from '../../../components/profile/ForumActivitySection'
@@ -121,12 +121,27 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
             .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
             .slice(0, 10) // Limit to 10 collections for the profile
     }
-    const watchLaterPreview = Array.isArray(userData.defaultWatchlist)
-        ? (userData.defaultWatchlist as (Movie | TVShow)[]).slice(
-              0,
-              PROFILE_CONFIG.WATCH_LATER_PREVIEW_LIMIT
-          )
-        : []
+    // Fetch watch history from Firestore subcollection if visibility allows
+    let watchHistoryPreview: (Movie | TVShow)[] = []
+    if (visibility.showWatchHistory) {
+        try {
+            const watchHistorySnap = await getDocs(
+                query(
+                    collection(db, 'users', userId, 'watchHistory'),
+                    limit(PROFILE_CONFIG.WATCH_LATER_PREVIEW_LIMIT)
+                )
+            )
+            watchHistoryPreview = watchHistorySnap.docs
+                .map((doc) => {
+                    const data = doc.data()
+                    return data.content as Movie | TVShow
+                })
+                .filter((content): content is Movie | TVShow => Boolean(content))
+        } catch (error) {
+            console.warn('[PublicProfile] Failed to load watch history:', error)
+            watchHistoryPreview = []
+        }
+    }
 
     // Only fetch rankings if visibility allows
     let publicRankings: Ranking[] = []
@@ -329,7 +344,7 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
             pollsCreated: visibility.showPollsCreated ? pollSummaries : [],
             pollsVoted: visibility.showPollsVoted ? votedPollSummaries : [],
         },
-        watchLaterPreview: visibility.showWatchLater ? watchLaterPreview : [],
+        watchHistoryPreview: visibility.showWatchHistory ? watchHistoryPreview : [],
         visibility,
     }
 }
@@ -418,7 +433,7 @@ export default function UserProfilePage() {
     const forumThreadsVoted = profileData?.forum?.threadsVoted ?? []
     const forumPollsCreated = profileData?.forum?.pollsCreated ?? []
     const forumPollsVoted = profileData?.forum?.pollsVoted ?? []
-    const watchLaterPreview = profileData?.watchLaterPreview ?? []
+    const watchHistoryPreview = profileData?.watchHistoryPreview ?? []
     const stats: PublicProfilePayload['stats'] = profileData?.stats ?? {
         totalRankings: publicRankings.length,
         totalLikes: publicRankings.reduce((sum, r) => sum + r.likes, 0),
@@ -525,12 +540,12 @@ export default function UserProfilePage() {
                 <>
                     {/* Bento Grid Layout - only show if at least one section is visible */}
                     {(profileData.visibility.showLikedContent ||
-                        profileData.visibility.showWatchLater) &&
+                        profileData.visibility.showWatchHistory) &&
                         (() => {
                             // Determine if both sections are visible
                             const showBothSections =
                                 profileData.visibility.showLikedContent &&
-                                profileData.visibility.showWatchLater
+                                profileData.visibility.showWatchHistory
                             // Show more items when section has full width
                             const itemLimit = showBothSections ? 6 : 12
 
@@ -548,10 +563,10 @@ export default function UserProfilePage() {
                                             limit={itemLimit}
                                         />
                                     )}
-                                    {profileData.visibility.showWatchLater && (
-                                        <WatchLaterSection
-                                            watchLaterPreview={watchLaterPreview}
-                                            totalCount={watchLaterPreview.length}
+                                    {profileData.visibility.showWatchHistory && (
+                                        <WatchHistorySection
+                                            watchHistoryPreview={watchHistoryPreview}
+                                            totalCount={watchHistoryPreview.length}
                                             userId={userId}
                                             isPublic={true}
                                             limit={itemLimit}

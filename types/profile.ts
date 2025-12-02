@@ -11,7 +11,7 @@ export type AvatarSource = 'google' | 'custom' | 'generated'
 export interface ProfileVisibility {
     enablePublicProfile: boolean // Master toggle - when off, all sections hidden
     showLikedContent: boolean // Show liked movies/shows
-    showWatchLater: boolean // Show watch later preview
+    showWatchHistory: boolean // Show watch history preview
     showRankings: boolean // Show public rankings
     showCollections: boolean // Show shared collections
     showThreads: boolean // Show forum threads created
@@ -26,7 +26,7 @@ export interface ProfileVisibility {
 export const DEFAULT_PROFILE_VISIBILITY: ProfileVisibility = {
     enablePublicProfile: true,
     showLikedContent: true,
-    showWatchLater: true,
+    showWatchHistory: true,
     showRankings: true,
     showCollections: true,
     showThreads: true,

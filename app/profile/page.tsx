@@ -25,8 +25,9 @@ import { useRankingStore } from '../../stores/rankingStore'
 import { useForumStore } from '../../stores/forumStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useProfileStore } from '../../stores/profileStore'
+import { useWatchHistoryStore } from '../../stores/watchHistoryStore'
 import { LikedContentSection } from '../../components/profile/LikedContentSection'
-import { WatchLaterSection } from '../../components/profile/WatchLaterSection'
+import { WatchHistorySection } from '../../components/profile/WatchHistorySection'
 import { RankingsSection } from '../../components/profile/RankingsSection'
 import { CollectionsSection } from '../../components/profile/CollectionsSection'
 import { ForumActivitySection } from '../../components/profile/ForumActivitySection'
@@ -317,7 +318,8 @@ export default function ProfilePage() {
         .slice(0, 2)
 
     const likedContent = userData.likedMovies || []
-    const watchLaterPreview = (userData.defaultWatchlist || []).slice(0, 6)
+    const watchHistory = useWatchHistoryStore((state) => state.history)
+    const watchHistoryPreview = watchHistory.slice(0, 6).map((entry) => entry.content)
     // Filter collections: exclude system collections and empty manual/ai-generated collections
     // TMDB genre-based collections are always shown (content is fetched dynamically)
     const collections = (userData.userCreatedWatchlists || []).filter((c: any) => {
@@ -465,12 +467,12 @@ export default function ProfilePage() {
                 {/* Main Content Area - constrained width like SubPageLayout */}
                 <div className="px-4 sm:px-6 lg:px-8 py-8">
                     <div className="max-w-[1800px] mx-auto space-y-8">
-                        {/* Bento Grid Layout - Liked & Watch Later */}
+                        {/* Bento Grid Layout - Liked & Watch History */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <LikedContentSection likedContent={likedContent} />
-                            <WatchLaterSection
-                                watchLaterPreview={watchLaterPreview}
-                                totalCount={userData.defaultWatchlist.length}
+                            <WatchHistorySection
+                                watchHistoryPreview={watchHistoryPreview}
+                                totalCount={watchHistory.length}
                             />
                         </div>
 
