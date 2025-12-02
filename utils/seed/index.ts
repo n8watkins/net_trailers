@@ -90,6 +90,15 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
     const shuffledContent = getShuffledContent()
     console.log('  🎲 Shuffled content pool:', shuffledContent.length, 'items')
 
+    // Validate we have enough content for all requested seeds
+    const totalNeeded = likedCount + hiddenCount + watchLaterCount + watchHistoryCount
+    if (totalNeeded > shuffledContent.length) {
+        console.warn(
+            `  ⚠️ Warning: Requested ${totalNeeded} items but only ${shuffledContent.length} available in content pool.`
+        )
+        console.warn('  ⚠️ Some categories may receive fewer items than requested.')
+    }
+
     // Track content indices to avoid duplicates
     let contentIndex = 0
 
@@ -226,13 +235,19 @@ export async function clearUserData(): Promise<void> {
     if (isGuest) {
         const guestId = localStorage.getItem('nettrailer_guest_id')
         if (guestId) {
-            // Use GuestStorageService to clear with correct v2 key
+            // Use GuestStorageService to clear data while preserving session
             const { GuestStorageService } = await import('../../services/guestStorageService')
-            GuestStorageService.clearGuestData(guestId)
+            const defaultPrefs = GuestStorageService.clearCurrentGuestData(guestId)
             console.log('  ✅ Cleared guest data from localStorage (v2 key)')
 
-            // Reload empty state from storage
-            await useGuestStore.getState().syncFromLocalStorage?.(guestId)
+            // Update store with empty state
+            useGuestStore.setState({
+                likedMovies: [],
+                hiddenMovies: [],
+                defaultWatchlist: [],
+                userCreatedWatchlists: [],
+                myRatings: [],
+            })
 
             // Clear watch history
             useWatchHistoryStore.getState().clearGuestSession(guestId)
@@ -251,14 +266,56 @@ export async function clearUserData(): Promise<void> {
             console.log('  ✅ Cleared forum threads and polls')
         }
     } else {
-        // For authenticated users, persist changes to Firestore
+        // For authenticated users, persist changes to Firestore FIRST
         const userId = useAuthStore.getState().userId
         if (!userId) {
             console.error('  ❌ No userId found for authenticated user')
             return
         }
 
-        // Clear local state
+        // Persist to Firestore FIRST (so if it fails, local state isn't corrupted)
+        const { auth, db } = await import('../../firebase')
+        const { doc, setDoc } = await import('firebase/firestore')
+
+        if (!auth.currentUser || auth.currentUser.uid !== userId) {
+            console.error('  ❌ No authenticated user or UID mismatch')
+            return
+        }
+
+        try {
+            // Clear Firestore user document
+            const userDocRef = doc(db, 'users', userId)
+            await setDoc(
+                userDocRef,
+                {
+                    defaultWatchlist: [],
+                    likedMovies: [],
+                    hiddenMovies: [],
+                    userCreatedWatchlists: [],
+                    myRatings: [],
+                    lastActive: Date.now(),
+                },
+                { merge: true }
+            )
+            console.log('  ✅ Cleared user data from Firestore')
+
+            // Clear watch history from Firestore
+            const watchHistoryDocRef = doc(db, 'users', userId, 'data', 'watchHistory')
+            await setDoc(
+                watchHistoryDocRef,
+                {
+                    history: [],
+                    updatedAt: Date.now(),
+                },
+                { merge: true }
+            )
+            console.log('  ✅ Cleared watch history from Firestore')
+        } catch (error) {
+            console.error('  ❌ Failed to clear Firestore data:', error)
+            throw new Error('Failed to clear server data. Please try again.')
+        }
+
+        // THEN clear local state (after successful Firestore write)
         useAuthStore.setState({
             likedMovies: [],
             hiddenMovies: [],
@@ -267,43 +324,6 @@ export async function clearUserData(): Promise<void> {
             myRatings: [],
         })
         console.log('  ✅ Cleared local state')
-
-        // Persist to Firestore
-        const { auth, db } = await import('../../firebase')
-        const { doc, setDoc } = await import('firebase/firestore')
-
-        if (auth.currentUser && auth.currentUser.uid === userId) {
-            try {
-                const userDocRef = doc(db, 'users', userId)
-                await setDoc(
-                    userDocRef,
-                    {
-                        defaultWatchlist: [],
-                        likedMovies: [],
-                        hiddenMovies: [],
-                        userCreatedWatchlists: [],
-                        myRatings: [],
-                        lastActive: Date.now(),
-                    },
-                    { merge: true }
-                )
-                console.log('  ✅ Persisted cleared state to Firestore')
-
-                // Clear watch history
-                const watchHistoryDocRef = doc(db, 'users', userId, 'data', 'watchHistory')
-                await setDoc(
-                    watchHistoryDocRef,
-                    {
-                        history: [],
-                        updatedAt: Date.now(),
-                    },
-                    { merge: true }
-                )
-                console.log('  ✅ Cleared watch history from Firestore')
-            } catch (error) {
-                console.error('  ❌ Failed to persist cleared state to Firestore:', error)
-            }
-        }
 
         // Clear local watch history store
         useWatchHistoryStore.getState().clearHistory()

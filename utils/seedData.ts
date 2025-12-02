@@ -1253,10 +1253,15 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
         { daysAgo: 14, entriesCount: 2 }, // 2 weeks ago
     ]
 
-    const scheduledEntries: Array<{ daysAgo: number; entryIndex: number }> = []
+    const scheduledEntries: Array<{ daysAgo: number; entryIndex: number; entriesCount: number }> =
+        []
     viewingSchedule.forEach((day) => {
         for (let i = 0; i < day.entriesCount; i++) {
-            scheduledEntries.push({ daysAgo: day.daysAgo, entryIndex: i })
+            scheduledEntries.push({
+                daysAgo: day.daysAgo,
+                entryIndex: i,
+                entriesCount: day.entriesCount,
+            })
         }
     })
 

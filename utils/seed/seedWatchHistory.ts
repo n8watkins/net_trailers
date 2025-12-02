@@ -70,10 +70,15 @@ export async function seedWatchHistoryContent(options: SeedWatchHistoryOptions):
     ]
 
     // Flatten schedule into individual entries with specific days
-    const scheduledEntries: Array<{ daysAgo: number; entryIndex: number }> = []
+    const scheduledEntries: Array<{ daysAgo: number; entryIndex: number; entriesCount: number }> =
+        []
     viewingSchedule.forEach((day) => {
         for (let i = 0; i < day.entriesCount; i++) {
-            scheduledEntries.push({ daysAgo: day.daysAgo, entryIndex: i })
+            scheduledEntries.push({
+                daysAgo: day.daysAgo,
+                entryIndex: i,
+                entriesCount: day.entriesCount,
+            })
         }
     })
 
@@ -84,7 +89,7 @@ export async function seedWatchHistoryContent(options: SeedWatchHistoryOptions):
         for (let i = 0; i < remaining; i++) {
             // Scatter across older dates (60-120 days ago)
             const daysAgo = 60 + Math.floor(Math.random() * 60)
-            scheduledEntries.push({ daysAgo, entryIndex: 0 })
+            scheduledEntries.push({ daysAgo, entryIndex: 0, entriesCount: 1 })
         }
     }
 
