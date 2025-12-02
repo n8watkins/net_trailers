@@ -90,7 +90,7 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()((set, get) => ({
     lastSyncedAt: null,
     syncError: null,
 
-    addWatchEntry: (contentId, mediaType, content, progress = 0, duration, watchedDuration) => {
+    addWatchEntry: (contentId, mediaType, content) => {
         const now = Date.now()
         const existingEntry = get().history.find(
             (entry) => entry.contentId === contentId && entry.mediaType === mediaType
@@ -104,9 +104,6 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()((set, get) => ({
                         ? {
                               ...entry,
                               watchedAt: now,
-                              progress,
-                              duration,
-                              watchedDuration,
                               content, // Update content in case details changed
                           }
                         : entry
@@ -119,9 +116,6 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()((set, get) => ({
                 contentId,
                 mediaType,
                 watchedAt: now,
-                progress,
-                duration,
-                watchedDuration,
                 content,
             }
 

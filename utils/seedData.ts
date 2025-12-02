@@ -1243,17 +1243,9 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
 
     for (let i = 0; i < watchContent.length; i++) {
         const item = watchContent[i]
-        const progress = Math.random() > 0.5 ? 100 : Math.floor(Math.random() * 90) + 10
 
         // Add to watch history via the watch history store
-        useWatchHistoryStore.getState().addWatchEntry(
-            item.id,
-            item.media_type,
-            item,
-            progress,
-            undefined, // duration
-            undefined // watchedDuration
-        )
+        useWatchHistoryStore.getState().addWatchEntry(item.id, item.media_type, item)
 
         // Manually update watchedAt for older entries to spread them over days
         if (i > 0) {

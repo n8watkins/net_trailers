@@ -52,23 +52,7 @@ export async function seedWatchHistoryContent(options: SeedWatchHistoryOptions):
     for (let i = 0; i < content.length; i++) {
         const item = content[i]
 
-        // Realistic watch progress distribution
-        // 40% fully watched, 30% nearly done (80-99%), 20% half-watched, 10% barely started
-        const rand = Math.random()
-        let progress: number
-        if (rand < 0.4) {
-            progress = 100 // Fully watched
-        } else if (rand < 0.7) {
-            progress = Math.floor(Math.random() * 20) + 80 // 80-99%
-        } else if (rand < 0.9) {
-            progress = Math.floor(Math.random() * 40) + 40 // 40-79%
-        } else {
-            progress = Math.floor(Math.random() * 30) + 5 // 5-34%
-        }
-
-        useWatchHistoryStore
-            .getState()
-            .addWatchEntry(item.id, item.media_type, item, progress, undefined, undefined)
+        useWatchHistoryStore.getState().addWatchEntry(item.id, item.media_type, item)
 
         // Create realistic timestamp distribution
         // More entries in recent days, with multiple views per day
