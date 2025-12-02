@@ -15,15 +15,15 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
-import { validateOrigin } from '../../../../lib/csrfProtection'
+import { validateServerActionOrigin } from '../../../../lib/csrfProtection'
 import { verifyIdToken } from '../../../../lib/firebase-admin'
 import { getAdminDb } from '../../../../lib/firebase-admin'
 
 export async function POST(request: NextRequest) {
     try {
-        // CSRF protection
+        // CSRF protection (using server action validation since we have Headers object)
         const headersList = await headers()
-        if (!validateOrigin(headersList)) {
+        if (!validateServerActionOrigin(headersList)) {
             console.error('[ClearData] ❌ CSRF validation failed')
             return NextResponse.json({ error: 'Invalid origin' }, { status: 403 })
         }
