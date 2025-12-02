@@ -276,8 +276,14 @@ service cloud.firestore {
       allow create: if request.auth != null
                     && request.resource.data.userId == request.auth.uid;
 
-      // Allow delete if authenticated user owns the like
-      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow delete if:
+      // - Authenticated user owns the like, OR
+      // - Authenticated user is the ranking owner (for cascade delete when deleting ranking)
+      allow delete: if request.auth != null && (
+                      request.auth.uid == resource.data.userId
+                      || request.auth.uid == get(/databases/$(database)/documents/ranking_comments/$(resource.data.commentId)).data.userId
+                      || request.auth.uid == get(/databases/$(database)/documents/rankings/$(get(/databases/$(database)/documents/ranking_comments/$(resource.data.commentId)).data.rankingId)).data.userId
+                    );
     }
 
     // Ranking likes collection
@@ -289,8 +295,13 @@ service cloud.firestore {
       allow create: if request.auth != null
                     && request.resource.data.userId == request.auth.uid;
 
-      // Allow delete if authenticated user owns the like
-      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow delete if:
+      // - Authenticated user owns the like, OR
+      // - Authenticated user is the ranking owner (for cascade delete when deleting ranking)
+      allow delete: if request.auth != null && (
+                      request.auth.uid == resource.data.userId
+                      || request.auth.uid == get(/databases/$(database)/documents/rankings/$(resource.data.rankingId)).data.userId
+                    );
     }
 
     // Helper function to validate ranking data structure
