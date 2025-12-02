@@ -767,9 +767,9 @@ export default function DebugControls() {
                                             userName: user?.displayName || '',
                                         })
                                     }
-                                    disabled={sendingEmail !== null || !user?.email}
+                                    disabled={sendingEmail !== null || !user?.email || !isAdmin}
                                     className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-sky-600/20 text-sky-400 border border-sky-500/30 hover:bg-sky-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    title="Send trending content email (pilot template with top 5 movies + TV)"
+                                    title="Send trending content email (pilot template with top 5 movies + TV) - Admin only"
                                 >
                                     <EnvelopeIcon className="w-3 h-3" />
                                     <span className="text-xs">
@@ -786,9 +786,9 @@ export default function DebugControls() {
                                             { demoMode: false }
                                         )
                                     }
-                                    disabled={sendingEmail !== null || !user?.email}
+                                    disabled={sendingEmail !== null || !user?.email || !isAdmin}
                                     className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-purple-600/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    title="Run weekly digest cron (real data comparison, only emails if new trending found)"
+                                    title="Run weekly digest cron (real data comparison, only emails if new trending found) - Admin only"
                                 >
                                     <EnvelopeIcon className="w-3 h-3" />
                                     <span className="text-xs">
@@ -805,9 +805,9 @@ export default function DebugControls() {
                                             { demoMode: true }
                                         )
                                     }
-                                    disabled={sendingEmail !== null || !user?.email}
+                                    disabled={sendingEmail !== null || !user?.email || !isAdmin}
                                     className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-pink-600/20 text-pink-400 border border-pink-500/30 hover:bg-pink-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    title="Run weekly digest cron (demo mode - always finds new items and sends email)"
+                                    title="Run weekly digest cron (demo mode - always finds new items and sends email) - Admin only"
                                 >
                                     <EnvelopeIcon className="w-3 h-3" />
                                     <span className="text-xs">
@@ -836,9 +836,9 @@ export default function DebugControls() {
                                             { demoMode: false }
                                         )
                                     }
-                                    disabled={sendingEmail !== null}
+                                    disabled={sendingEmail !== null || !isAdmin}
                                     className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    title="Test trending digest email (sends to admin only)"
+                                    title="Test trending digest email (sends to admin only) - Admin only"
                                 >
                                     <ClockIcon className="w-3 h-3" />
                                     <span className="text-xs">
@@ -858,9 +858,9 @@ export default function DebugControls() {
                                             'GET'
                                         )
                                     }
-                                    disabled={sendingEmail !== null}
+                                    disabled={sendingEmail !== null || !isAdmin}
                                     className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-teal-600/20 text-teal-400 border border-teal-500/30 hover:bg-teal-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    title="Run collection cache refresh cron (Sundays 2 AM UTC)"
+                                    title="Run collection cache refresh cron (Sundays 2 AM UTC) - Admin only"
                                 >
                                     <ClockIcon className="w-3 h-3" />
                                     <span className="text-xs">
@@ -879,7 +879,7 @@ export default function DebugControls() {
                                             {}
                                         )
                                     }
-                                    disabled={sendingEmail !== null}
+                                    disabled={sendingEmail !== null || !isAdmin}
                                     className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-purple-600/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
                                     title="Test social digest: creates fake comments/likes then sends email (admin only)"
                                 >

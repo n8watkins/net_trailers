@@ -447,26 +447,56 @@ async function createLikeNotification(
     rankingTitle: string
 ): Promise<void> {
     try {
-        // Create notification in user's notifications subcollection (will be batched in daily digest)
-        const notificationId = nanoid(12)
+        // Check if there's already a recent like notification for this ranking
+        // Use a predictable ID based on the ranking to aggregate likes
+        const notificationId = `like_${rankingId}`
         const notificationRef = doc(db, 'users', rankingOwnerId, 'notifications', notificationId)
-        await setDoc(notificationRef, {
-            id: notificationId,
-            userId: rankingOwnerId,
-            type: 'ranking_like',
-            title: `${likerName} liked your ranking`,
-            message: rankingTitle,
-            rankingId,
-            rankingTitle,
-            likerNames: [likerName],
-            emailSent: false,
-            createdAt: Date.now(),
-            isRead: false,
-        })
+        const existingNotification = await getDoc(notificationRef)
 
-        console.log(
-            `🔔 ✅ Created like notification for user ${rankingOwnerId} on ranking "${rankingTitle}"`
-        )
+        if (existingNotification.exists()) {
+            // Update existing notification to add this liker
+            const data = existingNotification.data()
+            const likerNames = data.likerNames || []
+
+            // Only add if not already in the list
+            if (!likerNames.includes(likerName)) {
+                likerNames.push(likerName)
+
+                await updateDoc(notificationRef, {
+                    likerNames,
+                    title:
+                        likerNames.length === 1
+                            ? `${likerNames[0]} liked your ranking`
+                            : likerNames.length === 2
+                              ? `${likerNames[0]} and ${likerNames[1]} liked your ranking`
+                              : `${likerNames[0]} and ${likerNames.length - 1} others liked your ranking`,
+                    createdAt: Date.now(), // Update timestamp to keep it recent
+                })
+
+                console.log(
+                    `🔔 ✅ Updated like notification for user ${rankingOwnerId} on ranking "${rankingTitle}" (${likerNames.length} likers)`
+                )
+            }
+        } else {
+            // Create new notification
+            await setDoc(notificationRef, {
+                id: notificationId,
+                userId: rankingOwnerId,
+                type: 'ranking_like',
+                title: `${likerName} liked your ranking`,
+                message: rankingTitle,
+                rankingId,
+                rankingTitle,
+                likerNames: [likerName],
+                emailSent: false,
+                createdAt: Date.now(),
+                isRead: false,
+            })
+
+            console.log(
+                `🔔 ✅ Created like notification for user ${rankingOwnerId} on ranking "${rankingTitle}"`
+            )
+        }
     } catch (error) {
         console.error('🔔 ❌ Error in createLikeNotification:', error)
         throw error

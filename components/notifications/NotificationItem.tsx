@@ -102,9 +102,9 @@ export default function NotificationItem({ notification }: NotificationItemProps
             case 'system':
                 return 'System'
             case 'ranking_comment':
-                return 'Comment'
+                return 'New Comment 💬'
             case 'ranking_like':
-                return 'Like'
+                return 'New Likes ❤️'
             default:
                 return 'Notification'
         }
@@ -112,6 +112,12 @@ export default function NotificationItem({ notification }: NotificationItemProps
 
     // Extract content title from notification title (remove prefix if present)
     const getContentTitle = () => {
+        // For social notifications, use the ranking title
+        if (notification.type === 'ranking_comment' || notification.type === 'ranking_like') {
+            // @ts-ignore - rankingTitle exists for social notifications
+            return notification.rankingTitle || notification.title || 'Your Ranking'
+        }
+
         // Remove any category prefix from the title
         const prefixes = [
             'Now Trending:',
@@ -132,8 +138,46 @@ export default function NotificationItem({ notification }: NotificationItemProps
         return title
     }
 
+    // Get social notification details
+    const getSocialDetails = () => {
+        if (notification.type === 'ranking_comment') {
+            // @ts-ignore - these fields exist for ranking_comment notifications
+            const commenterName = notification.commenterName
+            // @ts-ignore
+            const commentText = notification.commentText
+            // @ts-ignore
+            const isReply = notification.isReply
+
+            if (isReply) {
+                return `${commenterName} replied to a comment on your ranking`
+            }
+            return commentText || `${commenterName} commented on your ranking`
+        }
+
+        if (notification.type === 'ranking_like') {
+            // @ts-ignore - likerNames exists for ranking_like notifications
+            const likerNames = notification.likerNames as string[] | undefined
+
+            if (likerNames && likerNames.length > 0) {
+                if (likerNames.length === 1) {
+                    return `${likerNames[0]} liked your ranking`
+                } else if (likerNames.length === 2) {
+                    return `${likerNames[0]} and ${likerNames[1]} liked your ranking`
+                } else if (likerNames.length === 3) {
+                    return `${likerNames[0]}, ${likerNames[1]}, and ${likerNames[2]} liked your ranking`
+                } else {
+                    return `${likerNames[0]}, ${likerNames[1]}, and ${likerNames.length - 2} others liked your ranking`
+                }
+            }
+            return 'Someone liked your ranking'
+        }
+
+        return null
+    }
+
     const categoryLabel = getCategoryLabel()
     const contentTitle = getContentTitle()
+    const socialDetails = getSocialDetails()
 
     return (
         <div
@@ -174,18 +218,24 @@ export default function NotificationItem({ notification }: NotificationItemProps
                     </time>
                 </div>
 
-                {/* Content Title */}
+                {/* Content Title - for social notifications, this is the ranking title */}
                 <h4
-                    className={`line-clamp-3 text-lg font-semibold leading-snug ${
+                    className={`line-clamp-2 text-lg font-semibold leading-snug ${
                         notification.isRead ? 'text-gray-300' : 'text-white'
                     }`}
                 >
                     {contentTitle}
                 </h4>
 
-                {/* Message/Description if available */}
-                {notification.message && (
-                    <p className="text-base text-gray-300 line-clamp-2">{notification.message}</p>
+                {/* Social notification details or regular message */}
+                {socialDetails ? (
+                    <p className="text-base text-gray-300 line-clamp-3 italic">{socialDetails}</p>
+                ) : (
+                    notification.message && (
+                        <p className="text-base text-gray-300 line-clamp-2">
+                            {notification.message}
+                        </p>
+                    )
                 )}
             </div>
         </div>
