@@ -16,8 +16,14 @@ export function getShuffledContent(): Content[] {
     return [...sampleMovies, ...sampleTVShows].sort(() => Math.random() - 0.5)
 }
 
-// Helper to get content slice
-export function getContentSlice(start: number, count: number): Content[] {
-    const shuffled = getShuffledContent()
-    return shuffled.slice(start, start + count)
+// Helper to get content slice from a pre-shuffled array or shuffle new one
+// IMPORTANT: To avoid duplicates across multiple seed operations, pass a pre-shuffled
+// array instead of letting this function shuffle on each call
+export function getContentSlice(
+    start: number,
+    count: number,
+    shuffledContent?: Content[]
+): Content[] {
+    const content = shuffledContent || getShuffledContent()
+    return content.slice(start, start + count)
 }

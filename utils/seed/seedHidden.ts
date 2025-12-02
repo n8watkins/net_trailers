@@ -10,10 +10,11 @@ export interface SeedHiddenOptions {
     count: number
     isGuest: boolean
     startIndex?: number
+    shuffledContent?: Content[]
 }
 
 export async function seedHiddenContent(options: SeedHiddenOptions): Promise<void> {
-    const { userId, count, isGuest, startIndex = 0 } = options
+    const { userId, count, isGuest, startIndex = 0, shuffledContent } = options
 
     if (count <= 0) {
         console.log('  ⏭️  Skipping hidden content (count = 0)')
@@ -25,7 +26,7 @@ export async function seedHiddenContent(options: SeedHiddenOptions): Promise<voi
     const { useAuthStore } = await import('../../stores/authStore')
     const { useGuestStore } = await import('../../stores/guestStore')
 
-    const content = getContentSlice(startIndex, count)
+    const content = getContentSlice(startIndex, count, shuffledContent)
 
     for (const item of content) {
         if (isGuest) {

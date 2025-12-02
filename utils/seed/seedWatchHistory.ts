@@ -2,16 +2,19 @@
  * Seed Watch History
  */
 
+import { Content } from '../../typings'
 import { getContentSlice } from './sampleContent'
 
 export interface SeedWatchHistoryOptions {
     userId: string
     count: number
     isGuest: boolean
+    startIndex?: number
+    shuffledContent?: Content[]
 }
 
 export async function seedWatchHistoryContent(options: SeedWatchHistoryOptions): Promise<void> {
-    const { userId, count, isGuest } = options
+    const { userId, count, isGuest, startIndex = 0, shuffledContent } = options
 
     if (count <= 0) {
         console.log('  ⏭️  Skipping watch history (count = 0)')
@@ -22,6 +25,17 @@ export async function seedWatchHistoryContent(options: SeedWatchHistoryOptions):
 
     const { useWatchHistoryStore } = await import('../../stores/watchHistoryStore')
 
+    // SESSION ISOLATION: Verify we're seeding for the correct user
+    const currentSessionId = useWatchHistoryStore.getState().currentSessionId
+    if (currentSessionId && currentSessionId !== userId) {
+        console.error(
+            `  ❌ Session isolation violation! Current session: ${currentSessionId}, attempting to seed for: ${userId}`
+        )
+        throw new Error(
+            'Cannot seed watch history: session ID mismatch. Another user session is active.'
+        )
+    }
+
     // Clear existing and set session
     useWatchHistoryStore.getState().clearHistory()
     useWatchHistoryStore.setState({
@@ -30,7 +44,7 @@ export async function seedWatchHistoryContent(options: SeedWatchHistoryOptions):
         syncError: null,
     })
 
-    const content = getContentSlice(0, count)
+    const content = getContentSlice(startIndex, count, shuffledContent)
     const now = Date.now()
 
     for (let i = 0; i < content.length; i++) {
