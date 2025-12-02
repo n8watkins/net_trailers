@@ -343,31 +343,88 @@ export async function updateRanking(
 }
 
 /**
- * Delete ranking
+ * Delete ranking and all associated data (comments, likes, views)
  */
 export async function deleteRanking(userId: string, rankingId: string): Promise<void> {
     validateUserId(userId)
     validateRankingId(rankingId)
 
-    await runTransaction(db, async (transaction) => {
-        const rankingRef = getRankingDocRef(rankingId)
-        const rankingDoc = await transaction.get(rankingRef)
+    // First verify ownership and get ranking data
+    const rankingRef = getRankingDocRef(rankingId)
+    const rankingDoc = await getDoc(rankingRef)
 
-        if (!rankingDoc.exists()) {
-            throw new NotFoundError('Ranking', rankingId)
-        }
+    if (!rankingDoc.exists()) {
+        throw new NotFoundError('Ranking', rankingId)
+    }
 
-        const ranking = rankingDoc.data() as Ranking
-        if (ranking.userId !== userId) {
-            throw new UnauthorizedError('delete this ranking')
-        }
+    const ranking = rankingDoc.data() as Ranking
+    if (ranking.userId !== userId) {
+        throw new UnauthorizedError('delete this ranking')
+    }
 
-        // Delete ranking
-        transaction.delete(rankingRef)
+    // Delete all comments associated with this ranking
+    const commentsRef = collection(db, COLLECTIONS.comments)
+    const commentsQuery = query(commentsRef, where('rankingId', '==', rankingId))
+    const commentsSnapshot = await getDocs(commentsQuery)
 
-        // Note: Comments, likes, and views will be orphaned but that's OK
-        // Could add cleanup job later, or use Firestore security rules to cascade
+    // Delete comments in batches (Firestore batch limit is 500 operations)
+    const commentIds: string[] = []
+    commentsSnapshot.forEach((doc) => {
+        commentIds.push(doc.id)
     })
+
+    // Delete comments, comment likes, and the ranking in batches
+    let batch = writeBatch(db)
+    let operations = 0
+
+    // Delete all comments
+    for (const commentId of commentIds) {
+        const commentRef = doc(db, COLLECTIONS.comments, commentId)
+        batch.delete(commentRef)
+        operations++
+
+        // Delete comment likes for this comment
+        const commentLikesQuery = query(
+            collection(db, COLLECTIONS.commentLikes),
+            where('commentId', '==', commentId)
+        )
+        const commentLikesSnapshot = await getDocs(commentLikesQuery)
+        commentLikesSnapshot.forEach((likeDoc) => {
+            batch.delete(likeDoc.ref)
+            operations++
+        })
+
+        // Commit batch if we're approaching the limit
+        if (operations >= 450) {
+            await batch.commit()
+            batch = writeBatch(db)
+            operations = 0
+        }
+    }
+
+    // Delete ranking likes
+    const likesQuery = query(collection(db, COLLECTIONS.likes), where('rankingId', '==', rankingId))
+    const likesSnapshot = await getDocs(likesQuery)
+    likesSnapshot.forEach((likeDoc) => {
+        batch.delete(likeDoc.ref)
+        operations++
+
+        if (operations >= 450) {
+            // Commit and create new batch if needed
+            batch.commit()
+            batch = writeBatch(db)
+            operations = 0
+        }
+    })
+
+    // Delete the ranking itself
+    batch.delete(rankingRef)
+    operations++
+
+    // Commit final batch
+    if (operations > 0) {
+        await batch.commit()
+    }
 }
 
 /**
