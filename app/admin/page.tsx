@@ -7,7 +7,8 @@ import { useSessionStore } from '@/stores/sessionStore'
 import { getAccountStats } from '@/utils/accountLimits'
 import { Users, Settings, PlayCircle, RefreshCw, CalendarDays, Eye } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
-import type { AdminStats, TrendingStats, ActivityStats, ActiveUser } from '@/types/admin'
+import type { AdminStats, ActivityStats, ActiveUser } from '@/types/admin'
+import CronJobsPanel from '@/components/admin/CronJobsPanel'
 
 // Admin check is done server-side via API routes
 // Client-side verification happens through API calls, not exposed UIDs
@@ -21,7 +22,6 @@ export default function AdminDashboard() {
     const isAuth = sessionType === 'authenticated'
     const { showSuccess, showError } = useToast()
     const [stats, setStats] = useState<AdminStats | null>(null)
-    const [trendingStats, setTrendingStats] = useState<TrendingStats | null>(null)
     const [activityStats, setActivityStats] = useState<ActivityStats | null>(null)
     const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([])
     const [loading, setLoading] = useState(false)
@@ -168,13 +168,12 @@ export default function AdminDashboard() {
                 })
                 if (trendingResponse.ok) {
                     const trendingData = await trendingResponse.json()
-                    setTrendingStats(trendingData)
                     setLastTrendingRun(trendingData.lastRun ? new Date(trendingData.lastRun) : null)
                 } else {
                     console.error('Failed to load trending stats')
                 }
-            } catch (error) {
-                console.error('Error loading trending stats:', error)
+            } catch (_error) {
+                console.error('Error loading trending stats:', _error)
             }
 
             // Load activity stats
@@ -190,23 +189,25 @@ export default function AdminDashboard() {
 
                     // Get unique users from activities
                     const userMap = new Map<string, ActiveUser>()
-                    activityData.activities.forEach((activity: any) => {
-                        if (activity.userId && activity.userEmail) {
-                            if (!userMap.has(activity.userId)) {
-                                userMap.set(activity.userId, {
-                                    userId: activity.userId,
-                                    email: activity.userEmail,
-                                    lastActive: activity.timestamp,
-                                    activityCount: 0,
-                                })
-                            }
-                            const user = userMap.get(activity.userId)!
-                            user.activityCount++
-                            if (activity.timestamp > user.lastActive) {
-                                user.lastActive = activity.timestamp
+                    activityData.activities.forEach(
+                        (activity: { userId?: string; userEmail?: string; timestamp: number }) => {
+                            if (activity.userId && activity.userEmail) {
+                                if (!userMap.has(activity.userId)) {
+                                    userMap.set(activity.userId, {
+                                        userId: activity.userId,
+                                        email: activity.userEmail,
+                                        lastActive: activity.timestamp,
+                                        activityCount: 0,
+                                    })
+                                }
+                                const user = userMap.get(activity.userId)!
+                                user.activityCount++
+                                if (activity.timestamp > user.lastActive) {
+                                    user.lastActive = activity.timestamp
+                                }
                             }
                         }
-                    })
+                    )
 
                     // Sort by most recent activity
                     const users = Array.from(userMap.values()).sort(
@@ -265,7 +266,7 @@ export default function AdminDashboard() {
             } else {
                 showError(result.error || 'Failed to run trending check')
             }
-        } catch (error) {
+        } catch (_error) {
             showError('Failed to run trending check')
         } finally {
             setLoading(false)
@@ -305,7 +306,7 @@ export default function AdminDashboard() {
             } else {
                 showError('Failed to reset accounts')
             }
-        } catch (error) {
+        } catch (_error) {
             showError('Failed to reset accounts')
         } finally {
             setLoading(false)
@@ -611,6 +612,11 @@ export default function AdminDashboard() {
                     ) : (
                         <p className="text-gray-400">No user activity recorded this month</p>
                     )}
+                </div>
+
+                {/* Cron Jobs Management */}
+                <div className="mt-8">
+                    <CronJobsPanel />
                 </div>
 
                 {/* System Logs */}
