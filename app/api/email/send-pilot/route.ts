@@ -78,16 +78,29 @@ async function fetchTrendingContent(): Promise<{ movies: Content[]; tvShows: Con
 /**
  * POST /api/email/send-pilot
  *
- * Send a pilot email with trending content
+ * Send a pilot email with trending content (ADMIN ONLY - sends to admin's email)
  */
 async function handleSendPilot(request: NextRequest, userId: string): Promise<NextResponse> {
     try {
+        // ADMIN ONLY: Check if user is admin
+        const ADMIN_UID = process.env.NEXT_PUBLIC_ADMIN_UID
+        if (!ADMIN_UID || userId !== ADMIN_UID) {
+            console.error('[PilotEmail] User is not admin:', userId)
+            return NextResponse.json(
+                { error: 'Forbidden - Admin access required' },
+                { status: 403 }
+            )
+        }
+
         const body = await request.json()
         const { email, userName } = body
 
         if (!email) {
             return NextResponse.json({ error: 'Email is required' }, { status: 400 })
         }
+
+        // ADMIN ONLY: Force email to be admin's email (ignore body.email for safety)
+        console.log('[PilotEmail] Forcing email to admin user email (ignoring body.email)')
 
         // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/

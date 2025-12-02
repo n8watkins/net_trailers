@@ -6,11 +6,21 @@ const CRON_SECRET = process.env.CRON_SECRET
 /**
  * POST /api/email/test-weekly-digest
  *
- * Test endpoint for weekly digest - calls the cron job internally
+ * Test endpoint for weekly digest - calls the cron job internally (ADMIN ONLY)
  * Requires authentication (not CRON_SECRET)
  */
 async function handleTestWeeklyDigest(request: NextRequest, userId: string): Promise<NextResponse> {
     try {
+        // ADMIN ONLY: Check if user is admin
+        const ADMIN_UID = process.env.NEXT_PUBLIC_ADMIN_UID
+        if (!ADMIN_UID || userId !== ADMIN_UID) {
+            console.error('[TestWeeklyDigest] User is not admin:', userId)
+            return NextResponse.json(
+                { error: 'Forbidden - Admin access required' },
+                { status: 403 }
+            )
+        }
+
         const body = await request.json()
         const { demoMode = false } = body
 
@@ -21,9 +31,15 @@ async function handleTestWeeklyDigest(request: NextRequest, userId: string): Pro
             )
         }
 
-        // Call the cron endpoint internally with CRON_SECRET
+        // Call the cron endpoint internally with CRON_SECRET and adminOnly=true
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-        const cronUrl = `${baseUrl}/api/cron/update-trending${demoMode ? '?demo=true' : ''}`
+        const params = new URLSearchParams()
+        params.set('adminOnly', 'true') // ADMIN ONLY: Only process admin user
+        if (demoMode) params.set('demo', 'true')
+
+        const cronUrl = `${baseUrl}/api/cron/update-trending?${params.toString()}`
+
+        console.log(`[TestWeeklyDigest] Calling trending cron with adminOnly=true: ${cronUrl}`)
 
         const response = await fetch(cronUrl, {
             method: 'GET',
