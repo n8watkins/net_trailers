@@ -214,6 +214,9 @@ async function seedUserDataServerSide(userId: string, options: SeedOptions): Pro
 
 /**
  * Seed collections using Admin SDK
+ *
+ * Stores collections in the userCreatedWatchlists array in the main user document,
+ * matching the client-side behavior
  */
 async function seedCollectionsServerSide(adminDb: any, userId: string): Promise<void> {
     const { nanoid } = await import('nanoid')
@@ -294,6 +297,12 @@ async function seedCollectionsServerSide(adminDb: any, userId: string): Promise<
     ]
 
     const userRef = adminDb.collection('users').doc(userId)
+    const userDoc = await userRef.get()
+    const userData = userDoc.data()
+
+    // Get existing collections or start with empty array
+    const existingCollections = userData?.userCreatedWatchlists || []
+    const newCollections = []
 
     for (const template of collectionTemplates) {
         const collectionId = nanoid(12)
@@ -319,10 +328,17 @@ async function seedCollectionsServerSide(adminDb: any, userId: string): Promise<
             updatedAt: Date.now(),
         }
 
-        // Store in subcollection
-        await userRef.collection('customRows').doc(collectionId).set(collection)
+        newCollections.push(collection)
         console.log(`    ✅ Created collection: ${collection.name} (${items.length} items)`)
     }
+
+    // Store all collections in the userCreatedWatchlists array (matching client-side behavior)
+    await userRef.update({
+        userCreatedWatchlists: [...existingCollections, ...newCollections],
+        lastActive: Date.now(),
+    })
+
+    console.log(`    📦 Stored ${newCollections.length} collections in userCreatedWatchlists`)
 }
 
 /**
