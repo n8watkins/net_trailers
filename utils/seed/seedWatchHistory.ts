@@ -47,47 +47,82 @@ export async function seedWatchHistoryContent(options: SeedWatchHistoryOptions):
     const content = getContentSlice(startIndex, count, shuffledContent)
     const now = Date.now()
 
-    // Create more realistic watch history with multiple entries per day
-    // Distribution: More recent activity, with varied times throughout each day
+    // Create realistic watch history with MULTIPLE entries per day
+    // Strategy: Group entries by specific calendar days, then assign random times within each day
+
+    // Define our viewing schedule (days ago -> number of entries)
+    // This ensures multiple entries land on the same calendar day
+    const viewingSchedule: Array<{ daysAgo: number; entriesCount: number }> = [
+        { daysAgo: 0, entriesCount: 8 }, // Today: 8 entries
+        { daysAgo: 1, entriesCount: 6 }, // Yesterday: 6 entries
+        { daysAgo: 2, entriesCount: 5 }, // 2 days ago: 5 entries
+        { daysAgo: 3, entriesCount: 4 }, // 3 days ago: 4 entries
+        { daysAgo: 5, entriesCount: 3 }, // 5 days ago: 3 entries
+        { daysAgo: 7, entriesCount: 3 }, // 1 week ago: 3 entries
+        { daysAgo: 10, entriesCount: 2 }, // 10 days ago: 2 entries
+        { daysAgo: 14, entriesCount: 2 }, // 2 weeks ago: 2 entries
+        { daysAgo: 20, entriesCount: 2 }, // ~3 weeks ago: 2 entries
+        { daysAgo: 28, entriesCount: 2 }, // 4 weeks ago: 2 entries
+        { daysAgo: 35, entriesCount: 1 }, // 5 weeks ago: 1 entry
+        { daysAgo: 42, entriesCount: 1 }, // 6 weeks ago: 1 entry
+        { daysAgo: 50, entriesCount: 1 }, // ~7 weeks ago: 1 entry
+        { daysAgo: 58, entriesCount: 1 }, // ~8 weeks ago: 1 entry
+    ]
+
+    // Flatten schedule into individual entries with specific days
+    const scheduledEntries: Array<{ daysAgo: number; entryIndex: number }> = []
+    viewingSchedule.forEach((day) => {
+        for (let i = 0; i < day.entriesCount; i++) {
+            scheduledEntries.push({ daysAgo: day.daysAgo, entryIndex: i })
+        }
+    })
+
+    // Add remaining entries as scattered older content
+    const totalScheduled = scheduledEntries.length
+    if (content.length > totalScheduled) {
+        const remaining = content.length - totalScheduled
+        for (let i = 0; i < remaining; i++) {
+            // Scatter across older dates (60-120 days ago)
+            const daysAgo = 60 + Math.floor(Math.random() * 60)
+            scheduledEntries.push({ daysAgo, entryIndex: 0 })
+        }
+    }
+
+    // Process all content with assigned timestamps
     for (let i = 0; i < content.length; i++) {
         const item = content[i]
-
         useWatchHistoryStore.getState().addWatchEntry(item.id, item.media_type, item)
 
-        // Create realistic timestamp distribution
-        // More entries in recent days, with multiple views per day
-        if (i > 0) {
+        if (i > 0 && i < scheduledEntries.length) {
+            const schedule = scheduledEntries[i]
+            const daysAgo = schedule.daysAgo
+            const entryIndex = schedule.entryIndex
+
+            // Start of the day (midnight)
+            const startOfDay = new Date(now)
+            startOfDay.setHours(0, 0, 0, 0)
+            const dayStart = startOfDay.getTime() - daysAgo * 24 * 60 * 60 * 1000
+
+            // Generate time within the day based on entry index
+            // Multiple entries on same day get different times
             let watchedAt: number
 
-            // Distribution strategy:
-            // - First 20%: Today (spread throughout the day)
-            // - Next 30%: Last 3 days (2-4 entries per day)
-            // - Next 30%: Last 2 weeks (1-2 entries per day)
-            // - Last 20%: Last 2 months (scattered)
-
-            const percentile = i / content.length
-
-            if (percentile < 0.2) {
-                // Today - spread throughout the day (morning to now)
-                const hoursAgo = Math.random() * 16 // 0-16 hours ago
-                watchedAt = now - hoursAgo * 60 * 60 * 1000
-            } else if (percentile < 0.5) {
-                // Last 3 days - multiple entries per day
-                const daysAgo = 1 + Math.random() * 2 // 1-3 days ago
-                const hourOfDay = Math.floor(Math.random() * 16) + 8 // 8am-11pm
-                watchedAt = now - daysAgo * 24 * 60 * 60 * 1000 + hourOfDay * 60 * 60 * 1000
-            } else if (percentile < 0.8) {
-                // Last 2 weeks
-                const daysAgo = 3 + Math.random() * 11 // 3-14 days ago
-                const hourOfDay = Math.floor(Math.random() * 14) + 10 // 10am-11pm
-                watchedAt = now - daysAgo * 24 * 60 * 60 * 1000 + hourOfDay * 60 * 60 * 1000
+            if (daysAgo === 0) {
+                // Today: spread from morning (8am) to now
+                const morningStart = dayStart + 8 * 60 * 60 * 1000
+                const timeRange = now - morningStart
+                const segment = timeRange / 8 // Divide into segments for each entry
+                watchedAt = morningStart + segment * entryIndex + Math.random() * segment
             } else {
-                // Last 2 months - scattered
-                const daysAgo = 14 + Math.random() * 46 // 14-60 days ago
-                const hourOfDay = Math.floor(Math.random() * 12) + 10 // 10am-9pm
-                watchedAt = now - daysAgo * 24 * 60 * 60 * 1000 + hourOfDay * 60 * 60 * 1000
+                // Other days: spread throughout waking hours (8am - 11pm = 15 hours)
+                const wakingHours = 15
+                const segment = wakingHours / Math.max(schedule.entriesCount || 1, 1) // Hours per entry
+                const hour = 8 + segment * entryIndex + Math.random() * segment
+                const minutes = Math.floor(Math.random() * 60)
+                watchedAt = dayStart + hour * 60 * 60 * 1000 + minutes * 60 * 1000
             }
 
+            // Update the timestamp
             const history = useWatchHistoryStore.getState().history
             const lastEntry = history[history.length - 1]
             if (lastEntry) {

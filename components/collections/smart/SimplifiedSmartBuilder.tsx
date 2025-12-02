@@ -584,7 +584,7 @@ export function SimplifiedSmartBuilder({
                             <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-700/50">
                                 <button
                                     onClick={onClose}
-                                    className="px-6 py-2 bg-zinc-900/60 backdrop-blur-lg border border-zinc-700/50 text-white rounded-lg hover:bg-zinc-800/80 hover:border-zinc-600 transition-all duration-300"
+                                    className="px-6 py-2 bg-blue-950/60 backdrop-blur-lg border border-blue-800/50 text-white rounded-lg hover:bg-blue-900/80 hover:border-blue-700 transition-all duration-300"
                                 >
                                     Cancel
                                 </button>
