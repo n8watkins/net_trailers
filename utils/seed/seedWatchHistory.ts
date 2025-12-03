@@ -52,26 +52,34 @@ export async function seedWatchHistoryContent(options: SeedWatchHistoryOptions):
     console.log(`     Current time: ${new Date(now).toLocaleString()}`)
 
     // Create realistic watch history with MULTIPLE entries per day
-    // Strategy: Group entries by specific calendar days, then assign random times within each day
+    // Strategy: 2 months of viewing history with more entries on recent days
 
-    // Define our viewing schedule (days ago -> number of entries)
-    // This ensures multiple entries land on the same calendar day
-    const viewingSchedule: Array<{ daysAgo: number; entriesCount: number }> = [
-        { daysAgo: 0, entriesCount: 8 }, // Today: 8 entries
-        { daysAgo: 1, entriesCount: 6 }, // Yesterday: 6 entries
-        { daysAgo: 2, entriesCount: 5 }, // 2 days ago: 5 entries
-        { daysAgo: 3, entriesCount: 4 }, // 3 days ago: 4 entries
-        { daysAgo: 5, entriesCount: 3 }, // 5 days ago: 3 entries
-        { daysAgo: 7, entriesCount: 3 }, // 1 week ago: 3 entries
-        { daysAgo: 10, entriesCount: 2 }, // 10 days ago: 2 entries
-        { daysAgo: 14, entriesCount: 2 }, // 2 weeks ago: 2 entries
-        { daysAgo: 20, entriesCount: 2 }, // ~3 weeks ago: 2 entries
-        { daysAgo: 28, entriesCount: 2 }, // 4 weeks ago: 2 entries
-        { daysAgo: 35, entriesCount: 1 }, // 5 weeks ago: 1 entry
-        { daysAgo: 42, entriesCount: 1 }, // 6 weeks ago: 1 entry
-        { daysAgo: 50, entriesCount: 1 }, // ~7 weeks ago: 1 entry
-        { daysAgo: 58, entriesCount: 1 }, // ~8 weeks ago: 1 entry
-    ]
+    // Define viewing schedule - 2 months of realistic viewing history
+    // Strategy: More entries on recent days, gradually decreasing over 60 days
+    const viewingSchedule: Array<{ daysAgo: number; entriesCount: number }> = []
+
+    // Past week (days 0-6): Heavy viewing (3-4 entries per day) = ~25 entries
+    for (let day = 0; day <= 6; day++) {
+        viewingSchedule.push({ daysAgo: day, entriesCount: day === 0 ? 4 : 3 })
+    }
+
+    // Week 2 (days 7-13): Moderate viewing (2 entries per day) = 14 entries
+    for (let day = 7; day <= 13; day++) {
+        viewingSchedule.push({ daysAgo: day, entriesCount: 2 })
+    }
+
+    // Weeks 3-4 (days 14-27): Light viewing (1-2 entries per day) = ~21 entries
+    for (let day = 14; day <= 27; day++) {
+        viewingSchedule.push({ daysAgo: day, entriesCount: day % 2 === 0 ? 2 : 1 })
+    }
+
+    // Weeks 5-8 (days 28-55): Sparse viewing (1 entry every 2 days) = ~14 entries
+    for (let day = 28; day <= 55; day += 2) {
+        viewingSchedule.push({ daysAgo: day, entriesCount: 1 })
+    }
+
+    // Older (days 56-60): Very sparse = 1 entry
+    viewingSchedule.push({ daysAgo: 60, entriesCount: 1 })
 
     // Flatten schedule into individual entries with specific days
     const scheduledEntries: Array<{ daysAgo: number; entryIndex: number; entriesCount: number }> =
