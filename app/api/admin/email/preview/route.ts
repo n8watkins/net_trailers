@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withAuth } from '../../../../../lib/auth-middleware'
 import { getAdminDb } from '../../../../../lib/firebase-admin'
-import { validateEmailTemplate } from '../../../../../lib/email/email-validation'
+import {
+    validateEmailTemplate,
+    CUSTOM_HTML_SANITIZATION_CONFIG,
+} from '../../../../../lib/email/email-validation'
 import {
     renderTrendingPreview,
     renderSocialPreview,
     renderAnnouncementPreview,
     renderCustomPreview,
 } from '../../../../../lib/email/preview-renderer'
+import DOMPurify from 'isomorphic-dompurify'
 
 /**
  * POST /api/admin/email/preview
@@ -64,6 +68,12 @@ async function handlePreviewEmail(request: NextRequest, userId: string): Promise
             `👁️ [AdminEmailPreview] Generating ${template} preview for user: ${targetUserId}`
         )
 
+        // Sanitize custom HTML content to prevent XSS attacks (defense-in-depth)
+        const sanitizedHtmlContent =
+            template === 'custom' && customHtmlContent
+                ? DOMPurify.sanitize(customHtmlContent, CUSTOM_HTML_SANITIZATION_CONFIG)
+                : customHtmlContent
+
         const db = getAdminDb()
 
         // Fetch target user data
@@ -117,7 +127,7 @@ async function handlePreviewEmail(request: NextRequest, userId: string): Promise
                 html = await renderCustomPreview({
                     userName,
                     subject: subject!,
-                    htmlContent: customHtmlContent!,
+                    htmlContent: sanitizedHtmlContent!,
                 })
                 break
             }

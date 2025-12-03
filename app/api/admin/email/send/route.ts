@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { withAuth } from '../../../../../lib/auth-middleware'
 import { getAdminDb } from '../../../../../lib/firebase-admin'
 import { EmailService } from '../../../../../lib/email/email-service'
-import { validateEmailTemplate } from '../../../../../lib/email/email-validation'
+import {
+    validateEmailTemplate,
+    CUSTOM_HTML_SANITIZATION_CONFIG,
+} from '../../../../../lib/email/email-validation'
 import {
     checkAdminEmailRateLimit,
     checkRecipientEmailRateLimit,
@@ -43,9 +46,23 @@ async function handleSendEmail(request: NextRequest, userId: string): Promise<Ne
             customHtmlContent?: string
         } = body
 
+        const MAX_RECIPIENTS_PER_REQUEST = 100
+
         if (!template || !userIds || userIds.length === 0) {
             return NextResponse.json(
                 { error: 'Missing required fields: template, userIds' },
+                { status: 400 }
+            )
+        }
+
+        // Prevent overwhelming Resend API and excessive costs
+        if (userIds.length > MAX_RECIPIENTS_PER_REQUEST) {
+            return NextResponse.json(
+                {
+                    error: `Too many recipients (max ${MAX_RECIPIENTS_PER_REQUEST} per request)`,
+                    limit: MAX_RECIPIENTS_PER_REQUEST,
+                    requested: userIds.length,
+                },
                 { status: 400 }
             )
         }
@@ -93,35 +110,7 @@ async function handleSendEmail(request: NextRequest, userId: string): Promise<Ne
         // Sanitize custom HTML content to prevent XSS attacks
         const sanitizedHtmlContent =
             template === 'custom' && customHtmlContent
-                ? DOMPurify.sanitize(customHtmlContent, {
-                      ALLOWED_TAGS: [
-                          'p',
-                          'br',
-                          'strong',
-                          'em',
-                          'u',
-                          'h1',
-                          'h2',
-                          'h3',
-                          'ul',
-                          'ol',
-                          'li',
-                          'a',
-                      ],
-                      ALLOWED_ATTR: ['href', 'title'], // Only allow href and title attributes
-                      ALLOWED_URI_REGEXP: /^https:\/\//, // HTTPS only, no HTTP
-                      FORBID_ATTR: ['style', 'class', 'id', 'onclick', 'onerror'], // Block inline styles/scripts
-                      FORBID_TAGS: [
-                          'script',
-                          'style',
-                          'iframe',
-                          'object',
-                          'embed',
-                          'form',
-                          'input',
-                      ],
-                      ALLOW_DATA_ATTR: false,
-                  })
+                ? DOMPurify.sanitize(customHtmlContent, CUSTOM_HTML_SANITIZATION_CONFIG)
                 : customHtmlContent
 
         console.log(`📧 [AdminEmailSend] Sending ${template} emails to ${userIds.length} user(s)`)
@@ -271,7 +260,7 @@ async function handleSendEmail(request: NextRequest, userId: string): Promise<Ne
 
         console.log(`📧 [AdminEmailSend] Completed: ${emailsSent} sent, ${errors.length} errors`)
 
-        // Create email history record
+        // Create email history record (minimal data for GDPR compliance)
         try {
             const historyRecord = {
                 template,
@@ -279,19 +268,18 @@ async function handleSendEmail(request: NextRequest, userId: string): Promise<Ne
                 recipientCount: userIds.length,
                 successCount: emailsSent,
                 failureCount: errors.length,
-                recipients: users.map((u) => ({
-                    userId: u.userId,
-                    email: u.email || '',
-                    displayName: u.displayName,
-                })),
-                errors: errors.length > 0 ? errors : [],
+                // Store only first 10 errors to prevent large documents
+                errors: errors.length > 0 ? errors.slice(0, 10) : [],
                 sentBy: userId,
                 sentAt: Date.now(),
                 metadata: {
                     customMessage: customMessage || null,
-                    customHtmlContent: sanitizedHtmlContent || null,
+                    // Don't store HTML content in history (too large, unnecessary)
+                    customHtmlContent: null,
                 },
             }
+            // Note: Deliberately not storing recipient emails to minimize PII exposure
+            // Recipient count provides sufficient audit trail
 
             await db.collection('admin_emails').add(historyRecord)
             console.log(`📧 [AdminEmailSend] History record created`)

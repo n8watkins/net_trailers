@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { XMarkIcon, DevicePhoneMobileIcon, ComputerDesktopIcon } from '@heroicons/react/24/outline'
 import { useToast } from '@/hooks/useToast'
+import { authenticatedFetch } from '@/utils/authenticatedFetch'
 import type { EmailTemplate } from './EmailComposer'
 
 interface EmailPreviewModalProps {
@@ -49,7 +50,7 @@ export default function EmailPreviewModal({
             // Use first selected user for preview
             const targetUserId = userIds[0]
 
-            const response = await fetch('/api/admin/email/preview', {
+            const response = await authenticatedFetch('/api/admin/email/preview', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
