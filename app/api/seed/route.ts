@@ -546,7 +546,7 @@ async function seedRankingsServerSide(
             id: rankingId,
             userId,
             userName,
-            userUsername: userName.toLowerCase().replace(/\s+/g, '_'),
+            userUsername: null, // Don't set userUsername - let it use userId for profile links
             userAvatar: userAvatar || null,
             title: title,
             description: `My personal ranking of ${title.toLowerCase()}`,

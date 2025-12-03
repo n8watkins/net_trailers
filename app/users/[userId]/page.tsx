@@ -55,18 +55,36 @@ const sortByRecency = <T extends { updatedAt?: number | null; createdAt?: number
 }
 
 async function loadProfileFromClient(userId: string): Promise<PublicProfilePayload> {
-    // Fetch both user document and profile document
-    const [userSnap, profileSnap] = await Promise.all([
-        getDoc(doc(db, 'users', userId)),
-        getDoc(doc(db, 'profiles', userId)),
-    ])
+    // Fetch profile document (public) and try to fetch user document (may fail if not owner)
+    let userData: Record<string, any> = {}
+    let profileData: Record<string, any> = {}
 
-    if (!userSnap.exists() && !profileSnap.exists()) {
+    // Always fetch profile (public)
+    const profileSnap = await getDoc(doc(db, 'profiles', userId))
+    profileData = profileSnap.exists() ? profileSnap.data() || {} : {}
+
+    // Try to fetch user document (will fail if not the owner due to security rules)
+    try {
+        const userSnap = await getDoc(doc(db, 'users', userId))
+        userData = userSnap.exists() ? userSnap.data() || {} : {}
+    } catch (error) {
+        // Permission denied - this is expected when viewing other users' profiles
+        // Only the owner can read their /users/{userId} document
+        if (error instanceof FirebaseError && error.code === 'permission-denied') {
+            // This is fine - we'll use profile data only
+            userData = {}
+        } else {
+            // Unexpected error - log it
+            console.warn('[PublicProfile] Error fetching user document:', error)
+            userData = {}
+        }
+    }
+
+    // Check if we have any data at all
+    if (Object.keys(userData).length === 0 && Object.keys(profileData).length === 0) {
         throw new Error('User not found')
     }
 
-    const userData = userSnap.exists() ? userSnap.data() || {} : {}
-    const profileData = profileSnap.exists() ? profileSnap.data() || {} : {}
     const legacyProfile = userData.profile || {}
 
     // Get visibility settings - default to all visible for backward compatibility
