@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useToast } from '@/hooks/useToast'
+import { authenticatedFetch } from '@/utils/authenticatedFetch'
 import UserSelector from './UserSelector'
 import EmailPreviewModal from './EmailPreviewModal'
 import RichTextEditor from './RichTextEditor'
@@ -45,7 +46,7 @@ export default function EmailComposer() {
         setSending(true)
 
         try {
-            const response = await fetch('/api/admin/email/send', {
+            const response = await authenticatedFetch('/api/admin/email/send', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

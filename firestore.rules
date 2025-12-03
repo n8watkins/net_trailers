@@ -708,6 +708,15 @@ service cloud.firestore {
              && (!data.keys().hasAny(['id']) || data.id is string);
     }
 
+    // Admin email history collection
+    // Server-side only access via Firebase Admin SDK
+    // No client-side reads allowed to protect user PII in email records
+    match /admin_emails/{emailId} {
+      // Only server-side operations via Admin SDK
+      // Client-side access completely blocked to prevent PII exposure
+      allow read, write: if false;
+    }
+
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;

@@ -208,6 +208,8 @@ export async function seedDemoProfiles(options: SeedDemoProfilesOptions = {}): P
                     userId,
                     userName: profile.displayName,
                     userAvatar: profile.avatarUrl,
+                    count: rankingsPerProfile,
+                    favoriteGenres: profileData.favoriteGenres,
                 })
             }
 

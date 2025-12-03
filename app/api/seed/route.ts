@@ -112,7 +112,7 @@ async function seedUserDataServerSide(userId: string, options: SeedOptions): Pro
         likedCount = 15, // Match client-side
         hiddenCount = 8, // Match client-side
         watchLaterCount = 12,
-        watchHistoryCount = 20, // Match client-side
+        watchHistoryCount = 75, // Match client-side
         createCollections = true,
         rankingCount = 3,
         notificationCount = 8,
@@ -162,21 +162,106 @@ async function seedUserDataServerSide(userId: string, options: SeedOptions): Pro
         contentIndex += watchLaterCount
     }
 
-    // 4. Seed watch history
+    // 4. Seed watch history with realistic viewing schedule (MULTIPLE entries per day)
     if (watchHistoryCount > 0) {
         console.log(`  🕐 Adding ${watchHistoryCount} watch history items`)
-        const watchHistory = getShuffledContentSlice(contentIndex, watchHistoryCount).map(
-            (content, index) => ({
-                content,
-                watchedAt: Date.now() - (watchHistoryCount - index) * 86400000, // Spread over days
-            })
-        )
+        const content = getShuffledContentSlice(contentIndex, watchHistoryCount)
+        const now = Date.now()
+
+        // Define viewing schedule (same as client-side)
+        const viewingSchedule: Array<{ daysAgo: number; entriesCount: number }> = [
+            { daysAgo: 0, entriesCount: 8 }, // Today: 8 entries
+            { daysAgo: 1, entriesCount: 6 }, // Yesterday: 6 entries
+            { daysAgo: 2, entriesCount: 5 }, // 2 days ago: 5 entries
+            { daysAgo: 3, entriesCount: 4 }, // 3 days ago: 4 entries
+            { daysAgo: 5, entriesCount: 3 }, // 5 days ago: 3 entries
+            { daysAgo: 7, entriesCount: 3 }, // 1 week ago: 3 entries
+            { daysAgo: 10, entriesCount: 2 }, // 10 days ago: 2 entries
+            { daysAgo: 14, entriesCount: 2 }, // 2 weeks ago: 2 entries
+            { daysAgo: 20, entriesCount: 2 }, // ~3 weeks ago: 2 entries
+            { daysAgo: 28, entriesCount: 2 }, // 4 weeks ago: 2 entries
+            { daysAgo: 35, entriesCount: 1 }, // 5 weeks ago: 1 entry
+            { daysAgo: 42, entriesCount: 1 }, // 6 weeks ago: 1 entry
+            { daysAgo: 50, entriesCount: 1 }, // ~7 weeks ago: 1 entry
+            { daysAgo: 58, entriesCount: 1 }, // ~8 weeks ago: 1 entry
+        ]
+
+        // Flatten schedule into individual entries
+        const scheduledEntries: Array<{
+            daysAgo: number
+            entryIndex: number
+            entriesCount: number
+        }> = []
+        viewingSchedule.forEach((day) => {
+            for (let i = 0; i < day.entriesCount; i++) {
+                scheduledEntries.push({
+                    daysAgo: day.daysAgo,
+                    entryIndex: i,
+                    entriesCount: day.entriesCount,
+                })
+            }
+        })
+
+        // Add remaining entries as scattered older content
+        const totalScheduled = scheduledEntries.length
+        if (content.length > totalScheduled) {
+            const remaining = content.length - totalScheduled
+            for (let i = 0; i < remaining; i++) {
+                const daysAgo = 60 + Math.floor(Math.random() * 60)
+                scheduledEntries.push({ daysAgo, entryIndex: 0, entriesCount: 1 })
+            }
+        }
+
+        // Generate watch history with proper timestamps
+        const watchHistory = content.map((item, i) => {
+            let watchedAt: number
+
+            if (i === 0) {
+                // First entry uses current time
+                watchedAt = now
+            } else if (i <= scheduledEntries.length) {
+                const schedule = scheduledEntries[i - 1]
+                const daysAgo = schedule.daysAgo
+                const entryIndex = schedule.entryIndex
+
+                const startOfDay = new Date(now)
+                startOfDay.setHours(0, 0, 0, 0)
+                const dayStart = startOfDay.getTime() - daysAgo * 24 * 60 * 60 * 1000
+
+                if (daysAgo === 0) {
+                    // Today: spread from morning (8am) to now
+                    const morningStart = dayStart + 8 * 60 * 60 * 1000
+                    const timeRange = now - morningStart
+                    const segment = timeRange / 8
+                    watchedAt = morningStart + segment * entryIndex + Math.random() * segment
+                } else {
+                    // Other days: spread throughout waking hours (8am - 11pm)
+                    const wakingHours = 15
+                    const segment = wakingHours / Math.max(schedule.entriesCount || 1, 1)
+                    const hour = 8 + segment * entryIndex + Math.random() * segment
+                    const minutes = Math.floor(Math.random() * 60)
+                    watchedAt = dayStart + hour * 60 * 60 * 1000 + minutes * 60 * 1000
+                }
+            } else {
+                // Fallback for any extra entries
+                watchedAt = now - i * 24 * 60 * 60 * 1000
+            }
+
+            return {
+                id: `${item.id}-${item.media_type}`,
+                contentId: item.id,
+                mediaType: item.media_type,
+                watchedAt,
+                content: item,
+            }
+        })
 
         const historyRef = userRef.collection('data').doc('watchHistory')
         await historyRef.set({
             history: watchHistory,
             updatedAt: Date.now(),
         })
+        console.log(`  ✅ Watch history saved with realistic timestamps`)
     }
 
     // 5. Seed collections (if requested)

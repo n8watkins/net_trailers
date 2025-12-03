@@ -10,6 +10,8 @@ export interface SeedRankingsOptions {
     userId: string
     userName: string
     userAvatar?: string
+    count?: number // Number of rankings to create (default: 2)
+    favoriteGenres?: string[] // Filter rankings by these genres
 }
 
 // Helper to create a movie object from TMDB data
@@ -1442,7 +1444,15 @@ const NETFLIX_TV = {
 // ============================================================================
 // RANKING TEMPLATES - 2+ rankings per tag
 // ============================================================================
-const RANKING_TEMPLATES = [
+interface RankingTemplate {
+    title: string
+    description: string
+    movies: Movie[]
+    tvShows: TVShow[]
+    genres: string[] // Tags for matching to profile interests
+}
+
+const RANKING_TEMPLATES: RankingTemplate[] = [
     // ========== MCU (🦸) - 2 rankings ==========
     {
         title: 'MCU: The Ultimate Top 10',
@@ -1460,12 +1470,14 @@ const RANKING_TEMPLATES = [
             MCU_MOVIES.ironMan,
         ],
         tvShows: [],
+        genres: ['Action', 'Adventure', 'Sci-Fi'],
     },
     {
         title: 'MCU TV Shows Ranked',
         description: 'Disney+ Marvel series from best to... still pretty good',
         movies: [],
         tvShows: [MCU_TV.loki, MCU_TV.wandaVision, MCU_TV.falconWS],
+        genres: ['Action', 'Adventure', 'Sci-Fi'],
     },
 
     // ========== DC (🦇) - 2 rankings ==========
@@ -1485,6 +1497,7 @@ const RANKING_TEMPLATES = [
             DC_MOVIES.manOfSteel,
         ],
         tvShows: [],
+        genres: ['Action', 'Thriller', 'Drama'],
     },
     {
         title: 'Best Batman Films of All Time',
@@ -1496,6 +1509,7 @@ const RANKING_TEMPLATES = [
             DC_MOVIES.batmanBegins,
         ],
         tvShows: [],
+        genres: ['Action', 'Thriller', 'Drama'],
     },
 
     // ========== Star Wars (⭐) - 2 rankings ==========
@@ -1512,6 +1526,7 @@ const RANKING_TEMPLATES = [
             STAR_WARS_MOVIES.lastJedi,
         ],
         tvShows: [],
+        genres: ['Sci-Fi', 'Fantasy', 'Adventure'],
     },
     {
         title: 'Star Wars TV: The Best of Disney+',
@@ -1524,6 +1539,7 @@ const RANKING_TEMPLATES = [
             STAR_WARS_TV.ahsoka,
             STAR_WARS_TV.obiWan,
         ],
+        genres: ['Sci-Fi', 'Fantasy', 'Adventure'],
     },
 
     // ========== Harry Potter (⚡) - 2 rankings ==========
@@ -1541,6 +1557,7 @@ const RANKING_TEMPLATES = [
             HARRY_POTTER_MOVIES.chamberOfSecrets,
         ],
         tvShows: [],
+        genres: ['Fantasy', 'Adventure', 'Drama'],
     },
     {
         title: 'Wizarding World: Harry Potter + Fantastic Beasts',
@@ -1552,6 +1569,7 @@ const RANKING_TEMPLATES = [
             HARRY_POTTER_MOVIES.fantasticBeasts,
         ],
         tvShows: [],
+        genres: ['Fantasy', 'Adventure', 'Drama'],
     },
 
     // ========== LOTR (🧙) - 2 rankings ==========
@@ -1560,6 +1578,7 @@ const RANKING_TEMPLATES = [
         description: "Peter Jackson's epic Middle-earth trilogy",
         movies: [LOTR_MOVIES.returnOfKing, LOTR_MOVIES.fellowship, LOTR_MOVIES.twoTowers],
         tvShows: [],
+        genres: ['Fantasy', 'Adventure', 'Drama'],
     },
     {
         title: 'Complete Middle-earth: LOTR + Hobbit + Rings of Power',
@@ -1573,6 +1592,7 @@ const RANKING_TEMPLATES = [
             LOTR_MOVIES.battleFiveArmies,
         ],
         tvShows: [LOTR_TV.ringsOfPower],
+        genres: ['Fantasy', 'Adventure', 'Drama'],
     },
 
     // ========== Pixar (🎨) - 2 rankings ==========
@@ -1592,6 +1612,7 @@ const RANKING_TEMPLATES = [
             PIXAR_MOVIES.insideOut2,
         ],
         tvShows: [],
+        genres: ['Animation', 'Comedy', 'Family'],
     },
     {
         title: 'Pixar Tearjerkers: Most Emotional Films',
@@ -1604,6 +1625,7 @@ const RANKING_TEMPLATES = [
             PIXAR_MOVIES.toyStory,
         ],
         tvShows: [],
+        genres: ['Animation', 'Comedy', 'Family'],
     },
 
     // ========== Disney Animation (👸) - 2 rankings ==========
@@ -1623,6 +1645,7 @@ const RANKING_TEMPLATES = [
             DISNEY_MOVIES.hercules,
         ],
         tvShows: [],
+        genres: ['Animation', 'Fantasy', 'Family'],
     },
     {
         title: 'Disney Princess Movies Ranked',
@@ -1636,6 +1659,7 @@ const RANKING_TEMPLATES = [
             DISNEY_MOVIES.littleMermaid,
         ],
         tvShows: [],
+        genres: ['Animation', 'Fantasy', 'Family'],
     },
 
     // ========== Horror (👻) - 2 rankings ==========
@@ -1655,6 +1679,7 @@ const RANKING_TEMPLATES = [
             HORROR_MOVIES.us,
         ],
         tvShows: [],
+        genres: ['Horror', 'Thriller', 'Mystery'],
     },
     {
         title: 'Best Horror TV Series',
@@ -1685,6 +1710,7 @@ const RANKING_TEMPLATES = [
             SCIFI_MOVIES.terminator2,
         ],
         tvShows: [],
+        genres: ['Sci-Fi', 'Thriller', 'Drama'],
     },
     {
         title: 'Best Sci-Fi TV Shows',
@@ -1705,6 +1731,7 @@ const RANKING_TEMPLATES = [
             ANIME_MOVIES.graveFireflies,
         ],
         tvShows: [],
+        genres: ['Animation', 'Fantasy', 'Adventure'],
     },
     {
         title: 'Best Anime Series of All Time',
@@ -1734,6 +1761,7 @@ const RANKING_TEMPLATES = [
             TRUE_CRIME_MOVIES.sicario,
         ],
         tvShows: [],
+        genres: ['Documentary', 'Crime', 'Mystery'],
     },
     {
         title: 'Crime Drama TV: The Best Series',
@@ -1763,6 +1791,7 @@ const RANKING_TEMPLATES = [
             COMEDY_MOVIES.dumbAndDumber,
         ],
         tvShows: [],
+        genres: ['Comedy', 'Romance'],
     },
     {
         title: 'Best Comedy TV Shows',
@@ -1793,6 +1822,7 @@ const RANKING_TEMPLATES = [
             ROMANCE_MOVIES.loveActually,
         ],
         tvShows: [],
+        genres: ['Romance', 'Drama', 'Comedy'],
     },
     {
         title: 'Romantic TV Series Worth Watching',
@@ -1822,6 +1852,7 @@ const RANKING_TEMPLATES = [
             ACTION_MOVIES.missionImpossible7,
         ],
         tvShows: [],
+        genres: ['Action', 'Thriller', 'Adventure'],
     },
     {
         title: 'Best Action TV Series',
@@ -1847,6 +1878,7 @@ const RANKING_TEMPLATES = [
             NETFLIX_MOVIES.theGrayMan,
         ],
         tvShows: [],
+        genres: ['Drama', 'Thriller', 'Sci-Fi'],
     },
     {
         title: 'Netflix TV Shows Worth Binging',
@@ -1860,11 +1892,12 @@ const RANKING_TEMPLATES = [
             NETFLIX_TV.wednesday,
             NETFLIX_TV.theWitcher,
         ],
+        genres: ['Drama', 'Thriller', 'Sci-Fi'],
     },
 ]
 
 export async function seedRankings(options: SeedRankingsOptions): Promise<void> {
-    const { userId, userName, userAvatar } = options
+    const { userId, userName, userAvatar, count = 2, favoriteGenres = [] } = options
 
     console.log('  🏆 Creating sample rankings')
 
@@ -1875,12 +1908,36 @@ export async function seedRankings(options: SeedRankingsOptions): Promise<void> 
     const existingRankings = useRankingStore.getState().rankings
     const existingTitles = new Set(existingRankings.map((r) => r.title))
 
-    for (const template of RANKING_TEMPLATES) {
-        if (existingTitles.has(template.title)) {
-            console.log(`    ⏭️  Skipping duplicate ranking: ${template.title}`)
-            continue
-        }
+    // Filter templates by genre preferences
+    let availableTemplates = RANKING_TEMPLATES.filter((t) => !existingTitles.has(t.title))
 
+    if (favoriteGenres.length > 0) {
+        // Filter templates that match at least one favorite genre
+        const matchingTemplates = availableTemplates.filter((template) =>
+            template.genres.some((genre) =>
+                favoriteGenres.some((fav) => fav.toLowerCase() === genre.toLowerCase())
+            )
+        )
+
+        if (matchingTemplates.length > 0) {
+            availableTemplates = matchingTemplates
+            console.log(
+                `    🎯 Found ${matchingTemplates.length} rankings matching interests: ${favoriteGenres.join(', ')}`
+            )
+        } else {
+            console.log(
+                `    ℹ️  No genre matches found for ${favoriteGenres.join(', ')}, using all available rankings`
+            )
+        }
+    }
+
+    // Randomly select rankings up to the count limit
+    const shuffled = availableTemplates.sort(() => Math.random() - 0.5)
+    const selectedTemplates = shuffled.slice(0, Math.min(count, shuffled.length))
+
+    console.log(`    📊 Creating ${selectedTemplates.length} ranking(s)`)
+
+    for (const template of selectedTemplates) {
         // Build items from movies and tvShows arrays
         const items: Content[] = [
             ...template.movies.filter(Boolean),
