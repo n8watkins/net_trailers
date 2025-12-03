@@ -44,11 +44,24 @@ export async function seedWatchHistoryContent(options: SeedWatchHistoryOptions):
         syncError: null,
     })
 
-    const content = getContentSlice(startIndex, count, shuffledContent)
     const now = Date.now()
 
+    // Get content - cycle through available pool if count exceeds pool size
+    // This allows duplicates which is realistic (people rewatch content)
+    const availableContent =
+        shuffledContent || (await import('./sampleContent')).getShuffledContent()
+    const content: Content[] = []
+    for (let i = 0; i < count; i++) {
+        const index = (startIndex + i) % availableContent.length
+        content.push(availableContent[index])
+    }
+
     console.log('  📊 SEED DEBUG: Starting watch history seed')
-    console.log(`     Total content items: ${content.length}`)
+    console.log(`     Requested: ${count} items`)
+    console.log(`     Available pool: ${availableContent.length} items`)
+    console.log(
+        `     Generated: ${content.length} items (with ${count > availableContent.length ? 'duplicates' : 'no duplicates'})`
+    )
     console.log(`     Current time: ${new Date(now).toLocaleString()}`)
 
     // Create realistic watch history with MULTIPLE entries per day

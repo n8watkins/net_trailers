@@ -180,7 +180,20 @@ async function seedUserDataServerSide(userId: string, options: SeedOptions): Pro
     // 4. Seed watch history with realistic viewing schedule (MULTIPLE entries per day)
     if (watchHistoryCount > 0) {
         console.log(`  🕐 Adding ${watchHistoryCount} watch history items`)
-        const content = getShuffledContentSlice(contentIndex, watchHistoryCount)
+
+        // Get content - cycle through available pool if count exceeds pool size
+        // This allows duplicates which is realistic (people rewatch content)
+        const allContent = [...sampleMovies, ...sampleTVShows]
+        const shuffled = allContent.sort(() => Math.random() - 0.5)
+        const content: Content[] = []
+        for (let i = 0; i < watchHistoryCount; i++) {
+            content.push(shuffled[i % shuffled.length])
+        }
+
+        console.log(
+            `    Available pool: ${shuffled.length} items, generating ${content.length} entries (${watchHistoryCount > shuffled.length ? 'with duplicates' : 'no duplicates'})`
+        )
+
         const now = Date.now()
 
         // Define viewing schedule - 2 months of realistic viewing history

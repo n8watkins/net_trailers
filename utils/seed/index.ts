@@ -139,13 +139,16 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
     })
     contentIndex += watchLaterCount
 
-    // 4. Seed watch history (use separate index to allow some overlap)
+    // 4. Seed watch history
+    // Note: Watch history can have duplicates (people rewatch content)
+    // So we reshuffle the content pool to allow reuse
+    const watchHistoryContent = getShuffledContent()
     await seedWatchHistoryContent({
         userId,
         count: watchHistoryCount,
         isGuest,
-        startIndex: contentIndex,
-        shuffledContent,
+        startIndex: 0,
+        shuffledContent: watchHistoryContent,
     })
 
     // 5. Seed collections
