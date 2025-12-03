@@ -175,7 +175,36 @@ console.log('Demo profiles:', demoIds)
 
 ## Cleaning Up Demo Data
 
-To remove demo profiles and their content:
+### Automated Deletion Script
+
+Use the comprehensive delete script to remove all demo profiles and their associated data:
+
+```bash
+# Dry run (preview what will be deleted)
+npm run delete:demo-profiles
+
+# Actually delete the data (requires --confirm flag)
+npm run delete:demo-profiles -- --confirm
+```
+
+The delete script removes:
+
+- ✓ Demo user profiles (profiles collection)
+- ✓ Demo user data (users collection + subcollections)
+- ✓ Rankings created by demo users
+- ✓ Ranking comments by demo users
+- ✓ Ranking likes by demo users
+- ✓ Forum threads created by demo users
+- ✓ Thread replies by demo users
+- ✓ Polls created by demo users
+- ✓ Poll votes by demo users
+- ✓ Watch history for demo users
+- ✓ Collections created by demo users
+- ✓ Notifications for demo users
+
+### Manual Deletion (Advanced)
+
+For manual cleanup or custom queries:
 
 ```typescript
 import { db } from '@/firebase'
@@ -192,6 +221,8 @@ for (const doc of snapshot.docs) {
     await deleteDoc(doc.ref)
 }
 ```
+
+**Note**: Manual deletion may leave orphaned data in related collections. The automated script is recommended for complete cleanup.
 
 ## Extending the System
 
