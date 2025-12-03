@@ -68,22 +68,11 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
             onClick={handleCardClick}
             className="group relative cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1"
         >
-            {/* Ambient glow behind card - yellow by default, stronger on hover */}
-            <div className="absolute -inset-1 bg-gradient-to-br from-yellow-500/8 via-amber-500/6 to-yellow-500/8 rounded-2xl blur-xl opacity-60 group-hover:opacity-100 group-hover:from-yellow-500/15 group-hover:via-amber-500/12 group-hover:to-yellow-500/15 transition-all duration-300" />
-
-            {/* Main card container - yellow tinted by default */}
-            <div className="relative bg-gradient-to-br from-yellow-950/20 via-zinc-900/80 to-yellow-950/20 group-hover:from-yellow-950/35 group-hover:via-zinc-900/70 group-hover:to-yellow-950/35 backdrop-blur-lg rounded-xl overflow-hidden border border-yellow-500/10 group-hover:border-yellow-500/30 transition-all duration-300 shadow-lg group-hover:shadow-[0_0_25px_rgba(234,179,8,0.15)]">
+            {/* Main card container - clean dark background */}
+            <div className="relative bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800 group-hover:border-zinc-700 transition-all duration-300 shadow-lg group-hover:shadow-xl">
                 {/* Header with top 3 posters - Larger images */}
                 {topItems.length > 0 && (
-                    <div className="relative h-48 overflow-hidden">
-                        {/* Background gradient - yellow tinted */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-yellow-950/30 via-zinc-900/80 to-yellow-950/30 group-hover:from-yellow-950/40 group-hover:to-yellow-950/40 transition-all duration-300" />
-
-                        {/* Ambient glow behind posters - visible by default */}
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-full h-24 bg-gradient-to-r from-yellow-500/10 via-amber-500/15 to-yellow-500/10 blur-2xl opacity-60 group-hover:opacity-90 group-hover:from-yellow-500/15 group-hover:via-amber-500/20 group-hover:to-yellow-500/15 transition-all duration-300" />
-                        </div>
-
+                    <div className="relative h-48 overflow-hidden bg-zinc-950">
                         {/* Posters container - Larger posters */}
                         <div className="absolute inset-0 flex justify-center items-center gap-2 px-3 py-3">
                             {topItems.map((item, index) => (
@@ -95,16 +84,13 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
                                         transform: `translateY(${index === 1 ? '-3px' : '0'})`,
                                     }}
                                 >
-                                    {/* Poster glow rim - visible by default, stronger on hover */}
-                                    <div className="absolute -inset-0.5 bg-gradient-to-br from-yellow-400/10 via-amber-500/8 to-yellow-400/10 rounded-md blur-sm opacity-50 group-hover:opacity-100 group-hover:from-yellow-400/20 group-hover:via-amber-500/15 group-hover:to-yellow-400/20 transition-all duration-300" />
-
                                     <Image
                                         src={getPosterPath(item.content)}
                                         alt={getTitle(item.content)}
                                         fill
                                         loading="lazy"
                                         sizes="110px"
-                                        className="object-cover rounded-md shadow-lg relative z-10 ring-1 ring-white/10"
+                                        className="object-cover rounded-md shadow-lg relative z-10 ring-1 ring-zinc-700 group-hover:ring-zinc-600 transition-all"
                                     />
                                 </div>
                             ))}
@@ -115,7 +101,7 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
 
                         {/* Trending badge */}
                         {ranking.likes > 50 && (
-                            <div className="absolute top-2 left-2 px-2 py-1 bg-gradient-to-r from-orange-500 to-red-500 rounded-full text-[10px] font-bold text-white flex items-center gap-1 shadow-[0_0_12px_rgba(249,115,22,0.5)]">
+                            <div className="absolute top-2 left-2 px-2 py-1 bg-gradient-to-r from-orange-500 to-red-500 rounded-full text-[10px] font-bold text-white flex items-center gap-1 shadow-md">
                                 <FireIcon className="w-3 h-3" />
                                 <span>HOT</span>
                             </div>
@@ -131,7 +117,7 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
                 {/* Content section - Compact */}
                 <div className="relative z-20 p-3 space-y-2">
                     {/* Title */}
-                    <h3 className="text-base font-bold text-white group-hover:text-yellow-100 transition-colors duration-200 line-clamp-1 leading-tight">
+                    <h3 className="text-base font-bold text-white transition-colors duration-200 line-clamp-1 leading-tight">
                         {ranking.title}
                     </h3>
 
@@ -176,7 +162,7 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
                             className="group/like flex items-center gap-1 transition-all duration-200 hover:scale-105"
                         >
                             {isLiked ? (
-                                <HeartSolidIcon className="w-4 h-4 text-red-500 drop-shadow-[0_0_6px_rgba(239,68,68,0.4)]" />
+                                <HeartSolidIcon className="w-4 h-4 text-red-500" />
                             ) : (
                                 <HeartIcon className="w-4 h-4 text-gray-500 group-hover/like:text-red-400 transition-colors" />
                             )}
