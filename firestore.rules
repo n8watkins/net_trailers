@@ -225,14 +225,22 @@ service cloud.firestore {
       allow read: if request.auth != null;
 
       // Allow create if authenticated and userId matches auth
+      // OR if creating a demo profile ranking (userId starts with "demo_")
       allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid
+                    && (request.resource.data.userId == request.auth.uid
+                        || request.resource.data.userId.matches('demo_.*'))
                     && isValidRankingData(request.resource.data);
 
       // Allow update if authenticated user is the owner OR if only incrementing views/likes/comments
+      // OR if updating demo profile rankings
       allow update: if request.auth != null && (
                       // Owner can update anything
                       (request.auth.uid == resource.data.userId
+                       && request.resource.data.userId == resource.data.userId
+                       && isValidRankingData(request.resource.data))
+                      ||
+                      // Demo profile rankings can be updated
+                      (resource.data.userId.matches('demo_.*')
                        && request.resource.data.userId == resource.data.userId
                        && isValidRankingData(request.resource.data))
                       ||
@@ -240,8 +248,10 @@ service cloud.firestore {
                       (isOnlyIncrementingStats(resource.data, request.resource.data))
                     );
 
-      // Allow delete if authenticated user is the owner
-      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow delete if authenticated user is the owner OR demo profile ranking
+      allow delete: if request.auth != null
+                    && (request.auth.uid == resource.data.userId
+                        || resource.data.userId.matches('demo_.*'));
     }
 
     // Ranking comments collection
@@ -250,21 +260,26 @@ service cloud.firestore {
       allow read: if request.auth != null;
 
       // Allow create if authenticated and userId matches auth
+      // OR if creating from demo profile (userId starts with "demo_")
       allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid
+                    && (request.resource.data.userId == request.auth.uid
+                        || request.resource.data.userId.matches('demo_.*'))
                     && isValidCommentData(request.resource.data);
 
       // Allow update if authenticated user is the comment owner (for replies array)
+      // OR if updating demo profile comment
       allow update: if request.auth != null
-                    && request.auth.uid == resource.data.userId;
+                    && (request.auth.uid == resource.data.userId
+                        || resource.data.userId.matches('demo_.*'));
 
       // Allow delete if authenticated user is the comment owner
       // OR if authenticated user is the ranking owner
-      // OR if it's test data (userId starts with "test_user")
+      // OR if it's test/demo data (userId starts with "test_user" or "demo_")
       allow delete: if request.auth != null
                     && (request.auth.uid == resource.data.userId
                     || request.auth.uid == get(/databases/$(database)/documents/rankings/$(resource.data.rankingId)).data.userId
-                    || resource.data.userId.matches('test_user.*'));
+                    || resource.data.userId.matches('test_user.*')
+                    || resource.data.userId.matches('demo_.*'));
     }
 
     // Comment likes collection
@@ -273,14 +288,18 @@ service cloud.firestore {
       allow read: if request.auth != null;
 
       // Allow create if authenticated and userId in document matches auth
+      // OR if creating from demo profile
       allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid;
+                    && (request.resource.data.userId == request.auth.uid
+                        || request.resource.data.userId.matches('demo_.*'));
 
       // Allow delete if:
       // - Authenticated user owns the like, OR
+      // - Demo profile like, OR
       // - Authenticated user is the ranking owner (for cascade delete when deleting ranking)
       allow delete: if request.auth != null && (
                       request.auth.uid == resource.data.userId
+                      || resource.data.userId.matches('demo_.*')
                       || request.auth.uid == get(/databases/$(database)/documents/ranking_comments/$(resource.data.commentId)).data.userId
                       || request.auth.uid == get(/databases/$(database)/documents/rankings/$(get(/databases/$(database)/documents/ranking_comments/$(resource.data.commentId)).data.rankingId)).data.userId
                     );
@@ -292,14 +311,18 @@ service cloud.firestore {
       allow read: if request.auth != null;
 
       // Allow create if authenticated and userId in document matches auth
+      // OR if creating from demo profile
       allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid;
+                    && (request.resource.data.userId == request.auth.uid
+                        || request.resource.data.userId.matches('demo_.*'));
 
       // Allow delete if:
       // - Authenticated user owns the like, OR
+      // - Demo profile like, OR
       // - Authenticated user is the ranking owner (for cascade delete when deleting ranking)
       allow delete: if request.auth != null && (
                       request.auth.uid == resource.data.userId
+                      || resource.data.userId.matches('demo_.*')
                       || request.auth.uid == get(/databases/$(database)/documents/rankings/$(resource.data.rankingId)).data.userId
                     );
     }
@@ -372,14 +395,22 @@ service cloud.firestore {
       allow read: if request.auth != null;
 
       // Allow create if authenticated and userId matches auth
+      // OR if creating from demo profile
       allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid
+                    && (request.resource.data.userId == request.auth.uid
+                        || request.resource.data.userId.matches('demo_.*'))
                     && isValidThreadData(request.resource.data);
 
       // Allow update if authenticated user is the owner OR if only incrementing stats
+      // OR if updating demo profile thread
       allow update: if request.auth != null && (
                       // Owner can update anything
                       (request.auth.uid == resource.data.userId
+                       && request.resource.data.userId == resource.data.userId
+                       && isValidThreadData(request.resource.data))
+                      ||
+                      // Demo profile threads can be updated
+                      (resource.data.userId.matches('demo_.*')
                        && request.resource.data.userId == resource.data.userId
                        && isValidThreadData(request.resource.data))
                       ||
@@ -387,8 +418,10 @@ service cloud.firestore {
                       (isOnlyIncrementingThreadStats(resource.data, request.resource.data))
                     );
 
-      // Allow delete if authenticated user is the owner
-      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow delete if authenticated user is the owner OR demo profile thread
+      allow delete: if request.auth != null
+                    && (request.auth.uid == resource.data.userId
+                        || resource.data.userId.matches('demo_.*'));
     }
 
     // Thread replies collection
@@ -444,19 +477,27 @@ service cloud.firestore {
       allow read: if request.auth != null;
 
       // Allow create if authenticated and userId matches auth
+      // OR if creating from demo profile
       allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid
+                    && (request.resource.data.userId == request.auth.uid
+                        || request.resource.data.userId.matches('demo_.*'))
                     && isValidPollData(request.resource.data);
 
       // Allow update if:
       // 1. Owner can edit within 5 minutes of creation (full edit)
-      // 2. Owner can toggle isHidden at any time
-      // 3. Anyone authenticated can update vote counts
+      // 2. Demo profile polls can be edited
+      // 3. Owner can toggle isHidden at any time
+      // 4. Anyone authenticated can update vote counts
       allow update: if request.auth != null && (
                       // Owner can fully edit within 5-minute window
                       (request.auth.uid == resource.data.userId
                        && request.resource.data.userId == resource.data.userId
                        && resource.data.createdAt.toMillis() > request.time.toMillis() - 300000
+                       && isValidPollData(request.resource.data))
+                      ||
+                      // Demo profile polls can be edited
+                      (resource.data.userId.matches('demo_.*')
+                       && request.resource.data.userId == resource.data.userId
                        && isValidPollData(request.resource.data))
                       ||
                       // Owner can toggle isHidden at any time
@@ -467,8 +508,10 @@ service cloud.firestore {
                       (isOnlyUpdatingPollVotes(resource.data, request.resource.data))
                     );
 
-      // Allow delete if authenticated user is the owner
-      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow delete if authenticated user is the owner OR demo profile poll
+      allow delete: if request.auth != null
+                    && (request.auth.uid == resource.data.userId
+                        || resource.data.userId.matches('demo_.*'));
     }
 
     // Poll votes collection
@@ -629,16 +672,22 @@ service cloud.firestore {
       allow read: if request.auth != null;
 
       // Only the owner can create/update their own profile
+      // OR allow creation of demo profiles (userId starts with "demo_")
       allow create: if request.auth != null
-                    && request.auth.uid == userId
+                    && (request.auth.uid == userId
+                        || userId.matches('demo_.*'))
                     && isValidProfileData(request.resource.data);
 
+      // Allow updates for own profile OR demo profiles
       allow update: if request.auth != null
-                    && request.auth.uid == userId
+                    && (request.auth.uid == userId
+                        || userId.matches('demo_.*'))
                     && isValidProfileUpdate(request.resource.data);
 
-      // Only the owner can delete their profile
-      allow delete: if request.auth != null && request.auth.uid == userId;
+      // Only the owner can delete their profile OR demo profiles can be deleted
+      allow delete: if request.auth != null
+                    && (request.auth.uid == userId
+                        || userId.matches('demo_.*'));
     }
 
     // Usernames collection (maps usernames to user IDs)
