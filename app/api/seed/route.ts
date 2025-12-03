@@ -606,7 +606,7 @@ async function seedNotificationsServerSide(
     // Get existing notifications to avoid duplicates
     const existingNotifications = await userNotificationsRef.get()
     const existingNotificationKeys = new Set(
-        existingNotifications.docs.map((doc) => {
+        existingNotifications.docs.map((doc: any) => {
             const data = doc.data()
             return `${data.type}:${data.title}`
         })

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { XMarkIcon, DevicePhoneMobileIcon, ComputerDesktopIcon } from '@heroicons/react/24/outline'
 import { useToast } from '@/hooks/useToast'
-import { authenticatedFetch } from '@/utils/authenticatedFetch'
+import { authenticatedFetch } from '@/lib/authenticatedFetch'
 import type { EmailTemplate } from './EmailComposer'
 
 interface EmailPreviewModalProps {

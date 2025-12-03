@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useToast } from '@/hooks/useToast'
-import { authenticatedFetch } from '@/utils/authenticatedFetch'
+import { authenticatedFetch } from '@/lib/authenticatedFetch'
 import UserSelector from './UserSelector'
 import EmailPreviewModal from './EmailPreviewModal'
 import RichTextEditor from './RichTextEditor'
