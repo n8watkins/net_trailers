@@ -164,117 +164,17 @@ async function handleSendEmail(request: NextRequest, userId: string): Promise<Ne
 
         // Send emails based on template
         switch (template) {
-            case 'trending': {
-                // Send trending content emails
-                for (const user of users) {
-                    try {
-                        if (!user.email) {
-                            errors.push(`Missing email for user: ${user.userId}`)
-                            continue
-                        }
-
-                        // Check if user has opted in to trending emails
-                        if (user.emailNotifications?.trending !== true) {
-                            console.log(
-                                `[AdminEmailSend] User ${user.userId} has not opted in to trending emails, skipping`
-                            )
-                            errors.push(`User ${user.email} has not opted in to trending emails`)
-                            continue
-                        }
-
-                        // Check recipient rate limit (max 3 admin emails/day)
-                        const recipientCheck = checkRecipientEmailRateLimit(user.userId)
-                        if (!recipientCheck.allowed) {
-                            console.log(
-                                `[AdminEmailSend] User ${user.userId} has exceeded daily admin email limit, skipping`
-                            )
-                            errors.push(
-                                `User ${user.email} has received too many admin emails today (limit: ${recipientCheck.limit}/day)`
-                            )
-                            continue
-                        }
-
-                        // Fetch trending content for this user (simplified for manual send)
-                        // In a real scenario, you'd fetch actual trending data from their watchlist
-                        const movies: any[] = [] // Placeholder
-                        const tvShows: any[] = [] // Placeholder
-
-                        await EmailService.sendTrendingContent({
-                            to: user.email,
-                            userName: user.displayName || 'there',
-                            movies,
-                            tvShows,
-                            unsubscribeToken: unsubscribeTokens.get(user.userId),
-                        })
-
-                        emailsSent++
-                        console.log(`[AdminEmailSend] Sent trending email to ${user.email}`)
-                    } catch (error) {
-                        console.error(
-                            `[AdminEmailSend] Failed to send trending email to ${user.email}:`,
-                            error
-                        )
-                        errors.push(
-                            `Failed to send to ${user.email}: ${error instanceof Error ? error.message : 'Unknown error'}`
-                        )
-                    }
-                }
-                break
-            }
-
+            case 'trending':
             case 'social': {
-                // Send social digest emails
-                for (const user of users) {
-                    try {
-                        if (!user.email) {
-                            errors.push(`Missing email for user: ${user.userId}`)
-                            continue
-                        }
-
-                        // Check if user has opted in to social emails
-                        if (user.emailNotifications?.social !== true) {
-                            console.log(
-                                `[AdminEmailSend] User ${user.userId} has not opted in to social emails, skipping`
-                            )
-                            errors.push(`User ${user.email} has not opted in to social emails`)
-                            continue
-                        }
-
-                        // Check recipient rate limit (max 3 admin emails/day)
-                        const recipientCheck = checkRecipientEmailRateLimit(user.userId)
-                        if (!recipientCheck.allowed) {
-                            console.log(
-                                `[AdminEmailSend] User ${user.userId} has exceeded daily admin email limit, skipping`
-                            )
-                            errors.push(
-                                `User ${user.email} has received too many admin emails today (limit: ${recipientCheck.limit}/day)`
-                            )
-                            continue
-                        }
-
-                        // Fetch social notifications for this user (simplified for manual send)
-                        const interactions: any[] = [] // Placeholder
-
-                        await EmailService.sendSocialDigest({
-                            to: user.email,
-                            userName: user.displayName || 'there',
-                            interactions,
-                            unsubscribeToken: unsubscribeTokens.get(user.userId),
-                        })
-
-                        emailsSent++
-                        console.log(`[AdminEmailSend] Sent social digest to ${user.email}`)
-                    } catch (error) {
-                        console.error(
-                            `[AdminEmailSend] Failed to send social digest to ${user.email}:`,
-                            error
-                        )
-                        errors.push(
-                            `Failed to send to ${user.email}: ${error instanceof Error ? error.message : 'Unknown error'}`
-                        )
-                    }
-                }
-                break
+                // These templates require data integration not yet implemented
+                // Returning 501 to prevent sending broken emails with empty data
+                return NextResponse.json(
+                    {
+                        error: 'Not Implemented',
+                        message: `The ${template} email template is not yet fully implemented. Please use 'announcement' or 'custom' templates.`,
+                    },
+                    { status: 501 }
+                )
             }
 
             case 'announcement': {
