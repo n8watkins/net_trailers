@@ -160,6 +160,19 @@ export async function GET(req: NextRequest) {
         let notificationsCreated = 0
         let notificationsSkipped = 0
 
+        // Import notification utilities
+        const { createNotification } = await import('@/utils/firestore/notifications')
+
+        // Prepare top trending items (top 3 movies + top 3 TV shows)
+        const topMovies = moviesData.results.slice(0, 3)
+        const topShows = tvData.results.slice(0, 3)
+        const allTrendingItems = [
+            ...topMovies.map((m: any) => ({ ...m, media_type: 'movie' })),
+            ...topShows.map((s: any) => ({ ...s, media_type: 'tv' })),
+        ]
+
+        console.log(`🔔 [Trending] Will notify about ${allTrendingItems.length} trending items`)
+
         for (const userDoc of usersSnapshot.docs) {
             const userData = userDoc.data()
             const userId = userDoc.id
@@ -178,45 +191,42 @@ export async function GET(req: NextRequest) {
             }
 
             try {
-                // Build trending summary message with top 3 of each
-                const topMovies = moviesData.results
-                    .slice(0, 3)
-                    .map((m: any) => m.title || m.name)
-                    .join(', ')
-                const topShows = tvData.results
-                    .slice(0, 3)
-                    .map((s: any) => s.name || s.title)
-                    .join(', ')
+                // Create individual notification for each trending item
+                for (const item of allTrendingItems) {
+                    const title = item.title || item.name
+                    const mediaType = item.media_type === 'movie' ? 'movie' : 'tv'
 
-                // Use #1 trending movie as the featured image
-                const featuredContent = moviesData.results[0]
+                    await createNotification(userId, {
+                        type: 'trending_update',
+                        title: 'Now Trending! 🔥',
+                        message: `${title} is currently trending this week!`,
+                        contentId: item.id,
+                        mediaType: mediaType,
+                        imageUrl: item.poster_path
+                            ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
+                            : undefined,
+                        actionUrl: `/${mediaType}/${item.id}`,
+                        expiresIn: 7, // Expire after 7 days
+                    })
 
-                // Import notification utilities
-                const { createNotification } = await import('@/utils/firestore/notifications')
+                    notificationsCreated++
 
-                await createNotification(userId, {
-                    type: 'trending_update',
-                    title: 'Weekly Trending Update 🔥',
-                    message: `Top Movies: ${topMovies}\n\nTop Shows: ${topShows}`,
-                    contentId: featuredContent?.id,
-                    mediaType: 'movie',
-                    imageUrl: featuredContent?.poster_path
-                        ? `https://image.tmdb.org/t/p/w500${featuredContent.poster_path}`
-                        : undefined,
-                    actionUrl: '/trending', // Link to trending page/section
-                    expiresIn: 7, // Expire after 7 days
-                })
+                    // Small delay between notifications to avoid rate limiting
+                    await new Promise((resolve) => setTimeout(resolve, 50))
+                }
 
-                notificationsCreated++
+                console.log(
+                    `🔔 [Trending] Created ${allTrendingItems.length} notifications for user ${userId}`
+                )
             } catch (notifError) {
                 console.error(
-                    `🔔 ❌ [Trending] Failed to create notification for ${userId}:`,
+                    `🔔 ❌ [Trending] Failed to create notifications for ${userId}:`,
                     notifError
                 )
             }
         }
 
-        console.log(`🔔 [Trending] Created ${notificationsCreated} in-app notifications`)
+        console.log(`🔔 [Trending] Created ${notificationsCreated} total in-app notifications`)
         console.log(`🔔 [Trending] Skipped ${notificationsSkipped} users (trending disabled)`)
 
         return NextResponse.json({
