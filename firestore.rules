@@ -69,10 +69,27 @@ service cloud.firestore {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
 
-      // Data subcollection - watch history document
-      // Using wildcard to match any document in the data subcollection
-      match /data/{dataDoc=**} {
-        // Allow all operations if authenticated user matches the parent userId
+      // Data subcollection - watch history document with public access
+      match /data/watchHistory {
+        // Allow write if authenticated user matches the parent userId
+        allow write: if request.auth != null && request.auth.uid == userId;
+
+        // Allow read if:
+        // 1. User is the owner, OR
+        // 2. Public profile is enabled AND showWatchHistory visibility setting is true
+        allow read: if request.auth != null && (
+          // Owner can always read their own data
+          request.auth.uid == userId
+          ||
+          // Public access if profile visibility allows
+          (get(/databases/$(database)/documents/profiles/$(userId)).data.visibility.enablePublicProfile == true
+           && get(/databases/$(database)/documents/profiles/$(userId)).data.visibility.showWatchHistory == true)
+        );
+      }
+
+      // Data subcollection - other documents (future use)
+      match /data/{dataDoc} {
+        // Only the owner can read/write other data documents
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
 
