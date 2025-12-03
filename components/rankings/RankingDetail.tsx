@@ -196,6 +196,7 @@ export function RankingDetail({
                                     src={getPosterPath(item.content)}
                                     alt=""
                                     fill
+                                    sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
                                     className="object-cover blur-xl scale-110"
                                     priority={index === 0}
                                 />

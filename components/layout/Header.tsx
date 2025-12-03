@@ -403,7 +403,8 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                         width={140}
                         height={70}
                         alt="NetTrailers Logo"
-                        className="cursor-pointer object-contain select-none w-[100px] h-auto sm:w-[120px] md:w-[140px]"
+                        style={{ height: 'auto' }}
+                        className="cursor-pointer object-contain select-none w-[100px] sm:w-[120px] md:w-[140px]"
                         priority
                         onClick={() => {
                             if (pathname === '/') {

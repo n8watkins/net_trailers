@@ -14,7 +14,7 @@ import { UserIcon } from '@heroicons/react/24/outline'
 import { EyeSlashIcon } from '@heroicons/react/24/solid'
 import { FirebaseError } from 'firebase/app'
 import { db } from '../../../firebase'
-import { collection, doc, getDoc, getDocs, query, where, limit, orderBy } from 'firebase/firestore'
+import { collection, doc, getDoc, getDocs, query, where, limit } from 'firebase/firestore'
 import type { PublicProfilePayload } from '@/lib/publicProfile'
 import { DEFAULT_PROFILE_VISIBILITY } from '@/types/profile'
 import type { ProfileVisibility } from '@/types/profile'
@@ -80,9 +80,36 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
         }
     }
 
-    // Check if we have any data at all
+    // If no profile data exists, try to construct a basic profile from user's rankings
+    let fallbackProfile: Record<string, any> | null = null
     if (Object.keys(userData).length === 0 && Object.keys(profileData).length === 0) {
-        throw new Error('User not found')
+        console.log('[PublicProfile] No profile/user data found, checking rankings...')
+
+        // Try to get user info from their rankings
+        const rankingsSnap = await getDocs(
+            query(collection(db, 'rankings'), where('userId', '==', userId), limit(1))
+        )
+
+        if (rankingsSnap.empty) {
+            throw new Error('User not found')
+        }
+
+        // Construct basic profile from ranking data
+        const firstRanking = rankingsSnap.docs[0].data()
+        fallbackProfile = {
+            displayName: firstRanking.userName || 'User',
+            avatarUrl:
+                firstRanking.userAvatar ||
+                `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
+            isPublic: true,
+            visibility: { ...DEFAULT_PROFILE_VISIBILITY },
+        }
+
+        console.log(
+            '[PublicProfile] Created fallback profile from rankings:',
+            fallbackProfile.displayName
+        )
+        profileData = fallbackProfile
     }
 
     const legacyProfile = userData.profile || {}
@@ -139,23 +166,19 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
             .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
             .slice(0, 10) // Limit to 10 collections for the profile
     }
-    // Fetch watch history from Firestore subcollection if visibility allows
+    // Fetch watch history from Firestore document if visibility allows
     let watchHistoryPreview: (Movie | TVShow)[] = []
     if (visibility.showWatchHistory) {
         try {
-            const watchHistorySnap = await getDocs(
-                query(
-                    collection(db, 'users', userId, 'watchHistory'),
-                    orderBy('watchedAt', 'desc'),
-                    limit(PROFILE_CONFIG.WATCH_LATER_PREVIEW_LIMIT)
-                )
-            )
-            watchHistoryPreview = watchHistorySnap.docs
-                .map((doc) => {
-                    const data = doc.data()
-                    return data.content as Movie | TVShow
-                })
-                .filter((content): content is Movie | TVShow => Boolean(content))
+            const watchHistoryDoc = await getDoc(doc(db, 'users', userId, 'data', 'watchHistory'))
+            if (watchHistoryDoc.exists()) {
+                const data = watchHistoryDoc.data()
+                const history = Array.isArray(data.history) ? data.history : []
+                watchHistoryPreview = history
+                    .slice(0, PROFILE_CONFIG.WATCH_LATER_PREVIEW_LIMIT)
+                    .map((entry: any) => entry.content as Movie | TVShow)
+                    .filter((content): content is Movie | TVShow => Boolean(content))
+            }
         } catch (error) {
             console.warn('[PublicProfile] Failed to load watch history:', error)
             watchHistoryPreview = []

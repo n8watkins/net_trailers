@@ -163,24 +163,25 @@ export async function buildPublicProfilePayload(
             .slice(0, 10) // Limit to 10 collections for the profile
     }
 
-    // Fetch watch history from Firestore subcollection if visibility allows
+    // Fetch watch history from Firestore document if visibility allows
     let watchHistoryPreview: (Movie | TVShow)[] = []
     if (isPublicEnabled && visibility.showWatchHistory) {
         try {
-            const watchHistorySnap = await db
+            const watchHistoryDoc = await db
                 .collection('users')
                 .doc(userId)
-                .collection('watchHistory')
-                .orderBy('watchedAt', 'desc')
-                .limit(12)
+                .collection('data')
+                .doc('watchHistory')
                 .get()
 
-            watchHistoryPreview = watchHistorySnap.docs
-                .map((doc) => {
-                    const data = doc.data()
-                    return data.content as Movie | TVShow
-                })
-                .filter((content): content is Movie | TVShow => Boolean(content))
+            if (watchHistoryDoc.exists) {
+                const data = watchHistoryDoc.data()
+                const history = Array.isArray(data?.history) ? data.history : []
+                watchHistoryPreview = history
+                    .slice(0, 12)
+                    .map((entry: any) => entry.content as Movie | TVShow)
+                    .filter((content): content is Movie | TVShow => Boolean(content))
+            }
         } catch (error) {
             console.warn('[PublicProfile] Failed to load watch history:', error)
             watchHistoryPreview = []
