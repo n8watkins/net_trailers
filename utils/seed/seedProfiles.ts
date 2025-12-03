@@ -75,10 +75,13 @@ async function createDemoProfile(profileData: DemoProfile, userId: string): Prom
     const now = Date.now()
     const createdAt = now - Math.floor(Math.random() * 90) * 24 * 60 * 60 * 1000 // Random in last 90 days
 
+    const username = profileData.displayName.toLowerCase().replace(/\s+/g, '_')
+
     const profile: UserProfile = {
         id: userId,
         userId,
-        email: `${profileData.displayName.toLowerCase().replace(/\s+/g, '_')}@demo.nettrailers.com`,
+        email: `${username}@demo.nettrailers.com`,
+        username, // Required by Firestore rules
         displayName: profileData.displayName,
         avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${profileData.displayName}`,
         avatarSource: 'generated',
