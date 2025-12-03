@@ -155,9 +155,74 @@ export async function GET(req: NextRequest) {
         console.log(`📊 [Trending] Skipped ${skippedUsers} users (opted out or no email)`)
         console.log(`📧 [Trending] Sent ${emailsSent} weekly digest emails`)
 
+        // Create in-app notifications for all users with trending notifications enabled
+        console.log('🔔 [Trending] Creating in-app notifications...')
+        let notificationsCreated = 0
+        let notificationsSkipped = 0
+
+        for (const userDoc of usersSnapshot.docs) {
+            const userData = userDoc.data()
+            const userId = userDoc.id
+
+            // ADMIN ONLY MODE: Skip all users except admin
+            if (adminOnly && (!ADMIN_UID || userId !== ADMIN_UID)) {
+                continue
+            }
+
+            // Check if user has in-app trending notifications enabled
+            const trendingEnabled = userData.notifications?.types?.trending_update ?? false
+
+            if (!trendingEnabled) {
+                notificationsSkipped++
+                continue
+            }
+
+            try {
+                // Build trending summary message with top 3 of each
+                const topMovies = moviesData.results
+                    .slice(0, 3)
+                    .map((m: any) => m.title || m.name)
+                    .join(', ')
+                const topShows = tvData.results
+                    .slice(0, 3)
+                    .map((s: any) => s.name || s.title)
+                    .join(', ')
+
+                // Use #1 trending movie as the featured image
+                const featuredContent = moviesData.results[0]
+
+                // Import notification utilities
+                const { createNotification } = await import('@/utils/firestore/notifications')
+
+                await createNotification(userId, {
+                    type: 'trending_update',
+                    title: 'Weekly Trending Update 🔥',
+                    message: `Top Movies: ${topMovies}\n\nTop Shows: ${topShows}`,
+                    contentId: featuredContent?.id,
+                    mediaType: 'movie',
+                    imageUrl: featuredContent?.poster_path
+                        ? `https://image.tmdb.org/t/p/w500${featuredContent.poster_path}`
+                        : undefined,
+                    actionUrl: '/trending', // Link to trending page/section
+                    expiresIn: 7, // Expire after 7 days
+                })
+
+                notificationsCreated++
+            } catch (notifError) {
+                console.error(
+                    `🔔 ❌ [Trending] Failed to create notification for ${userId}:`,
+                    notifError
+                )
+            }
+        }
+
+        console.log(`🔔 [Trending] Created ${notificationsCreated} in-app notifications`)
+        console.log(`🔔 [Trending] Skipped ${notificationsSkipped} users (trending disabled)`)
+
         return NextResponse.json({
             success: true,
             emailsSent,
+            notificationsCreated,
             totalUsers: usersSnapshot.size,
             skippedUsers,
         })
