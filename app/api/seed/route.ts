@@ -568,7 +568,109 @@ async function seedRankingsServerSide(
 
         await adminDb.collection('rankings').doc(rankingId).set(ranking)
         console.log(`    ✅ Created ranking: ${ranking.title}`)
+
+        // Add comments to this ranking (2-5 comments from various profiles)
+        const commentCount = Math.floor(Math.random() * 4) + 2 // 2-5 comments
+        await seedRankingCommentsServerSide(
+            adminDb,
+            rankingId,
+            userId,
+            userName,
+            userAvatar,
+            commentCount
+        )
     }
+}
+
+/**
+ * Seed ranking comments using Admin SDK
+ * Creates comments from the current user and demo profiles
+ */
+async function seedRankingCommentsServerSide(
+    adminDb: any,
+    rankingId: string,
+    rankingOwnerId: string,
+    rankingOwnerName: string,
+    rankingOwnerAvatar: string | undefined,
+    commentCount: number
+): Promise<void> {
+    const { nanoid } = await import('nanoid')
+
+    // Get demo profiles to comment from
+    const demoProfiles = await adminDb
+        .collection('profiles')
+        .where('__name__', '>=', 'demo_')
+        .where('__name__', '<', 'demo`')
+        .limit(10)
+        .get()
+
+    const commenters = [
+        // Include the ranking owner
+        {
+            userId: rankingOwnerId,
+            userName: rankingOwnerName,
+            userAvatar: rankingOwnerAvatar || null,
+        },
+    ]
+
+    // Add demo profiles as potential commenters
+    demoProfiles.docs.forEach((doc: any) => {
+        const profile = doc.data()
+        commenters.push({
+            userId: doc.id,
+            userName: profile.displayName || 'Demo User',
+            userAvatar: profile.avatarUrl || null,
+        })
+    })
+
+    // If no demo profiles, use the owner multiple times with varied comments
+    if (commenters.length === 1) {
+        console.log(`      ℹ️  No demo profiles found, using ranking owner for all comments`)
+    }
+
+    const commentTexts = [
+        'Great ranking! I totally agree with your top picks.',
+        "Interesting choices! I'd swap #2 and #3 personally.",
+        'This list is spot on. Love your taste!',
+        "Nice ranking! Haven't seen #4 yet, adding to my watchlist.",
+        'Solid list. The top 3 are definitely classics.',
+        "I'd rank them differently but I respect your opinion!",
+        'Finally someone who appreciates these gems!',
+        'This ranking speaks to my soul. Perfect picks.',
+        "Good list but where's [insert movie]? That should be #1!",
+        'Absolutely agree with your #1 choice. Masterpiece!',
+    ]
+
+    const now = Date.now()
+    let actualCommentCount = 0
+
+    for (let i = 0; i < commentCount; i++) {
+        const commenter = commenters[Math.floor(Math.random() * commenters.length)]
+        const commentText = commentTexts[Math.floor(Math.random() * commentTexts.length)]
+        const commentId = nanoid(12)
+
+        const comment = {
+            id: commentId,
+            rankingId,
+            userId: commenter.userId,
+            userName: commenter.userName,
+            userAvatar: commenter.userAvatar,
+            text: commentText,
+            createdAt: now - (commentCount - i) * 3600000, // Spread over hours
+            updatedAt: now - (commentCount - i) * 3600000,
+            likes: Math.floor(Math.random() * 10), // 0-9 likes per comment
+        }
+
+        await adminDb.collection('rankingComments').doc(commentId).set(comment)
+        actualCommentCount++
+    }
+
+    // Update ranking with actual comment count
+    await adminDb.collection('rankings').doc(rankingId).update({
+        comments: actualCommentCount,
+    })
+
+    console.log(`      💬 Added ${actualCommentCount} comments`)
 }
 
 /**
