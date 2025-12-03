@@ -70,6 +70,9 @@ export async function POST(request: NextRequest) {
 
         // Verify user exists and get their profile data
         let userProfile: any = null
+        let displayName: string | null = null
+        let avatarUrl: string | null = null
+
         try {
             const adminDb = getAdminDb()
             const userDoc = await adminDb.collection('users').doc(userId).get()
@@ -81,7 +84,27 @@ export async function POST(request: NextRequest) {
             const profileDoc = await adminDb.collection('profiles').doc(userId).get()
             if (profileDoc.exists) {
                 userProfile = profileDoc.data()
-                console.log('📝 Found user profile:', userProfile.displayName)
+                displayName = userProfile.displayName
+                avatarUrl = userProfile.avatarUrl
+                console.log('📝 Found user profile:', displayName)
+            } else {
+                console.log('⚠️  No profile document found, checking Firebase Auth...')
+            }
+
+            // Fallback to Firebase Auth if no profile document
+            if (!displayName) {
+                const { getAdminAuth } = await import('@/lib/firebase-admin')
+                const adminAuth = getAdminAuth()
+                try {
+                    const userRecord = await adminAuth.getUser(userId)
+                    displayName =
+                        userRecord.displayName || userRecord.email?.split('@')[0] || 'User'
+                    avatarUrl = userRecord.photoURL || null
+                    console.log('📝 Using Firebase Auth display name:', displayName)
+                } catch (authError) {
+                    console.error('Failed to fetch user from Auth:', authError)
+                    displayName = 'User'
+                }
             }
         } catch (error) {
             console.error('Error verifying user:', error)
@@ -89,12 +112,14 @@ export async function POST(request: NextRequest) {
         }
 
         console.log('🌱 Starting server-side seed for user:', userId)
+        console.log('   Display name:', displayName)
+        console.log('   Avatar URL:', avatarUrl)
 
-        // Use profile data if available, otherwise fall back to options
+        // Use fetched display name and avatar
         const seedOptions = {
             ...options,
-            userName: userProfile?.displayName || options.userName || 'User',
-            userAvatar: userProfile?.avatarUrl || options.userAvatar,
+            userName: displayName || options.userName || 'User',
+            userAvatar: avatarUrl || options.userAvatar,
         }
 
         // Start seeding in the background (fire and forget)

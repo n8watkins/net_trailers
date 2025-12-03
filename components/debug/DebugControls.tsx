@@ -12,6 +12,7 @@ import {
     CircleStackIcon,
     EnvelopeIcon,
     ClockIcon,
+    BellAlertIcon,
 } from '@heroicons/react/24/outline'
 import { useProfileActions } from '../../hooks/useProfileActions'
 import useUserData from '../../hooks/useUserData'
@@ -19,6 +20,8 @@ import { useDebugOperationsStore } from '../../stores/debugOperationsStore'
 import useAuth from '../../hooks/useAuth'
 import { useToast } from '../../hooks/useToast'
 import { authenticatedFetch, AuthRequiredError } from '../../lib/authenticatedFetch'
+import { useNotificationStore } from '../../stores/notificationStore'
+import { useSessionStore } from '../../stores/sessionStore'
 
 interface DebugSettings {
     showFirebaseTracker: boolean
@@ -165,6 +168,12 @@ export default function DebugControls() {
     const [isAdmin, setIsAdmin] = useState(false)
     const { showSuccess, showError } = useToast()
     const [sendingEmail, setSendingEmail] = useState<string | null>(null)
+
+    // Notification store and session
+    const { createNotification } = useNotificationStore()
+    const { getUserId } = useSessionStore()
+    const userId = getUserId()
+    const [seedingNotification, setSeedingNotification] = useState(false)
 
     // Check admin status on mount
     useEffect(() => {
@@ -430,6 +439,62 @@ export default function DebugControls() {
             console.error('[DebugControls] Failed to clear user data:', error)
         } finally {
             setClearing(false)
+        }
+    }
+
+    // Seed a random trending notification
+    const handleSeedTrendingNotification = async () => {
+        if (!userId) {
+            showError('No user ID - sign in to seed notifications')
+            return
+        }
+
+        setSeedingNotification(true)
+        try {
+            // Randomly choose movies or TV
+            const mediaType = Math.random() > 0.5 ? 'movie' : 'tv'
+            const endpoint = mediaType === 'movie' ? '/api/movies/trending' : '/api/tv/trending'
+
+            // Fetch trending content
+            const response = await fetch(`${endpoint}?page=1`)
+            if (!response.ok) {
+                throw new Error('Failed to fetch trending content')
+            }
+
+            const data = await response.json()
+            const trendingItems = data.results || []
+
+            if (trendingItems.length === 0) {
+                throw new Error('No trending items found')
+            }
+
+            // Pick a random item
+            const randomIndex = Math.floor(Math.random() * trendingItems.length)
+            const randomItem = trendingItems[randomIndex]
+
+            // Create notification
+            await createNotification(userId, {
+                type: 'trending_update',
+                title: 'Now Trending! 🔥',
+                message: `${randomItem.title || randomItem.name} is currently trending!`,
+                contentId: randomItem.id,
+                mediaType: mediaType,
+                imageUrl: randomItem.poster_path
+                    ? `https://image.tmdb.org/t/p/w500${randomItem.poster_path}`
+                    : undefined,
+                actionUrl: `/${mediaType}/${randomItem.id}`,
+                expiresIn: 7,
+            })
+
+            showSuccess(`Created trending notification for ${randomItem.title || randomItem.name}`)
+            console.log('[DebugControls] ✅ Created trending notification:', randomItem)
+        } catch (error) {
+            console.error('[DebugControls] Failed to create trending notification:', error)
+            showError(
+                error instanceof Error ? error.message : 'Failed to create trending notification'
+            )
+        } finally {
+            setSeedingNotification(false)
         }
     }
 
@@ -744,6 +809,23 @@ export default function DebugControls() {
                                     <SparklesIcon className="w-3 h-3" />
                                     <span className="text-xs">
                                         {isSeeding ? 'Seeding...' : 'Seed Data'}
+                                    </span>
+                                </button>
+
+                                {/* Seed Trending Notification Button */}
+                                <button
+                                    onClick={handleSeedTrendingNotification}
+                                    disabled={seedingNotification || !userId}
+                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-orange-600/20 text-orange-400 border border-orange-500/30 hover:bg-orange-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title={
+                                        !userId
+                                            ? 'Sign in to seed trending notifications'
+                                            : 'Create a notification for a random trending movie or TV show'
+                                    }
+                                >
+                                    <BellAlertIcon className="w-3 h-3" />
+                                    <span className="text-xs">
+                                        {seedingNotification ? 'Creating...' : 'Seed Trending'}
                                     </span>
                                 </button>
 
