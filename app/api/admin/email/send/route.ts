@@ -108,9 +108,7 @@ async function handleSendEmail(request: NextRequest, userId: string): Promise<Ne
                           'li',
                           'a',
                       ],
-                      ALLOWED_ATTR: {
-                          a: ['href', 'title'], // Only allow href and title on links
-                      },
+                      ALLOWED_ATTR: ['href', 'title'], // Only allow href and title attributes
                       ALLOWED_URI_REGEXP: /^https:\/\//, // HTTPS only, no HTTP
                       FORBID_ATTR: ['style', 'class', 'id', 'onclick', 'onerror'], // Block inline styles/scripts
                       FORBID_TAGS: [
@@ -123,7 +121,6 @@ async function handleSendEmail(request: NextRequest, userId: string): Promise<Ne
                           'input',
                       ],
                       ALLOW_DATA_ATTR: false,
-                      SAFE_FOR_TEMPLATES: true,
                   })
                 : customHtmlContent
 
