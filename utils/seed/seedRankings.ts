@@ -1691,6 +1691,7 @@ const RANKING_TEMPLATES: RankingTemplate[] = [
             HORROR_TV.strangerThings,
             HORROR_TV.walkingDead,
         ],
+        genres: ['Horror', 'Thriller', 'Mystery'],
     },
 
     // ========== Sci-Fi (🚀) - 2 rankings ==========
@@ -1717,6 +1718,7 @@ const RANKING_TEMPLATES: RankingTemplate[] = [
         description: 'The future is now on the small screen',
         movies: [],
         tvShows: [SCIFI_TV.severance, SCIFI_TV.blackMirror, SCIFI_TV.expanse, SCIFI_TV.westworld],
+        genres: ['Sci-Fi', 'Thriller', 'Drama'],
     },
 
     // ========== Anime (🎌) - 2 rankings ==========
@@ -1745,6 +1747,7 @@ const RANKING_TEMPLATES: RankingTemplate[] = [
             ANIME_TV.jujutsuKaisen,
             ANIME_TV.onePiece,
         ],
+        genres: ['Animation', 'Fantasy', 'Adventure'],
     },
 
     // ========== True Crime (🔍) - 2 rankings ==========
@@ -1775,6 +1778,7 @@ const RANKING_TEMPLATES: RankingTemplate[] = [
             TRUE_CRIME_TV.mindhunter,
             TRUE_CRIME_TV.ozark,
         ],
+        genres: ['Documentary', 'Crime', 'Mystery'],
     },
 
     // ========== Comedy (😂) - 2 rankings ==========
@@ -1805,6 +1809,7 @@ const RANKING_TEMPLATES: RankingTemplate[] = [
             COMEDY_TV.brooklyn99,
             COMEDY_TV.whatWeDoShadows,
         ],
+        genres: ['Comedy', 'Romance'],
     },
 
     // ========== Romance (💕) - 2 rankings ==========
@@ -1834,6 +1839,7 @@ const RANKING_TEMPLATES: RankingTemplate[] = [
             ROMANCE_TV.bridgerton,
             ROMANCE_TV.outlander,
         ],
+        genres: ['Romance', 'Drama', 'Comedy'],
     },
 
     // ========== Action (💥) - 2 rankings ==========
@@ -1864,6 +1870,7 @@ const RANKING_TEMPLATES: RankingTemplate[] = [
             ACTION_TV.houseOfDragon,
             ACTION_TV.reacher,
         ],
+        genres: ['Action', 'Thriller', 'Adventure'],
     },
 
     // ========== Netflix (📺) - 2 rankings ==========
