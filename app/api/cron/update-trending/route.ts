@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
         const adminOnly = adminOnlyParam === 'true'
 
         // Get admin UID from environment variable
-        const ADMIN_UID = process.env.NEXT_PUBLIC_ADMIN_UID
+        const ADMIN_UID = process.env.ADMIN_UID
 
         if (adminOnly) {
             console.log(`📊 [Trending] Running in ADMIN-ONLY mode`)

@@ -161,10 +161,22 @@ export default function DebugControls() {
     // Email sending state
     const { user } = useAuth()
 
-    // Check if current user is admin
-    const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID
+    // Check if current user is admin (server-side check)
+    const [isAdmin, setIsAdmin] = useState(false)
     const { showSuccess, showError } = useToast()
     const [sendingEmail, setSendingEmail] = useState<string | null>(null)
+
+    // Check admin status on mount
+    useEffect(() => {
+        if (user) {
+            authenticatedFetch('/api/admin/check')
+                .then((res) => res.json())
+                .then((data) => setIsAdmin(data.isAdmin || false))
+                .catch(() => setIsAdmin(false))
+        } else {
+            setIsAdmin(false)
+        }
+    }, [user])
 
     // Visibility state - load from localStorage, hidden by default
     const [isVisible, setIsVisible] = useState(false)

@@ -83,7 +83,7 @@ async function fetchTrendingContent(): Promise<{ movies: Content[]; tvShows: Con
 async function handleSendPilot(request: NextRequest, userId: string): Promise<NextResponse> {
     try {
         // ADMIN ONLY: Check if user is admin
-        const ADMIN_UID = process.env.NEXT_PUBLIC_ADMIN_UID
+        const ADMIN_UID = process.env.ADMIN_UID
         if (!ADMIN_UID || userId !== ADMIN_UID) {
             console.error('[PilotEmail] User is not admin:', userId)
             return NextResponse.json(

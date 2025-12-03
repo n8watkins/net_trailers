@@ -13,6 +13,25 @@
 import './load-env'
 
 import { seedDemoProfiles, getDemoProfileIds } from '../utils/seed'
+import { auth } from '../firebase'
+import { signInWithEmailAndPassword } from 'firebase/auth'
+
+// Authenticate as test user to bypass security rules
+async function authenticateTestUser(): Promise<string> {
+    const email = 'test@nettrailer.dev'
+    const password = 'TestPassword123!'
+
+    try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password)
+        console.log(`✅ Authenticated as: ${email} (${userCredential.user.uid})\n`)
+        return userCredential.user.uid
+    } catch (error) {
+        console.error('❌ Failed to authenticate test user:', error)
+        throw new Error(
+            'Authentication failed. Make sure the test user exists. Run: npm run create-test-user'
+        )
+    }
+}
 
 // Parse command line arguments
 function parseArgs(): {
@@ -53,6 +72,10 @@ async function main() {
     console.log(`  Threads per profile: ${options.threads}`)
     console.log(`  Polls per profile: ${options.polls}`)
     console.log('')
+
+    // Authenticate as test user to bypass security rules
+    console.log('🔐 Authenticating...')
+    await authenticateTestUser()
 
     // Check for existing demo profiles
     console.log('📋 Checking for existing demo profiles...')

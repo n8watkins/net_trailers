@@ -3,6 +3,11 @@ import { withAuth } from '../../../../../lib/auth-middleware'
 import { getAdminDb } from '../../../../../lib/firebase-admin'
 import { EmailService } from '../../../../../lib/email/email-service'
 import { validateEmailTemplate } from '../../../../../lib/email/email-validation'
+import {
+    checkAdminEmailRateLimit,
+    checkRecipientEmailRateLimit,
+} from '../../../../../lib/email/rate-limiter'
+import { batchEnsureUnsubscribeTokens } from '../../../../../lib/email/unsubscribe-token'
 import DOMPurify from 'isomorphic-dompurify'
 
 /**
@@ -14,7 +19,7 @@ import DOMPurify from 'isomorphic-dompurify'
 async function handleSendEmail(request: NextRequest, userId: string): Promise<NextResponse> {
     try {
         // ADMIN ONLY: Check if user is admin
-        const ADMIN_UID = process.env.NEXT_PUBLIC_ADMIN_UID
+        const ADMIN_UID = process.env.ADMIN_UID
         if (!ADMIN_UID || userId !== ADMIN_UID) {
             console.error('[AdminEmailSend] User is not admin:', userId)
             return NextResponse.json(
@@ -56,6 +61,35 @@ async function handleSendEmail(request: NextRequest, userId: string): Promise<Ne
             return NextResponse.json({ error: validation.error }, { status: 400 })
         }
 
+        // Check admin rate limit (100 emails/hour)
+        const rateCheck = checkAdminEmailRateLimit(userId)
+        if (!rateCheck.allowed) {
+            const retryAfter = rateCheck.resetAt
+                ? Math.ceil((rateCheck.resetAt - Date.now()) / 1000)
+                : 3600
+
+            return NextResponse.json(
+                {
+                    error: 'Rate limit exceeded',
+                    message: `You can send up to ${rateCheck.limit} emails per hour. Please try again later.`,
+                    limit: rateCheck.limit,
+                    remaining: 0,
+                    resetAt: rateCheck.resetAt,
+                },
+                {
+                    status: 429,
+                    headers: {
+                        'Retry-After': retryAfter.toString(),
+                        'X-RateLimit-Limit': rateCheck.limit.toString(),
+                        'X-RateLimit-Remaining': '0',
+                        'X-RateLimit-Reset': rateCheck.resetAt
+                            ? (rateCheck.resetAt / 1000).toString()
+                            : '',
+                    },
+                }
+            )
+        }
+
         // Sanitize custom HTML content to prevent XSS attacks
         const sanitizedHtmlContent =
             template === 'custom' && customHtmlContent
@@ -73,11 +107,23 @@ async function handleSendEmail(request: NextRequest, userId: string): Promise<Ne
                           'ol',
                           'li',
                           'a',
-                          'span',
-                          'div',
                       ],
-                      ALLOWED_ATTR: ['href', 'style', 'class'],
-                      ALLOWED_URI_REGEXP: /^https?:\/\//,
+                      ALLOWED_ATTR: {
+                          a: ['href', 'title'], // Only allow href and title on links
+                      },
+                      ALLOWED_URI_REGEXP: /^https:\/\//, // HTTPS only, no HTTP
+                      FORBID_ATTR: ['style', 'class', 'id', 'onclick', 'onerror'], // Block inline styles/scripts
+                      FORBID_TAGS: [
+                          'script',
+                          'style',
+                          'iframe',
+                          'object',
+                          'embed',
+                          'form',
+                          'input',
+                      ],
+                      ALLOW_DATA_ATTR: false,
+                      SAFE_FOR_TEMPLATES: true,
                   })
                 : customHtmlContent
 
@@ -116,6 +162,9 @@ async function handleSendEmail(request: NextRequest, userId: string): Promise<Ne
 
         const users = (await Promise.all(userPromises)).filter((u) => u !== null)
 
+        // Generate unsubscribe tokens for all recipients (CAN-SPAM compliance)
+        const unsubscribeTokens = await batchEnsureUnsubscribeTokens(users.map((u) => u.userId))
+
         // Send emails based on template
         switch (template) {
             case 'trending': {
@@ -136,6 +185,18 @@ async function handleSendEmail(request: NextRequest, userId: string): Promise<Ne
                             continue
                         }
 
+                        // Check recipient rate limit (max 3 admin emails/day)
+                        const recipientCheck = checkRecipientEmailRateLimit(user.userId)
+                        if (!recipientCheck.allowed) {
+                            console.log(
+                                `[AdminEmailSend] User ${user.userId} has exceeded daily admin email limit, skipping`
+                            )
+                            errors.push(
+                                `User ${user.email} has received too many admin emails today (limit: ${recipientCheck.limit}/day)`
+                            )
+                            continue
+                        }
+
                         // Fetch trending content for this user (simplified for manual send)
                         // In a real scenario, you'd fetch actual trending data from their watchlist
                         const movies: any[] = [] // Placeholder
@@ -146,6 +207,7 @@ async function handleSendEmail(request: NextRequest, userId: string): Promise<Ne
                             userName: user.displayName || 'there',
                             movies,
                             tvShows,
+                            unsubscribeToken: unsubscribeTokens.get(user.userId),
                         })
 
                         emailsSent++
@@ -181,6 +243,18 @@ async function handleSendEmail(request: NextRequest, userId: string): Promise<Ne
                             continue
                         }
 
+                        // Check recipient rate limit (max 3 admin emails/day)
+                        const recipientCheck = checkRecipientEmailRateLimit(user.userId)
+                        if (!recipientCheck.allowed) {
+                            console.log(
+                                `[AdminEmailSend] User ${user.userId} has exceeded daily admin email limit, skipping`
+                            )
+                            errors.push(
+                                `User ${user.email} has received too many admin emails today (limit: ${recipientCheck.limit}/day)`
+                            )
+                            continue
+                        }
+
                         // Fetch social notifications for this user (simplified for manual send)
                         const interactions: any[] = [] // Placeholder
 
@@ -188,6 +262,7 @@ async function handleSendEmail(request: NextRequest, userId: string): Promise<Ne
                             to: user.email,
                             userName: user.displayName || 'there',
                             interactions,
+                            unsubscribeToken: unsubscribeTokens.get(user.userId),
                         })
 
                         emailsSent++
@@ -214,11 +289,24 @@ async function handleSendEmail(request: NextRequest, userId: string): Promise<Ne
                             continue
                         }
 
+                        // Check recipient rate limit (max 3 admin emails/day)
+                        const recipientCheck = checkRecipientEmailRateLimit(user.userId)
+                        if (!recipientCheck.allowed) {
+                            console.log(
+                                `[AdminEmailSend] User ${user.userId} has exceeded daily admin email limit, skipping`
+                            )
+                            errors.push(
+                                `User ${user.email} has received too many admin emails today (limit: ${recipientCheck.limit}/day)`
+                            )
+                            continue
+                        }
+
                         await EmailService.sendAnnouncement({
                             to: user.email,
                             userName: user.displayName || 'there',
                             subject: subject!,
                             message: customMessage!,
+                            unsubscribeToken: unsubscribeTokens.get(user.userId),
                         })
 
                         emailsSent++
@@ -245,11 +333,24 @@ async function handleSendEmail(request: NextRequest, userId: string): Promise<Ne
                             continue
                         }
 
+                        // Check recipient rate limit (max 3 admin emails/day)
+                        const recipientCheck = checkRecipientEmailRateLimit(user.userId)
+                        if (!recipientCheck.allowed) {
+                            console.log(
+                                `[AdminEmailSend] User ${user.userId} has exceeded daily admin email limit, skipping`
+                            )
+                            errors.push(
+                                `User ${user.email} has received too many admin emails today (limit: ${recipientCheck.limit}/day)`
+                            )
+                            continue
+                        }
+
                         await EmailService.sendCustomEmail({
                             to: user.email,
                             userName: user.displayName || 'there',
                             subject: subject!,
                             htmlContent: sanitizedHtmlContent!,
+                            unsubscribeToken: unsubscribeTokens.get(user.userId),
                         })
 
                         emailsSent++
