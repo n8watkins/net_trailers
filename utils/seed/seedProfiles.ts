@@ -401,9 +401,10 @@ export async function seedDemoProfiles(options: SeedDemoProfilesOptions = {}): P
 
                     // Random option selection
                     const optionIndex = Math.floor(Math.random() * poll.options.length)
+                    const optionId = poll.options[optionIndex].id
 
                     try {
-                        await forumState.voteOnPoll(poll.id, voter.userId, [optionIndex])
+                        await forumState.voteOnPoll(poll.id, voter.userId, [optionId])
                         await new Promise((resolve) => setTimeout(resolve, 100))
                     } catch (error) {
                         // Silently continue if already voted
