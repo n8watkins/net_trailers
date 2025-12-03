@@ -68,12 +68,20 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Verify user exists
+        // Verify user exists and get their profile data
+        let userProfile: any = null
         try {
             const adminDb = getAdminDb()
             const userDoc = await adminDb.collection('users').doc(userId).get()
             if (!userDoc.exists) {
                 return NextResponse.json({ error: 'User not found' }, { status: 404 })
+            }
+
+            // Get user's profile to use their actual display name
+            const profileDoc = await adminDb.collection('profiles').doc(userId).get()
+            if (profileDoc.exists) {
+                userProfile = profileDoc.data()
+                console.log('📝 Found user profile:', userProfile.displayName)
             }
         } catch (error) {
             console.error('Error verifying user:', error)
@@ -82,9 +90,16 @@ export async function POST(request: NextRequest) {
 
         console.log('🌱 Starting server-side seed for user:', userId)
 
+        // Use profile data if available, otherwise fall back to options
+        const seedOptions = {
+            ...options,
+            userName: userProfile?.displayName || options.userName || 'User',
+            userAvatar: userProfile?.avatarUrl || options.userAvatar,
+        }
+
         // Start seeding in the background (fire and forget)
         // This allows the response to return immediately while seeding continues
-        seedUserDataServerSide(userId, options).catch((error) => {
+        seedUserDataServerSide(userId, seedOptions).catch((error) => {
             console.error('❌ Server-side seed failed for user:', userId, error)
         })
 
