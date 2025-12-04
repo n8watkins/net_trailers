@@ -38,47 +38,37 @@ export default function UserLikedContentPage() {
             setError(null)
 
             try {
-                // Try to get profile data from API first (includes auth displayName fallback)
+                // Try to get profile data from API first (includes liked content)
                 let profileDisplayName = 'User'
+                let liked: (Movie | TVShow)[] = []
+
                 try {
                     const response = await fetch(`/api/public-profile/${userId}`)
                     if (response.ok) {
                         const payload = (await response.json()) as PublicProfilePayload
                         profileDisplayName = payload.profile.displayName
+                        liked = payload.likedContent
                     }
                 } catch (apiError) {
                     console.warn('[UserLiked] API failed, will use client-side data')
                 }
 
-                // Fetch user document for liked content
-                const userDoc = await getDoc(doc(db, 'users', userId))
-
-                if (!userDoc.exists()) {
-                    throw new Error('User not found')
+                // Fallback to client-side lookup for display name if API failed
+                if (profileDisplayName === 'User') {
+                    try {
+                        const profileDoc = await getDoc(doc(db, 'profiles', userId))
+                        if (profileDoc.exists()) {
+                            const profileData = profileDoc.data()
+                            profileDisplayName = profileData?.displayName || 'User'
+                        }
+                    } catch (profileError) {
+                        console.warn('[UserLiked] Could not load profile, using default name')
+                    }
                 }
-
-                const userData = userDoc.data()
 
                 if (!isMounted) return
 
-                // Use API-derived displayName, or fallback to client-side lookup
-                if (profileDisplayName === 'User') {
-                    const profileDoc = await getDoc(doc(db, 'profiles', userId))
-                    const profileData = profileDoc.exists() ? profileDoc.data() : {}
-                    const legacyProfile = userData?.profile || {}
-                    profileDisplayName =
-                        profileData?.displayName ||
-                        legacyProfile.displayName ||
-                        userData.displayName ||
-                        'User'
-                }
-
                 setDisplayName(profileDisplayName)
-
-                const liked = Array.isArray(userData.likedMovies)
-                    ? (userData.likedMovies as (Movie | TVShow)[])
-                    : []
-
                 setLikedContent(liked)
             } catch (err) {
                 console.error('Error loading liked content:', err)

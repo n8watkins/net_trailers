@@ -38,7 +38,7 @@ export default function UserWatchLaterPage() {
             setError(null)
 
             try {
-                // Try to get profile data from API first (includes auth displayName fallback)
+                // Try to get profile data from API first
                 let profileDisplayName = 'User'
                 try {
                     const response = await fetch(`/api/public-profile/${userId}`)
@@ -50,36 +50,50 @@ export default function UserWatchLaterPage() {
                     console.warn('[WatchLater] API failed, will use client-side data')
                 }
 
-                // Fetch user document for watch later content
-                const userDoc = await getDoc(doc(db, 'users', userId))
-
-                if (!userDoc.exists()) {
-                    throw new Error('User not found')
-                }
-
-                const userData = userDoc.data()
-
-                if (!isMounted) return
-
-                // Use API-derived displayName, or fallback to client-side lookup
+                // Fallback to client-side lookup for display name if API failed
                 if (profileDisplayName === 'User') {
-                    const profileDoc = await getDoc(doc(db, 'profiles', userId))
-                    const profileData = profileDoc.exists() ? profileDoc.data() : {}
-                    const legacyProfile = userData?.profile || {}
-                    profileDisplayName =
-                        profileData?.displayName ||
-                        legacyProfile.displayName ||
-                        userData.displayName ||
-                        'User'
+                    try {
+                        const profileDoc = await getDoc(doc(db, 'profiles', userId))
+                        if (profileDoc.exists()) {
+                            const profileData = profileDoc.data()
+                            profileDisplayName = profileData?.displayName || 'User'
+                        }
+                    } catch (profileError) {
+                        console.warn('[WatchLater] Could not load profile, using default name')
+                    }
                 }
 
                 setDisplayName(profileDisplayName)
 
-                const watchLater = Array.isArray(userData.defaultWatchlist)
-                    ? (userData.defaultWatchlist as (Movie | TVShow)[])
-                    : []
+                // Try to fetch watch later content
+                // Note: This will only work if viewing your own profile due to Firestore security rules
+                try {
+                    const userDoc = await getDoc(doc(db, 'users', userId))
 
-                setWatchLaterContent(watchLater)
+                    if (userDoc.exists()) {
+                        const userData = userDoc.data()
+                        const watchLater = Array.isArray(userData.defaultWatchlist)
+                            ? (userData.defaultWatchlist as (Movie | TVShow)[])
+                            : []
+
+                        if (isMounted) {
+                            setWatchLaterContent(watchLater)
+                        }
+                    }
+                } catch (permissionError: any) {
+                    // Permission denied - this is expected when viewing other users' profiles
+                    // Watch later is private and not included in public profiles
+                    if (
+                        permissionError?.code === 'permission-denied' ||
+                        permissionError?.message?.includes('permission')
+                    ) {
+                        console.warn('[WatchLater] Watch later is private for this user')
+                        // Leave watchLaterContent as empty array
+                    } else {
+                        // Re-throw unexpected errors
+                        throw permissionError
+                    }
+                }
             } catch (err) {
                 console.error('Error loading watch later content:', err)
                 if (isMounted) {

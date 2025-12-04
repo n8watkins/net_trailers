@@ -30,6 +30,10 @@ export {
     COMMENT_TEMPLATES,
     SHORT_COMMENTS,
 } from './seedRankingComments'
+export {
+    seedSocialNotifications,
+    type SeedSocialNotificationsOptions,
+} from './seedSocialNotifications'
 
 // Re-export sample content
 export { sampleMovies, sampleTVShows, getShuffledContent, getContentSlice } from './sampleContent'

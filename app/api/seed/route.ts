@@ -675,6 +675,7 @@ async function seedRankingCommentsServerSide(
 
 /**
  * Seed notifications using Admin SDK
+ * Creates individual trending notifications with real TMDB data
  */
 async function seedNotificationsServerSide(
     adminDb: any,
@@ -683,66 +684,83 @@ async function seedNotificationsServerSide(
 ): Promise<void> {
     const { nanoid } = await import('nanoid')
 
-    const notificationTypes = [
-        {
-            type: 'trending',
-            title: 'Content Trending',
-            message: 'A movie in your watchlist is trending!',
-        },
-        { type: 'system', title: 'New Feature', message: 'Check out our new ranking system!' },
-        {
-            type: 'collection_shared',
-            title: 'Collection Shared',
-            message: 'Someone shared a collection with you',
-        },
-        {
-            type: 'ranking_comment',
-            title: 'New Comment',
-            message: 'Someone commented on your ranking',
-        },
-        { type: 'ranking_like', title: 'New Like', message: 'Someone liked your ranking' },
-    ]
+    if (count <= 0) {
+        console.log('    ⏭️  Skipping notifications (count = 0)')
+        return
+    }
 
-    const userNotificationsRef = adminDb.collection('users').doc(userId).collection('notifications')
+    console.log(`    🔔 Creating ${count} trending notifications from live TMDB data`)
 
-    // Get existing notifications to avoid duplicates
-    const existingNotifications = await userNotificationsRef.get()
-    const existingNotificationKeys = new Set(
-        existingNotifications.docs.map((doc: any) => {
-            const data = doc.data()
-            return `${data.type}:${data.title}`
-        })
-    )
+    const TMDB_API_KEY = process.env.TMDB_API_KEY
 
-    let createdCount = 0
-    for (let i = 0; i < count; i++) {
-        const notifType = notificationTypes[i % notificationTypes.length]
-        const notificationKey = `${notifType.type}:${notifType.title}`
+    if (!TMDB_API_KEY) {
+        console.error('    ❌ TMDB_API_KEY not configured, cannot fetch trending data')
+        return
+    }
 
-        // Check if notification with this type and title already exists
-        if (existingNotificationKeys.has(notificationKey)) {
-            console.log(`    ⏭️  Skipping existing notification: ${notifType.title}`)
-            continue
+    try {
+        // Fetch current trending movies and TV shows
+        const [moviesRes, tvRes] = await Promise.all([
+            fetch(`https://api.themoviedb.org/3/trending/movie/week?api_key=${TMDB_API_KEY}`),
+            fetch(`https://api.themoviedb.org/3/trending/tv/week?api_key=${TMDB_API_KEY}`),
+        ])
+
+        if (!moviesRes.ok || !tvRes.ok) {
+            console.error('    ❌ Failed to fetch trending data from TMDB')
+            return
         }
 
-        const notificationId = nanoid(12)
+        const moviesData = await moviesRes.json()
+        const tvData = await tvRes.json()
+
+        // Combine trending items (movies and TV)
+        const allTrendingItems = [
+            ...moviesData.results.slice(0, 4).map((m: any) => ({ ...m, media_type: 'movie' })),
+            ...tvData.results.slice(0, 4).map((s: any) => ({ ...s, media_type: 'tv' })),
+        ]
+
+        // Limit to requested count
+        const itemsToNotify = allTrendingItems.slice(0, count)
+
+        console.log(`    🔔 Creating ${itemsToNotify.length} notifications for real trending items`)
+
+        const userNotificationsRef = adminDb
+            .collection('users')
+            .doc(userId)
+            .collection('notifications')
         const now = Date.now()
 
-        const notification = {
-            id: notificationId,
-            type: notifType.type,
-            title: notifType.title,
-            message: notifType.message,
-            read: i > count / 2, // First half unread, second half read
-            createdAt: now - i * 3600000, // Spread over hours
-            dismissedAt: null,
+        // Create individual notification for each trending item
+        for (let i = 0; i < itemsToNotify.length; i++) {
+            const item = itemsToNotify[i]
+            const title = item.title || item.name
+            const mediaType = item.media_type === 'movie' ? 'movie' : 'tv'
+            const notificationId = nanoid(12)
+
+            const notification = {
+                id: notificationId,
+                type: 'trending_update',
+                title: 'Now Trending! 🔥',
+                message: `${title} is currently trending this week!`,
+                contentId: item.id,
+                mediaType: mediaType,
+                imageUrl: item.poster_path
+                    ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
+                    : null,
+                actionUrl: `/${mediaType}/${item.id}`,
+                isRead: false,
+                createdAt: now - i * 300000, // Spread 5 minutes apart
+                expiresAt: now + 7 * 24 * 60 * 60 * 1000, // Expire after 7 days
+                dismissedAt: null,
+            }
+
+            await userNotificationsRef.doc(notificationId).set(notification)
         }
 
-        await userNotificationsRef.doc(notificationId).set(notification)
-        existingNotificationKeys.add(notificationKey) // Track this to avoid duplicates in same batch
-        createdCount++
+        console.log(`    ✅ Created ${itemsToNotify.length} trending notifications`)
+    } catch (error) {
+        console.error('    ❌ Failed to create trending notifications:', error)
     }
-    console.log(`    ✅ Created ${createdCount} notifications`)
 }
 
 /**

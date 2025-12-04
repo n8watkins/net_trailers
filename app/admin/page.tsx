@@ -275,6 +275,46 @@ export default function AdminDashboard() {
         }
     }
 
+    const seedSocialNotifications = async () => {
+        setLoading(true)
+        try {
+            // Get Firebase user and ID token
+            const user = auth.currentUser
+            if (!user) {
+                showError('Authentication required - please refresh the page')
+                setLoading(false)
+                return
+            }
+
+            const idToken = await user.getIdToken()
+            if (!idToken) {
+                showError('Failed to get authentication token')
+                setLoading(false)
+                return
+            }
+
+            const response = await fetch('/api/admin/seed-social', {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${idToken}`,
+                },
+            })
+            const result = await response.json()
+
+            if (response.ok) {
+                showSuccess(
+                    `Social seeding complete: ${result.commentsCreated} comments, ${result.likesCreated} likes, ${result.notificationsCreated} notifications created`
+                )
+            } else {
+                showError(result.error || 'Failed to seed social notifications')
+            }
+        } catch (_error) {
+            showError('Failed to seed social notifications')
+        } finally {
+            setLoading(false)
+        }
+    }
+
     const resetDemoAccounts = async () => {
         if (!confirm('Reset demo accounts to 5? This will delete test accounts.')) return
 
@@ -479,6 +519,25 @@ export default function AdminDashboard() {
                                 >
                                     <RefreshCw className="h-4 w-4" />
                                     {loading ? 'Running...' : 'Trigger Demo'}
+                                </button>
+                            </div>
+
+                            {/* Social Notifications Seed */}
+                            <div className="p-4 bg-gray-900 rounded-lg">
+                                <h3 className="text-sm font-medium text-gray-300 mb-2">
+                                    Seed Social Notifications
+                                </h3>
+                                <p className="text-xs text-gray-500 mb-3">
+                                    Create comments and likes on rankings to generate social
+                                    notifications
+                                </p>
+                                <button
+                                    onClick={seedSocialNotifications}
+                                    disabled={loading}
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 text-white rounded-lg transition"
+                                >
+                                    <Users className="h-4 w-4" />
+                                    {loading ? 'Seeding...' : 'Seed Social Notifications'}
                                 </button>
                             </div>
 
