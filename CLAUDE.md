@@ -129,6 +129,14 @@ The app handles both movies and TV shows through a unified type system:
 
 - `/api/cron/update-trending` - Update trending notifications (daily at 2 AM UTC)
 
+**Admin Email System**:
+
+- `/api/admin/email/send` - Send announcement or custom HTML emails
+- `/api/admin/email/preview` - Preview email before sending
+- `/api/admin/email/history` - Get email sending history
+- `/api/admin/users/filtered` - Get filtered user list for email targeting
+- `/api/admin/check` - Server-side admin verification endpoint
+
 ### Authentication & User Data System
 
 - **Firebase Auth** with multiple providers (Google, Email/Password)
@@ -188,6 +196,11 @@ The app handles both movies and TV shows through a unified type system:
 /sharedCollections/{linkId}
   - Shared collection snapshots
   - Public read access
+
+/admin_emails/{emailId}
+  - Email sending history
+  - Server-side only access (blocked client reads)
+  - Stores counts, not recipient lists (PII minimization)
 ```
 
 ### Unified Toast Notification System
@@ -405,9 +418,12 @@ Required environment variables are documented in the file with setup instruction
 - TMDB API key (query parameter auth for v3 API)
 - Google Gemini API key (for smart search)
 - CRON_SECRET (for auto-updating collections)
+- ADMIN*UID (server-side only, not NEXT_PUBLIC* - for admin portal access)
+- Firebase Admin SDK credentials (private key, client email)
 - Sentry DSN (for error monitoring)
 - Google Analytics measurement ID
-- Resend API key (optional - for email notifications)
+- Resend API key (optional - for admin email system)
+- RESEND_SENDER_EMAIL (defaults to onboarding@resend.dev)
 
 ### Next.js Configuration
 
@@ -618,13 +634,71 @@ export async function myAction() {
 - When the user mentions screenshots, check this directory using the Read or Glob tools
 - Screenshots may contain setup instructions, error messages, or UI mockups relevant to development tasks
 
+## Admin Email System
+
+### Features
+
+- **Two Email Templates**:
+    - **Announcement**: Plain text emails with subject and message
+    - **Custom HTML**: Rich formatted emails using TipTap rich text editor
+- **User Filtering**: Target all users, authenticated only, or guest users only
+- **Email Preview**: Live preview with actual user data before sending
+- **Batch Email Sending**: Process up to 100 recipients per request
+- **Email History**: Track sent emails with counts and metadata
+
+### Security Measures
+
+- **Rate Limiting**:
+    - Admin limit: 100 emails per hour (in-memory cache)
+    - Recipient limit: 3 emails per day per user
+    - Returns 429 with Retry-After header on limit exceeded
+- **XSS Prevention**:
+    - DOMPurify sanitization on all custom HTML content
+    - Shared CUSTOM_HTML_SANITIZATION_CONFIG
+    - Allowed tags: p, br, strong, em, u, h1-h3, ul, ol, li, a
+    - HTTPS-only links enforced via ALLOWED_URI_REGEXP
+- **Input Validation**:
+    - Subject: max 200 characters
+    - Message: max 10,000 characters
+    - HTML: max 50,000 characters
+    - Recipient limit: max 100 per request
+- **CSRF Protection**: All endpoints use authenticatedFetch()
+- **Admin-Only Access**: ADMIN_UID verification (server-side only)
+- **PII Minimization**: Email history stores counts, not recipient emails
+
+### CAN-SPAM Compliance
+
+- **Unsubscribe Tokens**: Crypto-secure 64-character hex tokens
+- **Batch Token Generation**: batchEnsureUnsubscribeTokens() for performance
+- **Transaction Safety**: Firestore transactions prevent race conditions
+- **Unsubscribe Links**: Automatically included in all emails
+
+### Key Files
+
+- `lib/email/email-validation.ts` - Centralized validation and sanitization config
+- `lib/email/rate-limiter.ts` - Admin and recipient rate limiting
+- `lib/email/unsubscribe-token.ts` - Token generation and management
+- `app/api/admin/email/send/route.ts` - Email sending endpoint
+- `app/api/admin/email/preview/route.ts` - Preview endpoint
+- `components/admin/EmailComposer.tsx` - UI for composing emails
+- `components/admin/EmailPreviewModal.tsx` - Preview modal component
+
+### Implementation Notes
+
+- **Trending/Social templates**: Not implemented (returns 501 Not Implemented)
+- **Announcement/Custom templates**: Fully functional and production-ready
+- **Batch optimization**: 100+ Firestore queries → 1 batched read
+- **Graceful degradation**: Returns null when Resend unavailable
+- **Template system**: React Email components prevent injection
+
 ## Key Metrics
 
 - **Codebase size**: 35,682 lines (components), ~50,000+ total (estimated)
-- **Total commits**: 378+
-- **Features completed**: 12 major feature sets
+- **Total commits**: 380+
+- **Features completed**: 13 major feature sets (including admin email system)
 - **Documentation**: 55+ markdown files
-- **API routes**: 30+
-- **Zustand stores**: 17 focused stores
+- **API routes**: 49+ (including 5 admin email routes)
+- **Zustand stores**: 18 focused stores
 - **Components**: 100+ React components
 - **Development time**: ~3 months active development
+- **Production status**: Production-ready with comprehensive security measures

@@ -2,8 +2,8 @@
 
 This document outlines the security measures implemented in NetTrailer to protect user data and ensure application integrity.
 
-**Last Updated:** November 2025
-**Security Review Status:** Production Ready
+**Last Updated:** December 3, 2025
+**Security Review Status:** Production Ready - Enhanced Email Security
 
 ---
 
@@ -480,10 +480,33 @@ Only approved domains allowed:
 - **Admin Fallback**: Cron jobs accept CRON_SECRET OR admin authentication
 - **Demo Mode Protection**: Only admins can trigger demo/test modes
 
-### Email Service
+### Email Security
+
+**Admin Email System (December 2025):**
+
+- **XSS Prevention**: DOMPurify sanitization on all custom HTML content
+- **HTTPS-Only Links**: ALLOWED_URI_REGEXP enforces `https://` scheme only
+- **Rate Limiting**: 100 emails/hour per admin, 3/day per recipient
+- **Recipient Limit**: Maximum 100 recipients per request (DoS protection)
+- **Input Validation**: 200/10K/50K character limits on subject/message/HTML
+- **PII Minimization**: Email history stores counts only, not recipient lists
+- **CAN-SPAM Compliance**: Crypto-secure unsubscribe tokens (64-character hex)
+- **Transaction Safety**: Firestore transactions prevent token generation race conditions
+- **Batch Optimization**: Batched Firestore reads (100+ queries → 1 read)
+- **CSRF Protection**: authenticatedFetch() used for all email endpoints
+- **Admin-Only Access**: ADMIN_UID verification required for all email operations
+- **Content Sanitization Config**: Shared CUSTOM_HTML_SANITIZATION_CONFIG
+    - Allowed tags: p, br, strong, em, u, h1-h3, ul, ol, li, a
+    - Allowed attributes: href, title only
+    - Forbidden: script, style, iframe, inline styles/handlers
+    - Data attributes blocked
+
+**Email Service:**
 
 - **Batch Rate Limiting**: 10 emails per batch, 1-second delays
 - **Graceful Degradation**: Returns null when email service unavailable
+- **Template Security**: React Email components prevent injection
+- **Sender Verification**: RESEND_SENDER_EMAIL defaults to verified domain
 
 ---
 
