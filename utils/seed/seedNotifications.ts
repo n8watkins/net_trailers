@@ -9,72 +9,6 @@ export interface SeedNotificationsOptions {
     count: number
 }
 
-const SAMPLE_NOTIFICATIONS: CreateNotificationRequest[] = [
-    {
-        type: 'trending_update',
-        title: 'New Trending Movie',
-        message: 'The Dark Knight just entered the top 10 trending movies!',
-        contentId: 155,
-        mediaType: 'movie',
-        imageUrl: 'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg',
-        actionUrl: '/movie/155',
-    },
-    {
-        type: 'trending_update',
-        title: 'Trending Series Alert',
-        message: 'Breaking Bad is now #1 on trending TV shows!',
-        contentId: 1396,
-        mediaType: 'tv',
-        imageUrl: 'https://image.tmdb.org/t/p/w500/ggFHVNu6YYI5L9pCfOacjizRGt.jpg',
-        actionUrl: '/tv/1396',
-    },
-    {
-        type: 'new_release',
-        title: 'New Season Available',
-        message: 'Stranger Things Season 5 is now available to stream!',
-        contentId: 61889,
-        mediaType: 'tv',
-        imageUrl: 'https://image.tmdb.org/t/p/w500/49WJfeN0moxb9IPfGn8AIqMGskD.jpg',
-        actionUrl: '/tv/61889',
-    },
-    {
-        type: 'trending_update',
-        title: 'Trending This Week',
-        message: 'Inception is gaining popularity - watch it before it leaves!',
-        contentId: 27205,
-        mediaType: 'movie',
-        imageUrl: 'https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg',
-        actionUrl: '/movie/27205',
-    },
-    {
-        type: 'new_release',
-        title: 'Highly Anticipated Release',
-        message: 'The sequel to Interstellar is coming next month!',
-        contentId: 157336,
-        mediaType: 'movie',
-        imageUrl: 'https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
-        actionUrl: '/movie/157336',
-    },
-    {
-        type: 'trending_update',
-        title: 'Must-Watch Alert',
-        message: 'Arcane Season 2 is breaking viewership records!',
-        contentId: 94605,
-        mediaType: 'tv',
-        imageUrl: 'https://image.tmdb.org/t/p/w500/fqldf2t8ztc9aiwn3k6mlX3tvRT.jpg',
-        actionUrl: '/tv/94605',
-    },
-    {
-        type: 'new_release',
-        title: 'Watchlist Alert',
-        message: 'The Matrix is now available to stream!',
-        contentId: 603,
-        mediaType: 'movie',
-        imageUrl: 'https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg',
-        actionUrl: '/movie/603',
-    },
-]
-
 export async function seedNotifications(options: SeedNotificationsOptions): Promise<void> {
     const { userId, count } = options
 
@@ -83,22 +17,61 @@ export async function seedNotifications(options: SeedNotificationsOptions): Prom
         return
     }
 
-    console.log(`  🔔 Creating ${count} sample notifications`)
+    console.log(`  🔔 Creating ${count} trending notifications from live TMDB data`)
 
     const { useNotificationStore } = await import('../../stores/notificationStore')
 
-    const notificationsToCreate = SAMPLE_NOTIFICATIONS.slice(
-        0,
-        Math.min(count, SAMPLE_NOTIFICATIONS.length)
-    )
+    try {
+        // Fetch current trending movies and TV shows
+        const [moviesRes, tvRes] = await Promise.all([
+            fetch('/api/movies/trending?page=1'),
+            fetch('/api/tv/trending?page=1'),
+        ])
 
-    for (const notification of notificationsToCreate) {
-        try {
-            await useNotificationStore.getState().createNotification(userId, notification)
-            await new Promise((resolve) => setTimeout(resolve, 100))
-        } catch (error) {
-            console.error('Failed to create notification:', error)
+        if (!moviesRes.ok || !tvRes.ok) {
+            console.error('  ❌ Failed to fetch trending data, using fallback')
+            return
         }
+
+        const moviesData = await moviesRes.json()
+        const tvData = await tvRes.json()
+
+        // Combine trending items (movies and TV)
+        const allTrendingItems = [
+            ...moviesData.results.slice(0, 4).map((m: any) => ({ ...m, media_type: 'movie' })),
+            ...tvData.results.slice(0, 4).map((s: any) => ({ ...s, media_type: 'tv' })),
+        ]
+
+        // Limit to requested count
+        const itemsToNotify = allTrendingItems.slice(0, count)
+
+        console.log(`  🔔 Creating ${itemsToNotify.length} notifications for real trending items`)
+
+        // Create individual notification for each trending item
+        for (const item of itemsToNotify) {
+            const title = item.title || item.name
+            const mediaType = item.media_type === 'movie' ? 'movie' : 'tv'
+
+            await useNotificationStore.getState().createNotification(userId, {
+                type: 'trending_update',
+                title: 'Now Trending! 🔥',
+                message: `${title} is currently trending this week!`,
+                contentId: item.id,
+                mediaType: mediaType,
+                imageUrl: item.poster_path
+                    ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
+                    : undefined,
+                actionUrl: `/${mediaType}/${item.id}`,
+                expiresIn: 7,
+            })
+
+            // Small delay between notifications
+            await new Promise((resolve) => setTimeout(resolve, 100))
+        }
+
+        console.log(`  ✅ Created ${itemsToNotify.length} trending notifications`)
+    } catch (error) {
+        console.error('  ❌ Failed to create trending notifications:', error)
     }
 }
 
