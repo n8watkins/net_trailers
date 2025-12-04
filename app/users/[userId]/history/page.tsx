@@ -8,7 +8,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { doc, getDoc, getDocs, collection, query, limit, orderBy } from 'firebase/firestore'
+import { doc, getDoc } from 'firebase/firestore'
 import { db } from '../../../../firebase'
 import SubPageLayout from '../../../../components/layout/SubPageLayout'
 import ContentCard from '../../../../components/common/ContentCard'
@@ -19,11 +19,16 @@ import type { Movie, TVShow } from '../../../../typings'
 import type { PublicProfilePayload } from '@/lib/publicProfile'
 import Link from 'next/link'
 
+interface WatchHistoryEntry {
+    content: Movie | TVShow
+    watchedAt: number
+}
+
 export default function UserWatchHistoryPage() {
     const params = useParams()
     const userId = params?.userId as string
 
-    const [watchHistoryContent, setWatchHistoryContent] = useState<(Movie | TVShow)[]>([])
+    const [watchHistory, setWatchHistory] = useState<WatchHistoryEntry[]>([])
     const [displayName, setDisplayName] = useState<string>('User')
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -38,7 +43,7 @@ export default function UserWatchHistoryPage() {
             setError(null)
 
             try {
-                // Try to get profile data from API first (includes auth displayName fallback)
+                // Try to get profile data from API first
                 let profileDisplayName = 'User'
                 try {
                     const response = await fetch(`/api/public-profile/${userId}`)
@@ -50,52 +55,46 @@ export default function UserWatchHistoryPage() {
                     console.warn('[WatchHistory] API failed, will use client-side data')
                 }
 
-                // Fetch user document for display name fallback
-                const userDoc = await getDoc(doc(db, 'users', userId))
-
-                if (!userDoc.exists()) {
-                    throw new Error('User not found')
+                // Fallback: try to get display name from public profile document
+                if (profileDisplayName === 'User') {
+                    try {
+                        const profileDoc = await getDoc(doc(db, 'profiles', userId))
+                        if (profileDoc.exists()) {
+                            const profileData = profileDoc.data()
+                            profileDisplayName = profileData?.displayName || 'User'
+                        }
+                    } catch (_profileError) {
+                        console.warn('[WatchHistory] Could not load profile, using default name')
+                    }
                 }
-
-                const userData = userDoc.data()
 
                 if (!isMounted) return
 
-                // Use API-derived displayName, or fallback to client-side lookup
-                if (profileDisplayName === 'User') {
-                    const profileDoc = await getDoc(doc(db, 'profiles', userId))
-                    const profileData = profileDoc.exists() ? profileDoc.data() : {}
-                    const legacyProfile = userData?.profile || {}
-                    profileDisplayName =
-                        profileData?.displayName ||
-                        legacyProfile.displayName ||
-                        userData.displayName ||
-                        'User'
-                }
-
                 setDisplayName(profileDisplayName)
 
-                // Fetch watch history from Firestore subcollection
+                // Fetch watch history from Firestore document
                 try {
-                    const watchHistorySnap = await getDocs(
-                        query(
-                            collection(db, 'users', userId, 'watchHistory'),
-                            orderBy('watchedAt', 'desc'),
-                            limit(100)
-                        )
+                    const watchHistoryDoc = await getDoc(
+                        doc(db, 'users', userId, 'data', 'watchHistory')
                     )
 
-                    const history = watchHistorySnap.docs
-                        .map((doc) => {
-                            const data = doc.data()
-                            return data.content as Movie | TVShow
-                        })
-                        .filter((content): content is Movie | TVShow => Boolean(content))
+                    if (watchHistoryDoc.exists()) {
+                        const data = watchHistoryDoc.data()
+                        const history = Array.isArray(data.history) ? data.history : []
+                        const entries: WatchHistoryEntry[] = history
+                            .map((entry: any) => ({
+                                content: entry.content as Movie | TVShow,
+                                watchedAt: entry.watchedAt || Date.now(),
+                            }))
+                            .filter((entry): entry is WatchHistoryEntry => Boolean(entry.content))
 
-                    setWatchHistoryContent(history)
+                        setWatchHistory(entries)
+                    } else {
+                        setWatchHistory([])
+                    }
                 } catch (historyError) {
                     console.error('Error loading watch history:', historyError)
-                    setWatchHistoryContent([])
+                    setWatchHistory([])
                 }
             } catch (err) {
                 console.error('Error loading watch history content:', err)
@@ -146,12 +145,33 @@ export default function UserWatchHistoryPage() {
         )
     }
 
+    // Group entries by date
+    const groupedByDate = watchHistory.reduce(
+        (acc, entry) => {
+            const date = new Date(entry.watchedAt)
+            date.setHours(0, 0, 0, 0)
+            const dateKey = date.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+            })
+
+            if (!acc[dateKey]) {
+                acc[dateKey] = []
+            }
+            acc[dateKey].push(entry)
+            return acc
+        },
+        {} as Record<string, WatchHistoryEntry[]>
+    )
+
     return (
         <SubPageLayout
             title={`${displayName}'s Watch History`}
             icon={<ClockIcon className="w-8 h-8" />}
             iconColor="text-purple-400"
-            description={`${watchHistoryContent.length} ${watchHistoryContent.length === 1 ? 'item' : 'items'}`}
+            description={`${watchHistory.length} ${watchHistory.length === 1 ? 'item' : 'items'}`}
         >
             {/* Back to Profile Link */}
             <div className="mb-6">
@@ -164,12 +184,27 @@ export default function UserWatchHistoryPage() {
                 </Link>
             </div>
 
-            {watchHistoryContent.length > 0 ? (
-                <div className="flex flex-wrap justify-between gap-x-6 sm:gap-x-8 md:gap-x-10 lg:gap-x-12 gap-y-3 sm:gap-y-4 md:gap-y-5 [&>*]:flex-none">
-                    {watchHistoryContent.map((content) => (
-                        <ContentCard key={content.id} content={content} />
+            {watchHistory.length > 0 ? (
+                <div className="space-y-8">
+                    {Object.entries(groupedByDate).map(([date, items]) => (
+                        <div key={date}>
+                            {/* Date header with count badge */}
+                            <div className="flex items-center gap-3 mb-4">
+                                <h3 className="text-lg font-semibold text-white">{date}</h3>
+                                <span className="text-sm text-gray-400 bg-zinc-800/50 px-2 py-0.5 rounded-full">
+                                    {items.length}
+                                </span>
+                            </div>
+
+                            {/* Content grid for this date */}
+                            <div className="flex flex-wrap justify-between gap-x-6 sm:gap-x-8 md:gap-x-10 lg:gap-x-12 gap-y-3 sm:gap-y-4 md:gap-y-5 [&>*]:flex-none">
+                                {items.map((entry) => (
+                                    <ContentCard key={entry.content.id} content={entry.content} />
+                                ))}
+                                <ContentGridSpacer />
+                            </div>
+                        </div>
                     ))}
-                    <ContentGridSpacer />
                 </div>
             ) : (
                 <div className="text-center py-16 bg-zinc-900 rounded-lg border border-zinc-800">
