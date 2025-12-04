@@ -25,18 +25,8 @@ export async function seedWatchHistoryContent(options: SeedWatchHistoryOptions):
 
     const { useWatchHistoryStore } = await import('../../stores/watchHistoryStore')
 
-    // SESSION ISOLATION: Verify we're seeding for the correct user
-    const currentSessionId = useWatchHistoryStore.getState().currentSessionId
-    if (currentSessionId && currentSessionId !== userId) {
-        console.error(
-            `  ❌ Session isolation violation! Current session: ${currentSessionId}, attempting to seed for: ${userId}`
-        )
-        throw new Error(
-            'Cannot seed watch history: session ID mismatch. Another user session is active.'
-        )
-    }
-
-    // Clear existing and set session
+    // FORCE CLEAR for seeding - we need to seed multiple users in sequence
+    // Clear any existing session and history
     useWatchHistoryStore.getState().clearHistory()
     useWatchHistoryStore.setState({
         currentSessionId: userId,

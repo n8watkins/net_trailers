@@ -71,8 +71,8 @@ service cloud.firestore {
 
       // Data subcollection - watch history document with public access
       match /data/watchHistory {
-        // Allow write if authenticated user matches the parent userId
-        allow write: if request.auth != null && request.auth.uid == userId;
+        // Allow write if authenticated user matches the parent userId OR demo profile
+        allow write: if request.auth != null && (request.auth.uid == userId || userId.matches('demo_.*'));
 
         // Allow read if:
         // 1. User is the owner, OR
