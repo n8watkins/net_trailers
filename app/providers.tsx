@@ -13,6 +13,7 @@ import { useAppStore } from '../stores/appStore'
 import DebugControls from '../components/debug/DebugControls'
 import WebVitalsHUD from '../components/debug/WebVitalsHUD'
 import FirebaseCallTracker from '../components/debug/FirebaseCallTracker'
+import CacheHealthPanel from '../components/debug/CacheHealthPanel'
 import VercelAnalyticsWrapper from '../components/utility/VercelAnalyticsWrapper'
 
 /**
@@ -41,6 +42,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             <DebugControls />
             <WebVitalsHUD />
             <FirebaseCallTracker />
+            <CacheHealthPanel />
             {/* Analytics */}
             <VercelAnalyticsWrapper />
         </AuthProvider>
