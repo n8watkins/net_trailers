@@ -10,20 +10,11 @@ export interface EmailTemplateMetadata {
 /**
  * Centralized email template configuration
  * Single source of truth for template metadata used across components
+ *
+ * NOTE: Only includes implemented templates (announcement, custom)
+ * Trending and Social templates are not yet implemented (require TMDB/social data integration)
  */
 export const EMAIL_TEMPLATES: EmailTemplateMetadata[] = [
-    {
-        id: 'trending',
-        name: 'Trending Content',
-        description: 'Weekly trending movies and TV shows from watchlists',
-        icon: '📈',
-    },
-    {
-        id: 'social',
-        name: 'Social Digest',
-        description: 'Batched comments and likes on rankings',
-        icon: '💬',
-    },
     {
         id: 'announcement',
         name: 'Announcement',

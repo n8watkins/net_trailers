@@ -12,7 +12,7 @@ import { EnvelopeIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline'
 export type EmailTemplate = 'trending' | 'social' | 'announcement' | 'custom'
 
 export default function EmailComposer() {
-    const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate>('trending')
+    const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate>('announcement')
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([])
     const [subject, setSubject] = useState('')
     const [customMessage, setCustomMessage] = useState('')

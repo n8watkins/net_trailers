@@ -46,14 +46,6 @@ export async function seedWatchHistoryContent(options: SeedWatchHistoryOptions):
         content.push(availableContent[index])
     }
 
-    console.log('  📊 SEED DEBUG: Starting watch history seed')
-    console.log(`     Requested: ${count} items`)
-    console.log(`     Available pool: ${availableContent.length} items`)
-    console.log(
-        `     Generated: ${content.length} items (with ${count > availableContent.length ? 'duplicates' : 'no duplicates'})`
-    )
-    console.log(`     Current time: ${new Date(now).toLocaleString()}`)
-
     // Create realistic watch history with MULTIPLE entries per day
     // Strategy: 2 months of viewing history with more entries on recent days
 
