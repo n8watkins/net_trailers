@@ -14,6 +14,7 @@ import DebugControls from '../components/debug/DebugControls'
 import WebVitalsHUD from '../components/debug/WebVitalsHUD'
 import FirebaseCallTracker from '../components/debug/FirebaseCallTracker'
 import CacheHealthPanel from '../components/debug/CacheHealthPanel'
+import StartupHealthCheck from '../components/utility/StartupHealthCheck'
 import VercelAnalyticsWrapper from '../components/utility/VercelAnalyticsWrapper'
 
 /**
@@ -43,6 +44,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             <WebVitalsHUD />
             <FirebaseCallTracker />
             <CacheHealthPanel />
+            <StartupHealthCheck />
             {/* Analytics */}
             <VercelAnalyticsWrapper />
         </AuthProvider>

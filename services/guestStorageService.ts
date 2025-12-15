@@ -1,6 +1,7 @@
 import { Content } from '../typings'
 import { UserPreferences } from '../types/shared'
 import { guestLog, guestError } from '../utils/debugLogger'
+import { StorageQuotaManager } from '../utils/storageQuota'
 
 // Type alias for backward compatibility
 export type GuestPreferences = UserPreferences
@@ -142,7 +143,11 @@ export class GuestStorageService {
             const storageKey = this.getStorageKey(guestId)
             const jsonData = JSON.stringify(dataToSave)
 
-            localStorage.setItem(storageKey, jsonData)
+            const success = StorageQuotaManager.safeSetItem(storageKey, jsonData)
+            if (!success) {
+                guestError('❌ [GuestStorageService] Failed to save: quota exceeded')
+                throw new Error('Storage quota exceeded')
+            }
 
             guestLog('✅ [GuestStorageService] Successfully saved to localStorage:', {
                 key: storageKey,
