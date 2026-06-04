@@ -449,3 +449,41 @@ export async function getDemoProfileIds(): Promise<string[]> {
         return []
     }
 }
+
+/**
+ * Demo profile identity used when seeding social interactions.
+ */
+export interface DemoProfileIdentity {
+    userId: string
+    userName: string
+    userAvatar?: string
+}
+
+/**
+ * Get demo profiles with their display name and avatar, read directly from
+ * the Firestore profile documents (which carry displayName/avatarUrl). Used to
+ * attribute seeded comments/likes to real demo identities.
+ */
+export async function getDemoProfiles(): Promise<DemoProfileIdentity[]> {
+    try {
+        const profilesRef = collection(db, 'profiles')
+        const q = query(
+            profilesRef,
+            where('__name__', '>=', 'demo_'),
+            where('__name__', '<', 'demo`') // 'demo`' is lexicographically after 'demo_'
+        )
+
+        const snapshot = await getDocs(q)
+        return snapshot.docs.map((docSnap) => {
+            const data = docSnap.data() as Partial<UserProfile>
+            return {
+                userId: docSnap.id,
+                userName: data.displayName || 'Demo User',
+                userAvatar: data.avatarUrl,
+            }
+        })
+    } catch (error) {
+        console.error('Error getting demo profiles:', error)
+        return []
+    }
+}

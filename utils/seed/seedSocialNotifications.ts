@@ -14,7 +14,7 @@
  * 5. Email delivery happens via weekly cron job (social-digest)
  */
 
-import { getDemoProfileIds, DEMO_PROFILES } from './seedProfiles'
+import { getDemoProfiles } from './seedProfiles'
 import { seedRankingComments, seedRankingLikes } from './seedRankingComments'
 import { seedRankings } from './seedRankings'
 
@@ -39,15 +39,7 @@ export async function seedSocialNotifications(options: SeedSocialNotificationsOp
     console.log(`🔔 Seeding social notifications for ${userName} (${userId})`)
 
     // 1. Get demo profiles to act as commenters/likers
-    const demoProfileIds = await getDemoProfileIds()
-    const commentingProfiles = demoProfileIds.map((id) => {
-        const profile = DEMO_PROFILES.find((p) => p.userId === id)
-        return {
-            userId: id,
-            userName: profile?.userName || 'Demo User',
-            userAvatar: profile?.userAvatar,
-        }
-    })
+    const commentingProfiles = await getDemoProfiles()
 
     // Add the user themselves to the profiles list (for ranking owner replies)
     const allProfiles = [
@@ -66,7 +58,7 @@ export async function seedSocialNotifications(options: SeedSocialNotificationsOp
     await useRankingStore.getState().loadUserRankings(userId)
     let userRankings = useRankingStore
         .getState()
-        .rankings.filter((r) => r.userId === userId && r.visibility === 'public')
+        .rankings.filter((r) => r.userId === userId && r.isPublic)
 
     // 3. If no rankings exist, create some demo rankings first
     if (userRankings.length === 0) {
@@ -77,7 +69,7 @@ export async function seedSocialNotifications(options: SeedSocialNotificationsOp
         await useRankingStore.getState().loadUserRankings(userId)
         userRankings = useRankingStore
             .getState()
-            .rankings.filter((r) => r.userId === userId && r.visibility === 'public')
+            .rankings.filter((r) => r.userId === userId && r.isPublic)
 
         console.log(`  ✅ Created ${userRankings.length} demo rankings`)
     }
