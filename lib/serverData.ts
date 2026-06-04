@@ -27,7 +27,8 @@ function getBaseUrl(): string {
     if (process.env.VERCEL_URL) {
         return `https://${process.env.VERCEL_URL}`
     }
-    return process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+    const port = process.env.PORT || '3000'
+    return process.env.NEXT_PUBLIC_BASE_URL || `http://localhost:${port}`
 }
 
 export interface HomeData {
