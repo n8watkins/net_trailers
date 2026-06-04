@@ -1,0 +1,37 @@
+local_ops_id: locops_net_trailers_2026_06
+name: Net Trailers
+slug: net-trailers
+type: web-app
+status: active
+priority: medium
+project_kind: single
+
+local:
+  path: /home/natkins/personal/portfolio/portfolio-examples/net_trailers
+  dev_command: npm run dev
+  build_command: npm run build
+  test_command: npm run type-check
+  package_manager: npm
+
+deployments:
+  - provider: vercel
+    production_url:
+
+docs:
+  readme: README.md
+  status: docs/status.md
+  roadmap: docs/roadmap.md
+  decisions: docs/decisions.md
+  links: docs/links.md
+  onboarding: docs/onboarding.md
+
+agent:
+  agents_md: AGENTS.md
+  claude_md: CLAUDE.md
+  update_protocol: false
+
+tags:
+  - portfolio
+  - trailers
+  - next
+  - recommendations
