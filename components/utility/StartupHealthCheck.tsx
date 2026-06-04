@@ -11,28 +11,26 @@
 
 import { useEffect, useState } from 'react'
 import { AppHealthMonitor, HealthCheckResult } from '@/utils/healthCheck'
+import { useDebugSettings } from '@/components/debug/DebugControls'
 
 export default function StartupHealthCheck() {
     const [healthResult, setHealthResult] = useState<HealthCheckResult | null>(null)
     const [isExpanded, setIsExpanded] = useState(false)
-
-    // Only show in development
-    if (process.env.NODE_ENV !== 'development') {
-        return null
-    }
+    const debugSettings = useDebugSettings()
 
     useEffect(() => {
-        // Run health check on mount
+        if (process.env.NODE_ENV !== 'development' || !debugSettings.showStartupHealth) return
+
         AppHealthMonitor.runFullHealthCheck().then((result) => {
             setHealthResult(result)
             console.log('🏥 Startup Health Check:', result)
-
-            // Auto-expand if there are errors
-            if (!result.healthy) {
-                setIsExpanded(true)
-            }
+            if (!result.healthy) setIsExpanded(true)
         })
-    }, [])
+    }, [debugSettings.showStartupHealth])
+
+    if (process.env.NODE_ENV !== 'development' || !debugSettings.showStartupHealth) {
+        return null
+    }
 
     if (!healthResult) {
         return (

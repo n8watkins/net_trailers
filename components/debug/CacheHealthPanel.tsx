@@ -11,20 +11,23 @@
 
 import { useState, useEffect } from 'react'
 import { FirestoreCacheHealth } from '@/utils/firestore/cacheHealth'
+import { useDebugSettings } from './DebugControls'
 
 export default function CacheHealthPanel() {
     const [healthInfo, setHealthInfo] = useState<any>(null)
     const [isClearing, setIsClearing] = useState(false)
     const [lastUpdate, setLastUpdate] = useState(Date.now())
-
-    // Only show in development
-    if (process.env.NODE_ENV !== 'development') {
-        return null
-    }
+    const debugSettings = useDebugSettings()
 
     useEffect(() => {
-        loadHealthInfo()
-    }, [lastUpdate])
+        if (debugSettings.showCacheHealth) {
+            loadHealthInfo()
+        }
+    }, [lastUpdate, debugSettings.showCacheHealth])
+
+    if (process.env.NODE_ENV !== 'development' || !debugSettings.showCacheHealth) {
+        return null
+    }
 
     const loadHealthInfo = async () => {
         const info = await FirestoreCacheHealth.getDetailedHealthInfo()

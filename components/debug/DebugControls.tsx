@@ -41,6 +41,8 @@ interface DebugSettings {
     showNextServerLogs: boolean
     showWatchHistoryDebug: boolean
     showBannerDebug: boolean
+    showCacheHealth: boolean
+    showStartupHealth: boolean
 }
 
 interface Position {
@@ -150,6 +152,8 @@ export default function DebugControls() {
         showNextServerLogs: true, // Enabled by default
         showWatchHistoryDebug: false,
         showBannerDebug: false,
+        showCacheHealth: false,
+        showStartupHealth: false,
     })
 
     // Profile actions for seed
@@ -377,6 +381,8 @@ export default function DebugControls() {
                     'showApiDebug',
                     'showNextServerLogs',
                     'showBannerDebug',
+                    'showCacheHealth',
+                    'showStartupHealth',
                 ]
             case 'features':
                 return [
@@ -752,6 +758,18 @@ export default function DebugControls() {
                                 'Toggle Banner Carousel & Image Loading Logs',
                                 'rose'
                             )}
+                            {renderButton(
+                                'showCacheHealth',
+                                'Cache Health',
+                                'Toggle Firestore Cache Health Panel',
+                                'cyan'
+                            )}
+                            {renderButton(
+                                'showStartupHealth',
+                                'Startup Health',
+                                'Toggle Startup Health Check Panel',
+                                'teal'
+                            )}
                         </>
                     )}
 
@@ -1120,6 +1138,8 @@ export function useDebugSettings() {
         showNextServerLogs: true, // Enabled by default
         showWatchHistoryDebug: false,
         showBannerDebug: false,
+        showCacheHealth: false,
+        showStartupHealth: false,
     })
 
     useEffect(() => {
