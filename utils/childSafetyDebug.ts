@@ -1,6 +1,6 @@
 /**
  * Child Safety Debug Logger
- * Controlled via DebugControls component (Alt+Shift+D)
+ * Controlled via DebugControls component (Alt+Shift+Q)
  * Enable the "Child Safety" toggle in Features & Tools category
  */
 

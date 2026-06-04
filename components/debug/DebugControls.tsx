@@ -211,11 +211,11 @@ export default function DebugControls() {
     const isFirstVisibilityMount = useRef(true)
     const isFirstCategoryMount = useRef(true)
 
-    // Keyboard shortcut handler for Alt+Shift+D
+    // Keyboard shortcut handler for Alt+Shift+Q
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            // Alt+Shift+D to toggle visibility
-            if (e.altKey && e.shiftKey && e.key.toLowerCase() === 'd') {
+            // Alt+Shift+Q to toggle visibility
+            if (e.altKey && e.shiftKey && e.key.toLowerCase() === 'q') {
                 e.preventDefault()
                 setIsVisible((prev) => !prev)
             }

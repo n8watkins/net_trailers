@@ -418,7 +418,7 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
                                 </div>
                             )}
 
-                            {/* Email testing moved to Debug Console (Alt+Shift+D → Email Testing) */}
+                            {/* Email testing moved to Debug Console (Alt+Shift+Q → Email Testing) */}
                         </div>
                     </div>
                 </div>

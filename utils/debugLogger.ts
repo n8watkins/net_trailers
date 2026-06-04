@@ -1,6 +1,6 @@
 /**
  * Logging utilities that respect debug settings
- * Controlled via DebugControls component (Alt+Shift+D)
+ * Controlled via DebugControls component (Alt+Shift+Q)
  */
 
 // Get debug settings from localStorage

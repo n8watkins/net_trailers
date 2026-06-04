@@ -9,6 +9,7 @@ This document outlines the data isolation architecture and provides manual verif
 ### Storage Separation
 
 **Authenticated Users:**
+
 - **User Data**: Firestore `/users/{userId}` document
 - **Watch History**: Firestore `/users/{userId}/data/watchHistory` document
 - **Notifications**: Firestore `/users/{userId}/data/notifications` collection
@@ -16,6 +17,7 @@ This document outlines the data isolation architecture and provides manual verif
 - **In-Memory**: authStore, watchHistoryStore
 
 **Guest Users:**
+
 - **User Data**: localStorage `nettrailer_guest_data_v2_{guestId}`
 - **Watch History**: localStorage `nettrailer-watch-history_guest_{guestId}`
 - **Notifications**: In-memory only (not persisted)
@@ -25,22 +27,23 @@ This document outlines the data isolation architecture and provides manual verif
 ### Key Isolation Points
 
 1. **Different Storage Backends**
-   - Auth = Firestore (cloud)
-   - Guest = localStorage (browser)
-   - **No overlap possible** ✅
+    - Auth = Firestore (cloud)
+    - Guest = localStorage (browser)
+    - **No overlap possible** ✅
 
 2. **Unique Storage Keys**
-   ```
-   Auth Cache:     "nettrailer_auth_cache"
-   Guest Data:     "nettrailer_guest_data_v2_guest_1234567890_abc123"
-   Guest History:  "nettrailer-watch-history_guest_guest_1234567890_abc123"
-   ```
+
+    ```
+    Auth Cache:     "nettrailer_auth_cache"
+    Guest Data:     "nettrailer_guest_data_v2_guest_1234567890_abc123"
+    Guest History:  "nettrailer-watch-history_guest_guest_1234567890_abc123"
+    ```
 
 3. **Session-Based Routing**
-   - `useUserData` hook checks `sessionStore.sessionType`
-   - Returns different `clearAccountData` implementations per session type
-   - Auth operations ONLY touch Firestore
-   - Guest operations ONLY touch localStorage
+    - `useUserData` hook checks `sessionStore.sessionType`
+    - Returns different `clearAccountData` implementations per session type
+    - Auth operations ONLY touch Firestore
+    - Guest operations ONLY touch localStorage
 
 ## Recent Fixes (2025-01-10)
 
@@ -49,6 +52,7 @@ This document outlines the data isolation architecture and provides manual verif
 **Problem**: Auth `clearAccountData` was missing watch history and notification clearing.
 
 **Solution** (lines 279-355):
+
 ```typescript
 clearAccountData: async () => {
     // 1. Clear Firestore user document
@@ -56,7 +60,7 @@ clearAccountData: async () => {
         defaultWatchlist: [],
         likedMovies: [],
         hiddenMovies: [],
-        userCreatedWatchlists: []
+        userCreatedWatchlists: [],
     })
 
     // 2. Clear Firestore watch history
@@ -69,7 +73,7 @@ clearAccountData: async () => {
     useWatchHistoryStore.setState({
         currentSessionId: userId,
         lastSyncedAt: Date.now(),
-        syncError: null
+        syncError: null,
     })
 
     // 5. Clear notifications
@@ -82,12 +86,14 @@ clearAccountData: async () => {
 ### 2. Fixed `seedData.ts` Session Isolation
 
 **Problems**:
+
 1. Generated watch history would bleed between guest/auth sessions
 2. Guest watch history wouldn't persist to localStorage
 
 **Solution** (lines 640-803):
 
 **A. Session Validation Before Seeding:**
+
 ```typescript
 // Verify we're seeding for the correct session
 const currentWatchSessionId = useWatchHistoryStore.getState().currentSessionId
@@ -97,6 +103,7 @@ if (currentWatchSessionId && currentWatchSessionId !== userId) {
 ```
 
 **B. Clear Store Before Seeding:**
+
 ```typescript
 // Clear watch history to prevent cross-contamination
 useWatchHistoryStore.getState().clearHistory()
@@ -105,11 +112,12 @@ useWatchHistoryStore.getState().clearHistory()
 useWatchHistoryStore.setState({
     currentSessionId: userId,
     lastSyncedAt: null,
-    syncError: null
+    syncError: null,
 })
 ```
 
 **C. Session Check During Seeding:**
+
 ```typescript
 // Verify session hasn't changed during seeding
 const currentSessionCheck = useWatchHistoryStore.getState().currentSessionId
@@ -119,6 +127,7 @@ if (currentSessionCheck !== userId) {
 ```
 
 **D. Proper localStorage Persistence for Guests:**
+
 ```typescript
 if (!isGuest) {
     // Auth: Save to Firestore
@@ -135,7 +144,7 @@ if (!isGuest) {
     }
 
     // Wait for localStorage flush before page reload
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await new Promise((resolve) => setTimeout(resolve, 100))
 }
 ```
 
@@ -144,19 +153,21 @@ if (!isGuest) {
 ### Test 1: Auth User Clears Data (Guest Data Unaffected)
 
 **Setup:**
+
 1. Open browser DevTools > Console
-2. Enable Debug Console: Press `Alt+Shift+D`, toggle "Seed Btn"
+2. Enable Debug Console: Press `Alt+Shift+Q`, toggle "Seed Btn"
 3. Create guest session: Logout or open incognito
 4. Click "Seed Test Data" in Profile page (as guest)
 5. Verify guest data in localStorage:
-   ```javascript
-   // In DevTools Console
-   Object.keys(localStorage).filter(k => k.includes('guest'))
-   // Should show: nettrailer_guest_data_v2_*, nettrailer-watch-history_guest_*
-   ```
+    ```javascript
+    // In DevTools Console
+    Object.keys(localStorage).filter((k) => k.includes('guest'))
+    // Should show: nettrailer_guest_data_v2_*, nettrailer-watch-history_guest_*
+    ```
 6. Note the guest watch history count (should be ~20 items)
 
 **Test:**
+
 1. Sign in as authenticated user
 2. Click "Seed Test Data" (as auth user)
 3. Go to Settings > Data Management
@@ -164,26 +175,29 @@ if (!isGuest) {
 5. Click "Clear All Data"
 6. Confirm clearing
 7. Check console logs - should see:
-   ```
-   [useUserData] 🗑️ Starting clearAccountData for user: {userId}
-   [useUserData] ✅ Cleared collections and ratings from Firestore
-   [useUserData] ✅ Cleared watch history from Firestore
-   [useUserData] ✅ Cleared {N} watch history entries from store
-   [useUserData] ✅ Cleared {N} notifications from Firestore
-   [useUserData] ✅ clearAccountData completed
-   ```
+    ```
+    [useUserData] 🗑️ Starting clearAccountData for user: {userId}
+    [useUserData] ✅ Cleared collections and ratings from Firestore
+    [useUserData] ✅ Cleared watch history from Firestore
+    [useUserData] ✅ Cleared {N} watch history entries from store
+    [useUserData] ✅ Cleared {N} notifications from Firestore
+    [useUserData] ✅ clearAccountData completed
+    ```
 
 **Verify:**
+
 1. Reload page - auth watch history should be empty
 2. Sign out (switch to guest)
 3. Go to /watch-history
 4. **CRITICAL**: Guest watch history should still have ~20 items (UNTOUCHED)
 5. Check localStorage:
-   ```javascript
-   const guestKey = Object.keys(localStorage).find(k => k.includes('nettrailer-watch-history_guest_'))
-   const guestHistory = JSON.parse(localStorage.getItem(guestKey))
-   console.log('Guest history count:', guestHistory.length) // Should be ~20
-   ```
+    ```javascript
+    const guestKey = Object.keys(localStorage).find((k) =>
+        k.includes('nettrailer-watch-history_guest_')
+    )
+    const guestHistory = JSON.parse(localStorage.getItem(guestKey))
+    console.log('Guest history count:', guestHistory.length) // Should be ~20
+    ```
 
 **Expected Result**: ✅ Guest data completely unaffected by auth clear
 
@@ -192,12 +206,14 @@ if (!isGuest) {
 ### Test 2: Guest User Clears Data (Auth Data Unaffected)
 
 **Setup:**
+
 1. Sign in as authenticated user
 2. Click "Seed Test Data"
 3. Verify Firestore has data (check Firebase Console or Network tab for Firestore requests)
 4. Sign out (switch to guest)
 
 **Test:**
+
 1. As guest, click "Seed Test Data"
 2. Go to Settings > Data Management
 3. Verify watch history shows ~20 items
@@ -205,12 +221,15 @@ if (!isGuest) {
 5. Confirm clearing
 
 **Verify:**
+
 1. Reload page - guest watch history should be empty
 2. Check localStorage:
-   ```javascript
-   const guestKey = Object.keys(localStorage).find(k => k.includes('nettrailer-watch-history_guest_'))
-   localStorage.getItem(guestKey) // Should be null
-   ```
+    ```javascript
+    const guestKey = Object.keys(localStorage).find((k) =>
+        k.includes('nettrailer-watch-history_guest_')
+    )
+    localStorage.getItem(guestKey) // Should be null
+    ```
 3. Sign in as authenticated user
 4. Go to /watch-history
 5. **CRITICAL**: Auth watch history should still have ~20 items (UNTOUCHED)
@@ -223,45 +242,49 @@ if (!isGuest) {
 ### Test 3: Seed Data Respects Session Type
 
 **Test A - Guest Seeding:**
+
 1. Ensure logged out (guest mode)
 2. Click "Seed Test Data"
 3. Check console logs - should see:
-   ```
-   🌱 Seeding data... { userId: 'guest_...', sessionType: 'guest', isGuest: true }
-   🧹 Clearing existing watch history to ensure clean seed...
-   💾 Saving watch history to localStorage (guest user)...
-   🔑 Guest ID: guest_...
-   🗂️  Storage key: nettrailer-watch-history_guest_guest_...
-   📊 Saving 20 watch history entries to localStorage
-   ✅ Watch history saved to localStorage: 20 entries
-   ⏱️  Wait complete - localStorage should be flushed
-   ```
+    ```
+    🌱 Seeding data... { userId: 'guest_...', sessionType: 'guest', isGuest: true }
+    🧹 Clearing existing watch history to ensure clean seed...
+    💾 Saving watch history to localStorage (guest user)...
+    🔑 Guest ID: guest_...
+    🗂️  Storage key: nettrailer-watch-history_guest_guest_...
+    📊 Saving 20 watch history entries to localStorage
+    ✅ Watch history saved to localStorage: 20 entries
+    ⏱️  Wait complete - localStorage should be flushed
+    ```
 4. Check localStorage:
-   ```javascript
-   const guestKey = Object.keys(localStorage).find(k => k.includes('nettrailer-watch-history_guest_'))
-   const guestHistory = JSON.parse(localStorage.getItem(guestKey))
-   console.log('Guest history:', guestHistory.length) // Should be 20
-   ```
+    ```javascript
+    const guestKey = Object.keys(localStorage).find((k) =>
+        k.includes('nettrailer-watch-history_guest_')
+    )
+    const guestHistory = JSON.parse(localStorage.getItem(guestKey))
+    console.log('Guest history:', guestHistory.length) // Should be 20
+    ```
 5. Reload page
 6. Go to /watch-history
 7. **CRITICAL**: Should still show 20 items (persisted correctly)
 
 **Test B - Auth Seeding:**
+
 1. Sign in
 2. Click "Seed Test Data"
 3. Check console logs - should see:
-   ```
-   🌱 Seeding data... { userId: '{auth-uid}', sessionType: 'authenticated', isGuest: false }
-   🧹 Clearing existing watch history to ensure clean seed...
-   💾 Syncing watch history to Firestore (authenticated user)...
-   🔑 User ID: {auth-uid}
-   📊 Saving 20 watch history entries to Firestore
-   ✅ Watch history saved to Firestore successfully
-   ```
+    ```
+    🌱 Seeding data... { userId: '{auth-uid}', sessionType: 'authenticated', isGuest: false }
+    🧹 Clearing existing watch history to ensure clean seed...
+    💾 Syncing watch history to Firestore (authenticated user)...
+    🔑 User ID: {auth-uid}
+    📊 Saving 20 watch history entries to Firestore
+    ✅ Watch history saved to Firestore successfully
+    ```
 4. Check Network tab - should see POST to Firestore:
-   ```
-   https://firestore.googleapis.com/v1/projects/.../databases/(default)/documents/users/{uid}/data/watchHistory
-   ```
+    ```
+    https://firestore.googleapis.com/v1/projects/.../databases/(default)/documents/users/{uid}/data/watchHistory
+    ```
 5. Check localStorage - should NOT have any new guest history keys
 6. Reload page
 7. Go to /watch-history
@@ -274,6 +297,7 @@ if (!isGuest) {
 ### Test 4: Session Switching Isolation
 
 **Test:**
+
 1. As guest, seed data
 2. Note guest watch history count (e.g., 20 items)
 3. Sign in as auth user
@@ -285,6 +309,7 @@ if (!isGuest) {
 9. Check auth watch history count
 
 **Verify at Each Step:**
+
 ```javascript
 // Check current session
 const sessionStore = useSessionStore.getState()
@@ -297,11 +322,12 @@ console.log('Current session ID:', watchStore.currentSessionId)
 console.log('History count:', watchStore.history.length)
 
 // Check localStorage
-const guestKeys = Object.keys(localStorage).filter(k => k.includes('guest'))
+const guestKeys = Object.keys(localStorage).filter((k) => k.includes('guest'))
 console.log('Guest localStorage keys:', guestKeys)
 ```
 
 **Expected Result**:
+
 - ✅ Guest always shows guest data (20 items)
 - ✅ Auth always shows auth data (20 items)
 - ✅ No mixing or bleeding between sessions
@@ -312,6 +338,7 @@ console.log('Guest localStorage keys:', guestKeys)
 ### Test 5: Multiple Guests Isolation
 
 **Test:**
+
 1. Open browser in Incognito Window #1
 2. Seed data as guest
 3. Note guest ID from console: `guest_1234567890_abc123`
@@ -322,6 +349,7 @@ console.log('Guest localStorage keys:', guestKeys)
 8. In Window #1, reload page
 
 **Expected Result**:
+
 - ✅ Window #1 guest data still intact (different guestId)
 - ✅ Window #2 guest data cleared
 - ✅ Each guest has separate localStorage keys
@@ -339,20 +367,22 @@ match /data/{dataDoc=**} {
 ```
 
 This ensures:
+
 - ✅ Users can only read/write their own `/users/{userId}/data/**` documents
 - ✅ Watch history at `/users/{userId}/data/watchHistory` is protected
 - ✅ No user can access another user's data
 
 **Test:**
+
 1. Sign in as User A
 2. Get User A's uid from console
 3. Try to manually read User B's data (replace {uidB} with different user):
-   ```javascript
-   const { doc, getDoc } = await import('firebase/firestore')
-   const { db } = await import('./firebase')
-   const otherUserDoc = doc(db, 'users', '{uidB}', 'data', 'watchHistory')
-   await getDoc(otherUserDoc) // Should fail with permission denied
-   ```
+    ```javascript
+    const { doc, getDoc } = await import('firebase/firestore')
+    const { db } = await import('./firebase')
+    const otherUserDoc = doc(db, 'users', '{uidB}', 'data', 'watchHistory')
+    await getDoc(otherUserDoc) // Should fail with permission denied
+    ```
 
 **Expected Result**: ✅ Permission denied error
 
@@ -363,9 +393,12 @@ This ensures:
 ### Issue: Guest watch history not persisting after reload
 
 **Debug:**
+
 ```javascript
 // Before reload
-const guestKey = Object.keys(localStorage).find(k => k.includes('nettrailer-watch-history_guest_'))
+const guestKey = Object.keys(localStorage).find((k) =>
+    k.includes('nettrailer-watch-history_guest_')
+)
 console.log('Guest key:', guestKey)
 const data = localStorage.getItem(guestKey)
 console.log('Data exists:', !!data)
@@ -382,6 +415,7 @@ console.log('Current session ID:', watchStore.currentSessionId)
 ### Issue: Auth watch history showing in guest mode (bleeding)
 
 **Debug:**
+
 ```javascript
 const sessionStore = useSessionStore.getState()
 console.log('Current session type:', sessionStore.sessionType)
@@ -398,6 +432,7 @@ console.log('Expected session ID:', sessionStore.activeSessionId)
 ### Issue: Seed data throws "Session isolation violation"
 
 **Debug:**
+
 ```javascript
 const sessionStore = useSessionStore.getState()
 const watchStore = useWatchHistoryStore.getState()
@@ -414,22 +449,22 @@ console.log('Watch store session ID:', watchStore.currentSessionId)
 ## Test Files Created
 
 1. **`__tests__/hooks/useWatchHistory.isolation.test.ts`**
-   - Tests watch history operations for auth/guest isolation
-   - Covers add/remove/clear operations
-   - Verifies localStorage vs Firestore separation
-   - *Note: Requires refactoring to match actual hook API*
+    - Tests watch history operations for auth/guest isolation
+    - Covers add/remove/clear operations
+    - Verifies localStorage vs Firestore separation
+    - _Note: Requires refactoring to match actual hook API_
 
 2. **`__tests__/hooks/useUserData.clearData.test.ts`**
-   - Tests `clearAccountData` for auth/guest users
-   - Verifies Firestore clearing for auth
-   - Verifies localStorage clearing for guest
-   - Tests multiple guest isolation
+    - Tests `clearAccountData` for auth/guest users
+    - Verifies Firestore clearing for auth
+    - Verifies localStorage clearing for guest
+    - Tests multiple guest isolation
 
 3. **`__tests__/integration/sessionDataIsolation.test.ts`**
-   - End-to-end session switching tests
-   - Covers auth → guest and guest → auth transitions
-   - Verifies Settings "Clear All Data" button
-   - Tests full isolation across all storage layers
+    - End-to-end session switching tests
+    - Covers auth → guest and guest → auth transitions
+    - Verifies Settings "Clear All Data" button
+    - Tests full isolation across all storage layers
 
 ---
 
@@ -445,6 +480,7 @@ The data isolation architecture is **rock-solid**:
 ✅ **Clear operations** respect session boundaries
 
 **Zero possibility of cross-contamination** between:
+
 - Auth user ↔ Guest user
 - Auth user A ↔ Auth user B
 - Guest A ↔ Guest B
