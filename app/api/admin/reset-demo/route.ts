@@ -5,16 +5,9 @@ import {
     createUnauthorizedResponse,
     createForbiddenResponse,
 } from '@/utils/adminMiddleware'
-import { applyCsrfProtection } from '@/lib/csrfProtection'
 
 export async function POST(req: NextRequest) {
     try {
-        // Apply CSRF protection
-        const csrfResponse = applyCsrfProtection(req)
-        if (csrfResponse) {
-            return csrfResponse
-        }
-
         // Validate admin access via Firebase Auth
         const authResult = await validateAdminRequest(req)
         if (!authResult.authorized) {
@@ -48,7 +41,7 @@ export async function POST(req: NextRequest) {
                 await adminDb.collection('signupLog').doc(user.uid).delete()
                 deleteCount++
             } catch (error) {
-                console.error(`Failed to delete user ${user.uid}:`, error)
+                console.error(`👑 ❌ Failed to delete user ${user.uid}:`, error)
             }
         }
 
@@ -68,7 +61,7 @@ export async function POST(req: NextRequest) {
             remaining: usersToKeep.length,
         })
     } catch (error) {
-        console.error('Error resetting demo accounts:', error)
+        console.error('👑 ❌ Error resetting demo accounts:', error)
         return NextResponse.json({ error: 'Failed to reset' }, { status: 500 })
     }
 }

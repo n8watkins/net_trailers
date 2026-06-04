@@ -232,7 +232,11 @@ export function WizardStep3NamePreview({
     const activeFilterCount = formData.advancedFilters
         ? Object.keys(formData.advancedFilters).filter((key) => {
               const value = formData.advancedFilters![key as keyof typeof formData.advancedFilters]
-              return value !== undefined && value !== null && value !== ''
+              // Check if value is defined and not empty (works for arrays, numbers, and strings)
+              if (value === undefined || value === null) return false
+              if (Array.isArray(value)) return value.length > 0
+              if (typeof value === 'string') return value !== ''
+              return true // For numbers and other types
           }).length
         : 0
 

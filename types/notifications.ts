@@ -13,6 +13,8 @@ export type NotificationType =
     | 'new_release' // Movie/show from watchlist released
     | 'trending_update' // New content entered trending
     | 'system' // App updates, announcements
+    | 'ranking_comment' // Comment on user's ranking
+    | 'ranking_like' // Like on user's ranking
 
 /**
  * Notification
@@ -62,6 +64,34 @@ export interface Notification {
 
     /** Expiration timestamp (auto-delete old notifications) */
     expiresAt?: number
+
+    // Social notification fields (ranking_comment and ranking_like)
+    /** Ranking ID for social notifications */
+    rankingId?: string
+
+    /** Ranking title for social notifications */
+    rankingTitle?: string
+
+    /** Commenter name for ranking_comment notifications */
+    commenterName?: string
+
+    /** Comment text for ranking_comment notifications */
+    commentText?: string
+
+    /** Comment ID for ranking_comment notifications */
+    commentId?: string
+
+    /** Whether comment is a reply for ranking_comment notifications */
+    isReply?: boolean
+
+    /** Parent comment text for reply notifications */
+    parentCommentText?: string
+
+    /** Array of liker names for ranking_like notifications */
+    likerNames?: string[]
+
+    /** Whether email has been sent for this notification */
+    emailSent?: boolean
 }
 
 /**
@@ -96,6 +126,8 @@ export interface NotificationStats {
         new_release: number
         trending_update: number
         system: number
+        ranking_comment: number
+        ranking_like: number
     }
 
     /** Most recent notification */
@@ -183,5 +215,15 @@ export const NOTIFICATION_META = {
         icon: 'BellIcon',
         color: 'text-gray-500',
         bgColor: 'bg-gray-600/20',
+    },
+    ranking_comment: {
+        icon: 'ChatBubbleLeftIcon',
+        color: 'text-green-500',
+        bgColor: 'bg-green-600/20',
+    },
+    ranking_like: {
+        icon: 'HeartIcon',
+        color: 'text-red-500',
+        bgColor: 'bg-red-600/20',
     },
 } as const

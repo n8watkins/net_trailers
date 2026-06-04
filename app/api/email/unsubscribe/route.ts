@@ -1,9 +1,13 @@
 /**
  * Email Unsubscribe Handler
- * GET /api/email/unsubscribe?token=xxx
  *
- * Handles email unsubscribe requests
- * Validates token and disables email notifications for user
+ * GET /api/email/unsubscribe?token=xxx
+ *   - Redirects to confirmation page (does NOT perform unsubscribe)
+ *   - This prevents email scanners/link previews from unsubscribing users
+ *
+ * POST /api/email/unsubscribe
+ *   - Performs actual unsubscribe (CSRF protected by proxy.ts)
+ *   - Body: { token: string }
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -11,10 +15,30 @@ import { getAdminDb } from '@/lib/firebase-admin'
 import { apiLog, apiError } from '@/utils/debugLogger'
 import crypto from 'crypto'
 
+/**
+ * GET: Redirect to confirmation page
+ * This is safe from CSRF because it doesn't perform state changes
+ */
 export async function GET(request: NextRequest) {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const token = request.nextUrl.searchParams.get('token')
+
+    if (!token) {
+        return NextResponse.redirect(`${appUrl}/unsubscribe?error=missing-token`)
+    }
+
+    // Redirect to confirmation page - user must click button to unsubscribe
+    return NextResponse.redirect(`${appUrl}/unsubscribe?token=${token}`)
+}
+
+/**
+ * POST: Perform actual unsubscribe
+ * Protected by proxy.ts CSRF validation (Origin/Referer header check)
+ */
+export async function POST(request: NextRequest) {
     try {
-        const searchParams = request.nextUrl.searchParams
-        const token = searchParams.get('token')
+        const body = await request.json()
+        const { token } = body
 
         if (!token) {
             return NextResponse.json({ error: 'Missing unsubscribe token' }, { status: 400 })
@@ -48,9 +72,7 @@ export async function GET(request: NextRequest) {
 
         apiLog(`[Unsubscribe] User ${userId} unsubscribed from email notifications`)
 
-        // Redirect to success page
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-        return NextResponse.redirect(`${appUrl}/unsubscribed?success=true`)
+        return NextResponse.json({ success: true })
     } catch (error) {
         apiError('[Unsubscribe] Error:', error)
         return NextResponse.json({ error: 'Failed to unsubscribe' }, { status: 500 })

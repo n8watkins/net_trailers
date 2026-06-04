@@ -10,6 +10,7 @@ import { useSessionStore } from '../../../stores/sessionStore'
 import ProfileSection from '../../../components/settings/ProfileSection'
 import { ProfileVisibility, DEFAULT_PROFILE_VISIBILITY } from '../../../types/profile'
 import { validateUsername } from '../../../utils/usernameValidation'
+import { validateDisplayNameWithZod } from '../../../utils/profileValidationSchemas'
 
 const ProfilePage: React.FC = () => {
     const router = useRouter()
@@ -34,7 +35,10 @@ const ProfilePage: React.FC = () => {
 
     // Profile form state
     const [displayName, setDisplayName] = useState(user?.displayName || '')
+    const [displayNameError, setDisplayNameError] = useState<string | undefined>()
+    const [isValidatingDisplayName, setIsValidatingDisplayName] = useState(false)
     const [isSavingProfile, setIsSavingProfile] = useState(false)
+    const displayNameDebounceRef = useRef<NodeJS.Timeout | null>(null)
 
     // Username state
     const [username, setUsername] = useState(profile?.displayName || '')
@@ -89,6 +93,41 @@ const ProfilePage: React.FC = () => {
             setUsernameError(undefined)
         }
     }, [profile?.displayName])
+
+    // Validate display name with debounce
+    const handleDisplayNameChange = useCallback(
+        (newDisplayName: string) => {
+            setDisplayName(newDisplayName)
+            setDisplayNameError(undefined)
+
+            // Clear previous debounce
+            if (displayNameDebounceRef.current) {
+                clearTimeout(displayNameDebounceRef.current)
+            }
+
+            // If empty, show error immediately
+            if (!newDisplayName.trim()) {
+                setDisplayNameError('Display name is required')
+                return
+            }
+
+            // If same as current display name, no error
+            if (newDisplayName === user?.displayName) {
+                return
+            }
+
+            // Validate format with debounce
+            setIsValidatingDisplayName(true)
+            displayNameDebounceRef.current = setTimeout(() => {
+                const validation = validateDisplayNameWithZod(newDisplayName)
+                if (!validation.isValid) {
+                    setDisplayNameError(validation.error)
+                }
+                setIsValidatingDisplayName(false)
+            }, 300)
+        },
+        [user?.displayName]
+    )
 
     // Validate and check username availability with debounce
     const handleUsernameChange = useCallback(
@@ -179,10 +218,11 @@ const ProfilePage: React.FC = () => {
                 updates = {
                     enablePublicProfile: checked,
                     showLikedContent: checked,
-                    showWatchLater: checked,
+                    showWatchHistory: checked,
                     showRankings: checked,
                     showCollections: checked,
                     showThreads: checked,
+                    showThreadsVoted: checked,
                     showPollsCreated: checked,
                     showPollsVoted: checked,
                 }
@@ -216,7 +256,7 @@ const ProfilePage: React.FC = () => {
                         const labelMap: Record<keyof ProfileVisibility, string> = {
                             enablePublicProfile: 'Public Profile',
                             showLikedContent: 'Liked Content',
-                            showWatchLater: 'Watch Later',
+                            showWatchHistory: 'Watch History',
                             showRankings: 'Rankings',
                             showCollections: 'Collections',
                             showThreads: 'Forum Threads',
@@ -334,7 +374,9 @@ const ProfilePage: React.FC = () => {
             isGoogleAuth={isGoogleAuth}
             isEmailAuth={isEmailAuth}
             displayName={displayName}
-            setDisplayName={setDisplayName}
+            setDisplayName={handleDisplayNameChange}
+            displayNameError={displayNameError}
+            isValidatingDisplayName={isValidatingDisplayName}
             isSavingProfile={isSavingProfile}
             onSaveProfile={handleSaveProfile}
             username={username}

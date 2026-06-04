@@ -15,11 +15,8 @@ import {
     DEFAULT_PROFILE_VISIBILITY,
     createDefaultProfile,
 } from '../types/profile'
-import {
-    validateUsername,
-    generateRandomUsername,
-    createUsernameFromName,
-} from '../utils/usernameValidation'
+import { validateUsername } from '../utils/usernameValidation'
+import { validateDisplayName, createDisplayNameFromEmail } from '../utils/displayNameValidation'
 import {
     getProfile,
     getProfileByUsername,
@@ -165,38 +162,22 @@ export const useProfileStore = create<ProfileState>()(
                         return existingProfile
                     }
 
-                    // Try to create username from display name or email first
-                    let username: string
-                    let attempts = 0
-                    const maxAttempts = 10
+                    // Create display name from email or use provided one
+                    const finalDisplayName = displayName || createDisplayNameFromEmail(email)
 
-                    // Start with display name-based username if provided
-                    const baseName = displayName || email
-                    username = createUsernameFromName(baseName)
-
-                    // Ensure username is available (append numbers if needed)
-                    while (attempts < maxAttempts) {
-                        const availability = await get().checkUsernameAvailability(username)
-                        if (availability.available) break
-
-                        // Try with number suffix
-                        const randomNum = Math.floor(Math.random() * 999) + 1
-                        const baseUsername = createUsernameFromName(baseName)
-                        username = `${baseUsername}${randomNum}`.slice(0, 20)
-                        attempts++
+                    // Validate display name
+                    const displayNameValidation = validateDisplayName(finalDisplayName)
+                    if (!displayNameValidation.isValid) {
+                        throw new Error(displayNameValidation.error || 'Invalid display name')
                     }
 
-                    // If still not available, fall back to random username
-                    if (attempts >= maxAttempts) {
-                        username = generateRandomUsername()
-                        const availability = await get().checkUsernameAvailability(username)
-                        if (!availability.available) {
-                            throw new Error('Could not generate unique username. Please try again.')
-                        }
-                    }
-
-                    // Create default profile
-                    const profile = createDefaultProfile(userId, email, username, googlePhotoUrl)
+                    // Create default profile WITHOUT username (username is optional)
+                    const profile = createDefaultProfile(
+                        userId,
+                        email,
+                        finalDisplayName,
+                        googlePhotoUrl
+                    )
 
                     // Save to Firestore
                     await createProfileInFirestore(profile)
@@ -223,28 +204,71 @@ export const useProfileStore = create<ProfileState>()(
                 set({ isLoading: true, error: null })
 
                 try {
-                    // If updating username, validate it
+                    // If updating display name, validate it
                     if (request.displayName) {
-                        const validation = validateUsername(request.displayName)
+                        const validation = validateDisplayName(request.displayName)
                         if (!validation.isValid) {
-                            set({ error: validation.error || 'Invalid username', isLoading: false })
-                            return
-                        }
-
-                        // Check availability
-                        const availability = await get().checkUsernameAvailability(
-                            request.displayName
-                        )
-                        if (!availability.available) {
                             set({
-                                error: 'Username is already taken',
+                                error: validation.error || 'Invalid display name',
                                 isLoading: false,
                             })
                             return
                         }
                     }
 
+                    // If updating username, validate and check availability
+                    if (request.username !== undefined) {
+                        // Allow clearing username (set to undefined)
+                        if (request.username === null || request.username === '') {
+                            // Clear username - this is allowed
+                            request.username = undefined
+                        } else {
+                            // Validate username format
+                            const validation = validateUsername(request.username)
+                            if (!validation.isValid) {
+                                set({
+                                    error: validation.error || 'Invalid username',
+                                    isLoading: false,
+                                })
+                                return
+                            }
+
+                            // Check availability
+                            const availability = await get().checkUsernameAvailability(
+                                request.username
+                            )
+                            if (!availability.available) {
+                                set({
+                                    error: 'Username is already taken',
+                                    isLoading: false,
+                                })
+                                return
+                            }
+                        }
+                    }
+
                     await updateProfileInFirestore(userId, request)
+
+                    // Update denormalized usernames in rankings and comments if display name changed
+                    if (request.displayName) {
+                        console.log(
+                            `[ProfileStore] Updating denormalized display names to: ${request.displayName}`
+                        )
+                        // Update rankings in parallel (fire and forget for performance)
+                        updateRankingsUsername(userId, request.displayName).catch((error) =>
+                            console.error(
+                                '[ProfileStore] Failed to update rankings username:',
+                                error
+                            )
+                        )
+                        // Update comments in parallel (fire and forget for performance)
+                        updateRankingCommentsUsername(userId, request.displayName).catch((error) =>
+                            console.error(
+                                '[ProfileStore] Failed to update comments username:',
+                                error
+                            )
+                        )
+                    }
 
                     // Update local state (exclude visibility from spread to avoid type issues)
                     const { visibility: _visibility, ...restRequest } = request
@@ -368,6 +392,7 @@ export const useProfileStore = create<ProfileState>()(
             },
 
             // Update username (with all necessary cascading updates)
+            // Note: This updates the optional username field (URL slug), not display name
             updateUsername: async (userId: string | null, newUsername: string) => {
                 if (!userId || isGuestUserId(userId)) {
                     set({ error: 'Authentication required' })
@@ -382,7 +407,7 @@ export const useProfileStore = create<ProfileState>()(
                     return
                 }
 
-                if (currentProfile.displayName === trimmedUsername) {
+                if (currentProfile.username === trimmedUsername) {
                     // Nothing to do
                     return
                 }
@@ -391,6 +416,15 @@ export const useProfileStore = create<ProfileState>()(
 
                 try {
                     // Validate and check availability
+                    const validation = validateUsername(trimmedUsername)
+                    if (!validation.isValid) {
+                        set({
+                            error: validation.error || 'Invalid username',
+                            isLoading: false,
+                        })
+                        return
+                    }
+
                     const availability = await get().checkUsernameAvailability(trimmedUsername)
                     if (!availability.available) {
                         set({
@@ -400,10 +434,10 @@ export const useProfileStore = create<ProfileState>()(
                         return
                     }
 
-                    // Update canonical profile (handles displayName mapping atomically)
-                    await updateProfileInFirestore(userId, { displayName: trimmedUsername })
+                    // Update canonical profile (handles username mapping atomically)
+                    await updateProfileInFirestore(userId, { username: trimmedUsername })
 
-                    // Update denormalized references
+                    // Update denormalized references with username
                     await Promise.all([
                         updateRankingsUsername(userId, trimmedUsername),
                         updateRankingCommentsUsername(userId, trimmedUsername),

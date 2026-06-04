@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { Content, getTitle as getContentTitle } from '../../typings'
 import { Recommendation } from '../../types/recommendations'
 import Row from '../content/Row'
@@ -16,10 +16,23 @@ import { useSessionStore } from '../../stores/sessionStore'
 import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
 import { auth } from '../../firebase'
+import { useToast } from '../../hooks/useToast'
 import RecommendationInsightsModal from './RecommendationInsightsModal'
 import GenrePreferenceModal, { PreviewContent } from './GenrePreferenceModal'
 import TitlePreferenceModal, { ContentWithCredits } from './TitlePreferenceModal'
 import { GenrePreference, VotedContent, SkippedContent } from '../../types/shared'
+import {
+    getRecentInteractions,
+    getV2InteractionSummary,
+    saveV2InteractionSummary,
+} from '../../utils/firestore/interactions'
+import {
+    aggregateUserInteractions,
+    shouldRefreshSummary,
+} from '../../utils/recommendations/interactionAggregator'
+import type { InteractionSummary } from '../../utils/recommendations/interactionAggregator'
+import { useRecommendationFeedback } from '../../hooks/useRecommendationFeedback'
+import { FEEDBACK_CONSTRAINTS } from '../../types/recommendations'
 
 interface RecommendedForYouRowProps {
     onLoadComplete?: () => void
@@ -57,6 +70,21 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
     const syncStatus = useAuthStore((state) => state.syncStatus)
     const isDataSyncing = sessionType === 'authenticated' && syncStatus === 'syncing'
 
+    // Phase 2: Recommendation Feedback Tracking
+    const feedbackHook = useRecommendationFeedback()
+    const { showContentHidden } = useToast()
+    const contentPageMapRef = useRef<Map<string, number>>(new Map()) // Map content ID+type to page number
+    const viewedContentRef = useRef<Set<string>>(new Set()) // Track which content has been viewed
+    const previousDataRef = useRef<{
+        likedIds: Set<number>
+        hiddenIds: Set<number>
+        watchlistIds: Set<number>
+    }>({
+        likedIds: new Set(),
+        hiddenIds: new Set(),
+        watchlistIds: new Set(),
+    })
+
     // Check if recommendations are enabled in user preferences
     const showRecommendations = sessionData.showRecommendations ?? true
 
@@ -83,6 +111,134 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
                 .join(','),
         [genrePreferences, contentPreferences, votedContent]
     )
+
+    // Phase 2: Build content-to-page mapping when recommendations change
+    // Page 1 = first 40 items, Page 2 = next batch, etc.
+    useEffect(() => {
+        if (recommendations.length === 0) {
+            contentPageMapRef.current.clear()
+            viewedContentRef.current.clear()
+            return
+        }
+
+        // Map content IDs to page numbers (1-indexed)
+        // Assuming 40 items per page from the API
+        const itemsPerPage = 40
+        recommendations.forEach((rec, index) => {
+            const key = `${rec.content.id}-${rec.content.media_type}`
+            const page = Math.floor(index / itemsPerPage) + 1
+            contentPageMapRef.current.set(key, page)
+        })
+
+        console.log(
+            `[Feedback] Mapped ${recommendations.length} recommendations across ${Math.ceil(recommendations.length / itemsPerPage)} pages`
+        )
+    }, [recommendations])
+
+    // Phase 2: Track user actions on recommended content (liked, hidden, watchlisted)
+    useEffect(() => {
+        const currentLikedIds = new Set(sessionData.likedMovies.map((c) => c.id))
+        const currentHiddenIds = new Set(sessionData.hiddenMovies.map((c) => c.id))
+        const currentWatchlistIds = new Set(sessionData.defaultWatchlist.map((c) => c.id))
+
+        const previous = previousDataRef.current
+
+        // Detect new likes on recommended content
+        for (const id of currentLikedIds) {
+            if (!previous.likedIds.has(id)) {
+                // User just liked this content - check if it's a recommendation
+                const recommendation = recommendations.find((r) => r.content.id === id)
+                if (recommendation) {
+                    const key = `${recommendation.content.id}-${recommendation.content.media_type}`
+                    const page = contentPageMapRef.current.get(key) || 1
+                    feedbackHook.trackLiked({
+                        contentId: recommendation.content.id,
+                        mediaType: recommendation.content.media_type as 'movie' | 'tv',
+                        page,
+                    })
+                }
+            }
+        }
+
+        // Detect new hidden content
+        for (const id of currentHiddenIds) {
+            if (!previous.hiddenIds.has(id)) {
+                const recommendation = recommendations.find((r) => r.content.id === id)
+                if (recommendation) {
+                    const key = `${recommendation.content.id}-${recommendation.content.media_type}`
+                    const page = contentPageMapRef.current.get(key) || 1
+                    feedbackHook.trackHidden({
+                        contentId: recommendation.content.id,
+                        mediaType: recommendation.content.media_type as 'movie' | 'tv',
+                        page,
+                    })
+
+                    // Show confirmation toast
+                    const contentTitle = getContentTitle(recommendation.content)
+                    showContentHidden('Content dismissed', contentTitle)
+                }
+            }
+        }
+
+        // Detect new watchlist additions
+        for (const id of currentWatchlistIds) {
+            if (!previous.watchlistIds.has(id)) {
+                const recommendation = recommendations.find((r) => r.content.id === id)
+                if (recommendation) {
+                    const key = `${recommendation.content.id}-${recommendation.content.media_type}`
+                    const page = contentPageMapRef.current.get(key) || 1
+                    feedbackHook.trackWatchlisted({
+                        contentId: recommendation.content.id,
+                        mediaType: recommendation.content.media_type as 'movie' | 'tv',
+                        page,
+                    })
+                }
+            }
+        }
+
+        // Update previous state for next comparison
+        previousDataRef.current = {
+            likedIds: currentLikedIds,
+            hiddenIds: currentHiddenIds,
+            watchlistIds: currentWatchlistIds,
+        }
+    }, [
+        sessionData.likedMovies,
+        sessionData.hiddenMovies,
+        sessionData.defaultWatchlist,
+        recommendations,
+        feedbackHook,
+    ])
+
+    // Phase 2: Track viewed content (simplified - tracks when content becomes visible in the row)
+    // Note: This is a basic implementation. A more sophisticated approach would use
+    // IntersectionObserver to track actual viewport visibility >3 seconds
+    useEffect(() => {
+        if (recommendations.length === 0) return
+
+        // Track the first 10 items as "viewed" when recommendations first load
+        // This simulates the initial view of content in the row
+        const viewableCount = Math.min(10, recommendations.length)
+
+        recommendations.slice(0, viewableCount).forEach((rec) => {
+            const key = `${rec.content.id}-${rec.content.media_type}`
+
+            // Only track once per content
+            if (!viewedContentRef.current.has(key)) {
+                viewedContentRef.current.add(key)
+                const page = contentPageMapRef.current.get(key) || 1
+
+                // Track after a 3-second delay (minimum view time)
+                setTimeout(() => {
+                    feedbackHook.trackViewed({
+                        contentId: rec.content.id,
+                        mediaType: rec.content.media_type as 'movie' | 'tv',
+                        page,
+                    })
+                }, FEEDBACK_CONSTRAINTS.MIN_VIEW_TIME_MS)
+            }
+        })
+    }, [recommendations, feedbackHook])
 
     // Extract all items from user collections (for recommendation engine)
     const collectionItems = useMemo(() => {
@@ -309,6 +465,61 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
 
                 const idToken = await currentUser.getIdToken()
 
+                // V2: Generate or fetch cached interaction summary (Phase 1b - Caching)
+                let interactionSummary: InteractionSummary | undefined
+                try {
+                    // Try to load cached summary first
+                    const cachedSummary = await getV2InteractionSummary(userId)
+
+                    // Check if cache is fresh (time-based only - 24h TTL)
+                    const now = Date.now()
+                    const isCacheFresh =
+                        cachedSummary && now - cachedSummary.lastCalculated < 24 * 60 * 60 * 1000
+
+                    if (isCacheFresh) {
+                        // Use cached summary WITHOUT fetching interactions (true cache hit)
+                        interactionSummary = cachedSummary
+                        const age = now - cachedSummary!.lastCalculated
+                        const ageMinutes = Math.floor(age / 60000)
+                        console.log(
+                            `[V2] Cache HIT: Using cached summary (${ageMinutes}m old, ${cachedSummary!.totalInteractions} interactions)`
+                        )
+                    } else {
+                        // Cache miss or stale - fetch interactions and regenerate
+                        console.log(
+                            cachedSummary
+                                ? `[V2] Cache STALE: Regenerating summary (${Math.floor((now - cachedSummary.lastCalculated) / 60000)}m old)`
+                                : '[V2] Cache MISS: Generating first summary'
+                        )
+
+                        const interactions = await getRecentInteractions(userId, 1000)
+
+                        if (interactions.length > 0) {
+                            // Generate new summary and cache it
+                            interactionSummary = aggregateUserInteractions(
+                                userId,
+                                interactions,
+                                sessionData.myRatings || []
+                            )
+
+                            console.log(
+                                `[V2] Generated NEW summary: ${interactions.length} interactions → ${interactionSummary.topContent.length} top items`
+                            )
+
+                            // Save to cache (don't await - fire and forget)
+                            saveV2InteractionSummary(userId, interactionSummary).catch((err) =>
+                                console.warn('[V2] Failed to cache summary:', err)
+                            )
+                        }
+                    }
+                } catch (error) {
+                    console.warn(
+                        'Failed to generate interaction summary, falling back to V1:',
+                        error
+                    )
+                    // Continue without summary - API will use V1 logic
+                }
+
                 // Use POST with body instead of GET with URL params to avoid 431 header size error
                 const response = await fetch(`/api/recommendations/personalized`, {
                     method: 'POST',
@@ -317,6 +528,8 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
                         Authorization: `Bearer ${idToken}`,
                     },
                     body: JSON.stringify({
+                        // V2: Interaction summary (Phase 1 - Deep History)
+                        ...(interactionSummary && { interactionSummary }),
                         // New unified ratings system (preferred)
                         myRatings: sessionData.myRatings?.slice(0, 20) || [],
                         // Legacy arrays (for backward compatibility)

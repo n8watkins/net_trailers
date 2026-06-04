@@ -34,7 +34,7 @@ export interface PublicProfilePayload {
         pollsCreated: PollSummary[]
         pollsVoted: PollSummary[]
     }
-    watchLaterPreview: (Movie | TVShow)[]
+    watchHistoryPreview: (Movie | TVShow)[]
     visibility: ProfileVisibility
 }
 
@@ -163,10 +163,30 @@ export async function buildPublicProfilePayload(
             .slice(0, 10) // Limit to 10 collections for the profile
     }
 
-    const watchLaterPreview =
-        isPublicEnabled && visibility.showWatchLater && Array.isArray(legacyData.defaultWatchlist)
-            ? (legacyData.defaultWatchlist as (Movie | TVShow)[]).slice(0, 12)
-            : []
+    // Fetch watch history from Firestore document if visibility allows
+    let watchHistoryPreview: (Movie | TVShow)[] = []
+    if (isPublicEnabled && visibility.showWatchHistory) {
+        try {
+            const watchHistoryDoc = await db
+                .collection('users')
+                .doc(userId)
+                .collection('data')
+                .doc('watchHistory')
+                .get()
+
+            if (watchHistoryDoc.exists) {
+                const data = watchHistoryDoc.data()
+                const history = Array.isArray(data?.history) ? data.history : []
+                watchHistoryPreview = history
+                    .slice(0, 12)
+                    .map((entry: any) => entry.content as Movie | TVShow)
+                    .filter((content): content is Movie | TVShow => Boolean(content))
+            }
+        } catch (error) {
+            console.warn('[PublicProfile] Failed to load watch history:', error)
+            watchHistoryPreview = []
+        }
+    }
 
     // Only fetch rankings if visibility allows
     let publicRankings: Ranking[] = []
@@ -418,7 +438,7 @@ export async function buildPublicProfilePayload(
             pollsCreated: pollSummaries,
             pollsVoted: orderedVotedPolls,
         },
-        watchLaterPreview,
+        watchHistoryPreview,
         visibility,
     }
 }

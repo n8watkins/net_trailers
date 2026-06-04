@@ -417,8 +417,9 @@ export default function CollectionCreatorModal() {
                 collectionType: 'ai-generated', // This is from smart search
                 originalQuery: query, // Store the original search query
                 canGenerateMore: infiniteEnabled,
-                autoUpdateEnabled: false, // AI-generated collections don't auto-update
-                updateFrequency: 'never',
+                // NOTE: Auto-update feature was removed during refactor
+                // autoUpdateEnabled: false,
+                // updateFrequency: 'never',
                 genres: selectedGenres,
                 genreLogic,
                 mediaType,

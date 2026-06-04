@@ -41,9 +41,12 @@ export default function NotificationItem({ notification }: NotificationItemProps
         return 'Just now'
     }
 
-    // Check if notification is clickable (has content or action URL)
+    // Check if notification is clickable (has content, action URL, or ranking)
     const isClickable =
-        !!(notification.contentId && notification.mediaType) || !!notification.actionUrl
+        !!(notification.contentId && notification.mediaType) ||
+        !!notification.actionUrl ||
+        (!!(notification.type === 'ranking_comment' || notification.type === 'ranking_like') &&
+            notification.rankingId)
 
     // Handle notification click
     const handleClick = async () => {
@@ -52,6 +55,16 @@ export default function NotificationItem({ notification }: NotificationItemProps
         // Mark as read if unread (don't await - let it happen in background)
         if (!notification.isRead) {
             markNotificationAsRead(userId, notification.id).catch(console.error)
+        }
+
+        // Handle social notifications - navigate to ranking detail page
+        if (
+            (notification.type === 'ranking_comment' || notification.type === 'ranking_like') &&
+            notification.rankingId
+        ) {
+            closePanel()
+            router.push(`/community/ranking/${notification.rankingId}`)
+            return
         }
 
         // If notification has contentId and mediaType, open the content modal
@@ -101,6 +114,10 @@ export default function NotificationItem({ notification }: NotificationItemProps
                 return 'Collection Update'
             case 'system':
                 return 'System'
+            case 'ranking_comment':
+                return 'New Comment 💬'
+            case 'ranking_like':
+                return 'New Likes ❤️'
             default:
                 return 'Notification'
         }
@@ -108,6 +125,11 @@ export default function NotificationItem({ notification }: NotificationItemProps
 
     // Extract content title from notification title (remove prefix if present)
     const getContentTitle = () => {
+        // For social notifications, use the ranking title
+        if (notification.type === 'ranking_comment' || notification.type === 'ranking_like') {
+            return notification.rankingTitle || notification.title || 'Your Ranking'
+        }
+
         // Remove any category prefix from the title
         const prefixes = [
             'Now Trending:',
@@ -117,7 +139,7 @@ export default function NotificationItem({ notification }: NotificationItemProps
             'System:',
         ]
 
-        let title = notification.title
+        let title = notification.title || ''
         for (const prefix of prefixes) {
             if (title.startsWith(prefix)) {
                 title = title.replace(prefix, '').trim()
@@ -128,8 +150,48 @@ export default function NotificationItem({ notification }: NotificationItemProps
         return title
     }
 
+    // Get social notification details
+    const getSocialDetails = () => {
+        if (notification.type === 'ranking_comment') {
+            const commenterName = notification.commenterName
+            const commentText = notification.commentText
+            const isReply = notification.isReply
+
+            if (isReply && commenterName) {
+                return `${commenterName} replied to a comment on your ranking`
+            }
+            if (commentText) {
+                return `"${commentText}"`
+            }
+            if (commenterName) {
+                return `${commenterName} commented on your ranking`
+            }
+            return 'Someone commented on your ranking'
+        }
+
+        if (notification.type === 'ranking_like') {
+            const likerNames = notification.likerNames
+
+            if (likerNames && likerNames.length > 0) {
+                if (likerNames.length === 1) {
+                    return `${likerNames[0]} liked your ranking`
+                } else if (likerNames.length === 2) {
+                    return `${likerNames[0]} and ${likerNames[1]} liked your ranking`
+                } else if (likerNames.length === 3) {
+                    return `${likerNames[0]}, ${likerNames[1]}, and ${likerNames[2]} liked your ranking`
+                } else {
+                    return `${likerNames[0]}, ${likerNames[1]}, and ${likerNames.length - 2} others liked your ranking`
+                }
+            }
+            return 'Someone liked your ranking'
+        }
+
+        return null
+    }
+
     const categoryLabel = getCategoryLabel()
     const contentTitle = getContentTitle()
+    const socialDetails = getSocialDetails()
 
     return (
         <div
@@ -170,18 +232,24 @@ export default function NotificationItem({ notification }: NotificationItemProps
                     </time>
                 </div>
 
-                {/* Content Title */}
+                {/* Content Title - for social notifications, this is the ranking title */}
                 <h4
-                    className={`line-clamp-3 text-lg font-semibold leading-snug ${
+                    className={`line-clamp-2 text-lg font-semibold leading-snug ${
                         notification.isRead ? 'text-gray-300' : 'text-white'
                     }`}
                 >
                     {contentTitle}
                 </h4>
 
-                {/* Message/Description if available */}
-                {notification.message && (
-                    <p className="text-base text-gray-300 line-clamp-2">{notification.message}</p>
+                {/* Social notification details or regular message */}
+                {socialDetails ? (
+                    <p className="text-base text-gray-300 line-clamp-3 italic">{socialDetails}</p>
+                ) : (
+                    notification.message && (
+                        <p className="text-base text-gray-300 line-clamp-2">
+                            {notification.message}
+                        </p>
+                    )
                 )}
             </div>
         </div>

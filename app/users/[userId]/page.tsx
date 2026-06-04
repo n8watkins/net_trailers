@@ -23,7 +23,7 @@ import type { UserList } from '../../../types/collections'
 import type { Ranking } from '../../../types/rankings'
 import type { ThreadSummary, PollSummary, PollOptionSummary } from '../../../types/forum'
 import { LikedContentSection } from '../../../components/profile/LikedContentSection'
-import { WatchLaterSection } from '../../../components/profile/WatchLaterSection'
+import { WatchHistorySection } from '../../../components/profile/WatchHistorySection'
 import { RankingsSection } from '../../../components/profile/RankingsSection'
 import { CollectionsSection } from '../../../components/profile/CollectionsSection'
 import { ForumActivitySection } from '../../../components/profile/ForumActivitySection'
@@ -55,18 +55,63 @@ const sortByRecency = <T extends { updatedAt?: number | null; createdAt?: number
 }
 
 async function loadProfileFromClient(userId: string): Promise<PublicProfilePayload> {
-    // Fetch both user document and profile document
-    const [userSnap, profileSnap] = await Promise.all([
-        getDoc(doc(db, 'users', userId)),
-        getDoc(doc(db, 'profiles', userId)),
-    ])
+    // Fetch profile document (public) and try to fetch user document (may fail if not owner)
+    let userData: Record<string, any> = {}
+    let profileData: Record<string, any> = {}
 
-    if (!userSnap.exists() && !profileSnap.exists()) {
-        throw new Error('User not found')
+    // Always fetch profile (public)
+    const profileSnap = await getDoc(doc(db, 'profiles', userId))
+    profileData = profileSnap.exists() ? profileSnap.data() || {} : {}
+
+    // Try to fetch user document (will fail if not the owner due to security rules)
+    try {
+        const userSnap = await getDoc(doc(db, 'users', userId))
+        userData = userSnap.exists() ? userSnap.data() || {} : {}
+    } catch (error) {
+        // Permission denied - this is expected when viewing other users' profiles
+        // Only the owner can read their /users/{userId} document
+        if (error instanceof FirebaseError && error.code === 'permission-denied') {
+            // This is fine - we'll use profile data only
+            userData = {}
+        } else {
+            // Unexpected error - log it
+            console.warn('[PublicProfile] Error fetching user document:', error)
+            userData = {}
+        }
     }
 
-    const userData = userSnap.exists() ? userSnap.data() || {} : {}
-    const profileData = profileSnap.exists() ? profileSnap.data() || {} : {}
+    // If no profile data exists, try to construct a basic profile from user's rankings
+    let fallbackProfile: Record<string, any> | null = null
+    if (Object.keys(userData).length === 0 && Object.keys(profileData).length === 0) {
+        console.log('[PublicProfile] No profile/user data found, checking rankings...')
+
+        // Try to get user info from their rankings
+        const rankingsSnap = await getDocs(
+            query(collection(db, 'rankings'), where('userId', '==', userId), limit(1))
+        )
+
+        if (rankingsSnap.empty) {
+            throw new Error('User not found')
+        }
+
+        // Construct basic profile from ranking data
+        const firstRanking = rankingsSnap.docs[0].data()
+        fallbackProfile = {
+            displayName: firstRanking.userName || 'User',
+            avatarUrl:
+                firstRanking.userAvatar ||
+                `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
+            isPublic: true,
+            visibility: { ...DEFAULT_PROFILE_VISIBILITY },
+        }
+
+        console.log(
+            '[PublicProfile] Created fallback profile from rankings:',
+            fallbackProfile.displayName
+        )
+        profileData = fallbackProfile
+    }
+
     const legacyProfile = userData.profile || {}
 
     // Get visibility settings - default to all visible for backward compatibility
@@ -121,12 +166,24 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
             .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
             .slice(0, 10) // Limit to 10 collections for the profile
     }
-    const watchLaterPreview = Array.isArray(userData.defaultWatchlist)
-        ? (userData.defaultWatchlist as (Movie | TVShow)[]).slice(
-              0,
-              PROFILE_CONFIG.WATCH_LATER_PREVIEW_LIMIT
-          )
-        : []
+    // Fetch watch history from Firestore document if visibility allows
+    let watchHistoryPreview: (Movie | TVShow)[] = []
+    if (visibility.showWatchHistory) {
+        try {
+            const watchHistoryDoc = await getDoc(doc(db, 'users', userId, 'data', 'watchHistory'))
+            if (watchHistoryDoc.exists()) {
+                const data = watchHistoryDoc.data()
+                const history = Array.isArray(data.history) ? data.history : []
+                watchHistoryPreview = history
+                    .slice(0, PROFILE_CONFIG.WATCH_LATER_PREVIEW_LIMIT)
+                    .map((entry: any) => entry.content as Movie | TVShow)
+                    .filter((content): content is Movie | TVShow => Boolean(content))
+            }
+        } catch (error) {
+            console.warn('[PublicProfile] Failed to load watch history:', error)
+            watchHistoryPreview = []
+        }
+    }
 
     // Only fetch rankings if visibility allows
     let publicRankings: Ranking[] = []
@@ -329,7 +386,7 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
             pollsCreated: visibility.showPollsCreated ? pollSummaries : [],
             pollsVoted: visibility.showPollsVoted ? votedPollSummaries : [],
         },
-        watchLaterPreview: visibility.showWatchLater ? watchLaterPreview : [],
+        watchHistoryPreview: visibility.showWatchHistory ? watchHistoryPreview : [],
         visibility,
     }
 }
@@ -418,7 +475,7 @@ export default function UserProfilePage() {
     const forumThreadsVoted = profileData?.forum?.threadsVoted ?? []
     const forumPollsCreated = profileData?.forum?.pollsCreated ?? []
     const forumPollsVoted = profileData?.forum?.pollsVoted ?? []
-    const watchLaterPreview = profileData?.watchLaterPreview ?? []
+    const watchHistoryPreview = profileData?.watchHistoryPreview ?? []
     const stats: PublicProfilePayload['stats'] = profileData?.stats ?? {
         totalRankings: publicRankings.length,
         totalLikes: publicRankings.reduce((sum, r) => sum + r.likes, 0),
@@ -525,12 +582,12 @@ export default function UserProfilePage() {
                 <>
                     {/* Bento Grid Layout - only show if at least one section is visible */}
                     {(profileData.visibility.showLikedContent ||
-                        profileData.visibility.showWatchLater) &&
+                        profileData.visibility.showWatchHistory) &&
                         (() => {
                             // Determine if both sections are visible
                             const showBothSections =
                                 profileData.visibility.showLikedContent &&
-                                profileData.visibility.showWatchLater
+                                profileData.visibility.showWatchHistory
                             // Show more items when section has full width
                             const itemLimit = showBothSections ? 6 : 12
 
@@ -548,10 +605,10 @@ export default function UserProfilePage() {
                                             limit={itemLimit}
                                         />
                                     )}
-                                    {profileData.visibility.showWatchLater && (
-                                        <WatchLaterSection
-                                            watchLaterPreview={watchLaterPreview}
-                                            totalCount={watchLaterPreview.length}
+                                    {profileData.visibility.showWatchHistory && (
+                                        <WatchHistorySection
+                                            watchHistoryPreview={watchHistoryPreview}
+                                            totalCount={watchHistoryPreview.length}
                                             userId={userId}
                                             isPublic={true}
                                             limit={itemLimit}

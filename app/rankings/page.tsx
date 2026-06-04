@@ -20,7 +20,13 @@ import { getUserComments } from '../../utils/firestore/rankingComments'
 import { getUserLikedRankings } from '../../utils/firestore/rankings'
 import { formatDistanceToNow } from 'date-fns'
 import Link from 'next/link'
-import { TrophyIcon, ChatBubbleLeftIcon, HeartIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import {
+    TrophyIcon,
+    ChatBubbleLeftIcon,
+    HeartIcon,
+    XMarkIcon,
+    MicrophoneIcon,
+} from '@heroicons/react/24/outline'
 import {
     Cog6ToothIcon,
     ChevronDownIcon,
@@ -28,12 +34,15 @@ import {
     PlusIcon,
     MagnifyingGlassIcon,
 } from '@heroicons/react/24/solid'
+import { useVoiceInput } from '../../hooks/useVoiceInput'
+import { useToast } from '../../hooks/useToast'
 
 export default function RankingsPage() {
     const router = useRouter()
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
     const { isGuest, isInitialized } = useAuthStatus()
+    const { showError } = useToast()
 
     const { rankings, isLoading, error, loadUserRankings } = useRankingStore()
 
@@ -47,10 +56,40 @@ export default function RankingsPage() {
     const [rankingsSearch, setRankingsSearch] = useState('')
     const [commentsSearch, setCommentsSearch] = useState('')
     const [likedSearch, setLikedSearch] = useState('')
+    const [isMounted, setIsMounted] = useState(false)
 
     // Manage dropdown state
     const [showManageDropdown, setShowManageDropdown] = useState(false)
     const manageDropdownRef = useRef<HTMLDivElement>(null)
+
+    // Voice input for active search
+    const currentSearch =
+        activeTab === 'rankings'
+            ? rankingsSearch
+            : activeTab === 'comments'
+              ? commentsSearch
+              : likedSearch
+    const setCurrentSearch =
+        activeTab === 'rankings'
+            ? setRankingsSearch
+            : activeTab === 'comments'
+              ? setCommentsSearch
+              : setLikedSearch
+
+    const { isListening, isSupported, transcript, startListening, stopListening } = useVoiceInput({
+        onResult: (transcript) => {
+            setCurrentSearch(transcript)
+        },
+        onError: (error) => {
+            showError(error)
+        },
+        sourceId: `rankings-${activeTab}-search`,
+    })
+
+    // Track client-side mount
+    useEffect(() => {
+        setIsMounted(true)
+    }, [])
 
     // Handle click outside to close dropdown
     useEffect(() => {
@@ -150,20 +189,6 @@ export default function RankingsPage() {
         )
     }, [likedRankings, likedSearch])
 
-    // Get current search value and setter based on active tab
-    const currentSearch =
-        activeTab === 'rankings'
-            ? rankingsSearch
-            : activeTab === 'comments'
-              ? commentsSearch
-              : likedSearch
-    const setCurrentSearch =
-        activeTab === 'rankings'
-            ? setRankingsSearch
-            : activeTab === 'comments'
-              ? setCommentsSearch
-              : setLikedSearch
-
     // Check if we should show search bar
     const showSearch =
         (activeTab === 'rankings' && rankings.length > 0) ||
@@ -183,7 +208,7 @@ export default function RankingsPage() {
                 {/* Content Container */}
                 <div className="relative z-10">
                     {/* Cinematic Hero Header */}
-                    <div className="relative overflow-hidden pt-4">
+                    <div className="relative overflow-hidden pt-12">
                         {/* Animated Background Gradients */}
                         <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900/80 to-black" />
                         <div
@@ -197,151 +222,132 @@ export default function RankingsPage() {
                         <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60" />
 
                         {/* Hero Content */}
-                        <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-6">
-                            {/* Trophy Icon with glow */}
-                            <div className="relative mb-4">
-                                <div className="absolute inset-0 bg-yellow-500/30 blur-2xl scale-150" />
-                                <TrophyIcon className="relative w-16 h-16 text-yellow-400 drop-shadow-[0_0_20px_rgba(234,179,8,0.5)]" />
-                            </div>
+                        <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-4">
+                            {/* Title with inline icon */}
+                            <div className="flex items-center gap-4 mb-2">
+                                {/* Trophy Icon with glow */}
+                                <div className="relative">
+                                    <div className="absolute inset-0 bg-yellow-500/30 blur-2xl scale-150" />
+                                    <TrophyIcon className="relative w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 text-yellow-400 drop-shadow-[0_0_20px_rgba(234,179,8,0.5)]" />
+                                </div>
 
-                            {/* Title */}
-                            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-2 text-center tracking-tight">
-                                <span className="bg-gradient-to-r from-yellow-200 via-amber-100 to-yellow-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
-                                    My Rankings
-                                </span>
-                            </h1>
+                                {/* Title */}
+                                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white text-center tracking-tight">
+                                    <span className="bg-gradient-to-r from-yellow-200 via-amber-100 to-yellow-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
+                                        My Rankings
+                                    </span>
+                                </h1>
+                            </div>
 
                             {/* Subtitle */}
                             <p className="text-base sm:text-lg text-gray-300 mb-6 text-center max-w-2xl">
                                 Create, manage, and share your personalized content rankings
                             </p>
 
-                            {/* Tab Pills */}
-                            <div className="flex flex-wrap gap-2 items-center justify-center mb-5 px-4">
-                                {[
-                                    {
-                                        value: 'rankings',
-                                        label: 'Your Rankings',
-                                        icon: TrophyIcon,
-                                        count: rankings.length,
-                                        loading: isLoading,
-                                    },
-                                    {
-                                        value: 'comments',
-                                        label: 'Comments',
-                                        icon: ChatBubbleLeftIcon,
-                                        count: userComments.length,
-                                        loading: isLoadingComments,
-                                        disabled: isGuest,
-                                    },
-                                    {
-                                        value: 'liked',
-                                        label: 'Liked',
-                                        icon: HeartIcon,
-                                        count: likedRankings.length,
-                                        loading: isLoadingLiked,
-                                        disabled: isGuest,
-                                    },
-                                ].map((tab) => {
-                                    const Icon = tab.icon
-                                    const isSelected = activeTab === tab.value
+                            {/* Filter Tabs - Left Aligned */}
+                            <div className="w-full max-w-4xl mb-5 px-4">
+                                <div className="flex flex-wrap gap-2 items-center justify-between">
+                                    {/* Left: Tab Pills */}
+                                    <div className="flex flex-wrap gap-2">
+                                        {[
+                                            {
+                                                value: 'rankings',
+                                                label: 'Your Rankings',
+                                                icon: TrophyIcon,
+                                                disabled: false,
+                                            },
+                                            {
+                                                value: 'comments',
+                                                label: 'Comments',
+                                                icon: ChatBubbleLeftIcon,
+                                                disabled: isGuest,
+                                            },
+                                            {
+                                                value: 'liked',
+                                                label: 'Liked',
+                                                icon: HeartIcon,
+                                                disabled: isGuest,
+                                            },
+                                        ].map((tab) => {
+                                            const Icon = tab.icon
+                                            const isSelected = activeTab === tab.value
 
-                                    return (
-                                        <button
-                                            key={tab.value}
-                                            onClick={() =>
-                                                !tab.disabled &&
-                                                setActiveTab(
-                                                    tab.value as 'rankings' | 'comments' | 'liked'
-                                                )
-                                            }
-                                            disabled={tab.disabled}
-                                            className={`group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 ${
-                                                tab.disabled
-                                                    ? 'bg-zinc-900/20 text-gray-600 border-zinc-800/50 cursor-not-allowed'
-                                                    : isSelected
-                                                      ? 'bg-yellow-500/90 text-black border-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.3)] scale-105'
-                                                      : 'bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105 hover:shadow-[0_0_8px_rgba(255,255,255,0.08)]'
-                                            }`}
-                                        >
-                                            <Icon
-                                                className={`w-4 h-4 ${isSelected ? 'text-black' : ''}`}
-                                            />
-                                            <span className="relative z-10">{tab.label}</span>
-                                            {!tab.disabled && (
-                                                <span
-                                                    className={`text-xs ${isSelected ? 'text-black/70' : 'text-gray-500'}`}
+                                            return (
+                                                <button
+                                                    key={tab.value}
+                                                    onClick={() =>
+                                                        !tab.disabled &&
+                                                        setActiveTab(
+                                                            tab.value as
+                                                                | 'rankings'
+                                                                | 'comments'
+                                                                | 'liked'
+                                                        )
+                                                    }
+                                                    disabled={tab.disabled}
+                                                    className={`group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 ${
+                                                        tab.disabled
+                                                            ? 'bg-zinc-900/20 text-gray-600 border-zinc-800/50 cursor-not-allowed'
+                                                            : isSelected
+                                                              ? 'bg-yellow-500/90 text-black border-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.3)] scale-105'
+                                                              : 'bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105 hover:shadow-[0_0_8px_rgba(255,255,255,0.08)]'
+                                                    }`}
                                                 >
-                                                    {tab.loading ? '...' : `(${tab.count})`}
-                                                </span>
-                                            )}
-                                            {isSelected && !tab.disabled && (
-                                                <div className="absolute inset-0 rounded-full bg-yellow-500 blur-md opacity-15 animate-pulse" />
-                                            )}
+                                                    <Icon
+                                                        className={`w-4 h-4 ${isSelected ? 'text-black' : ''}`}
+                                                    />
+                                                    <span className="relative z-10">
+                                                        {tab.label}
+                                                    </span>
+                                                    {isSelected && !tab.disabled && (
+                                                        <div className="absolute inset-0 rounded-full bg-yellow-500 blur-md opacity-15 animate-pulse" />
+                                                    )}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+
+                                    {/* Right: Manage dropdown */}
+                                    <div className="relative" ref={manageDropdownRef}>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setShowManageDropdown(!showManageDropdown)
+                                            }
+                                            className="group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105 hover:shadow-[0_0_8px_rgba(255,255,255,0.08)]"
+                                        >
+                                            <Cog6ToothIcon className="w-4 h-4 text-gray-400" />
+                                            <span>Manage</span>
+                                            <ChevronDownIcon
+                                                className={`w-4 h-4 transition-transform ${
+                                                    showManageDropdown ? 'rotate-180' : ''
+                                                }`}
+                                            />
                                         </button>
-                                    )
-                                })}
-                            </div>
 
-                            {/* Action Row - Create & Manage */}
-                            <div className="flex gap-2 items-center mb-5">
-                                {/* Create Ranking Button */}
-                                <button
-                                    onClick={handleCreateNew}
-                                    disabled={isGuest}
-                                    className={`group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 ${
-                                        isGuest
-                                            ? 'bg-zinc-900/20 text-gray-600 border-zinc-800/50 cursor-not-allowed'
-                                            : 'bg-yellow-500/90 text-black border-yellow-400 hover:bg-yellow-400 hover:scale-105 hover:shadow-[0_0_10px_rgba(234,179,8,0.3)]'
-                                    }`}
-                                    title={
-                                        isGuest
-                                            ? 'Sign in to create rankings'
-                                            : 'Create a new ranking'
-                                    }
-                                >
-                                    <PlusIcon className="w-4 h-4" />
-                                    <span>Create Ranking</span>
-                                </button>
-
-                                {/* Manage dropdown */}
-                                <div className="relative" ref={manageDropdownRef}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowManageDropdown(!showManageDropdown)}
-                                        className="group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105 hover:shadow-[0_0_8px_rgba(255,255,255,0.08)]"
-                                    >
-                                        <Cog6ToothIcon className="w-4 h-4 text-gray-400" />
-                                        <span>Manage</span>
-                                        <ChevronDownIcon
-                                            className={`w-4 h-4 transition-transform ${
-                                                showManageDropdown ? 'rotate-180' : ''
-                                            }`}
-                                        />
-                                    </button>
-
-                                    {/* Dropdown Menu */}
-                                    {showManageDropdown && (
-                                        <div className="absolute top-full mt-2 right-0 bg-zinc-900/95 backdrop-blur-lg border border-zinc-700/50 rounded-xl shadow-2xl z-50 min-w-[200px] overflow-hidden">
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    router.push('/settings/account')
-                                                    setShowManageDropdown(false)
-                                                }}
-                                                className="w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-zinc-800/80 transition-colors"
-                                            >
-                                                <TrashIcon className="w-5 h-5 text-red-400 flex-shrink-0" />
-                                                <span>Clear Data</span>
-                                            </button>
-                                        </div>
-                                    )}
+                                        {/* Dropdown Menu */}
+                                        {showManageDropdown && (
+                                            <div className="absolute top-full mt-2 right-0 bg-zinc-900/95 backdrop-blur-lg border border-zinc-700/50 rounded-xl shadow-2xl z-50 min-w-[200px] overflow-hidden">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        router.push('/settings/account')
+                                                        setShowManageDropdown(false)
+                                                    }}
+                                                    className="w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-zinc-800/80 transition-colors"
+                                                >
+                                                    <TrashIcon className="w-5 h-5 text-red-400 flex-shrink-0" />
+                                                    <span>Clear Data</span>
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
                             {/* Enhanced Search Bar */}
                             {showSearch && (
-                                <div className="w-full max-w-3xl relative">
+                                <div className="w-full max-w-4xl relative">
                                     <div className="relative group">
                                         <MagnifyingGlassIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 z-10 transition-colors group-focus-within:text-yellow-400" />
                                         <input
@@ -349,16 +355,42 @@ export default function RankingsPage() {
                                             value={currentSearch}
                                             onChange={(e) => setCurrentSearch(e.target.value)}
                                             placeholder={`Search ${activeTab === 'rankings' ? 'your rankings' : activeTab === 'comments' ? 'your comments' : 'liked rankings'}...`}
-                                            className="w-full pl-14 pr-14 py-4 bg-zinc-900/40 backdrop-blur-lg border border-zinc-800/50 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-yellow-500 focus:shadow-[0_0_25px_rgba(234,179,8,0.3)] transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700"
+                                            className={`w-full pl-14 ${isMounted && isSupported ? 'pr-24' : 'pr-14'} py-4 bg-zinc-900/40 backdrop-blur-lg border border-zinc-800/50 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-yellow-500 focus:shadow-[0_0_25px_rgba(234,179,8,0.3)] transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700`}
                                         />
-                                        {currentSearch && (
-                                            <button
-                                                onClick={() => setCurrentSearch('')}
-                                                className="absolute right-5 top-1/2 -translate-y-1/2 z-10 text-gray-400 hover:text-white transition-colors"
-                                            >
-                                                <XMarkIcon className="w-6 h-6" />
-                                            </button>
-                                        )}
+                                        <div className="absolute right-5 top-1/2 -translate-y-1/2 z-10 flex items-center gap-2">
+                                            {isMounted && isSupported && (
+                                                <button
+                                                    type="button"
+                                                    onClick={async () => {
+                                                        if (isListening) {
+                                                            stopListening()
+                                                        } else {
+                                                            await startListening()
+                                                        }
+                                                    }}
+                                                    className={`p-1.5 rounded-lg transition-all ${
+                                                        isListening
+                                                            ? 'bg-yellow-500 text-white animate-pulse'
+                                                            : 'text-gray-400 hover:text-yellow-400 hover:bg-yellow-500/10'
+                                                    }`}
+                                                    title={
+                                                        isListening
+                                                            ? 'Stop listening'
+                                                            : 'Voice search'
+                                                    }
+                                                >
+                                                    <MicrophoneIcon className="w-5 h-5" />
+                                                </button>
+                                            )}
+                                            {currentSearch && (
+                                                <button
+                                                    onClick={() => setCurrentSearch('')}
+                                                    className="text-gray-400 hover:text-white transition-colors"
+                                                >
+                                                    <XMarkIcon className="w-6 h-6" />
+                                                </button>
+                                            )}
+                                        </div>
 
                                         {/* Glowing border effect on focus */}
                                         <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-yellow-500 to-amber-500 opacity-0 group-focus-within:opacity-20 blur-xl transition-opacity duration-300 -z-10" />
@@ -369,7 +401,7 @@ export default function RankingsPage() {
                     </div>
 
                     {/* Main Content Area */}
-                    <div className="px-6 sm:px-8 lg:px-12 py-8 space-y-6">
+                    <div className="px-6 sm:px-8 lg:px-12 py-4 space-y-6">
                         {/* Guest Mode Banner */}
                         {isGuest && (
                             <div className="flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-yellow-600/10 border border-yellow-600/30 max-w-2xl mx-auto">
@@ -450,7 +482,7 @@ export default function RankingsPage() {
                                         </p>
                                     </div>
                                 ) : (
-                                    <div className="space-y-4 max-w-3xl mx-auto">
+                                    <div className="space-y-4 max-w-4xl mx-auto">
                                         {filteredComments.map((comment, index) => (
                                             <Link
                                                 key={comment.id}
@@ -534,7 +566,29 @@ export default function RankingsPage() {
                     </div>
                 </div>
 
-                {/* Add keyframe animation for fade-in */}
+                {/* Floating Create Ranking Button */}
+                {!isGuest && (
+                    <button
+                        onClick={handleCreateNew}
+                        className="fixed bottom-8 right-20 z-50 group"
+                        style={{
+                            animation: 'bob 5s ease-in-out infinite',
+                        }}
+                    >
+                        <div className="relative">
+                            {/* Glowing background */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-amber-500 rounded-full blur-lg opacity-30 group-hover:opacity-40 transition-opacity" />
+
+                            {/* Button */}
+                            <div className="relative flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-yellow-500 via-amber-500 to-yellow-600 rounded-full text-black font-bold text-sm shadow-[0_0_20px_rgba(234,179,8,0.3)] group-hover:shadow-[0_0_30px_rgba(234,179,8,0.4)] group-hover:scale-105 transition-all duration-300">
+                                <PlusIcon className="w-5 h-5" />
+                                <span className="hidden sm:inline">New Ranking</span>
+                            </div>
+                        </div>
+                    </button>
+                )}
+
+                {/* Add keyframe animations */}
                 <style jsx>{`
                     @keyframes fadeInUp {
                         from {
@@ -544,6 +598,16 @@ export default function RankingsPage() {
                         to {
                             opacity: 1;
                             transform: translateY(0);
+                        }
+                    }
+
+                    @keyframes bob {
+                        0%,
+                        100% {
+                            transform: translateY(0);
+                        }
+                        50% {
+                            transform: translateY(-8px);
                         }
                     }
 

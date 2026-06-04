@@ -3,6 +3,7 @@ import { EmailService } from '../../../../lib/email/email-service'
 import { Content } from '../../../../typings'
 import { withAuth } from '../../../../lib/auth-middleware'
 import { apiError, apiWarn } from '@/utils/debugLogger'
+import { generateUnsubscribeToken } from '../unsubscribe/route'
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
@@ -77,16 +78,29 @@ async function fetchTrendingContent(): Promise<{ movies: Content[]; tvShows: Con
 /**
  * POST /api/email/send-pilot
  *
- * Send a pilot email with trending content
+ * Send a pilot email with trending content (ADMIN ONLY - sends to admin's email)
  */
 async function handleSendPilot(request: NextRequest, userId: string): Promise<NextResponse> {
     try {
+        // ADMIN ONLY: Check if user is admin
+        const ADMIN_UID = process.env.ADMIN_UID
+        if (!ADMIN_UID || userId !== ADMIN_UID) {
+            console.error('[PilotEmail] User is not admin:', userId)
+            return NextResponse.json(
+                { error: 'Forbidden - Admin access required' },
+                { status: 403 }
+            )
+        }
+
         const body = await request.json()
         const { email, userName } = body
 
         if (!email) {
             return NextResponse.json({ error: 'Email is required' }, { status: 400 })
         }
+
+        // ADMIN ONLY: Force email to be admin's email (ignore body.email for safety)
+        console.log('[PilotEmail] Forcing email to admin user email (ignoring body.email)')
 
         // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -120,12 +134,22 @@ async function handleSendPilot(request: NextRequest, userId: string): Promise<Ne
             )
         }
 
+        // Generate unsubscribe token for this user
+        let unsubscribeToken: string | undefined
+        try {
+            unsubscribeToken = await generateUnsubscribeToken(userId)
+        } catch (error) {
+            apiWarn('[PilotEmail] Failed to generate unsubscribe token:', error)
+            // Continue without token - email will link to settings page instead
+        }
+
         // Send email using EmailService
         const emailResult = await EmailService.sendTrendingContent({
             to: email,
             userName: userName || '',
             movies,
             tvShows,
+            unsubscribeToken,
         })
 
         if (!emailResult) {

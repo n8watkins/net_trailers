@@ -104,10 +104,16 @@ function extractContentMetadata(rankedItems: RankedItem[]) {
 
 /**
  * Create a new ranking
+ * @param userId - User's Firebase auth ID
+ * @param displayName - User's display name (shown in UI)
+ * @param username - Optional username for profile URL
+ * @param userAvatar - User's avatar URL
+ * @param request - Ranking creation request
  */
 export async function createRanking(
     userId: string,
-    username: string,
+    displayName: string,
+    username: string | undefined,
     userAvatar: string | undefined,
     request: CreateRankingRequest
 ): Promise<Ranking> {
@@ -121,8 +127,8 @@ export async function createRanking(
     const ranking: Ranking = {
         id: rankingId,
         userId,
-        userName: username,
-        userUsername: username,
+        userName: displayName, // Display name for UI
+        userUsername: username, // Optional username for profile URL
         userAvatar: userAvatar || null,
         title: request.title.trim(),
         description: request.description?.trim(),
@@ -337,47 +343,79 @@ export async function updateRanking(
 }
 
 /**
- * Delete ranking
+ * Delete ranking and all associated data (comments, likes, views)
+ *
+ * Uses server-side API with Firebase Admin SDK to avoid client-side
+ * security rule issues with nested get() calls.
  */
 export async function deleteRanking(userId: string, rankingId: string): Promise<void> {
     validateUserId(userId)
     validateRankingId(rankingId)
 
-    await runTransaction(db, async (transaction) => {
-        const rankingRef = getRankingDocRef(rankingId)
-        const rankingDoc = await transaction.get(rankingRef)
+    console.log(`🗑️ Deleting ranking ${rankingId} via server API...`)
 
-        if (!rankingDoc.exists()) {
-            throw new NotFoundError('Ranking', rankingId)
-        }
+    // Get Firebase auth token
+    const { auth } = await import('../../firebase')
+    const currentUser = auth.currentUser
 
-        const ranking = rankingDoc.data() as Ranking
-        if (ranking.userId !== userId) {
-            throw new UnauthorizedError('delete this ranking')
-        }
+    if (!currentUser) {
+        throw new UnauthorizedError('delete this ranking - not authenticated')
+    }
 
-        // Delete ranking
-        transaction.delete(rankingRef)
+    const idToken = await currentUser.getIdToken()
 
-        // Note: Comments, likes, and views will be orphaned but that's OK
-        // Could add cleanup job later, or use Firestore security rules to cascade
+    // Call server-side delete API (uses Admin SDK, bypasses security rules)
+    const response = await fetch(`/api/rankings/${rankingId}/delete`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${idToken}`,
+        },
     })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete ranking')
+    }
+
+    console.log('✅ Ranking deleted successfully:', data.deleted)
 }
 
 /**
  * Like ranking
  */
-export async function likeRanking(userId: string, rankingId: string): Promise<void> {
+export async function likeRanking(
+    userId: string,
+    rankingId: string,
+    userName: string
+): Promise<void> {
     try {
         const likeId = `${userId}_${rankingId}`
         const likeRef = doc(db, COLLECTIONS.likes, likeId)
         const rankingRef = getRankingDocRef(rankingId)
+
+        let rankingOwnerId: string | null = null
+        let rankingTitle: string | null = null
 
         await runTransaction(db, async (transaction) => {
             // Check if already liked
             const likeDoc = await transaction.get(likeRef)
             if (likeDoc.exists()) {
                 return // Already liked
+            }
+
+            // Get ranking details for notification
+            const rankingDoc = await transaction.get(rankingRef)
+            if (rankingDoc.exists()) {
+                const ranking = rankingDoc.data() as Ranking
+                rankingOwnerId = ranking.userId
+                rankingTitle = ranking.title
+
+                // Don't notify if liking your own ranking
+                if (ranking.userId === userId) {
+                    rankingOwnerId = null
+                }
             }
 
             // Create like record
@@ -393,8 +431,87 @@ export async function likeRanking(userId: string, rankingId: string): Promise<vo
                 likes: increment(1),
             })
         })
+
+        // Create notification for batching (will be sent via daily social digest)
+        if (rankingOwnerId && rankingTitle) {
+            createLikeNotification(rankingOwnerId, userId, userName, rankingId, rankingTitle).catch(
+                (error) => {
+                    console.error('🔔 ❌ Error creating like notification:', error)
+                    // Don't throw - notification failure shouldn't fail like creation
+                }
+            )
+        }
     } catch (error) {
         console.error('Error liking ranking:', error)
+        throw error
+    }
+}
+
+/**
+ * Create notification for new ranking like
+ * Notifications are batched and sent via daily social digest email
+ */
+async function createLikeNotification(
+    rankingOwnerId: string,
+    likerId: string,
+    likerName: string,
+    rankingId: string,
+    rankingTitle: string
+): Promise<void> {
+    try {
+        // Check if there's already a recent like notification for this ranking
+        // Use a predictable ID based on the ranking to aggregate likes
+        const notificationId = `like_${rankingId}`
+        const notificationRef = doc(db, 'users', rankingOwnerId, 'notifications', notificationId)
+        const existingNotification = await getDoc(notificationRef)
+
+        if (existingNotification.exists()) {
+            // Update existing notification to add this liker
+            const data = existingNotification.data()
+            const likerNames = data.likerNames || []
+
+            // Only add if not already in the list
+            if (!likerNames.includes(likerName)) {
+                likerNames.push(likerName)
+
+                await updateDoc(notificationRef, {
+                    likerNames,
+                    title:
+                        likerNames.length === 1
+                            ? `${likerNames[0]} liked your ranking`
+                            : likerNames.length === 2
+                              ? `${likerNames[0]} and ${likerNames[1]} liked your ranking`
+                              : `${likerNames[0]} and ${likerNames.length - 1} others liked your ranking`,
+                    createdAt: Date.now(), // Update timestamp to keep it recent
+                })
+
+                console.log(
+                    `🔔 ✅ Updated like notification for user ${rankingOwnerId} on ranking "${rankingTitle}" (${likerNames.length} likers)`
+                )
+            }
+        } else {
+            // Create new notification
+            await setDoc(notificationRef, {
+                id: notificationId,
+                userId: rankingOwnerId,
+                type: 'ranking_like',
+                title: `${likerName} liked your ranking`,
+                message: rankingTitle,
+                rankingId,
+                rankingTitle,
+                likerNames: [likerName],
+                actionUrl: `/rankings/${rankingId}`, // Link to ranking detail page
+                emailSent: false,
+                createdAt: Date.now(),
+                isRead: false,
+            })
+
+            console.log(
+                `🔔 ✅ Created like notification for user ${rankingOwnerId} on ranking "${rankingTitle}"`
+            )
+        }
+    } catch (error) {
+        console.error('🔔 ❌ Error in createLikeNotification:', error)
         throw error
     }
 }

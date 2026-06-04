@@ -233,7 +233,7 @@ export async function verifyPIN(
             }
         }
     } catch (error) {
-        console.error('PIN verification error:', error)
+        console.error('🔥 ❌ PIN verification error:', error)
         return { success: false, error: 'Failed to verify PIN. Please try again.' }
     }
 }
@@ -364,7 +364,7 @@ export async function getPINSettings(
             }
         }
     } catch (error) {
-        console.error('Error fetching PIN settings:', error)
+        console.error('🔥 ❌ Error fetching PIN settings:', error)
         return DEFAULT_PIN_SETTINGS
     }
 }

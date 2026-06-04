@@ -10,10 +10,18 @@ import {
     TrashIcon,
     DocumentTextIcon,
     CircleStackIcon,
+    EnvelopeIcon,
+    ClockIcon,
+    BellAlertIcon,
 } from '@heroicons/react/24/outline'
 import { useProfileActions } from '../../hooks/useProfileActions'
 import useUserData from '../../hooks/useUserData'
 import { useDebugOperationsStore } from '../../stores/debugOperationsStore'
+import useAuth from '../../hooks/useAuth'
+import { useToast } from '../../hooks/useToast'
+import { authenticatedFetch, AuthRequiredError } from '../../lib/authenticatedFetch'
+import { useNotificationStore } from '../../stores/notificationStore'
+import { useSessionStore } from '../../stores/sessionStore'
 
 interface DebugSettings {
     showFirebaseTracker: boolean
@@ -44,9 +52,12 @@ interface CategoryState {
     firebase: boolean
     ui: boolean
     features: boolean
+    data: boolean
+    email: boolean
+    cron: boolean
 }
 
-type DebugCategory = 'firebase' | 'ui' | 'features'
+type DebugCategory = 'firebase' | 'ui' | 'features' | 'data' | 'email' | 'cron'
 
 // Static color map for Tailwind - dynamic class names don't work with Tailwind's purge
 const COLOR_CLASSES: Record<string, { enabled: string; disabled: string }> = {
@@ -142,13 +153,39 @@ export default function DebugControls() {
     })
 
     // Profile actions for seed
-    const { isSeeding, handleSeedData } = useProfileActions()
+    const { isSeeding, handleSeedDataServerSide } = useProfileActions()
 
     // Debug operations store for mutual exclusion
     const { isClearing, setClearing, canStartClearing } = useDebugOperationsStore()
 
     // User data for clearing user data
     const { clearAccountData } = useUserData()
+
+    // Email sending state
+    const { user } = useAuth()
+
+    // Check if current user is admin (server-side check)
+    const [isAdmin, setIsAdmin] = useState(false)
+    const { showSuccess, showError } = useToast()
+    const [sendingEmail, setSendingEmail] = useState<string | null>(null)
+
+    // Notification store and session
+    const { createNotification } = useNotificationStore()
+    const { getUserId } = useSessionStore()
+    const userId = getUserId()
+    const [seedingNotification, setSeedingNotification] = useState(false)
+
+    // Check admin status on mount
+    useEffect(() => {
+        if (user) {
+            authenticatedFetch('/api/admin/check')
+                .then((res) => res.json())
+                .then((data) => setIsAdmin(data.isAdmin || false))
+                .catch(() => setIsAdmin(false))
+        } else {
+            setIsAdmin(false)
+        }
+    }, [user])
 
     // Visibility state - load from localStorage, hidden by default
     const [isVisible, setIsVisible] = useState(false)
@@ -158,6 +195,9 @@ export default function DebugControls() {
         firebase: true,
         ui: true,
         features: true,
+        data: true,
+        email: true,
+        cron: true,
     })
 
     // Drag state - default position is a bit to the left (initialized after mount)
@@ -345,6 +385,11 @@ export default function DebugControls() {
                     'showNotifTester',
                     'showChildSafetyDebug',
                 ]
+            case 'data':
+            case 'email':
+            case 'cron':
+                // These categories don't have settings toggles, only action buttons
+                return []
         }
     }
 
@@ -394,6 +439,132 @@ export default function DebugControls() {
             console.error('[DebugControls] Failed to clear user data:', error)
         } finally {
             setClearing(false)
+        }
+    }
+
+    // Seed a random trending notification
+    const handleSeedTrendingNotification = async () => {
+        if (!userId) {
+            showError('No user ID - sign in to seed notifications')
+            return
+        }
+
+        setSeedingNotification(true)
+        try {
+            // Randomly choose movies or TV
+            const mediaType = Math.random() > 0.5 ? 'movie' : 'tv'
+            const endpoint = mediaType === 'movie' ? '/api/movies/trending' : '/api/tv/trending'
+
+            // Fetch trending content
+            const response = await fetch(`${endpoint}?page=1`)
+            if (!response.ok) {
+                throw new Error('Failed to fetch trending content')
+            }
+
+            const data = await response.json()
+            const trendingItems = data.results || []
+
+            if (trendingItems.length === 0) {
+                throw new Error('No trending items found')
+            }
+
+            // Pick a random item
+            const randomIndex = Math.floor(Math.random() * trendingItems.length)
+            const randomItem = trendingItems[randomIndex]
+
+            // Create notification
+            await createNotification(userId, {
+                type: 'trending_update',
+                title: 'Now Trending! 🔥',
+                message: `${randomItem.title || randomItem.name} is currently trending!`,
+                contentId: randomItem.id,
+                mediaType: mediaType,
+                imageUrl: randomItem.poster_path
+                    ? `https://image.tmdb.org/t/p/w500${randomItem.poster_path}`
+                    : undefined,
+                actionUrl: `/${mediaType}/${randomItem.id}`,
+                expiresIn: 7,
+            })
+
+            showSuccess(`Created trending notification for ${randomItem.title || randomItem.name}`)
+            console.log('[DebugControls] ✅ Created trending notification:', randomItem)
+        } catch (error) {
+            console.error('[DebugControls] Failed to create trending notification:', error)
+            showError(
+                error instanceof Error ? error.message : 'Failed to create trending notification'
+            )
+        } finally {
+            setSeedingNotification(false)
+        }
+    }
+
+    // Send test email
+    const handleSendEmail = async (
+        emailType: string,
+        endpoint: string,
+        body: object,
+        method: string = 'POST'
+    ) => {
+        if (!user?.email) {
+            showError('No email address - sign in to test emails')
+            return
+        }
+
+        setSendingEmail(emailType)
+        try {
+            // Build URL with query params for GET requests
+            let url = endpoint
+            if (method === 'GET' && Object.keys(body).length > 0) {
+                const params = new URLSearchParams(
+                    Object.entries(body).map(([k, v]) => [k, String(v)])
+                )
+                url = `${endpoint}?${params.toString()}`
+            }
+
+            const response = await authenticatedFetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: method === 'POST' ? JSON.stringify(body) : undefined,
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.error || `Failed to send ${emailType}`)
+            }
+
+            // Show detailed success message for cron jobs
+            if (
+                emailType.includes('Trending') ||
+                emailType.includes('Cache') ||
+                emailType.includes('Social')
+            ) {
+                const details: string[] = []
+                if (data.emailsSent !== undefined) details.push(`${data.emailsSent} emails sent`)
+                if (data.collectionsUpdated !== undefined)
+                    details.push(`${data.collectionsUpdated} collections updated`)
+                if (data.notificationsCreated !== undefined)
+                    details.push(`${data.notificationsCreated} notifications`)
+                if (data.totalUsers !== undefined)
+                    details.push(`${data.totalUsers} users processed`)
+
+                const detailsStr = details.length > 0 ? details.join(', ') : 'Completed'
+                showSuccess(`${emailType} complete! ${detailsStr}`)
+            } else if (emailType.includes('Digest')) {
+                const details = `${data.newItems || 0} new items, ${data.notifications || 0} notifications, ${data.emailsSent || 0} emails sent`
+                showSuccess(`${emailType} complete! ${details}`)
+            } else {
+                showSuccess(`${emailType} sent to ${user.email}!`)
+            }
+        } catch (error) {
+            console.error(`Email test error (${emailType}):`, error)
+            if (error instanceof AuthRequiredError) {
+                showError('Sign in again to send emails')
+            } else {
+                showError(error instanceof Error ? error.message : `Failed: ${emailType}`)
+            }
+        } finally {
+            setSendingEmail(null)
         }
     }
 
@@ -617,30 +788,44 @@ export default function DebugControls() {
                         </>
                     )}
 
-                    {/* Data Actions Row - Always visible when hovering */}
-                    {showAllControls && (
-                        <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2 px-2 py-1">
-                                <CircleStackIcon className="w-3.5 h-3.5 text-emerald-500" />
-                                <span className="text-xs font-medium text-gray-400">
-                                    Data Actions
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-2 flex-wrap pl-6">
+                    {/* Data Actions Category - Collapsible */}
+                    {showAllControls &&
+                        renderCategory(
+                            'data',
+                            'Data Actions',
+                            <CircleStackIcon className="w-3.5 h-3.5 text-emerald-500" />,
+                            <>
                                 {/* Seed Data Button */}
                                 <button
-                                    onClick={handleSeedData}
+                                    onClick={handleSeedDataServerSide}
                                     disabled={isSeeding || isClearing}
                                     className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-purple-600/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
                                     title={
                                         isClearing
                                             ? 'Cannot seed while clearing data'
-                                            : 'Seed test data (15 liked, 8 hidden, 12 watch later, 20 watch history, 8 collections)'
+                                            : 'Seed test data in background (15 liked, 8 hidden, 12 watch later, 20 watch history) - continues even if you navigate away'
                                     }
                                 >
                                     <SparklesIcon className="w-3 h-3" />
                                     <span className="text-xs">
                                         {isSeeding ? 'Seeding...' : 'Seed Data'}
+                                    </span>
+                                </button>
+
+                                {/* Seed Trending Notification Button */}
+                                <button
+                                    onClick={handleSeedTrendingNotification}
+                                    disabled={seedingNotification || !userId}
+                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-orange-600/20 text-orange-400 border border-orange-500/30 hover:bg-orange-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title={
+                                        !userId
+                                            ? 'Sign in to seed trending notifications'
+                                            : 'Create a notification for a random trending movie or TV show'
+                                    }
+                                >
+                                    <BellAlertIcon className="w-3 h-3" />
+                                    <span className="text-xs">
+                                        {seedingNotification ? 'Creating...' : 'Seed Trending'}
                                     </span>
                                 </button>
 
@@ -682,9 +867,233 @@ export default function DebugControls() {
                                     <DocumentTextIcon className="w-3 h-3" />
                                     <span className="text-xs">Docs</span>
                                 </a>
-                            </div>
-                        </div>
-                    )}
+                            </>
+                        )}
+
+                    {/* Email Testing Category - Only visible for admin users */}
+                    {showAllControls &&
+                        isAdmin &&
+                        renderCategory(
+                            'email',
+                            'Email Testing (Admin)',
+                            <EnvelopeIcon className="w-3.5 h-3.5 text-sky-500" />,
+                            <>
+                                {/* Trending Content Email */}
+                                <button
+                                    onClick={() =>
+                                        handleSendEmail('Trending', '/api/email/send-pilot', {
+                                            email: user?.email,
+                                            userName: user?.displayName || '',
+                                        })
+                                    }
+                                    disabled={sendingEmail !== null || !user?.email || !isAdmin}
+                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-sky-600/20 text-sky-400 border border-sky-500/30 hover:bg-sky-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Send trending content email (pilot template with top 5 movies + TV) - Admin only"
+                                >
+                                    <EnvelopeIcon className="w-3 h-3" />
+                                    <span className="text-xs">
+                                        {sendingEmail === 'Trending' ? 'Sending...' : 'Trending'}
+                                    </span>
+                                </button>
+
+                                {/* Weekly Digest - Real */}
+                                <button
+                                    onClick={() =>
+                                        handleSendEmail(
+                                            'Digest (Real)',
+                                            '/api/email/test-weekly-digest',
+                                            { demoMode: false }
+                                        )
+                                    }
+                                    disabled={sendingEmail !== null || !user?.email || !isAdmin}
+                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-purple-600/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Run weekly digest cron (real data comparison, only emails if new trending found) - Admin only"
+                                >
+                                    <EnvelopeIcon className="w-3 h-3" />
+                                    <span className="text-xs">
+                                        {sendingEmail === 'Digest (Real)' ? 'Running...' : 'Digest'}
+                                    </span>
+                                </button>
+
+                                {/* Weekly Digest - Demo */}
+                                <button
+                                    onClick={() =>
+                                        handleSendEmail(
+                                            'Digest (Demo)',
+                                            '/api/email/test-weekly-digest',
+                                            { demoMode: true }
+                                        )
+                                    }
+                                    disabled={sendingEmail !== null || !user?.email || !isAdmin}
+                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-pink-600/20 text-pink-400 border border-pink-500/30 hover:bg-pink-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Run weekly digest cron (demo mode - always finds new items and sends email) - Admin only"
+                                >
+                                    <EnvelopeIcon className="w-3 h-3" />
+                                    <span className="text-xs">
+                                        {sendingEmail === 'Digest (Demo)'
+                                            ? 'Running...'
+                                            : 'Demo Digest'}
+                                    </span>
+                                </button>
+                            </>
+                        )}
+
+                    {/* Cron Jobs Category - Only visible for admin users */}
+                    {showAllControls &&
+                        isAdmin &&
+                        renderCategory(
+                            'cron',
+                            'Cron Jobs (Admin)',
+                            <ClockIcon className="w-3.5 h-3.5 text-emerald-500" />,
+                            <>
+                                {/* ADMIN-ONLY TRIGGERS (Single User) */}
+                                <div className="w-full flex items-center gap-2 pt-1">
+                                    <div className="h-px flex-1 bg-gray-700" />
+                                    <span className="text-[10px] text-gray-500 uppercase tracking-wide">
+                                        Admin Only (You)
+                                    </span>
+                                    <div className="h-px flex-1 bg-gray-700" />
+                                </div>
+
+                                {/* Admin-Only Trending */}
+                                <button
+                                    onClick={() =>
+                                        handleSendEmail(
+                                            'Trending (Admin)',
+                                            '/api/cron/update-trending',
+                                            { adminOnly: true },
+                                            'GET'
+                                        )
+                                    }
+                                    disabled={sendingEmail !== null || !isAdmin}
+                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Test trending digest - admin only (just you)"
+                                >
+                                    <ClockIcon className="w-3 h-3" />
+                                    <span className="text-xs">
+                                        {sendingEmail === 'Trending (Admin)'
+                                            ? 'Running...'
+                                            : 'Trending'}
+                                    </span>
+                                </button>
+
+                                {/* Admin-Only Collections */}
+                                <button
+                                    onClick={() =>
+                                        handleSendEmail(
+                                            'Cache (Admin)',
+                                            '/api/cron/refresh-collection-cache',
+                                            { adminOnly: true },
+                                            'GET'
+                                        )
+                                    }
+                                    disabled={sendingEmail !== null || !isAdmin}
+                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-teal-600/20 text-teal-400 border border-teal-500/30 hover:bg-teal-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Refresh collection cache - admin only (just your collections)"
+                                >
+                                    <ClockIcon className="w-3 h-3" />
+                                    <span className="text-xs">
+                                        {sendingEmail === 'Cache (Admin)' ? 'Running...' : 'Cache'}
+                                    </span>
+                                </button>
+
+                                {/* Admin-Only Social Digest */}
+                                <button
+                                    onClick={() =>
+                                        handleSendEmail(
+                                            'Social (Admin)',
+                                            '/api/email/test-social-interactions',
+                                            {}
+                                        )
+                                    }
+                                    disabled={sendingEmail !== null || !isAdmin}
+                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-purple-600/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Test social digest - admin only (creates fake interactions for your rankings)"
+                                >
+                                    <ClockIcon className="w-3 h-3" />
+                                    <span className="text-xs">
+                                        {sendingEmail === 'Social (Admin)'
+                                            ? 'Testing...'
+                                            : 'Social'}
+                                    </span>
+                                </button>
+
+                                {/* ALL USERS TRIGGERS (Production) */}
+                                <div className="w-full flex items-center gap-2 pt-2">
+                                    <div className="h-px flex-1 bg-gray-700" />
+                                    <span className="text-[10px] text-gray-500 uppercase tracking-wide">
+                                        All Users (Production)
+                                    </span>
+                                    <div className="h-px flex-1 bg-gray-700" />
+                                </div>
+
+                                {/* All Users Trending */}
+                                <button
+                                    onClick={() =>
+                                        handleSendEmail(
+                                            'Trending (All)',
+                                            '/api/cron/update-trending',
+                                            {},
+                                            'GET'
+                                        )
+                                    }
+                                    disabled={sendingEmail !== null || !isAdmin}
+                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Run trending digest for ALL users (production behavior)"
+                                >
+                                    <ClockIcon className="w-3 h-3" />
+                                    <span className="text-xs">
+                                        {sendingEmail === 'Trending (All)'
+                                            ? 'Running...'
+                                            : 'Trending (All)'}
+                                    </span>
+                                </button>
+
+                                {/* All Users Collections */}
+                                <button
+                                    onClick={() =>
+                                        handleSendEmail(
+                                            'Cache (All)',
+                                            '/api/cron/refresh-collection-cache',
+                                            {},
+                                            'GET'
+                                        )
+                                    }
+                                    disabled={sendingEmail !== null || !isAdmin}
+                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-teal-600/20 text-teal-400 border border-teal-500/30 hover:bg-teal-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Refresh collection cache for ALL users (production behavior)"
+                                >
+                                    <ClockIcon className="w-3 h-3" />
+                                    <span className="text-xs">
+                                        {sendingEmail === 'Cache (All)'
+                                            ? 'Running...'
+                                            : 'Cache (All)'}
+                                    </span>
+                                </button>
+
+                                {/* All Users Social Digest */}
+                                <button
+                                    onClick={() =>
+                                        handleSendEmail(
+                                            'Social (All)',
+                                            '/api/cron/social-digest',
+                                            { adminOnly: false },
+                                            'GET'
+                                        )
+                                    }
+                                    disabled={sendingEmail !== null || !isAdmin}
+                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-purple-600/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Run social digest for ALL users (production behavior - sends real notifications)"
+                                >
+                                    <ClockIcon className="w-3 h-3" />
+                                    <span className="text-xs">
+                                        {sendingEmail === 'Social (All)'
+                                            ? 'Running...'
+                                            : 'Social (All)'}
+                                    </span>
+                                </button>
+                            </>
+                        )}
                 </div>
             </div>
         </div>

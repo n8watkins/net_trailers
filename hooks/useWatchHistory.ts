@@ -128,13 +128,10 @@ export function useWatchHistory() {
     const addWatchEntry = async (
         contentId: number,
         mediaType: 'movie' | 'tv',
-        content: Content,
-        progress?: number,
-        duration?: number,
-        watchedDuration?: number
+        content: Content
     ) => {
         // Add to local store first (for immediate UI update)
-        addToStore(contentId, mediaType, content, progress, duration, watchedDuration)
+        addToStore(contentId, mediaType, content)
 
         // Persist based on session type
         if (sessionType === 'authenticated' && userId) {

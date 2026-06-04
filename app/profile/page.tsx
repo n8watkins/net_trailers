@@ -25,8 +25,9 @@ import { useRankingStore } from '../../stores/rankingStore'
 import { useForumStore } from '../../stores/forumStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useProfileStore } from '../../stores/profileStore'
+import { useWatchHistoryStore } from '../../stores/watchHistoryStore'
 import { LikedContentSection } from '../../components/profile/LikedContentSection'
-import { WatchLaterSection } from '../../components/profile/WatchLaterSection'
+import { WatchHistorySection } from '../../components/profile/WatchHistorySection'
 import { RankingsSection } from '../../components/profile/RankingsSection'
 import { CollectionsSection } from '../../components/profile/CollectionsSection'
 import { ForumActivitySection } from '../../components/profile/ForumActivitySection'
@@ -317,7 +318,8 @@ export default function ProfilePage() {
         .slice(0, 2)
 
     const likedContent = userData.likedMovies || []
-    const watchLaterPreview = (userData.defaultWatchlist || []).slice(0, 6)
+    const watchHistory = useWatchHistoryStore((state) => state.history)
+    const watchHistoryPreview = watchHistory.slice(0, 6).map((entry) => entry.content)
     // Filter collections: exclude system collections and empty manual/ai-generated collections
     // TMDB genre-based collections are always shown (content is fetched dynamically)
     const collections = (userData.userCreatedWatchlists || []).filter((c: any) => {
@@ -352,7 +354,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Content Container - with padding for fixed header and sub-nav */}
-            <div className="relative z-10 pt-28 sm:pt-36 md:pt-44">
+            <div className="relative z-10 pt-36 sm:pt-44 md:pt-52">
                 {/* Cinematic Hero Header */}
                 <div className="relative overflow-hidden">
                     {/* Animated Background Gradients */}
@@ -376,47 +378,50 @@ export default function ProfilePage() {
                             </div>
                         )}
 
-                        {/* Avatar with atmospheric glow */}
-                        <div className="relative mb-6 group cursor-pointer transition-transform duration-300 hover:-translate-y-1">
-                            {/* Ambient glow behind avatar */}
-                            <div className="absolute -inset-4 bg-gradient-to-br from-blue-500/30 via-indigo-500/20 to-purple-500/30 rounded-full blur-2xl opacity-60 group-hover:opacity-100 transition-opacity duration-300" />
+                        {/* Avatar and Username inline */}
+                        <div className="flex items-center gap-6 mb-2">
+                            {/* Avatar with atmospheric glow */}
+                            <div className="relative group cursor-pointer transition-transform duration-300 hover:-translate-y-1">
+                                {/* Ambient glow behind avatar */}
+                                <div className="absolute -inset-4 bg-gradient-to-br from-blue-500/30 via-indigo-500/20 to-purple-500/30 rounded-full blur-2xl opacity-60 group-hover:opacity-100 transition-opacity duration-300" />
 
-                            {/* Avatar container with rim light */}
-                            <div className="relative">
-                                {/* Rim light effect */}
-                                <div className="absolute -inset-1 bg-gradient-to-br from-blue-400/40 via-indigo-500/30 to-purple-400/40 rounded-full blur-sm opacity-80 group-hover:opacity-100 transition-opacity" />
+                                {/* Avatar container with rim light */}
+                                <div className="relative">
+                                    {/* Rim light effect */}
+                                    <div className="absolute -inset-1 bg-gradient-to-br from-blue-400/40 via-indigo-500/30 to-purple-400/40 rounded-full blur-sm opacity-80 group-hover:opacity-100 transition-opacity" />
 
-                                {user?.photoURL ? (
-                                    <img
-                                        src={user.photoURL}
-                                        alt={userName}
-                                        className="relative w-32 h-32 sm:w-36 sm:h-36 rounded-full object-cover ring-2 ring-blue-500/50 group-hover:ring-blue-400/70 transition-all duration-300 shadow-[0_0_30px_rgba(59,130,246,0.3)]"
-                                        referrerPolicy="no-referrer"
-                                        onError={(e) => {
-                                            e.currentTarget.style.display = 'none'
-                                            const fallbackDiv = e.currentTarget
-                                                .nextElementSibling as HTMLElement
-                                            if (fallbackDiv) fallbackDiv.style.display = 'flex'
-                                        }}
-                                    />
-                                ) : null}
-                                <div
-                                    className="relative w-32 h-32 sm:w-36 sm:h-36 rounded-full bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center ring-2 ring-blue-500/50 group-hover:ring-blue-400/70 transition-all duration-300 shadow-[0_0_30px_rgba(59,130,246,0.3)]"
-                                    style={{ display: user?.photoURL ? 'none' : 'flex' }}
-                                >
-                                    <span className="text-4xl sm:text-5xl font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
-                                        {userInitials}
-                                    </span>
+                                    {user?.photoURL ? (
+                                        <img
+                                            src={user.photoURL}
+                                            alt={userName}
+                                            className="relative w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 rounded-full object-cover ring-2 ring-blue-500/50 group-hover:ring-blue-400/70 transition-all duration-300 shadow-[0_0_30px_rgba(59,130,246,0.3)]"
+                                            referrerPolicy="no-referrer"
+                                            onError={(e) => {
+                                                e.currentTarget.style.display = 'none'
+                                                const fallbackDiv = e.currentTarget
+                                                    .nextElementSibling as HTMLElement
+                                                if (fallbackDiv) fallbackDiv.style.display = 'flex'
+                                            }}
+                                        />
+                                    ) : null}
+                                    <div
+                                        className="relative w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 rounded-full bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center ring-2 ring-blue-500/50 group-hover:ring-blue-400/70 transition-all duration-300 shadow-[0_0_30px_rgba(59,130,246,0.3)]"
+                                        style={{ display: user?.photoURL ? 'none' : 'flex' }}
+                                    >
+                                        <span className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+                                            {userInitials}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Username with glow */}
-                        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white mb-2 text-center tracking-tight">
-                            <span className="bg-gradient-to-r from-blue-200 via-white to-blue-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
-                                {userName}
-                            </span>
-                        </h1>
+                            {/* Username with glow */}
+                            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white text-center tracking-tight">
+                                <span className="bg-gradient-to-r from-blue-200 via-white to-blue-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
+                                    {userName}
+                                </span>
+                            </h1>
+                        </div>
 
                         {/* Email with subtle glow */}
                         {user?.email && (
@@ -462,12 +467,12 @@ export default function ProfilePage() {
                 {/* Main Content Area - constrained width like SubPageLayout */}
                 <div className="px-4 sm:px-6 lg:px-8 py-8">
                     <div className="max-w-[1800px] mx-auto space-y-8">
-                        {/* Bento Grid Layout - Liked & Watch Later */}
+                        {/* Bento Grid Layout - Liked & Watch History */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <LikedContentSection likedContent={likedContent} />
-                            <WatchLaterSection
-                                watchLaterPreview={watchLaterPreview}
-                                totalCount={userData.defaultWatchlist.length}
+                            <WatchHistorySection
+                                watchHistoryPreview={watchHistoryPreview}
+                                totalCount={watchHistory.length}
                             />
                         </div>
 

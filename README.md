@@ -11,7 +11,7 @@ A Netflix-inspired streaming discovery platform built with modern web technologi
 | Frontend          | Backend              | Database         | APIs             | Styling             | State Management | Monitoring              | Testing     |
 | ----------------- | -------------------- | ---------------- | ---------------- | ------------------- | ---------------- | ----------------------- | ----------- |
 | ▲ **Next.js 16**  | 🔥 **Firebase**      | 🔥 **Firestore** | 🎬 **TMDB**      | 🎨 **Tailwind CSS** | 🐻 **Zustand**   | 🛡️ **Sentry**           | 🧪 **Jest** |
-| **TS TypeScript** | 🔐 **Firebase Auth** |                  | 🤖 **Gemini AI** | 🎭 **Material-UI**  |                  | 📊 **GA4**              | 🧪 **RTL**  |
+| **TS TypeScript** | 🔐 **Firebase Auth** | 📧 **Resend**    | 🤖 **Gemini AI** | 🎭 **Material-UI**  |                  | 📊 **GA4**              | 🧪 **RTL**  |
 | ⚛️ **React 19**   |                      |                  |                  | 🦸 **Heroicons**    |                  | 📈 **Vercel Analytics** |             |
 
 </div>
@@ -51,7 +51,6 @@ A Netflix-inspired streaming discovery platform built with modern web technologi
     - Natural language query understanding powered by Google Gemini AI
     - Voice input with live transcription (Web Speech API)
     - Semantic concept recognition ("rainy day vibes", "mind-bending thrillers")
-    - Entity recognition with autocomplete (`@actors`, `#directors`)
     - Auto-detection of media type preferences
     - Save AI search results as custom collections
     - Live result count preview
@@ -238,6 +237,7 @@ A Netflix-inspired streaming discovery platform built with modern web technologi
     - Trending notification system controls (production/demo modes)
     - Active users monitoring (top 10 most active)
     - System logs viewer
+    - **Email Composer** - Send announcement and custom HTML emails to users
 
 - **Admin Pages**
     - `/admin/accounts` - User management with filtering, search, and CSV export
@@ -245,11 +245,24 @@ A Netflix-inspired streaming discovery platform built with modern web technologi
     - `/admin/activity` - Activity analytics with login and page view tracking
     - `/admin/trending-stats` - Trending notification statistics
 
+- **Email System** (Resend Integration)
+    - **Announcement Emails** - Send plain text announcements with subject and message
+    - **Custom HTML Emails** - Rich text editor with TipTap for formatted content
+    - **User Filtering** - Send to all users, authenticated only, or guest users only
+    - **Email Preview** - Preview emails before sending with live rendering
+    - **Rate Limiting** - 100 emails/hour per admin, 3 emails/day per recipient
+    - **XSS Protection** - DOMPurify sanitization on all custom HTML content
+    - **HTTPS-Only Links** - Security enforced on all email links
+    - **CAN-SPAM Compliance** - Automatic unsubscribe token generation
+    - **Email History** - Track sent emails with counts and metadata (PII minimized)
+
 - **Security**
     - Dual-layer authentication (client routing + server Firebase ID token validation)
-    - Admin UID-based authorization
+    - Admin UID-based authorization (server-side only, not exposed to client)
     - Rate limiting on public endpoints (30 requests/minute per IP)
+    - Email rate limiting (100/hour admin, 3/day recipient)
     - Input validation and sanitization
+    - CSRF protection via authenticatedFetch
     - Firebase Admin SDK for secure server operations
 
 - **Analytics Tracking**
@@ -348,11 +361,13 @@ _Experience all features or continue as guest to explore the platform_
 
     # Admin Portal (Required for admin access - SERVER-SIDE ONLY)
     # Get your Firebase UID from: Firebase Console > Authentication > Users > Copy UID
-    # NOTE: This is intentionally NOT prefixed with NEXT_PUBLIC_ to keep it server-side only
+    # IMPORTANT: This is intentionally NOT prefixed with NEXT_PUBLIC_ to keep it server-side only
+    # Admin credentials are never exposed to client bundles for security
     ADMIN_UID=your_firebase_uid_here
 
     # Firebase Admin SDK (Required for admin API endpoints)
     # Get from: Firebase Console > Project Settings > Service Accounts > Generate new private key
+    # These credentials allow server-side admin operations
     FIREBASE_ADMIN_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
     FIREBASE_ADMIN_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
 
@@ -374,9 +389,11 @@ _Experience all features or continue as guest to explore the platform_
     # Get from: https://analytics.google.com/
     NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
 
-    # Email Notifications (Optional - Future Feature)
+    # Email Notifications (Optional - for admin email system)
     # Get from: https://resend.com/
     RESEND_API_KEY=your_resend_api_key
+    # Sender email address (defaults to onboarding@resend.dev if not set)
+    RESEND_SENDER_EMAIL=noreply@yourdomain.com
     ```
 
 4. **Firebase Setup**
@@ -1011,6 +1028,7 @@ NetTrailer implements comprehensive security measures. See the full [Security Do
 **Key Security Features:**
 
 - **Authentication**: Firebase Auth with server-side token verification
+- **CSRF Protection**: Global CSRF protection on all state-changing API requests (POST/PUT/DELETE/PATCH)
 - **Input Sanitization**: DOMPurify, control character removal, length validation
 - **Rate Limiting**: Per-user limits on AI requests, password reset, email verification
 - **Data Protection**: 540+ lines of Firestore security rules, user data isolation

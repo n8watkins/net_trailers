@@ -4,40 +4,86 @@ const { exec, spawn } = require('child_process')
 const path = require('path')
 const fs = require('fs')
 
+const LOCK_FILE = path.join(__dirname, '..', '.next-dev-lock')
+const PORT = process.env.PORT || 3000
+
 console.log('🔍 Checking for existing development servers...')
 
-// Kill any existing Next.js dev processes
-exec('pkill -f "next dev"', (error) => {
-    if (error && error.code !== 1) {
-        console.log('⚠️  Error killing existing processes:', error.message)
+// Lock file mechanism for race condition prevention
+function createLockFile() {
+    const lock = {
+        pid: process.pid,
+        port: PORT,
+        timestamp: Date.now(),
     }
+    fs.writeFileSync(LOCK_FILE, JSON.stringify(lock, null, 2))
+}
 
-    // Kill processes on common dev ports (including 1234 as default for net_trailers)
-    const ports = [1234, 3000, 3001, 3002, 3003, 3004, 3005, 3006, 3007, 3008, 3009, 3010]
-    let portsChecked = 0
+function checkLockFile() {
+    if (fs.existsSync(LOCK_FILE)) {
+        try {
+            const lock = JSON.parse(fs.readFileSync(LOCK_FILE, 'utf8'))
+            const age = Date.now() - lock.timestamp
 
-    ports.forEach((port) => {
-        exec(`lsof -ti:${port}`, (error, stdout) => {
-            if (stdout.trim()) {
-                const pid = stdout.trim()
-                exec(`kill -9 ${pid}`, (killError) => {
-                    if (!killError) {
-                        console.log(`🔫 Killed process on port ${port} (PID: ${pid})`)
-                    }
-                })
+            if (age < 30000) {
+                // Lock is fresh (< 30 seconds)
+                console.error('❌ Another dev server may be running!')
+                console.error(`   Lock file: ${LOCK_FILE}`)
+                console.error(`   PID: ${lock.pid}, Port: ${lock.port}`)
+                console.error('\nOptions:')
+                console.error('  1. Kill servers: npm run dev:kill')
+                console.error('  2. Force restart: npm run dev:force')
+                process.exit(1)
             }
 
-            portsChecked++
-            if (portsChecked === ports.length) {
-                startDevServer()
-            }
-        })
+            // Auto-cleanup stale locks
+            console.log('⚠️  Removing stale lock file (age: ' + Math.round(age / 1000) + 's)')
+            fs.unlinkSync(LOCK_FILE)
+        } catch (error) {
+            // Corrupted lock file, remove it
+            console.log('⚠️  Removing corrupted lock file')
+            fs.unlinkSync(LOCK_FILE)
+        }
+    }
+}
+
+// WSL2-compatible port checking using netstat
+function checkPortInUse(port, callback) {
+    // Use netstat which works reliably in WSL2
+    exec(`netstat -tln | grep :${port}`, (error, stdout) => {
+        const inUse = stdout.trim().length > 0
+        callback(inUse)
     })
+}
 
-    // Fallback if no ports to check
-    if (ports.length === 0) {
-        startDevServer()
+// Cleanup on exit
+process.on('exit', () => {
+    if (fs.existsSync(LOCK_FILE)) {
+        fs.unlinkSync(LOCK_FILE)
     }
+})
+
+process.on('SIGINT', () => {
+    console.log('\n🛑 Shutting down dev server...')
+    process.exit(0)
+})
+
+process.on('SIGTERM', () => {
+    process.exit(0)
+})
+
+// Main startup sequence
+checkLockFile()
+
+checkPortInUse(PORT, (inUse) => {
+    if (inUse) {
+        console.error(`❌ Port ${PORT} is already in use!`)
+        console.error('Run: npm run dev:kill')
+        process.exit(1)
+    }
+
+    createLockFile()
+    startDevServer()
 })
 
 function shouldCleanCache() {

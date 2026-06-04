@@ -1,8 +1,14 @@
 /**
  * GET /api/shares/[shareId]
  *
- * Get shared collection data (public endpoint)
- * Validates share, increments view count, returns collection data
+ * Get shared collection data (public endpoint, read-only)
+ * Validates share and returns collection data
+ * NOTE: View count is NOT incremented here - use POST to track views (CSRF-safe)
+ *
+ * POST /api/shares/[shareId]
+ *
+ * Track view for a shared collection (CSRF protected by proxy.ts)
+ * Increments view count - separate from GET to prevent CSRF via img/prefetch
  *
  * DELETE /api/shares/[shareId]
  *
@@ -26,6 +32,10 @@ interface RouteContext {
     }>
 }
 
+/**
+ * GET: Read-only fetch of shared collection data
+ * Does NOT increment view count (that requires POST to prevent CSRF)
+ */
 export async function GET(request: NextRequest, { params }: RouteContext) {
     try {
         const { shareId } = await params
@@ -56,10 +66,8 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
             )
         }
 
-        // Increment view count asynchronously (don't wait)
-        incrementViewCount(db, shareId).catch((err) =>
-            apiError('Failed to increment view count:', err)
-        )
+        // NOTE: View count is NOT incremented here
+        // Client must call POST to track views (CSRF-protected)
 
         return NextResponse.json({
             success: true,
@@ -72,6 +80,59 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
             {
                 success: false,
                 error: 'Failed to load shared collection',
+            },
+            { status: 500 }
+        )
+    }
+}
+
+/**
+ * POST: Track view for shared collection
+ * CSRF protected by proxy.ts (requires valid Origin/Referer)
+ * Separated from GET to prevent view inflation via img tags, prefetch, etc.
+ */
+export async function POST(request: NextRequest, { params }: RouteContext) {
+    try {
+        const { shareId } = await params
+
+        if (!shareId) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    error: 'Share ID is required',
+                },
+                { status: 400 }
+            )
+        }
+
+        const db = getAdminDb()
+
+        // Verify share exists before incrementing
+        const data = await getSharedCollectionData(db, shareId)
+        if (!data) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    error: 'Share link not found, expired, or inactive',
+                },
+                { status: 404 }
+            )
+        }
+
+        // Increment view count
+        await incrementViewCount(db, shareId)
+
+        return NextResponse.json({
+            success: true,
+            message: 'View tracked',
+        })
+    } catch (error) {
+        apiError('Error tracking share view:', error)
+
+        return NextResponse.json(
+            {
+                success: false,
+                error: 'Failed to track view',
             },
             { status: 500 }
         )

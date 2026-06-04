@@ -11,9 +11,6 @@ export interface WatchHistoryEntry {
     contentId: number // TMDB content ID
     mediaType: 'movie' | 'tv'
     watchedAt: number // Timestamp when watched
-    progress: number // Percentage watched (0-100)
-    duration?: number // Total duration in seconds
-    watchedDuration?: number // How much was watched in seconds
     content: Content // Full content object for easy access
 }
 
@@ -27,14 +24,7 @@ export interface WatchHistoryState {
 
 export interface WatchHistoryActions {
     // Add or update watch history entry
-    addWatchEntry: (
-        contentId: number,
-        mediaType: 'movie' | 'tv',
-        content: Content,
-        progress?: number,
-        duration?: number,
-        watchedDuration?: number
-    ) => void
+    addWatchEntry: (contentId: number, mediaType: 'movie' | 'tv', content: Content) => void
 
     // Get watch history for a specific content
     getWatchEntry: (contentId: number, mediaType: 'movie' | 'tv') => WatchHistoryEntry | undefined

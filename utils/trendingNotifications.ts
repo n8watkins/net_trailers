@@ -81,7 +81,8 @@ export async function createTrendingNotifications(
                     title: title, // Just the content title, no prefix
                     message: `${title} (${mediaType}) just entered the trending list!`,
                     contentId: content.id,
-                    actionUrl: `/`, // Could link to content detail page in future
+                    mediaType: content.media_type, // Add mediaType for modal opening
+                    actionUrl: `/?modal=${content.id}&type=${content.media_type}`, // Open content modal
                     imageUrl: posterPath
                         ? `https://image.tmdb.org/t/p/w500${posterPath}`
                         : undefined,

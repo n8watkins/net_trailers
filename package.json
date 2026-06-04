@@ -3,6 +3,8 @@
     "scripts": {
         "dev": "node scripts/dev-safe.js",
         "dev:quiet": "SHOW_NEXT_LOGS=false node scripts/dev-safe.js",
+        "dev:kill": "node scripts/kill-dev-servers.js",
+        "dev:force": "node scripts/kill-dev-servers.js && node scripts/dev-safe.js",
         "dev:next": "CHOKIDAR_USEPOLLING=1 WATCHPACK_POLLING=true next dev -p 3000",
         "dev:turbo": "CHOKIDAR_USEPOLLING=1 WATCHPACK_POLLING=true next dev --turbo -p 3000",
         "build": "next build",
@@ -14,6 +16,11 @@
         "test:watch": "jest --watch",
         "test:coverage": "jest --coverage",
         "test:ci": "jest --ci --coverage --watchAll=false",
+        "test:cron": "node scripts/test-cron.js",
+        "test:cron:v2": "node scripts/test-cron-v2.js",
+        "test:trending-notifications": "npx tsx scripts/test-trending-notifications.ts",
+        "test:weekly-digest": "npx tsx scripts/test-weekly-digest.ts",
+        "test:notification": "npx tsx scripts/test-create-notification.ts",
         "test:persistence": "npx tsx test-persistence-flow.ts",
         "test:create-user": "npx tsx scripts/create-test-user.ts",
         "test:verify-user": "npx tsx scripts/create-test-user.ts verify",
@@ -22,6 +29,8 @@
         "delete-all-user-data": "npx tsx scripts/delete-all-user-data.ts",
         "seed:rankings": "npx tsx scripts/seedRankings.ts",
         "seed:demo-profiles": "npx tsx scripts/seedDemoProfiles.ts",
+        "delete:demo-profiles": "npx tsx scripts/deleteDemoProfiles.ts",
+        "ensure:profiles": "npx tsx scripts/ensureUserProfiles.ts",
         "migrate:genres": "npx tsx scripts/migrate-genres-to-unified.ts",
         "refresh:seed": "npx tsx scripts/refresh-seed-data.ts",
         "migrate:genres:dry-run": "npx tsx scripts/migrate-genres-to-unified.ts --dry-run",
@@ -39,7 +48,13 @@
         "@heroicons/react": "^2.0.13",
         "@mui/material": "^5.11.7",
         "@next/third-parties": "^16.0.0",
-        "@sentry/nextjs": "^10.22.0",
+        "@react-email/components": "^1.0.1",
+        "@sentry/nextjs": "^10.56.0",
+        "@tiptap/extension-link": "^3.12.0",
+        "@tiptap/extension-text-align": "^3.12.0",
+        "@tiptap/extension-underline": "^3.12.0",
+        "@tiptap/react": "^3.12.0",
+        "@tiptap/starter-kit": "^3.12.0",
         "@types/bcryptjs": "^2.4.6",
         "@vercel/analytics": "^1.5.0",
         "bcryptjs": "^3.0.3",
@@ -47,7 +62,7 @@
         "date-fns": "^4.1.0",
         "firebase": "^12.2.1",
         "firebase-admin": "^13.6.0",
-        "isomorphic-dompurify": "^2.30.1",
+        "isomorphic-dompurify": "^3.15.0",
         "lodash": "^4.17.21",
         "lucide-react": "^0.554.0",
         "nanoid": "^5.1.6",
@@ -56,7 +71,7 @@
         "react-dom": "^19.2.0",
         "react-hook-form": "^7.43.0",
         "react-player": "^2.11.2",
-        "resend": "^6.4.2",
+        "resend": "^6.12.4",
         "tailwind-scrollbar-hide": "^1.1.7",
         "tailwindcss-autofill": "^1.0.2",
         "tailwindcss-shadow-fill": "^1.0.1",
@@ -77,6 +92,7 @@
         "@types/react-dom": "^19.2.2",
         "@types/uuid": "^10.0.0",
         "autoprefixer": "^10.4.12",
+        "baseline-browser-mapping": "^2.8.32",
         "eslint": "^9.38.0",
         "eslint-config-next": "^16.0.0",
         "eslint-plugin-react": "^7.37.5",
@@ -101,5 +117,20 @@
         "*.{json,md,css}": [
             "prettier --write"
         ]
+    },
+    "overrides": {
+        "postcss": "$postcss",
+        "@google-cloud/storage": {
+            "uuid": "^11.1.1"
+        },
+        "google-gax": {
+            "uuid": "^11.1.1"
+        },
+        "gaxios": {
+            "uuid": "^11.1.1"
+        },
+        "teeny-request": {
+            "uuid": "^11.1.1"
+        }
     }
 }

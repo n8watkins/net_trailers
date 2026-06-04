@@ -57,16 +57,39 @@ service cloud.firestore {
                               && isValidInteractionData(request.resource.data);
       }
 
-      // Interaction summary document (for recommendation tracking)
+      // Interaction summary document (for recommendation tracking - V1)
       match /interactionSummary/summary {
         // Only the authenticated user can read/write their own interaction summary
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
 
-      // Data subcollection - watch history document
-      // Using wildcard to match any document in the data subcollection
-      match /data/{dataDoc=**} {
-        // Allow all operations if authenticated user matches the parent userId
+      // Recommendation summary V2 document (for deep history caching)
+      match /recommendationSummaryV2/summary {
+        // Only the authenticated user can read/write their own recommendation summary
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // Data subcollection - watch history document with public access
+      match /data/watchHistory {
+        // Allow write if authenticated user matches the parent userId OR demo profile
+        allow write: if request.auth != null && (request.auth.uid == userId || userId.matches('demo_.*'));
+
+        // Allow read if:
+        // 1. User is the owner, OR
+        // 2. Public profile is enabled AND showWatchHistory visibility setting is true
+        allow read: if request.auth != null && (
+          // Owner can always read their own data
+          request.auth.uid == userId
+          ||
+          // Public access if profile visibility allows
+          (get(/databases/$(database)/documents/profiles/$(userId)).data.visibility.enablePublicProfile == true
+           && get(/databases/$(database)/documents/profiles/$(userId)).data.visibility.showWatchHistory == true)
+        );
+      }
+
+      // Data subcollection - other documents (future use)
+      match /data/{dataDoc} {
+        // Only the owner can read/write other data documents
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
 
@@ -111,17 +134,29 @@ service cloud.firestore {
              && data.id is string
              && data.userId is string
              && data.type is string
+             // Validate notification type (standard + social types)
+             && (data.type in ['collection_update', 'new_release', 'trending_update', 'system', 'ranking_comment', 'ranking_like'])
              && data.title is string
              && data.message is string
              && data.isRead is bool
              && data.createdAt is number
-             // Optional fields
+             // Optional fields (standard)
              && (!data.keys().hasAny(['contentId']) || data.contentId is number)
              && (!data.keys().hasAny(['collectionId']) || data.collectionId is string)
              && (!data.keys().hasAny(['shareId']) || data.shareId is string)
              && (!data.keys().hasAny(['actionUrl']) || data.actionUrl is string)
              && (!data.keys().hasAny(['imageUrl']) || data.imageUrl is string)
-             && (!data.keys().hasAny(['expiresAt']) || data.expiresAt is number);
+             && (!data.keys().hasAny(['expiresAt']) || data.expiresAt is number)
+             // Optional fields (social digest)
+             && (!data.keys().hasAny(['rankingId']) || data.rankingId is string)
+             && (!data.keys().hasAny(['rankingTitle']) || data.rankingTitle is string)
+             && (!data.keys().hasAny(['commenterName']) || data.commenterName is string)
+             && (!data.keys().hasAny(['commentText']) || data.commentText is string)
+             && (!data.keys().hasAny(['commentId']) || data.commentId is string)
+             && (!data.keys().hasAny(['isReply']) || data.isReply is bool)
+             && (!data.keys().hasAny(['parentCommentText']) || data.parentCommentText is string)
+             && (!data.keys().hasAny(['likerNames']) || data.likerNames is list)
+             && (!data.keys().hasAny(['emailSent']) || data.emailSent is bool);
     }
 
     // Helper function to validate interaction data structure
@@ -207,14 +242,22 @@ service cloud.firestore {
       allow read: if request.auth != null;
 
       // Allow create if authenticated and userId matches auth
+      // OR if creating a demo profile ranking (userId starts with "demo_")
       allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid
+                    && (request.resource.data.userId == request.auth.uid
+                        || request.resource.data.userId.matches('demo_.*'))
                     && isValidRankingData(request.resource.data);
 
       // Allow update if authenticated user is the owner OR if only incrementing views/likes/comments
+      // OR if updating demo profile rankings
       allow update: if request.auth != null && (
                       // Owner can update anything
                       (request.auth.uid == resource.data.userId
+                       && request.resource.data.userId == resource.data.userId
+                       && isValidRankingData(request.resource.data))
+                      ||
+                      // Demo profile rankings can be updated
+                      (resource.data.userId.matches('demo_.*')
                        && request.resource.data.userId == resource.data.userId
                        && isValidRankingData(request.resource.data))
                       ||
@@ -222,8 +265,10 @@ service cloud.firestore {
                       (isOnlyIncrementingStats(resource.data, request.resource.data))
                     );
 
-      // Allow delete if authenticated user is the owner
-      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow delete if authenticated user is the owner OR demo profile ranking
+      allow delete: if request.auth != null
+                    && (request.auth.uid == resource.data.userId
+                        || resource.data.userId.matches('demo_.*'));
     }
 
     // Ranking comments collection
@@ -232,19 +277,26 @@ service cloud.firestore {
       allow read: if request.auth != null;
 
       // Allow create if authenticated and userId matches auth
+      // OR if creating from demo profile (userId starts with "demo_")
       allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid
+                    && (request.resource.data.userId == request.auth.uid
+                        || request.resource.data.userId.matches('demo_.*'))
                     && isValidCommentData(request.resource.data);
 
       // Allow update if authenticated user is the comment owner (for replies array)
+      // OR if updating demo profile comment
       allow update: if request.auth != null
-                    && request.auth.uid == resource.data.userId;
+                    && (request.auth.uid == resource.data.userId
+                        || resource.data.userId.matches('demo_.*'));
 
       // Allow delete if authenticated user is the comment owner
       // OR if authenticated user is the ranking owner
+      // OR if it's test/demo data (userId starts with "test_user" or "demo_")
       allow delete: if request.auth != null
                     && (request.auth.uid == resource.data.userId
-                    || request.auth.uid == get(/databases/$(database)/documents/rankings/$(resource.data.rankingId)).data.userId);
+                    || request.auth.uid == get(/databases/$(database)/documents/rankings/$(resource.data.rankingId)).data.userId
+                    || resource.data.userId.matches('test_user.*')
+                    || resource.data.userId.matches('demo_.*'));
     }
 
     // Comment likes collection
@@ -253,11 +305,21 @@ service cloud.firestore {
       allow read: if request.auth != null;
 
       // Allow create if authenticated and userId in document matches auth
+      // OR if creating from demo profile
       allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid;
+                    && (request.resource.data.userId == request.auth.uid
+                        || request.resource.data.userId.matches('demo_.*'));
 
-      // Allow delete if authenticated user owns the like
-      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow delete if:
+      // - Authenticated user owns the like, OR
+      // - Demo profile like, OR
+      // - Authenticated user is the ranking owner (for cascade delete when deleting ranking)
+      allow delete: if request.auth != null && (
+                      request.auth.uid == resource.data.userId
+                      || resource.data.userId.matches('demo_.*')
+                      || request.auth.uid == get(/databases/$(database)/documents/ranking_comments/$(resource.data.commentId)).data.userId
+                      || request.auth.uid == get(/databases/$(database)/documents/rankings/$(get(/databases/$(database)/documents/ranking_comments/$(resource.data.commentId)).data.rankingId)).data.userId
+                    );
     }
 
     // Ranking likes collection
@@ -266,11 +328,20 @@ service cloud.firestore {
       allow read: if request.auth != null;
 
       // Allow create if authenticated and userId in document matches auth
+      // OR if creating from demo profile
       allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid;
+                    && (request.resource.data.userId == request.auth.uid
+                        || request.resource.data.userId.matches('demo_.*'));
 
-      // Allow delete if authenticated user owns the like
-      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow delete if:
+      // - Authenticated user owns the like, OR
+      // - Demo profile like, OR
+      // - Authenticated user is the ranking owner (for cascade delete when deleting ranking)
+      allow delete: if request.auth != null && (
+                      request.auth.uid == resource.data.userId
+                      || resource.data.userId.matches('demo_.*')
+                      || request.auth.uid == get(/databases/$(database)/documents/rankings/$(resource.data.rankingId)).data.userId
+                    );
     }
 
     // Helper function to validate ranking data structure
@@ -341,14 +412,22 @@ service cloud.firestore {
       allow read: if request.auth != null;
 
       // Allow create if authenticated and userId matches auth
+      // OR if creating from demo profile
       allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid
+                    && (request.resource.data.userId == request.auth.uid
+                        || request.resource.data.userId.matches('demo_.*'))
                     && isValidThreadData(request.resource.data);
 
       // Allow update if authenticated user is the owner OR if only incrementing stats
+      // OR if updating demo profile thread
       allow update: if request.auth != null && (
                       // Owner can update anything
                       (request.auth.uid == resource.data.userId
+                       && request.resource.data.userId == resource.data.userId
+                       && isValidThreadData(request.resource.data))
+                      ||
+                      // Demo profile threads can be updated
+                      (resource.data.userId.matches('demo_.*')
                        && request.resource.data.userId == resource.data.userId
                        && isValidThreadData(request.resource.data))
                       ||
@@ -356,8 +435,10 @@ service cloud.firestore {
                       (isOnlyIncrementingThreadStats(resource.data, request.resource.data))
                     );
 
-      // Allow delete if authenticated user is the owner
-      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow delete if authenticated user is the owner OR demo profile thread
+      allow delete: if request.auth != null
+                    && (request.auth.uid == resource.data.userId
+                        || resource.data.userId.matches('demo_.*'));
     }
 
     // Thread replies collection
@@ -413,19 +494,27 @@ service cloud.firestore {
       allow read: if request.auth != null;
 
       // Allow create if authenticated and userId matches auth
+      // OR if creating from demo profile
       allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid
+                    && (request.resource.data.userId == request.auth.uid
+                        || request.resource.data.userId.matches('demo_.*'))
                     && isValidPollData(request.resource.data);
 
       // Allow update if:
       // 1. Owner can edit within 5 minutes of creation (full edit)
-      // 2. Owner can toggle isHidden at any time
-      // 3. Anyone authenticated can update vote counts
+      // 2. Demo profile polls can be edited
+      // 3. Owner can toggle isHidden at any time
+      // 4. Anyone authenticated can update vote counts
       allow update: if request.auth != null && (
                       // Owner can fully edit within 5-minute window
                       (request.auth.uid == resource.data.userId
                        && request.resource.data.userId == resource.data.userId
                        && resource.data.createdAt.toMillis() > request.time.toMillis() - 300000
+                       && isValidPollData(request.resource.data))
+                      ||
+                      // Demo profile polls can be edited
+                      (resource.data.userId.matches('demo_.*')
+                       && request.resource.data.userId == resource.data.userId
                        && isValidPollData(request.resource.data))
                       ||
                       // Owner can toggle isHidden at any time
@@ -436,8 +525,10 @@ service cloud.firestore {
                       (isOnlyUpdatingPollVotes(resource.data, request.resource.data))
                     );
 
-      // Allow delete if authenticated user is the owner
-      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow delete if authenticated user is the owner OR demo profile poll
+      allow delete: if request.auth != null
+                    && (request.auth.uid == resource.data.userId
+                        || resource.data.userId.matches('demo_.*'));
     }
 
     // Poll votes collection
@@ -598,16 +689,22 @@ service cloud.firestore {
       allow read: if request.auth != null;
 
       // Only the owner can create/update their own profile
+      // OR allow creation of demo profiles (userId starts with "demo_")
       allow create: if request.auth != null
-                    && request.auth.uid == userId
+                    && (request.auth.uid == userId
+                        || userId.matches('demo_.*'))
                     && isValidProfileData(request.resource.data);
 
+      // Allow updates for own profile OR demo profiles
       allow update: if request.auth != null
-                    && request.auth.uid == userId
+                    && (request.auth.uid == userId
+                        || userId.matches('demo_.*'))
                     && isValidProfileUpdate(request.resource.data);
 
-      // Only the owner can delete their profile
-      allow delete: if request.auth != null && request.auth.uid == userId;
+      // Only the owner can delete their profile OR demo profiles can be deleted
+      allow delete: if request.auth != null
+                    && (request.auth.uid == userId
+                        || userId.matches('demo_.*'));
     }
 
     // Usernames collection (maps usernames to user IDs)
@@ -642,6 +739,48 @@ service cloud.firestore {
       // Allow writes from server-side only (Firebase Admin SDK)
       // This appears to block client writes but allows Admin SDK writes
       allow write: if false;
+    }
+
+    // Recommendation feedback collection (Phase 2 - Feedback Loop)
+    match /recommendation_feedback/{feedbackId} {
+      // Only authenticated users can read their own feedback
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+
+      // Allow create if authenticated and userId matches auth
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid
+                    && isValidFeedbackData(request.resource.data);
+
+      // No updates or deletes - feedback is immutable once created
+      allow update, delete: if false;
+    }
+
+    // Helper function to validate feedback data structure
+    function isValidFeedbackData(data) {
+      // id is optional since Firestore auto-generates it
+      return data.keys().hasAll(['userId', 'contentId', 'mediaType', 'recommendationPage', 'feedbackType', 'action', 'timestamp', 'source'])
+             && data.userId is string
+             && data.contentId is number
+             && data.mediaType is string
+             && data.mediaType in ['movie', 'tv']
+             && data.recommendationPage is number
+             && data.feedbackType is string
+             && data.feedbackType in ['explicit', 'implicit']
+             && data.action is string
+             && data.action in ['viewed', 'dismissed', 'hidden', 'liked', 'watchlisted', 'scrolled_past']
+             && data.timestamp is number
+             && data.source == 'recommended_row'
+             // Optional id field (Firestore auto-generates document IDs)
+             && (!data.keys().hasAny(['id']) || data.id is string);
+    }
+
+    // Admin email history collection
+    // Server-side only access via Firebase Admin SDK
+    // No client-side reads allowed to protect user PII in email records
+    match /admin_emails/{emailId} {
+      // Only server-side operations via Admin SDK
+      // Client-side access completely blocked to prevent PII exposure
+      allow read, write: if false;
     }
 
     // Deny all other access

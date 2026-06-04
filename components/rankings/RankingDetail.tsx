@@ -22,6 +22,7 @@ import { getTitle, getPosterPath, getYear } from '@/typings'
 import { CommentSection } from './CommentSection'
 import { useRankingStore } from '@/stores/rankingStore'
 import { useSessionStore } from '@/stores/sessionStore'
+import useAuth from '@/hooks/useAuth'
 import { hasUserLikedRanking } from '@/utils/firestore/rankings'
 import { formatDistanceToNow } from 'date-fns'
 import {
@@ -59,6 +60,8 @@ export function RankingDetail({
 }: RankingDetailProps) {
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
+    const { user } = useAuth()
+    const userName = user?.displayName || user?.email?.split('@')[0] || 'Anonymous'
     const comments = useRankingStore((state) => state.comments)
     const { likeRanking, unlikeRanking, incrementView, loadComments } = useRankingStore()
 
@@ -142,7 +145,7 @@ export function RankingDetail({
             setIsLiked(false)
             setLocalLikes((prev) => prev - 1)
         } else {
-            await likeRanking(userId, ranking.id)
+            await likeRanking(userId, ranking.id, userName)
             setIsLiked(true)
             setLocalLikes((prev) => prev + 1)
         }
@@ -193,6 +196,7 @@ export function RankingDetail({
                                     src={getPosterPath(item.content)}
                                     alt=""
                                     fill
+                                    sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
                                     className="object-cover blur-xl scale-110"
                                     priority={index === 0}
                                 />
@@ -201,34 +205,20 @@ export function RankingDetail({
                     </div>
                     {/* Dark overlay */}
                     <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-zinc-900/90 to-black/95" />
-                    {/* Gold ambient glow */}
-                    <div className="absolute inset-0 bg-gradient-radial from-yellow-500/10 via-transparent to-transparent" />
-                    {/* Film grain */}
-                    <div
-                        className="absolute inset-0 opacity-[0.03] pointer-events-none"
-                        style={{
-                            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-                        }}
-                    />
                 </div>
 
                 {/* Hero Content */}
                 <div className="relative z-10 p-8 lg:p-12">
-                    {/* Trophy Icon with Shimmer */}
+                    {/* Trophy Icon */}
                     <div className="flex justify-center mb-6">
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-yellow-500/40 blur-2xl scale-150 animate-pulse" />
-                            <div className="relative p-4 rounded-full bg-gradient-to-br from-yellow-400/20 to-amber-500/20 border border-yellow-500/30">
-                                <TrophyIcon className="w-12 h-12 text-yellow-400 drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]" />
-                            </div>
+                        <div className="p-4 rounded-full bg-zinc-800/50 border border-zinc-700">
+                            <TrophyIcon className="w-12 h-12 text-yellow-500" />
                         </div>
                     </div>
 
-                    {/* Title with Glow */}
-                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-center mb-4 drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
-                        <span className="bg-gradient-to-r from-white via-yellow-50 to-white bg-clip-text text-transparent">
-                            {ranking.title}
-                        </span>
+                    {/* Title */}
+                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-center mb-4 text-white">
+                        {ranking.title}
                     </h1>
 
                     {/* Description */}
@@ -244,7 +234,7 @@ export function RankingDetail({
                             <>
                                 <button
                                     onClick={onEdit}
-                                    className="group p-3 bg-zinc-800/80 hover:bg-zinc-700 backdrop-blur-sm text-white rounded-xl transition-all duration-300 border border-zinc-700/50 hover:border-yellow-500/50 hover:shadow-[0_0_20px_rgba(234,179,8,0.2)]"
+                                    className="group p-3 bg-zinc-800/80 hover:bg-zinc-700 backdrop-blur-sm text-white rounded-xl transition-all duration-300 border border-zinc-700/50 hover:border-yellow-500/50"
                                     title="Edit ranking"
                                 >
                                     <PencilIcon className="w-5 h-5 group-hover:text-yellow-400 transition-colors" />
@@ -261,7 +251,7 @@ export function RankingDetail({
                         {!isOwner && userId && (
                             <button
                                 onClick={onClone}
-                                className="group p-3 bg-blue-600/80 hover:bg-blue-500 backdrop-blur-sm text-white rounded-xl transition-all duration-300 border border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)]"
+                                className="group p-3 bg-blue-600/80 hover:bg-blue-500 backdrop-blur-sm text-white rounded-xl transition-all duration-300 border border-blue-500/50"
                                 title="Clone this ranking to your account"
                             >
                                 <DocumentDuplicateIcon className="w-5 h-5" />
@@ -269,7 +259,7 @@ export function RankingDetail({
                         )}
                         <button
                             onClick={handleShare}
-                            className="group p-3 bg-zinc-800/80 hover:bg-zinc-700 backdrop-blur-sm text-white rounded-xl transition-all duration-300 border border-zinc-700/50 hover:border-cyan-500/50 hover:shadow-[0_0_20px_rgba(6,182,212,0.2)]"
+                            className="group p-3 bg-zinc-800/80 hover:bg-zinc-700 backdrop-blur-sm text-white rounded-xl transition-all duration-300 border border-zinc-700/50 hover:border-cyan-500/50"
                             title="Share ranking"
                         >
                             <ShareIcon className="w-5 h-5 group-hover:text-cyan-400 transition-colors" />
@@ -325,7 +315,7 @@ export function RankingDetail({
                                     className="group flex items-center gap-2 disabled:cursor-not-allowed transition-all duration-300 hover:scale-110"
                                 >
                                     {isLiked ? (
-                                        <HeartSolidIcon className="w-6 h-6 text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
+                                        <HeartSolidIcon className="w-6 h-6 text-red-500" />
                                     ) : (
                                         <HeartIcon className="w-6 h-6 text-gray-400 group-hover:text-red-400 transition-colors" />
                                     )}
@@ -379,13 +369,10 @@ export function RankingDetail({
             </div>
 
             {/* Ranked Items List */}
-            <div className="relative bg-zinc-900/60 backdrop-blur-xl rounded-2xl p-6 lg:p-8 border border-zinc-800/50 mb-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+            <div className="relative bg-zinc-900/60 backdrop-blur-xl rounded-2xl p-6 lg:p-8 border border-zinc-800/50 mb-8">
                 {/* Section Header */}
                 <div className="flex items-center gap-3 mb-8">
-                    <div className="relative">
-                        <div className="absolute inset-0 bg-yellow-500/30 blur-lg" />
-                        <TrophyIcon className="relative w-8 h-8 text-yellow-400" />
-                    </div>
+                    <TrophyIcon className="w-8 h-8 text-yellow-500" />
                     <h2 className="text-2xl font-bold text-white">
                         Ranked Items{' '}
                         <span className="text-gray-500 font-normal">
@@ -398,60 +385,44 @@ export function RankingDetail({
                     {ranking.rankedItems.map((item, index) => (
                         <div
                             key={item.content.id}
-                            className="group relative flex items-start gap-4 lg:gap-6 bg-zinc-800/60 hover:bg-zinc-800/80 rounded-2xl p-4 lg:p-5 transition-all duration-500 border border-zinc-700/30 hover:border-yellow-500/30 hover:shadow-[0_0_30px_rgba(234,179,8,0.1)] animate-slideIn"
+                            className="group relative flex items-start gap-4 lg:gap-6 bg-zinc-800/60 hover:bg-zinc-800/80 rounded-2xl p-4 lg:p-5 transition-all duration-300 border border-zinc-700/30 hover:border-zinc-600 animate-slideIn"
                             style={{
                                 animationDelay: `${index * 100}ms`,
                                 animationFillMode: 'both',
                             }}
                         >
-                            {/* Metallic Gold Rank Badge */}
+                            {/* Rank Badge */}
                             <div className="absolute -left-3 -top-3 z-20">
-                                <div className="relative">
-                                    {/* Glow effect */}
-                                    <div className="absolute inset-0 bg-yellow-500/50 blur-lg rounded-xl animate-pulse" />
-                                    {/* Badge */}
-                                    <div
-                                        className="relative w-14 h-14 flex items-center justify-center rounded-xl shadow-xl"
-                                        style={{
-                                            background:
-                                                'linear-gradient(135deg, #fbbf24 0%, #f59e0b 25%, #d97706 50%, #f59e0b 75%, #fbbf24 100%)',
-                                            boxShadow:
-                                                'inset 0 1px 0 rgba(255,255,255,0.4), inset 0 -1px 0 rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.3)',
-                                        }}
-                                    >
-                                        <span className="text-xl font-black text-black drop-shadow-[0_1px_0_rgba(255,255,255,0.3)]">
-                                            #{item.position}
-                                        </span>
-                                    </div>
+                                <div className="w-14 h-14 flex items-center justify-center rounded-xl shadow-lg bg-gradient-to-br from-yellow-500 to-yellow-600 border border-yellow-400">
+                                    <span className="text-xl font-black text-black">
+                                        #{item.position}
+                                    </span>
                                 </div>
                             </div>
 
-                            {/* Poster with Ambient Glow */}
+                            {/* Poster */}
                             <div className="relative w-24 lg:w-28 h-36 lg:h-40 flex-shrink-0 ml-10">
-                                {/* Glow behind poster */}
-                                <div className="absolute -inset-2 bg-gradient-to-br from-yellow-500/20 via-pink-500/10 to-amber-500/20 rounded-xl blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
                                 <Image
                                     src={getPosterPath(item.content)}
                                     alt={getTitle(item.content)}
                                     fill
                                     sizes="112px"
-                                    className="relative z-10 object-cover rounded-xl shadow-xl ring-1 ring-white/10 group-hover:ring-yellow-500/30 transition-all duration-500 group-hover:scale-105"
+                                    className="object-cover rounded-xl shadow-lg ring-1 ring-zinc-700 group-hover:ring-zinc-600 transition-all duration-300"
                                 />
                             </div>
 
                             {/* Content info */}
                             <div className="flex-1 min-w-0 pt-2">
                                 <div className="flex items-start justify-between gap-4 mb-2">
-                                    <h3 className="text-xl lg:text-2xl font-bold text-white group-hover:text-yellow-300 transition-colors duration-300 leading-tight">
+                                    <h3 className="text-xl lg:text-2xl font-bold text-white transition-colors duration-300 leading-tight">
                                         {getTitle(item.content)}
                                     </h3>
 
-                                    {/* Neon Rating Badge */}
+                                    {/* Rating Badge */}
                                     {item.content.vote_average && (
-                                        <div className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900/80 rounded-full border border-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.2)]">
+                                        <div className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900/80 rounded-full border border-yellow-600/30">
                                             <StarIcon className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                                            <span className="font-bold text-yellow-300">
+                                            <span className="font-bold text-yellow-400">
                                                 {item.content.vote_average.toFixed(1)}
                                             </span>
                                         </div>

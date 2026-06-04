@@ -1,31 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyAuthentication } from '@/lib/auth-middleware'
-import { isAdmin } from '@/utils/adminAuth'
+import { withAuth } from '../../../../lib/auth-middleware'
 
 /**
- * Check if the current user is an admin
- * Returns 200 with {isAdmin: true} if user is admin
- * Returns 403 if user is not admin
+ * GET /api/admin/check
+ *
+ * Check if current user is admin
+ * Returns { isAdmin: boolean }
  */
-export async function GET(request: NextRequest) {
-    try {
-        // Verify user authentication
-        const authResult = await verifyAuthentication(request)
+async function handleCheckAdmin(request: NextRequest, userId: string): Promise<NextResponse> {
+    const ADMIN_UID = process.env.ADMIN_UID
+    const isAdmin = ADMIN_UID && userId === ADMIN_UID
 
-        if (!authResult.authenticated || !authResult.userId) {
-            return NextResponse.json({ isAdmin: false }, { status: 403 })
-        }
-
-        // Check if user is admin (server-side only)
-        const userIsAdmin = isAdmin(authResult.userId)
-
-        if (!userIsAdmin) {
-            return NextResponse.json({ isAdmin: false }, { status: 403 })
-        }
-
-        return NextResponse.json({ isAdmin: true }, { status: 200 })
-    } catch (error) {
-        console.error('Admin check error:', error)
-        return NextResponse.json({ isAdmin: false }, { status: 500 })
-    }
+    return NextResponse.json({ isAdmin })
 }
+
+export const GET = withAuth(handleCheckAdmin)

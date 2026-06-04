@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
             tvSnapshot: data.tvSnapshot?.length || 0,
         })
     } catch (error) {
-        console.error('Error getting trending stats:', error)
+        console.error('👑 ❌ Error getting trending stats:', error)
         return NextResponse.json({ error: 'Failed to get stats' }, { status: 500 })
     }
 }

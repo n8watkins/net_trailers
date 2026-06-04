@@ -10,10 +10,11 @@ export interface SeedWatchLaterOptions {
     count: number
     isGuest: boolean
     startIndex?: number
+    shuffledContent?: Content[]
 }
 
 export async function seedWatchLaterContent(options: SeedWatchLaterOptions): Promise<void> {
-    const { userId, count, isGuest, startIndex = 0 } = options
+    const { userId, count, isGuest, startIndex = 0, shuffledContent } = options
 
     if (count <= 0) {
         console.log('  ⏭️  Skipping watch later (count = 0)')
@@ -25,7 +26,7 @@ export async function seedWatchLaterContent(options: SeedWatchLaterOptions): Pro
     const { useAuthStore } = await import('../../stores/authStore')
     const { useGuestStore } = await import('../../stores/guestStore')
 
-    const content = getContentSlice(startIndex, count)
+    const content = getContentSlice(startIndex, count, shuffledContent)
 
     for (const item of content) {
         if (isGuest) {

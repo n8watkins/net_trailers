@@ -13,6 +13,7 @@ import SubPageLayout from '../../../components/layout/SubPageLayout'
 import { RankingDetail } from '../../../components/rankings/RankingDetail'
 import { useRankingStore } from '../../../stores/rankingStore'
 import { useSessionStore } from '../../../stores/sessionStore'
+import { useProfileStore } from '../../../stores/profileStore'
 import { useAuthStatus } from '../../../hooks/useAuthStatus'
 import NetflixLoader from '../../../components/common/NetflixLoader'
 import { TrophyIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
@@ -39,6 +40,8 @@ export default function RankingDetailPage() {
         createRanking,
         updateRanking,
     } = useRankingStore()
+
+    const profile = useProfileStore((state) => state.profile)
 
     const [isDeleting, setIsDeleting] = useState(false)
     const [isCloning, setIsCloning] = useState(false)
@@ -81,20 +84,22 @@ export default function RankingDetailPage() {
     const handleClone = async () => {
         if (!userId || !currentRanking) return
 
-        // Get current user's display name and photo
+        // Get current user's display name and username from profile
         const currentUser = auth.currentUser
         if (!currentUser) {
             showError('You must be logged in to clone rankings')
             return
         }
 
-        const username = currentUser.displayName || 'Unknown User'
-        const userAvatar = currentUser.photoURL || undefined
+        // Use profile data for displayName and username
+        const displayName = profile?.displayName || currentUser.displayName || 'Unknown User'
+        const username = profile?.username // Optional username for profile URL
+        const userAvatar = profile?.avatarUrl || currentUser.photoURL || undefined
 
         setIsCloning(true)
         try {
             // Create a new ranking with cloned data
-            const clonedRankingId = await createRanking(userId, username, userAvatar, {
+            const clonedRankingId = await createRanking(userId, displayName, username, userAvatar, {
                 title: `${currentRanking.title} (Copy)`,
                 description: currentRanking.description,
                 isPublic: currentRanking.isPublic,

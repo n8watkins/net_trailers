@@ -9,13 +9,14 @@
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import SubPageLayout from '../../components/layout/SubPageLayout'
-import { ClockIcon, CalendarIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { ClockIcon, CalendarIcon, XMarkIcon, MicrophoneIcon } from '@heroicons/react/24/outline'
 import {
     Cog6ToothIcon,
     ChevronDownIcon,
     TrashIcon,
     MagnifyingGlassIcon,
 } from '@heroicons/react/24/solid'
+import { useVoiceInput } from '../../hooks/useVoiceInput'
 import ContentCard from '../../components/common/ContentCard'
 import ContentGridSpacer from '../../components/common/ContentGridSpacer'
 import NetflixLoader from '../../components/common/NetflixLoader'
@@ -24,14 +25,33 @@ import { getTitle } from '../../typings'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import useUserData from '../../hooks/useUserData'
+import { useToast } from '../../hooks/useToast'
 import Link from 'next/link'
 
 export default function WatchHistoryPage() {
     const router = useRouter()
+    const { showError } = useToast()
     const [searchQuery, setSearchQuery] = useState('')
     const [filter, setFilter] = useState<'all' | 'today' | 'week' | 'month'>('all')
     const [showManageDropdown, setShowManageDropdown] = useState(false)
+    const [isMounted, setIsMounted] = useState(false)
     const manageDropdownRef = useRef<HTMLDivElement>(null)
+
+    // Voice input
+    const { isListening, isSupported, transcript, startListening, stopListening } = useVoiceInput({
+        onResult: (transcript) => {
+            setSearchQuery(transcript)
+        },
+        onError: (error) => {
+            showError(error)
+        },
+        sourceId: 'history-search',
+    })
+
+    // Track client-side mount
+    useEffect(() => {
+        setIsMounted(true)
+    }, [])
 
     useEffect(() => {
         document.title = 'Watch History - NetTrailers'
@@ -91,42 +111,18 @@ export default function WatchHistoryPage() {
           })
         : filteredHistory
 
-    // Group by date - format changes based on filter
+    // Group by calendar date (not relative dates like "Today")
     const groupedHistory = searchFilteredHistory.reduce(
         (groups, item) => {
-            let date: string
             const itemDate = new Date(item.watchedAt)
 
-            // Format date based on current filter
-            switch (filter) {
-                case 'today':
-                    // Show just the time for today
-                    date = 'Today'
-                    break
-                case 'week':
-                    // Show weekday for this week
-                    date = itemDate.toLocaleDateString('en-US', {
-                        weekday: 'long',
-                        month: 'long',
-                        day: 'numeric',
-                    })
-                    break
-                case 'month':
-                    // Show week grouping for this month
-                    date = itemDate.toLocaleDateString('en-US', {
-                        month: 'long',
-                        day: 'numeric',
-                    })
-                    break
-                default:
-                    // Show full date for all time
-                    date = itemDate.toLocaleDateString('en-US', {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                    })
-            }
+            // Always use actual calendar date format
+            const date = itemDate.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+            })
 
             if (!groups[date]) {
                 groups[date] = []
@@ -153,7 +149,7 @@ export default function WatchHistoryPage() {
                 {/* Content Container */}
                 <div className="relative z-10">
                     {/* Cinematic Hero Header */}
-                    <div className="relative overflow-hidden pt-4">
+                    <div className="relative overflow-hidden pt-12">
                         {/* Animated Background Gradients */}
                         <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900/80 to-black" />
                         <div
@@ -167,22 +163,25 @@ export default function WatchHistoryPage() {
                         <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60" />
 
                         {/* Hero Content */}
-                        <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-6">
-                            {/* Clock Icon with glow */}
-                            <div className="relative mb-4">
-                                <div className="absolute inset-0 bg-purple-500/30 blur-2xl scale-150" />
-                                <ClockIcon className="relative w-16 h-16 text-purple-400 drop-shadow-[0_0_20px_rgba(168,85,247,0.5)]" />
+                        <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-4">
+                            {/* Title with inline icon */}
+                            <div className="flex items-center gap-4 mb-2">
+                                {/* Clock Icon with glow */}
+                                <div className="relative">
+                                    <div className="absolute inset-0 bg-purple-500/30 blur-2xl scale-150" />
+                                    <ClockIcon className="relative w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 text-purple-400 drop-shadow-[0_0_20px_rgba(168,85,247,0.5)]" />
+                                </div>
+
+                                {/* Title */}
+                                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white text-center tracking-tight">
+                                    <span className="bg-gradient-to-r from-purple-200 via-violet-100 to-purple-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
+                                        Watch History
+                                    </span>
+                                </h1>
                             </div>
 
-                            {/* Title */}
-                            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-2 text-center tracking-tight">
-                                <span className="bg-gradient-to-r from-purple-200 via-violet-100 to-purple-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
-                                    Watch History
-                                </span>
-                            </h1>
-
                             {/* Subtitle */}
-                            <p className="text-base sm:text-lg text-gray-300 mb-6 text-center max-w-2xl">
+                            <p className="text-base sm:text-lg text-gray-300 mb-4 text-center max-w-2xl">
                                 Your complete viewing timeline with all watched content.
                             </p>
 
@@ -203,7 +202,7 @@ export default function WatchHistoryPage() {
 
                             {/* Filter Row - Pills on left, Manage on right */}
                             {showFiltersAndSearch && (
-                                <div className="flex flex-col sm:flex-row gap-4 items-center justify-between w-full max-w-3xl mb-5 px-4">
+                                <div className="flex flex-col sm:flex-row gap-4 items-center justify-between w-full max-w-4xl mb-5 px-4">
                                     {/* Date Filter Pills */}
                                     <div className="flex gap-2 items-center flex-wrap justify-center sm:justify-start">
                                         {[
@@ -294,7 +293,7 @@ export default function WatchHistoryPage() {
 
                             {/* Enhanced Search Bar */}
                             {showFiltersAndSearch && (
-                                <div className="w-full max-w-3xl relative">
+                                <div className="w-full max-w-4xl relative">
                                     <div className="relative group">
                                         <MagnifyingGlassIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 z-10 transition-colors group-focus-within:text-purple-400" />
                                         <input
@@ -302,16 +301,42 @@ export default function WatchHistoryPage() {
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
                                             placeholder="Search your history..."
-                                            className="w-full pl-14 pr-14 py-4 bg-zinc-900/40 backdrop-blur-lg border border-zinc-800/50 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:shadow-[0_0_25px_rgba(168,85,247,0.3)] transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700"
+                                            className={`w-full pl-14 ${isMounted && isSupported ? 'pr-24' : 'pr-14'} py-4 bg-zinc-900/40 backdrop-blur-lg border border-zinc-800/50 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:shadow-[0_0_25px_rgba(168,85,247,0.3)] transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700`}
                                         />
-                                        {searchQuery && (
-                                            <button
-                                                onClick={() => setSearchQuery('')}
-                                                className="absolute right-5 top-1/2 -translate-y-1/2 z-10 text-gray-400 hover:text-white transition-colors"
-                                            >
-                                                <XMarkIcon className="w-6 h-6" />
-                                            </button>
-                                        )}
+                                        <div className="absolute right-5 top-1/2 -translate-y-1/2 z-10 flex items-center gap-2">
+                                            {isMounted && isSupported && (
+                                                <button
+                                                    type="button"
+                                                    onClick={async () => {
+                                                        if (isListening) {
+                                                            stopListening()
+                                                        } else {
+                                                            await startListening()
+                                                        }
+                                                    }}
+                                                    className={`p-1.5 rounded-lg transition-all ${
+                                                        isListening
+                                                            ? 'bg-purple-500 text-white animate-pulse'
+                                                            : 'text-gray-400 hover:text-purple-400 hover:bg-purple-500/10'
+                                                    }`}
+                                                    title={
+                                                        isListening
+                                                            ? 'Stop listening'
+                                                            : 'Voice search'
+                                                    }
+                                                >
+                                                    <MicrophoneIcon className="w-5 h-5" />
+                                                </button>
+                                            )}
+                                            {searchQuery && (
+                                                <button
+                                                    onClick={() => setSearchQuery('')}
+                                                    className="text-gray-400 hover:text-white transition-colors"
+                                                >
+                                                    <XMarkIcon className="w-6 h-6" />
+                                                </button>
+                                            )}
+                                        </div>
 
                                         {/* Glowing border effect on focus */}
                                         <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500 to-violet-500 opacity-0 group-focus-within:opacity-20 blur-xl transition-opacity duration-300 -z-10" />
@@ -322,7 +347,7 @@ export default function WatchHistoryPage() {
                     </div>
 
                     {/* Main Content Area */}
-                    <div className="px-6 sm:px-8 lg:px-12 py-8 space-y-6">
+                    <div className="px-6 sm:px-8 lg:px-12 py-4 space-y-4">
                         {/* Loading state */}
                         {isLoading && (
                             <div className="py-16">
@@ -388,12 +413,15 @@ export default function WatchHistoryPage() {
                             <div className="space-y-8">
                                 {Object.entries(groupedHistory).map(([date, items]) => (
                                     <div key={date} className="space-y-4">
-                                        {/* Date Header */}
+                                        {/* Date Header with count */}
                                         <div className="flex items-center gap-3 sticky top-24 bg-gradient-to-r from-black to-transparent py-3 z-10">
                                             <CalendarIcon className="w-5 h-5 text-purple-400" />
                                             <h3 className="text-lg font-semibold text-white">
                                                 {date}
                                             </h3>
+                                            <span className="text-sm text-gray-400 bg-zinc-800/50 px-2 py-0.5 rounded-full">
+                                                {items.length}
+                                            </span>
                                             <div className="flex-1 h-px bg-gradient-to-r from-gray-700 to-transparent" />
                                         </div>
 
@@ -409,14 +437,6 @@ export default function WatchHistoryPage() {
                                                     }}
                                                 >
                                                     <ContentCard content={item.content} />
-                                                    <div className="mt-2 text-xs text-gray-400">
-                                                        {new Date(
-                                                            item.watchedAt
-                                                        ).toLocaleTimeString('en-US', {
-                                                            hour: 'numeric',
-                                                            minute: '2-digit',
-                                                        })}
-                                                    </div>
                                                 </div>
                                             ))}
                                             <ContentGridSpacer />

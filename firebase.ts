@@ -37,20 +37,52 @@ declare global {
 let db: ReturnType<typeof getFirestore>
 
 if (typeof window !== 'undefined') {
-    // Client-side: Check if already initialized in global scope
+    // Client-side: Check if already initialized (hot reload)
     if (!globalThis.firestore) {
-        // TEMPORARY: Disable persistent cache to fix corrupted state
-        // Re-enable after cache is cleared by uncommenting the try block
+        // Synchronous health check using localStorage (no async)
+        let isSafe = false
         try {
-            // Try to initialize WITHOUT persistent cache (temporary fix)
-            globalThis.firestore = getFirestore(app)
+            const healthData = localStorage.getItem('nettrailer_firestore_health')
+            if (healthData) {
+                const health = JSON.parse(healthData)
+                const errorCount = health.errorCount || 0
+                isSafe = errorCount < 3 && 'indexedDB' in window
+            } else {
+                // First time - assume safe if IndexedDB available
+                isSafe = 'indexedDB' in window
+            }
+        } catch {
+            isSafe = false
+        }
 
-            // ORIGINAL CODE (re-enable after clearing cache):
-            // globalThis.firestore = initializeFirestore(app, {
-            //     localCache: persistentLocalCache(),
-            // })
+        // Initialize Firestore once with appropriate settings
+        try {
+            if (isSafe) {
+                console.log('✅ Firestore cache health: GOOD - enabling persistence')
+                globalThis.firestore = initializeFirestore(app, {
+                    localCache: persistentLocalCache({
+                        cacheSizeBytes: 40 * 1024 * 1024, // 40MB limit
+                    }),
+                })
+            } else {
+                console.warn('⚠️  Firestore cache health: DEGRADED - using memory cache')
+                console.warn('   To re-enable: Clear cache via Cache Health Panel')
+                globalThis.firestore = getFirestore(app)
+            }
         } catch (error) {
-            // If already initialized, get the existing instance
+            console.error('❌ Firestore initialization error:', error)
+
+            // Record error for health monitoring (async, non-blocking)
+            ;(async () => {
+                try {
+                    const { FirestoreCacheHealth } = await import('@/utils/firestore/cacheHealth')
+                    FirestoreCacheHealth.recordCacheError(error as Error)
+                } catch (recordError) {
+                    console.error('Failed to record cache error:', recordError)
+                }
+            })()
+
+            // Fallback to getFirestore if initialization failed
             globalThis.firestore = getFirestore(app)
         }
     }

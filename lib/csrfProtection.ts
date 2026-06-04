@@ -1,12 +1,11 @@
 /**
  * CSRF Protection Middleware
  *
- * Validates Origin and Referer headers to prevent Cross-Site Request Forgery attacks
- * Allows bypass for authenticated server-to-server calls (cron jobs, webhooks)
+ * Validates Origin and Referer headers to prevent Cross-Site Request Forgery attacks.
+ * CRON_SECRET bypass is handled separately in proxy.ts for /api/cron/* routes only.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import crypto from 'crypto'
 
 // Allowed origins for CSRF protection
 const ALLOWED_ORIGINS = [
@@ -23,41 +22,48 @@ if (process.env.NEXT_PUBLIC_VERCEL_URL) {
     ALLOWED_ORIGINS.push(`https://${process.env.NEXT_PUBLIC_VERCEL_URL}`)
 }
 
-// Server-side secrets for bypass
-const CRON_SECRET = process.env.CRON_SECRET
+/**
+ * Parse and extract origin from a URL string
+ * Returns normalized origin (scheme + host + port) or null if invalid
+ */
+function parseOrigin(urlString: string): string | null {
+    try {
+        const url = new URL(urlString)
+        // Origin is scheme + host (includes port if non-default)
+        return url.origin
+    } catch {
+        return null
+    }
+}
 
 /**
  * Validate request origin/referer to prevent CSRF attacks
  * Returns true if request is from an allowed origin
+ *
+ * SECURITY: Uses exact origin matching (scheme + host + port) to prevent
+ * bypass via look-alike domains like https://allowed.com.attacker.com
  */
 export function validateOrigin(request: NextRequest): boolean {
     const origin = request.headers.get('origin')
     const referer = request.headers.get('referer')
 
+    // Normalize allowed origins for comparison
+    const normalizedAllowedOrigins = ALLOWED_ORIGINS.map((o) => parseOrigin(o)).filter(
+        (o): o is string => o !== null
+    )
+
     // Check Origin header (preferred)
     if (origin) {
-        // Normalize origin (remove trailing slash)
-        const normalizedOrigin = origin.replace(/\/$/, '')
-        const allowed = ALLOWED_ORIGINS.some((allowedOrigin) => {
-            const normalizedAllowed = allowedOrigin.replace(/\/$/, '')
-            return (
-                normalizedOrigin === normalizedAllowed ||
-                normalizedOrigin.startsWith(normalizedAllowed)
-            )
-        })
-
-        if (allowed) {
+        const parsedOrigin = parseOrigin(origin)
+        if (parsedOrigin && normalizedAllowedOrigins.includes(parsedOrigin)) {
             return true
         }
     }
 
-    // Fallback to Referer header
+    // Fallback to Referer header - extract origin from full URL
     if (referer) {
-        const allowed = ALLOWED_ORIGINS.some((allowedOrigin) => {
-            return referer.startsWith(allowedOrigin)
-        })
-
-        if (allowed) {
+        const parsedRefererOrigin = parseOrigin(referer)
+        if (parsedRefererOrigin && normalizedAllowedOrigins.includes(parsedRefererOrigin)) {
             return true
         }
     }
@@ -67,54 +73,17 @@ export function validateOrigin(request: NextRequest): boolean {
 }
 
 /**
- * Timing-safe comparison of cron secret tokens.
- * Prevents timing attacks by using constant-time comparison.
- */
-function isValidCronSecret(token: string | null | undefined): boolean {
-    if (!token || !CRON_SECRET) return false
-    try {
-        const encoder = new TextEncoder()
-        const tokenBytes = encoder.encode(token)
-        const secretBytes = encoder.encode(CRON_SECRET)
-        if (tokenBytes.length !== secretBytes.length) return false
-        return crypto.timingSafeEqual(tokenBytes, secretBytes)
-    } catch {
-        return false
-    }
-}
-
-/**
- * Check if request is an authenticated server-to-server call
- * These can bypass CSRF checks because they use secure authentication
- */
-function isServerToServerCall(request: NextRequest): boolean {
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader) return false
-
-    const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader
-
-    // Check for cron secret (machine-to-machine)
-    if (isValidCronSecret(token)) {
-        return true
-    }
-
-    // Firebase ID tokens start with "eyJ" (base64-encoded JWT header)
-    // These are verified server-side by Firebase Admin SDK
-    if (token.startsWith('eyJ')) {
-        return true
-    }
-
-    return false
-}
-
-/**
  * Apply CSRF protection to a request
  * Returns null if valid, NextResponse with 403 status if CSRF detected
  *
  * Bypasses CSRF for:
  * - Safe methods (GET, HEAD, OPTIONS)
- * - Authenticated server-to-server calls (cron jobs with CRON_SECRET)
- * - Requests with valid Firebase ID tokens (verified by downstream handlers)
+ *
+ * NOTE: CRON_SECRET bypass is handled ONLY in proxy.ts for /api/cron/* routes.
+ * This function should NOT check for CRON_SECRET to limit blast radius if leaked.
+ *
+ * Browser requests must have valid Origin or Referer headers.
+ * User authentication is handled separately by withAuth() middleware.
  */
 export function applyCsrfProtection(request: NextRequest): NextResponse | null {
     // Only check state-changing methods
@@ -123,13 +92,8 @@ export function applyCsrfProtection(request: NextRequest): NextResponse | null {
         return null // Safe methods don't need CSRF protection
     }
 
-    // Allow authenticated server-to-server calls to bypass CSRF
-    // These use secure tokens that cannot be forged by attackers
-    if (isServerToServerCall(request)) {
-        return null
-    }
-
     // Validate origin/referer for browser-based requests
+    // NOTE: CRON_SECRET bypass removed - now handled only in proxy.ts for /api/cron/*
     if (!validateOrigin(request)) {
         return NextResponse.json(
             {
@@ -178,4 +142,40 @@ export function withCsrfForAuthRoute(
         // Call original handler with userId
         return handler(request, userId, ...args)
     }
+}
+
+/**
+ * Validate CSRF for server actions using headers() from next/headers
+ * Server actions don't go through proxy.ts, so they need explicit validation
+ *
+ * @param headersList - Headers from next/headers
+ * @returns true if origin is valid, false otherwise
+ */
+export function validateServerActionOrigin(headersList: Headers): boolean {
+    const origin = headersList.get('origin')
+    const referer = headersList.get('referer')
+
+    // Normalize allowed origins for comparison
+    const normalizedAllowedOrigins = ALLOWED_ORIGINS.map((o) => parseOrigin(o)).filter(
+        (o): o is string => o !== null
+    )
+
+    // Check Origin header (preferred)
+    if (origin) {
+        const parsedOrigin = parseOrigin(origin)
+        if (parsedOrigin && normalizedAllowedOrigins.includes(parsedOrigin)) {
+            return true
+        }
+    }
+
+    // Fallback to Referer header - extract origin from full URL
+    if (referer) {
+        const parsedRefererOrigin = parseOrigin(referer)
+        if (parsedRefererOrigin && normalizedAllowedOrigins.includes(parsedRefererOrigin)) {
+            return true
+        }
+    }
+
+    // If neither header is present or doesn't match, reject
+    return false
 }

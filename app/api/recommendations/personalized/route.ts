@@ -20,12 +20,23 @@ import {
     UserVotedContent,
 } from '@/utils/recommendations/genreEngine'
 import { getBatchSimilarContent } from '@/utils/tmdb/recommendations'
-import { Recommendation, RECOMMENDATION_CONSTRAINTS } from '@/types/recommendations'
+import {
+    Recommendation,
+    RECOMMENDATION_CONSTRAINTS,
+    RecommendationFeedback,
+    FEEDBACK_CONSTRAINTS,
+} from '@/types/recommendations'
 import { Content, getTitle } from '@/typings'
 import { withAuth } from '@/lib/auth-middleware'
 import { apiError } from '@/utils/debugLogger'
 import { VotedContent, RatedContent } from '@/types/shared'
 import { getAdminDb } from '@/lib/firebase-admin'
+import { InteractionSummary } from '@/utils/recommendations/interactionAggregator'
+import {
+    processFeedback,
+    applyFeedbackToRecommendations,
+    calculateEngagementMetrics,
+} from '@/utils/recommendations/feedbackProcessor'
 
 async function handlePersonalizedRecommendations(
     request: NextRequest,
@@ -36,6 +47,9 @@ async function handlePersonalizedRecommendations(
         const body = await request.json()
         const limit = Math.min(body.limit || 20, RECOMMENDATION_CONSTRAINTS.MAX_LIMIT)
         const page = Math.max(1, parseInt(body.page as string) || 1) // Default to page 1
+
+        // V2: Check for interaction summary (Phase 1 - Deep History)
+        const interactionSummary = body.interactionSummary as InteractionSummary | undefined
 
         // Support both new myRatings format and legacy likedMovies/hiddenMovies
         const myRatings = (body.myRatings || []) as RatedContent[]
@@ -115,9 +129,17 @@ async function handlePersonalizedRecommendations(
             .filter((v) => v.vote === 'dislike')
             .map((v) => v.contentId)
 
+        // V2: Add negative signals from interaction summary
+        const negativeContentIds = interactionSummary?.negativeSignals.hiddenContent || []
+
         // Check if user has enough data (preferences and votes also count)
+        // V2: Interaction summary also counts as preference data
         const hasPreferenceData =
-            genrePreferences.length > 0 || contentPreferences.length > 0 || votedContent.length > 0
+            genrePreferences.length > 0 ||
+            contentPreferences.length > 0 ||
+            votedContent.length > 0 ||
+            (interactionSummary && interactionSummary.totalInteractions > 0)
+
         if (!hasEnoughDataForRecommendations(userData) && !hasPreferenceData) {
             return NextResponse.json({
                 success: true,
@@ -136,9 +158,61 @@ async function handlePersonalizedRecommendations(
             votedContent
         )
 
-        // Get content IDs to exclude (already seen + "not for me" votes)
+        // Phase 2: Fetch recent feedback data for learning
+        let feedbackSignals: ReturnType<typeof processFeedback> | null = null
+        let engagementMetrics: ReturnType<typeof calculateEngagementMetrics> | null = null
+
+        try {
+            const db = getAdminDb()
+            const thirtyDaysAgo =
+                Date.now() - FEEDBACK_CONSTRAINTS.RECENT_WINDOW_DAYS * 24 * 60 * 60 * 1000
+
+            const feedbackSnapshot = await db
+                .collection('recommendation_feedback')
+                .where('userId', '==', userId)
+                .where('timestamp', '>=', thirtyDaysAgo)
+                .orderBy('timestamp', 'desc')
+                .limit(500)
+                .get()
+
+            if (!feedbackSnapshot.empty) {
+                const feedback: RecommendationFeedback[] = []
+                feedbackSnapshot.forEach((doc) => {
+                    feedback.push(doc.data() as RecommendationFeedback)
+                })
+
+                console.log(
+                    `[Phase 2] Fetched ${feedback.length} feedback entries for user ${userId}`
+                )
+
+                // Process feedback to extract signals
+                feedbackSignals = processFeedback(feedback, contentGenreMap)
+
+                // Calculate engagement metrics for analytics
+                engagementMetrics = calculateEngagementMetrics(feedback)
+
+                console.log(
+                    `[Phase 2] Engagement: ${engagementMetrics.viewRate.toFixed(1)}% view rate, ${engagementMetrics.engagementRate.toFixed(1)}% engagement rate`
+                )
+            }
+        } catch (error) {
+            console.warn('[Phase 2] Failed to fetch feedback, continuing without it:', error)
+            // Continue without feedback - don't block recommendations
+        }
+
+        // Get content IDs to exclude (already seen + "not for me" votes + negative signals + dismissed/hidden from feedback)
         const seenIds = getSeenContentIds(userData)
-        const excludeIds = [...new Set([...seenIds, ...dislikedContentIds])]
+        const feedbackExcludeIds = feedbackSignals
+            ? Array.from(feedbackSignals.excludedContentIds)
+            : []
+        const excludeIds = [
+            ...new Set([
+                ...seenIds,
+                ...dislikedContentIds,
+                ...negativeContentIds,
+                ...feedbackExcludeIds,
+            ]),
+        ]
 
         // Generate recommendations from multiple sources
         // For page 1, use 60/40 split between genre and similar
@@ -146,14 +220,27 @@ async function handlePersonalizedRecommendations(
         const genreWeight = page === 1 ? 0.6 : 0.8
         const similarWeight = page === 1 ? 0.4 : 0.2
 
+        // V2: Use top content from interaction summary for better similar content
+        let similarContentIds: number[] = []
+        if (interactionSummary && interactionSummary.topContent.length > 0) {
+            // Use top 5 most-interacted content for similarity
+            similarContentIds = interactionSummary.topContent
+                .filter((item) => item.mediaType === 'movie') // getBatchSimilarContent expects movies
+                .slice(0, 5)
+                .map((item) => item.contentId)
+        } else if (userData.likedMovies.length > 0) {
+            // Fallback to first 3 liked movies (V1 behavior)
+            similarContentIds = userData.likedMovies.slice(0, 3).map((c) => c.id)
+        }
+
         const [genreBased, tmdbSimilar] = await Promise.all([
             // Genre-based recommendations with pagination
             getGenreBasedRecommendations(profile, Math.ceil(limit * genreWeight), excludeIds, page),
 
-            // TMDB similar content - only for page 1 and if user has liked movies
-            page === 1 && userData.likedMovies.length > 0
+            // TMDB similar content - only for page 1 and if we have content to base it on
+            page === 1 && similarContentIds.length > 0
                 ? getBatchSimilarContent(
-                      userData.likedMovies.slice(0, 3).map((c) => c.id),
+                      similarContentIds,
                       'movie',
                       Math.ceil(limit * similarWeight)
                   ).then((results) => results.filter((c) => !excludeIds.includes(c.id)))
@@ -161,7 +248,28 @@ async function handlePersonalizedRecommendations(
         ])
 
         // Merge recommendations with diversity
-        const mergedContent = mergeRecommendations([genreBased, tmdbSimilar], limit)
+        let mergedContent = mergeRecommendations([genreBased, tmdbSimilar], limit)
+
+        // Phase 2: Apply feedback signals to filter and boost recommendations
+        if (feedbackSignals) {
+            mergedContent = applyFeedbackToRecommendations(mergedContent, feedbackSignals)
+            console.log(
+                `[Phase 2] Applied feedback: filtered ${feedbackSignals.excludedContentIds.size} excluded items`
+            )
+        }
+
+        // V2: Filter out content from disliked genres (3+ dislikes)
+        const hiddenGenreIds = interactionSummary?.negativeSignals.hiddenGenres || []
+        if (hiddenGenreIds.length > 0) {
+            mergedContent = mergedContent.filter((content) => {
+                // Check if content has any of the hidden genres
+                const contentGenres = content.genre_ids || []
+                const hasHiddenGenre = contentGenres.some((genreId) =>
+                    hiddenGenreIds.includes(genreId)
+                )
+                return !hasHiddenGenre
+            })
+        }
 
         // Convert to Recommendation objects with metadata
         const recommendations: Recommendation[] = mergedContent.map((content, index) => {
@@ -190,14 +298,29 @@ async function handlePersonalizedRecommendations(
             }
         })
 
-        // Return response
+        // Return response with V2 metadata if interaction summary was used
         return NextResponse.json({
             success: true,
             recommendations,
             profile: {
                 topGenres: profile.topGenres.slice(0, 3),
                 preferredRating: profile.preferredRating,
+                // V2: Include interaction summary metadata
+                ...(interactionSummary && {
+                    v2Enabled: true,
+                    totalInteractions: interactionSummary.totalInteractions,
+                    summaryAge: Date.now() - interactionSummary.lastCalculated,
+                }),
             },
+            // Phase 2: Include feedback-based engagement metrics
+            ...(engagementMetrics && {
+                feedback: {
+                    enabled: true,
+                    metrics: engagementMetrics,
+                    excludedCount: feedbackSignals?.excludedContentIds.size || 0,
+                    boostedCount: feedbackSignals?.positiveSignals.size || 0,
+                },
+            }),
             totalCount: recommendations.length,
             generatedAt: Date.now(),
         })
@@ -306,9 +429,64 @@ async function handlePersonalizedRecommendationsGet(
         // Build recommendation profile
         const profile = buildRecommendationProfile(userDataForRec, genrePreferences)
 
-        // Get content IDs to exclude (now includes watchlist + collections + client-shown)
+        // Phase 2: Fetch recent feedback data for learning (same as POST handler)
+        let feedbackSignals: ReturnType<typeof processFeedback> | null = null
+
+        try {
+            const thirtyDaysAgo =
+                Date.now() - FEEDBACK_CONSTRAINTS.RECENT_WINDOW_DAYS * 24 * 60 * 60 * 1000
+
+            const feedbackSnapshot = await db
+                .collection('recommendation_feedback')
+                .where('userId', '==', userId)
+                .where('timestamp', '>=', thirtyDaysAgo)
+                .orderBy('timestamp', 'desc')
+                .limit(500)
+                .get()
+
+            if (!feedbackSnapshot.empty) {
+                const feedback: RecommendationFeedback[] = []
+                feedbackSnapshot.forEach((doc) => {
+                    feedback.push(doc.data() as RecommendationFeedback)
+                })
+
+                console.log(
+                    `[Phase 2 GET] Fetched ${feedback.length} feedback entries for user ${userId}`
+                )
+
+                // Build content genre map for signal processing
+                const contentGenreMap = new Map<string, number[]>()
+                const allContent = [
+                    ...likedMovies,
+                    ...watchlist,
+                    ...collectionItems,
+                    ...hiddenMovies,
+                ]
+                allContent.forEach((content) => {
+                    if (content.genre_ids && content.genre_ids.length > 0) {
+                        const key = `${content.id}-${content.media_type}`
+                        contentGenreMap.set(key, content.genre_ids)
+                    }
+                })
+
+                // Process feedback to extract signals
+                feedbackSignals = processFeedback(feedback, contentGenreMap)
+
+                console.log(
+                    `[Phase 2 GET] Processed feedback: ${feedbackSignals.excludedContentIds.size} excluded, ${feedbackSignals.positiveSignals.size} boosted`
+                )
+            }
+        } catch (error) {
+            console.warn('[Phase 2 GET] Failed to fetch feedback, continuing without it:', error)
+            // Continue without feedback - don't block pagination
+        }
+
+        // Get content IDs to exclude (now includes watchlist + collections + client-shown + feedback)
         const seenIds = getSeenContentIds(userDataForRec)
-        const excludeIds = [...new Set([...seenIds, ...clientExcludeIds])]
+        const feedbackExcludeIds = feedbackSignals
+            ? Array.from(feedbackSignals.excludedContentIds)
+            : []
+        const excludeIds = [...new Set([...seenIds, ...clientExcludeIds, ...feedbackExcludeIds])]
 
         // For page > 1, focus on genre-based recommendations (80% weight)
         const genreWeight = page === 1 ? 0.6 : 0.8
@@ -370,6 +548,14 @@ async function handlePersonalizedRecommendationsGet(
 
             // Merge genre-based with fallback content
             genreBased = [...genreBased, ...fallbackContent.slice(0, limit - genreBased.length)]
+        }
+
+        // Phase 2: Apply feedback signals to filter and boost recommendations
+        if (feedbackSignals) {
+            genreBased = applyFeedbackToRecommendations(genreBased, feedbackSignals)
+            console.log(
+                `[Phase 2 GET] Applied feedback: ${genreBased.length} recommendations after filtering/boosting`
+            )
         }
 
         // Return TMDB-compatible format for Row component

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Content } from '@/typings'
+import { Content, sanitizePosterPath } from '@/typings'
 import { UserList } from '@/types/collections'
 import {
     RankedItem,
@@ -13,6 +13,7 @@ import {
 import { useSessionStore } from '@/stores/sessionStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useGuestStore } from '@/stores/guestStore'
+import { useProfileStore } from '@/stores/profileStore'
 import { useToast } from '@/hooks/useToast'
 import { useRankingStore } from '@/stores/rankingStore'
 import { useSessionData } from '@/hooks/useSessionData'
@@ -206,6 +207,7 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
     const authCollections = useAuthStore((state) => state.userCreatedWatchlists)
     const guestCollections = useGuestStore((state) => state.userCreatedWatchlists)
     const { createRanking, updateRanking } = useRankingStore()
+    const profile = useProfileStore((state) => state.profile)
     const { showSuccess, showError } = useToast()
     const { hiddenMovies } = useSessionData()
 
@@ -286,7 +288,7 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                 id: movie.tmdbId,
                 title: movie.title,
                 release_date: movie.year ? `${movie.year}-01-01` : '',
-                poster_path: movie.posterPath,
+                poster_path: sanitizePosterPath(movie.posterPath),
                 vote_average: movie.rating,
                 media_type: data.mediaType === 'tv' ? 'tv' : 'movie',
                 overview: movie.reason || '',
@@ -448,7 +450,7 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                     id: movie.tmdbId,
                     title: movie.title,
                     release_date: movie.year ? `${movie.year}-01-01` : '',
-                    poster_path: movie.posterPath,
+                    poster_path: sanitizePosterPath(movie.posterPath),
                     vote_average: movie.rating,
                     media_type: data.mediaType === 'tv' ? 'tv' : 'movie',
                     overview: movie.reason || '',
@@ -546,7 +548,12 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                 const age = Date.now() - draft.savedAt
                 if (age < 7 * 24 * 60 * 60 * 1000) {
                     setLastSearchQuery(draft.query || '')
-                    setSelectedItems(draft.selectedItems || [])
+                    // Sanitize poster_path values in loaded draft data to fix any corrupted paths
+                    const sanitizedItems = (draft.selectedItems || []).map((item: Content) => ({
+                        ...item,
+                        poster_path: sanitizePosterPath(item.poster_path),
+                    }))
+                    setSelectedItems(sanitizedItems)
                     setItemNotes(draft.itemNotes || {})
                     setTitle(draft.title || '')
                     setDescription(draft.description || '')
@@ -622,8 +629,10 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
             return
         }
 
-        const username = currentUser.displayName || 'Unknown User'
-        const avatarUrl = currentUser.photoURL || undefined
+        // Get display name and optional username from profile
+        const displayName = profile?.displayName || currentUser.displayName || 'Unknown User'
+        const username = profile?.username // Optional username for profile URL
+        const avatarUrl = profile?.avatarUrl || currentUser.photoURL || undefined
 
         setIsLoading(true)
         try {
@@ -644,7 +653,13 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                 createRequest.description = description.trim()
             }
 
-            const rankingId = await createRanking(userId, username, avatarUrl, createRequest)
+            const rankingId = await createRanking(
+                userId,
+                displayName,
+                username,
+                avatarUrl,
+                createRequest
+            )
 
             if (rankingId) {
                 // Update with ranked items

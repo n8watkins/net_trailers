@@ -51,24 +51,16 @@ export default function UserRankingsPage() {
 
                 // Fallback to client-side lookup if API failed
                 if (profileDisplayName === 'User') {
-                    const [userDoc, profileDoc] = await Promise.all([
-                        getDoc(doc(db, 'users', userId)),
-                        getDoc(doc(db, 'profiles', userId)),
-                    ])
+                    try {
+                        const profileDoc = await getDoc(doc(db, 'profiles', userId))
 
-                    if (!userDoc.exists() && !profileDoc.exists()) {
-                        throw new Error('User not found')
+                        if (profileDoc.exists()) {
+                            const profileData = profileDoc.data()
+                            profileDisplayName = profileData?.displayName || 'User'
+                        }
+                    } catch (profileError) {
+                        console.warn('[UserRankings] Could not load profile, using default name')
                     }
-
-                    const userData = userDoc.exists() ? userDoc.data() : {}
-                    const profileData = profileDoc.exists() ? profileDoc.data() : {}
-                    const legacyProfile = userData?.profile || {}
-
-                    profileDisplayName =
-                        profileData?.displayName ||
-                        legacyProfile.displayName ||
-                        userData.displayName ||
-                        'User'
                 }
 
                 if (!isMounted) return

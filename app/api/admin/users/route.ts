@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
             totalCount: users.length,
         })
     } catch (error) {
-        console.error('Error fetching users:', error)
+        console.error('👑 ❌ Error fetching users:', error)
         return NextResponse.json(
             {
                 error: 'Failed to fetch users',

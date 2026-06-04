@@ -10,6 +10,8 @@ import {
     FilmIcon,
     TvIcon,
     TrashIcon,
+    PencilIcon,
+    PlusIcon,
 } from '@heroicons/react/24/outline'
 import { DeleteConfirmationModal } from './DeleteConfirmationModal'
 import { UserList } from '../../types/collections'
@@ -23,6 +25,8 @@ import { GenrePills } from '../collections/GenrePills'
 import { getUnifiedGenresByMediaType } from '../../constants/unifiedGenres'
 import { useChildSafety } from '../../hooks/useChildSafety'
 import { useSessionStore } from '../../stores/sessionStore'
+import { AdvancedFilters } from '../../types/collections'
+import { AdvancedFiltersModal } from './AdvancedFiltersModal'
 
 interface CollectionEditorModalProps {
     collection: UserList | null
@@ -63,21 +67,37 @@ export default function CollectionEditorModal({
     const [mediaType, setMediaType] = useState<'movie' | 'tv' | 'both'>('both')
     const [selectedGenres, setSelectedGenres] = useState<string[]>([])
     const [genreLogic, setGenreLogic] = useState<'AND' | 'OR'>('AND')
+    const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({})
 
     // UI state
     const [showIconPicker, setShowIconPicker] = useState(false)
     const [showColorPicker, setShowColorPicker] = useState(false)
     const [showInfiniteTooltip, setShowInfiniteTooltip] = useState(false)
     const [showGenreModal, setShowGenreModal] = useState(false)
+    const [showAdvancedFiltersModal, setShowAdvancedFiltersModal] = useState(false)
     const [showDeleteModal, setShowDeleteModal] = useState(false)
     const [searchFilter, setSearchFilter] = useState('')
     const [_isSaving, _setIsSaving] = useState(false)
     const [mounted, setMounted] = useState(false)
     const [highlightMediaType, setHighlightMediaType] = useState(false)
+    const [isEditingIdentity, setIsEditingIdentity] = useState(false)
 
     // Media type enabled states (independent toggles)
     const [isMovieEnabled, setIsMovieEnabled] = useState(true)
     const [isTVEnabled, setIsTVEnabled] = useState(true)
+
+    // Cast and director states
+    const [showActorInput, setShowActorInput] = useState(false)
+    const [showDirectorInput, setShowDirectorInput] = useState(false)
+    const [actorInput, setActorInput] = useState('')
+    const [directorInput, setDirectorInput] = useState('')
+    const [actorSearchResults, setActorSearchResults] = useState<any[]>([])
+    const [directorSearchResults, setDirectorSearchResults] = useState<any[]>([])
+    const [isSearchingActors, setIsSearchingActors] = useState(false)
+    const [isSearchingDirector, setIsSearchingDirector] = useState(false)
+    const [selectedActorIndex, setSelectedActorIndex] = useState(0)
+    const [selectedDirectorIndex, setSelectedDirectorIndex] = useState(0)
+    const [actorProfileImages, setActorProfileImages] = useState<Record<string, string | null>>({})
 
     // Content management
     const [content, setContent] = useState<Content[]>([])
@@ -86,6 +106,7 @@ export default function CollectionEditorModal({
     // Track mousedown location for click-outside detection
     const mouseDownTargetRef = React.useRef<EventTarget | null>(null)
     const genreModalMouseDownTargetRef = React.useRef<EventTarget | null>(null)
+    const identityContainerRef = React.useRef<HTMLDivElement | null>(null)
 
     // Mount the portal after client-side render
     useEffect(() => {
@@ -117,6 +138,7 @@ export default function CollectionEditorModal({
             setRemovedIds(new Set())
             setSearchFilter('')
             setHighlightMediaType(false)
+            setAdvancedFilters(collection.advancedFilters || {})
         }
     }, [collection, isOpen])
 
@@ -178,6 +200,23 @@ export default function CollectionEditorModal({
         return () => document.removeEventListener('keydown', handleKeyDown)
     }, [isOpen, showDeleteModal, showGenreModal, onClose])
 
+    // Handle click-outside for identity edit mode
+    useEffect(() => {
+        if (!isEditingIdentity) return
+
+        const handleClickOutside = (e: MouseEvent) => {
+            if (
+                identityContainerRef.current &&
+                !identityContainerRef.current.contains(e.target as Node)
+            ) {
+                setIsEditingIdentity(false)
+            }
+        }
+
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [isEditingIdentity])
+
     if (!isOpen || !collection) return null
 
     // Determine editing capabilities based on collection properties
@@ -206,6 +245,7 @@ export default function CollectionEditorModal({
         setRemovedIds(new Set())
         setSearchFilter('')
         setHighlightMediaType(false)
+        setAdvancedFilters({})
     }
 
     const handleClose = async (options?: { skipWaitForSave?: boolean }) => {
@@ -274,6 +314,7 @@ export default function CollectionEditorModal({
                     showOnPublicProfile,
                     genres: selectedGenres,
                     genreLogic,
+                    advancedFilters,
                 }
             } else {
                 // For user-created collections
@@ -288,6 +329,7 @@ export default function CollectionEditorModal({
                     genreLogic,
                     mediaType,
                     canGenerateMore: enableInfiniteContent && selectedGenres.length > 0,
+                    advancedFilters,
                 }
             }
 
@@ -384,10 +426,144 @@ export default function CollectionEditorModal({
 
     const selectedGenreNames = selectedGenres.map((id) => GENRE_LOOKUP.get(id) || `Genre ${id}`)
 
+    // Search for people
+    const searchPeople = async (query: string): Promise<any[]> => {
+        if (query.trim().length < 2) return []
+
+        try {
+            const response = await fetch(`/api/search/people?query=${encodeURIComponent(query)}`)
+            if (!response.ok) throw new Error('Search failed')
+            const data = await response.json()
+            return data.results || []
+        } catch (error) {
+            console.error('Person search error:', error)
+            return []
+        }
+    }
+
+    const handleActorInputChange = async (value: string) => {
+        setActorInput(value)
+
+        if (value.trim().length >= 2) {
+            setIsSearchingActors(true)
+            const results = await searchPeople(value.trim())
+            setActorSearchResults(results.filter((p) => p.known_for_department === 'Acting'))
+            setSelectedActorIndex(0)
+            setIsSearchingActors(false)
+        } else {
+            setActorSearchResults([])
+            setSelectedActorIndex(0)
+        }
+    }
+
+    const handleDirectorInputChange = async (value: string) => {
+        setDirectorInput(value)
+
+        if (value.trim().length >= 2) {
+            setIsSearchingDirector(true)
+            const results = await searchPeople(value.trim())
+            setDirectorSearchResults(results.filter((p) => p.known_for_department === 'Directing'))
+            setSelectedDirectorIndex(0)
+            setIsSearchingDirector(false)
+        } else {
+            setDirectorSearchResults([])
+            setSelectedDirectorIndex(0)
+        }
+    }
+
+    const handleActorKeyDown = (e: React.KeyboardEvent) => {
+        if (actorSearchResults.length === 0) return
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault()
+            setSelectedActorIndex((prev) => Math.min(prev + 1, actorSearchResults.length - 1))
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault()
+            setSelectedActorIndex((prev) => Math.max(prev - 1, 0))
+        } else if (e.key === 'Enter') {
+            e.preventDefault()
+            if (actorSearchResults[selectedActorIndex]) {
+                addActor(actorSearchResults[selectedActorIndex])
+            }
+        }
+    }
+
+    const handleDirectorKeyDown = (e: React.KeyboardEvent) => {
+        if (directorSearchResults.length === 0) return
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault()
+            setSelectedDirectorIndex((prev) => Math.min(prev + 1, directorSearchResults.length - 1))
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault()
+            setSelectedDirectorIndex((prev) => Math.max(prev - 1, 0))
+        } else if (e.key === 'Enter') {
+            e.preventDefault()
+            if (directorSearchResults[selectedDirectorIndex]) {
+                setDirector(directorSearchResults[selectedDirectorIndex])
+            }
+        }
+    }
+
+    const addActor = (actor: any) => {
+        const currentActors = advancedFilters.withCast || []
+        const currentActorIds = advancedFilters.withCastIds || []
+        if (!currentActors.includes(actor.name)) {
+            setAdvancedFilters({
+                ...advancedFilters,
+                withCast: [...currentActors, actor.name],
+                withCastIds: [...currentActorIds, actor.id], // Store TMDB person ID
+            })
+            // Store the profile image for this actor
+            setActorProfileImages((prev) => ({
+                ...prev,
+                [actor.name]: actor.profile_path,
+            }))
+        }
+        setActorInput('')
+        setActorSearchResults([])
+        setShowActorInput(false)
+        setSelectedActorIndex(0)
+    }
+
+    const removeActor = (actorName: string) => {
+        const currentActors = advancedFilters.withCast || []
+        const currentActorIds = advancedFilters.withCastIds || []
+        const actorIndex = currentActors.indexOf(actorName)
+
+        setAdvancedFilters({
+            ...advancedFilters,
+            withCast: currentActors.filter((name) => name !== actorName),
+            withCastIds: currentActorIds.filter((_, index) => index !== actorIndex), // Remove corresponding ID
+        })
+    }
+
+    const setDirector = (director: any) => {
+        setAdvancedFilters({
+            ...advancedFilters,
+            withDirector: director.name,
+            withDirectorId: director.id, // Store TMDB person ID
+        })
+        setDirectorInput('')
+        setDirectorSearchResults([])
+        setShowDirectorInput(false)
+    }
+
+    const removeDirector = () => {
+        setAdvancedFilters({
+            ...advancedFilters,
+            withDirector: undefined,
+            withDirectorId: undefined, // Clear director ID
+        })
+    }
+
     const modalContent = (
         <div className="fixed inset-0 z-modal-editor overflow-y-auto">
-            {/* Backdrop */}
-            <div className="fixed inset-0 z-modal-editor-bg bg-black/80 backdrop-blur-sm pointer-events-none" />
+            {/* Atmospheric backdrop */}
+            <div className="fixed inset-0 pointer-events-none z-modal-editor-bg">
+                <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-purple-900/20 via-transparent to-transparent opacity-50" />
+            </div>
 
             {/* Modal */}
             <div
@@ -405,52 +581,151 @@ export default function CollectionEditorModal({
                 }}
             >
                 <div
-                    className={`relative z-modal-editor bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-lg shadow-2xl w-full border border-gray-700 ${
-                        isSystemCollection ? 'max-w-xl' : 'max-w-6xl'
+                    className={`relative z-modal-editor bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-2xl shadow-2xl w-full border border-gray-700 ${
+                        isSystemCollection ? 'max-w-2xl' : 'max-w-7xl'
                     }`}
                     onClick={(e) => e.stopPropagation()}
                 >
-                    {/* Header */}
-                    <div className="flex items-center justify-between p-6 border-b border-gray-700">
-                        <div>
-                            <h2 className="text-2xl font-bold text-white">Edit Collection</h2>
-                        </div>
+                    {/* Header with Collection Identity */}
+                    <div className="p-6 border-b border-zinc-800/50">
+                        <div className="flex items-start justify-between">
+                            {/* Collection Identity Section */}
+                            {!canOnlyToggle ? (
+                                <div
+                                    ref={identityContainerRef}
+                                    className="flex-1 p-4 rounded-xl border-2 transition-all duration-200 min-h-[100px] flex items-center"
+                                    style={{
+                                        backgroundColor: `${color}15`,
+                                        borderColor: `${color}80`,
+                                    }}
+                                >
+                                    {!isEditingIdentity ? (
+                                        /* Display Mode */
+                                        <div className="flex items-center gap-4 w-full">
+                                            {/* Emoji Display */}
+                                            <div className="text-5xl">{emoji}</div>
+                                            {/* Collection Name Display */}
+                                            <h3 className="text-2xl font-bold text-white">
+                                                {name || 'Untitled Collection'}
+                                            </h3>
+                                            {/* Edit Button (Pencil Icon) */}
+                                            <button
+                                                onClick={() => setIsEditingIdentity(true)}
+                                                className="p-2 bg-zinc-800/60 hover:bg-zinc-700/80 text-white rounded-lg transition-all duration-200 border border-zinc-700/50 hover:border-zinc-600"
+                                                title="Edit collection identity"
+                                            >
+                                                <PencilIcon className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        /* Edit Mode - Inside the same colored container */
+                                        <div className="flex items-center space-x-3 w-full">
+                                            {/* Icon Picker */}
+                                            <div className="relative flex-shrink-0">
+                                                <button
+                                                    onClick={() => setShowIconPicker(true)}
+                                                    className="w-14 h-14 bg-gray-800 border border-gray-600 rounded-lg flex items-center justify-center text-3xl transition-all duration-200 hover:bg-gray-700 hover:border-gray-500"
+                                                    title="Choose an icon"
+                                                >
+                                                    {emoji}
+                                                </button>
 
-                        <div className="flex items-center gap-3">
+                                                <IconPickerModal
+                                                    isOpen={showIconPicker}
+                                                    selectedIcon={emoji}
+                                                    onSelectIcon={(selectedEmoji) => {
+                                                        setEmoji(selectedEmoji)
+                                                        setShowIconPicker(false)
+                                                    }}
+                                                    onClose={() => setShowIconPicker(false)}
+                                                />
+                                            </div>
+
+                                            {/* Color Picker - Available for user collections and editable system collections */}
+                                            {(canEditFull || canEditLimited) && (
+                                                <div className="relative flex-shrink-0">
+                                                    <button
+                                                        onClick={() => setShowColorPicker(true)}
+                                                        className="w-14 h-14 bg-gray-800 border-2 border-gray-700 rounded-lg transition-all duration-200 hover:bg-gray-700 hover:border-gray-600 p-2 flex items-center justify-center"
+                                                        title="Choose a color"
+                                                    >
+                                                        <div
+                                                            className="w-full h-full rounded-md"
+                                                            style={{ backgroundColor: color }}
+                                                        />
+                                                    </button>
+
+                                                    <ColorPickerModal
+                                                        isOpen={showColorPicker}
+                                                        selectedColor={color}
+                                                        onSelectColor={(selectedColor) => {
+                                                            setColor(selectedColor)
+                                                            setShowColorPicker(false)
+                                                        }}
+                                                        onClose={() => setShowColorPicker(false)}
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {/* Name Input */}
+                                            <div className="flex-1">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Collection name"
+                                                    value={name}
+                                                    onChange={(e) => setName(e.target.value)}
+                                                    disabled={canOnlyToggle}
+                                                    className={`w-full max-w-md h-14 px-4 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                                        canOnlyToggle
+                                                            ? 'opacity-50 cursor-not-allowed'
+                                                            : ''
+                                                    }`}
+                                                />
+                                            </div>
+
+                                            {/* Done Button */}
+                                            <button
+                                                onClick={() => setIsEditingIdentity(false)}
+                                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 text-sm font-medium"
+                                            >
+                                                Done
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                /* System collection header */
+                                <div>
+                                    <h2 className="text-xl font-bold text-white">
+                                        {collection?.name}
+                                    </h2>
+                                    <p className="text-gray-300 text-sm mt-1">
+                                        System collection with limited customization
+                                    </p>
+                                </div>
+                            )}
+
                             {/* Delete button - show for user collections and deletable system collections */}
                             {(canEditFull ||
                                 (isSystemCollection && collection.canDelete === true)) && (
                                 <button
                                     onClick={() => setShowDeleteModal(true)}
-                                    className="px-3 py-2 bg-red-600/20 border border-red-600 text-red-400 rounded-lg font-medium transition-all duration-200 hover:bg-red-600/30 hover:text-red-300 flex items-center gap-2"
+                                    className="ml-4 px-3 py-2 bg-red-600/20 border border-red-600 text-red-400 rounded-lg font-medium transition-all duration-200 hover:bg-red-600/30 hover:text-red-300 flex items-center gap-2"
                                     title="Delete collection"
                                 >
                                     <TrashIcon className="w-5 h-5" />
-                                    <span className="hidden sm:inline">Delete</span>
+                                    <span className="hidden sm:inline">Delete Collection</span>
                                 </button>
                             )}
-
-                            {/* Close button */}
-                            <button
-                                type="button"
-                                onClick={() => handleClose()}
-                                className="text-gray-400 hover:text-white transition-colors"
-                            >
-                                <XMarkIcon className="w-6 h-6" />
-                            </button>
                         </div>
                     </div>
 
                     {/* Content */}
-                    <div className="p-6 max-h-[calc(90vh-200px)] overflow-y-auto">
+                    <div className="p-6 max-h-[calc(90vh-200px)] overflow-y-auto modal-scrollbar">
                         <div className="space-y-6">
                             {/* For non-editable system collections, show minimal UI */}
                             {canOnlyToggle && (
                                 <div className="text-center py-8">
-                                    <p className="text-gray-300 mb-6">
-                                        This is a core system collection with limited customization
-                                        options.
-                                    </p>
                                     <div className="inline-flex flex-col items-center gap-4 p-6 bg-gray-800/50 rounded-lg border border-gray-700">
                                         <div className="flex items-center justify-between gap-3 sm:gap-4 md:gap-6 lg:gap-8">
                                             <label className="text-sm font-medium text-white flex items-center gap-2">
@@ -485,74 +760,8 @@ export default function CollectionEditorModal({
                             {/* For editable collections, show full or limited UI */}
                             {!canOnlyToggle && (
                                 <>
-                                    {/* Name, Icon, Color Section - Left Aligned */}
-                                    <div className="flex items-center space-x-3">
-                                        {/* Icon Picker */}
-                                        <div className="relative flex-shrink-0">
-                                            <button
-                                                onClick={() => setShowIconPicker(true)}
-                                                className="w-14 h-14 bg-gray-800 border border-gray-600 rounded-lg flex items-center justify-center text-3xl transition-all duration-200 hover:bg-gray-700 hover:border-gray-500"
-                                                title="Choose an icon"
-                                            >
-                                                {emoji}
-                                            </button>
-
-                                            <IconPickerModal
-                                                isOpen={showIconPicker}
-                                                selectedIcon={emoji}
-                                                onSelectIcon={(selectedEmoji) => {
-                                                    setEmoji(selectedEmoji)
-                                                    setShowIconPicker(false)
-                                                }}
-                                                onClose={() => setShowIconPicker(false)}
-                                            />
-                                        </div>
-
-                                        {/* Color Picker - Available for user collections and editable system collections */}
-                                        {(canEditFull || canEditLimited) && (
-                                            <div className="relative flex-shrink-0">
-                                                <button
-                                                    onClick={() => setShowColorPicker(true)}
-                                                    className="w-14 h-14 bg-gray-800 border-2 border-gray-700 rounded-lg transition-all duration-200 hover:bg-gray-700 hover:border-gray-600 p-2 flex items-center justify-center"
-                                                    title="Choose a color"
-                                                >
-                                                    <div
-                                                        className="w-full h-full rounded-md"
-                                                        style={{ backgroundColor: color }}
-                                                    />
-                                                </button>
-
-                                                <ColorPickerModal
-                                                    isOpen={showColorPicker}
-                                                    selectedColor={color}
-                                                    onSelectColor={(selectedColor) => {
-                                                        setColor(selectedColor)
-                                                        setShowColorPicker(false)
-                                                    }}
-                                                    onClose={() => setShowColorPicker(false)}
-                                                />
-                                            </div>
-                                        )}
-
-                                        {/* Name Input */}
-                                        <div className="flex-1">
-                                            <input
-                                                type="text"
-                                                placeholder="Collection name"
-                                                value={name}
-                                                onChange={(e) => setName(e.target.value)}
-                                                disabled={canOnlyToggle}
-                                                className={`w-full max-w-md h-14 px-4 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                                    canOnlyToggle
-                                                        ? 'opacity-50 cursor-not-allowed'
-                                                        : ''
-                                                }`}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Toggle Settings Row - Display on Page, Show on Public Profile, and Infinite Content */}
-                                    <div className="grid grid-cols-3 gap-3">
+                                    {/* Toggle Settings - Single Column Layout */}
+                                    <div className="space-y-3">
                                         {/* Display on Page Toggle */}
                                         <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
                                             <div className="flex items-center justify-between">
@@ -678,7 +887,7 @@ export default function CollectionEditorModal({
                                         </div>
                                     </div>
 
-                                    {/* Media Type and Genres - Side by side */}
+                                    {/* Media Type and Genres - Two Column */}
                                     <div className="grid grid-cols-2 gap-3">
                                         {/* Media Type Selection */}
                                         <div
@@ -688,8 +897,8 @@ export default function CollectionEditorModal({
                                                     : 'border-gray-700'
                                             }`}
                                         >
-                                            <div className="space-y-3">
-                                                <p className="text-sm font-medium text-white">
+                                            <div className="space-y-4">
+                                                <p className="text-lg font-bold text-white">
                                                     Media Type
                                                 </p>
                                                 <div className="space-y-2">
@@ -756,17 +965,18 @@ export default function CollectionEditorModal({
 
                                         {/* Genres */}
                                         <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
-                                            <div className="space-y-3">
-                                                <div className="flex items-center justify-between">
-                                                    <p className="text-sm font-medium text-white">
+                                            <div className="space-y-4">
+                                                <div className="flex items-start justify-between">
+                                                    <p className="text-lg font-bold text-white">
                                                         Genres
                                                     </p>
                                                     {!canOnlyToggle && (
                                                         <button
                                                             type="button"
                                                             onClick={() => setShowGenreModal(true)}
-                                                            className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors whitespace-nowrap"
+                                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 text-sm font-medium flex-shrink-0"
                                                         >
+                                                            <PencilIcon className="w-3.5 h-3.5" />
                                                             Edit
                                                         </button>
                                                     )}
@@ -805,6 +1015,323 @@ export default function CollectionEditorModal({
                                             </div>
                                         </div>
                                     </div>
+
+                                    {/* Cast & Director and Advanced Filters - Two Column */}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {/* Cast & Director Section */}
+                                        <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
+                                            <h3 className="text-base font-semibold text-white mb-3">
+                                                Cast & Director
+                                            </h3>
+
+                                            {/* Actors Section */}
+                                            <div className="mb-4">
+                                                <label className="block text-sm font-medium text-gray-200 mb-2">
+                                                    Actors
+                                                </label>
+
+                                                {/* Actor Pills */}
+                                                {advancedFilters.withCast &&
+                                                    advancedFilters.withCast.length > 0 && (
+                                                        <div className="flex flex-wrap gap-2 mb-2">
+                                                            {advancedFilters.withCast.map(
+                                                                (actorName) => (
+                                                                    <div
+                                                                        key={actorName}
+                                                                        className="group relative flex items-center gap-2 pl-1.5 pr-4 py-1.5 rounded-full text-sm font-medium bg-blue-600 text-white"
+                                                                    >
+                                                                        {/* Actor Profile Image */}
+                                                                        <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-700 flex-shrink-0">
+                                                                            {actorProfileImages[
+                                                                                actorName
+                                                                            ] ? (
+                                                                                <Image
+                                                                                    src={`https://image.tmdb.org/t/p/w185${actorProfileImages[actorName]}`}
+                                                                                    alt={actorName}
+                                                                                    width={32}
+                                                                                    height={32}
+                                                                                    className="object-cover"
+                                                                                />
+                                                                            ) : (
+                                                                                <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                                                                                    ?
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                        {actorName}
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                removeActor(
+                                                                                    actorName
+                                                                                )
+                                                                            }
+                                                                            className="absolute -top-1 -right-1 w-5 h-5 bg-white hover:bg-gray-200 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                                                                            title="Remove actor"
+                                                                        >
+                                                                            <XMarkIcon className="w-3 h-3 text-slate-600" />
+                                                                        </button>
+                                                                    </div>
+                                                                )
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                {/* Add Actor Button / Input */}
+                                                {!showActorInput ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowActorInput(true)}
+                                                        className="flex items-center gap-2 px-3 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-xs hover:bg-gray-600 transition-colors"
+                                                    >
+                                                        <PlusIcon className="w-3.5 h-3.5" />
+                                                        Add Actor
+                                                    </button>
+                                                ) : (
+                                                    <div className="relative">
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Search for an actor..."
+                                                            value={actorInput}
+                                                            onChange={(e) =>
+                                                                handleActorInputChange(
+                                                                    e.target.value
+                                                                )
+                                                            }
+                                                            onKeyDown={handleActorKeyDown}
+                                                            autoFocus
+                                                            className="w-full px-3 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                        />
+
+                                                        {/* Actor Search Results */}
+                                                        {actorSearchResults.length > 0 && (
+                                                            <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden max-h-48">
+                                                                {actorSearchResults
+                                                                    .slice(0, 5)
+                                                                    .map((person, index) => (
+                                                                        <button
+                                                                            key={person.id}
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                addActor(person)
+                                                                            }
+                                                                            className={`w-full flex items-center gap-2 p-2 transition-colors text-left ${
+                                                                                index ===
+                                                                                selectedActorIndex
+                                                                                    ? 'bg-blue-600/30'
+                                                                                    : 'hover:bg-gray-700'
+                                                                            }`}
+                                                                        >
+                                                                            <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-700 flex-shrink-0">
+                                                                                {person.profile_path ? (
+                                                                                    <Image
+                                                                                        src={`https://image.tmdb.org/t/p/w185${person.profile_path}`}
+                                                                                        alt={
+                                                                                            person.name
+                                                                                        }
+                                                                                        width={32}
+                                                                                        height={32}
+                                                                                        className="object-cover"
+                                                                                    />
+                                                                                ) : (
+                                                                                    <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs">
+                                                                                        ?
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <p className="text-white text-sm font-medium truncate">
+                                                                                    {person.name}
+                                                                                </p>
+                                                                            </div>
+                                                                        </button>
+                                                                    ))}
+                                                            </div>
+                                                        )}
+
+                                                        {isSearchingActors && (
+                                                            <div className="absolute right-3 top-2">
+                                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Director Section */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-200 mb-2">
+                                                    Director
+                                                </label>
+
+                                                {/* Director Pill */}
+                                                {advancedFilters.withDirector && (
+                                                    <div className="flex flex-wrap gap-2 mb-2">
+                                                        <div className="group relative px-3 py-1.5 rounded-full text-xs font-medium bg-purple-600 text-white">
+                                                            {advancedFilters.withDirector}
+                                                            <button
+                                                                type="button"
+                                                                onClick={removeDirector}
+                                                                className="absolute -top-1 -right-1 w-4 h-4 bg-white hover:bg-gray-200 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                                                                title="Remove director"
+                                                            >
+                                                                <XMarkIcon className="w-2.5 h-2.5 text-slate-600" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Add Director Button / Input */}
+                                                {!advancedFilters.withDirector &&
+                                                    (!showDirectorInput ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setShowDirectorInput(true)
+                                                            }
+                                                            className="flex items-center gap-2 px-3 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-xs hover:bg-gray-600 transition-colors"
+                                                        >
+                                                            <PlusIcon className="w-3.5 h-3.5" />
+                                                            Add Director
+                                                        </button>
+                                                    ) : (
+                                                        <div className="relative">
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Search for a director..."
+                                                                value={directorInput}
+                                                                onChange={(e) =>
+                                                                    handleDirectorInputChange(
+                                                                        e.target.value
+                                                                    )
+                                                                }
+                                                                onKeyDown={handleDirectorKeyDown}
+                                                                autoFocus
+                                                                className="w-full px-3 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                            />
+
+                                                            {/* Director Search Results */}
+                                                            {directorSearchResults.length > 0 && (
+                                                                <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden max-h-48">
+                                                                    {directorSearchResults
+                                                                        .slice(0, 5)
+                                                                        .map((person, index) => (
+                                                                            <button
+                                                                                key={person.id}
+                                                                                type="button"
+                                                                                onClick={() =>
+                                                                                    setDirector(
+                                                                                        person
+                                                                                    )
+                                                                                }
+                                                                                className={`w-full flex items-center gap-2 p-2 transition-colors text-left ${
+                                                                                    index ===
+                                                                                    selectedDirectorIndex
+                                                                                        ? 'bg-blue-600/30'
+                                                                                        : 'hover:bg-gray-700'
+                                                                                }`}
+                                                                            >
+                                                                                <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-700 flex-shrink-0">
+                                                                                    {person.profile_path ? (
+                                                                                        <Image
+                                                                                            src={`https://image.tmdb.org/t/p/w185${person.profile_path}`}
+                                                                                            alt={
+                                                                                                person.name
+                                                                                            }
+                                                                                            width={
+                                                                                                32
+                                                                                            }
+                                                                                            height={
+                                                                                                32
+                                                                                            }
+                                                                                            className="object-cover"
+                                                                                        />
+                                                                                    ) : (
+                                                                                        <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs">
+                                                                                            ?
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                                <div className="flex-1 min-w-0">
+                                                                                    <p className="text-white text-sm font-medium truncate">
+                                                                                        {
+                                                                                            person.name
+                                                                                        }
+                                                                                    </p>
+                                                                                </div>
+                                                                            </button>
+                                                                        ))}
+                                                                </div>
+                                                            )}
+
+                                                            {isSearchingDirector && (
+                                                                <div className="absolute right-3 top-2">
+                                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Advanced Filters Section */}
+                                        <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
+                                            <div className="flex items-center justify-between mb-6">
+                                                <div>
+                                                    <h3 className="text-base font-semibold text-white">
+                                                        Advanced Filters
+                                                    </h3>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setShowAdvancedFiltersModal(true)
+                                                    }
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 text-sm font-medium flex-shrink-0"
+                                                >
+                                                    <PencilIcon className="w-3.5 h-3.5" />
+                                                    Edit
+                                                </button>
+                                            </div>
+
+                                            {/* Preview of advanced filters */}
+                                            <div className="space-y-2 text-xs text-gray-300">
+                                                {advancedFilters.yearMin ||
+                                                advancedFilters.yearMax ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-gray-400">Year:</span>
+                                                        <span className="px-2 py-1 bg-gray-700 rounded">
+                                                            {advancedFilters.yearMin || '1900'} -{' '}
+                                                            {advancedFilters.yearMax ||
+                                                                new Date().getFullYear()}
+                                                        </span>
+                                                    </div>
+                                                ) : null}
+
+                                                {advancedFilters.ratingMin !== undefined ||
+                                                advancedFilters.ratingMax !== undefined ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-gray-400">
+                                                            Rating:
+                                                        </span>
+                                                        <span className="px-2 py-1 bg-gray-700 rounded">
+                                                            {advancedFilters.ratingMin ?? 0}/10 -{' '}
+                                                            {advancedFilters.ratingMax ?? 10}/10
+                                                        </span>
+                                                    </div>
+                                                ) : null}
+
+                                                {!advancedFilters.yearMin &&
+                                                    !advancedFilters.yearMax &&
+                                                    advancedFilters.ratingMin === undefined &&
+                                                    advancedFilters.ratingMax === undefined && (
+                                                        <p className="text-gray-500 italic">
+                                                            No advanced filters applied
+                                                        </p>
+                                                    )}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </>
                             )}
 
@@ -824,39 +1351,44 @@ export default function CollectionEditorModal({
 
                                     {/* Content Grid */}
                                     <div>
-                                        <h3 className="text-lg font-semibold text-white mb-4">
-                                            Collection Content ({visibleContent.length} titles
-                                            {removedIds.size > 0 && (
-                                                <span className="text-gray-500 ml-2">
-                                                    · {removedIds.size} removed
-                                                </span>
-                                            )}
-                                            )
-                                        </h3>
+                                        {visibleContent.length > 0 && (
+                                            <>
+                                                <h3 className="text-lg font-semibold text-white mb-4">
+                                                    Collection Content ({visibleContent.length}{' '}
+                                                    titles
+                                                    {removedIds.size > 0 && (
+                                                        <span className="text-gray-500 ml-2">
+                                                            · {removedIds.size} removed
+                                                        </span>
+                                                    )}
+                                                    )
+                                                </h3>
 
-                                        {/* Search Filter - Below heading */}
-                                        <div className="mb-4">
-                                            <div className="relative w-96">
-                                                <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                                                <input
-                                                    type="text"
-                                                    placeholder="Filter titles..."
-                                                    value={searchFilter}
-                                                    onChange={(e) =>
-                                                        setSearchFilter(e.target.value)
-                                                    }
-                                                    className="w-full h-12 pl-12 pr-4 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                />
-                                                {searchFilter && (
-                                                    <button
-                                                        onClick={() => setSearchFilter('')}
-                                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-                                                    >
-                                                        <XMarkIcon className="h-5 w-5" />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
+                                                {/* Search Filter - Below heading */}
+                                                <div className="mb-4">
+                                                    <div className="relative w-96">
+                                                        <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Filter titles..."
+                                                            value={searchFilter}
+                                                            onChange={(e) =>
+                                                                setSearchFilter(e.target.value)
+                                                            }
+                                                            className="w-full h-12 pl-12 pr-4 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                        />
+                                                        {searchFilter && (
+                                                            <button
+                                                                onClick={() => setSearchFilter('')}
+                                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                                                            >
+                                                                <XMarkIcon className="h-5 w-5" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
 
                                         {visibleContent.length === 0 ? (
                                             <div className="text-center py-8 text-gray-400">
@@ -935,8 +1467,11 @@ export default function CollectionEditorModal({
     // Genre Modal
     const genreModal = showGenreModal && (
         <div className="fixed inset-0 z-modal-editor-inner overflow-y-auto">
-            {/* Backdrop */}
-            <div className="fixed inset-0 z-modal-editor bg-black/80 backdrop-blur-sm pointer-events-none" />
+            {/* Atmospheric backdrop */}
+            <div className="fixed inset-0 pointer-events-none z-modal-editor">
+                <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-purple-900/20 via-transparent to-transparent opacity-50" />
+            </div>
 
             {/* Modal */}
             <div
@@ -957,11 +1492,11 @@ export default function CollectionEditorModal({
                 }}
             >
                 <div
-                    className="relative z-modal-editor-inner bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-lg shadow-2xl max-w-4xl w-full border border-gray-700"
+                    className="relative z-modal-editor-inner bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-2xl shadow-2xl max-w-4xl w-full border border-gray-700"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
-                    <div className="flex items-center justify-between p-6 border-b border-gray-700">
+                    <div className="flex items-center justify-between p-6 border-b border-zinc-800/50">
                         <div>
                             <h3 className="text-xl font-bold text-white">Edit Genre Collections</h3>
                         </div>
@@ -974,7 +1509,7 @@ export default function CollectionEditorModal({
                     </div>
 
                     {/* Content */}
-                    <div className="p-6 max-h-[calc(90vh-200px)] overflow-y-auto">
+                    <div className="p-6 max-h-[calc(90vh-200px)] overflow-y-auto modal-scrollbar">
                         {/* Genre Pills */}
                         <div>
                             <div className="mb-3">
@@ -1026,6 +1561,13 @@ export default function CollectionEditorModal({
         <>
             {createPortal(modalContent, document.body)}
             {showGenreModal && createPortal(genreModal, document.body)}
+            {/* Advanced Filters Modal */}
+            <AdvancedFiltersModal
+                isOpen={showAdvancedFiltersModal}
+                filters={advancedFilters}
+                onChange={setAdvancedFilters}
+                onClose={() => setShowAdvancedFiltersModal(false)}
+            />
             {/* Delete Confirmation Modal - uses its own portal */}
             <DeleteConfirmationModal
                 isOpen={showDeleteModal}

@@ -3,13 +3,10 @@ import {
     PasswordResetEmail,
     EmailVerificationEmail,
     EmailChangeEmail,
-    CollectionUpdateEmail,
-    NewReleaseEmail,
-    RankingCommentEmail,
-    RankingLikeEmail,
-    CollectionShareEmail,
-    WeeklyDigestEmail,
     TrendingContentEmail,
+    SocialDigestEmail,
+    AnnouncementEmail,
+    CustomEmail,
 } from './templates'
 import { Content } from '../../typings'
 
@@ -103,181 +100,33 @@ export class EmailService {
     }
 
     /**
-     * Send collection update notification
+     * Send daily social digest (batched comments and likes)
      */
-    static async sendCollectionUpdate(params: {
-        to: string
-        userName?: string
-        collectionName: string
-        collectionId: string
-        newItems: Content[]
-        totalNewItems: number
-    }) {
-        if (!this.isAvailable()) return null
-        return await resend!.emails.send({
-            from: `${APP_NAME} <${SENDER_EMAIL}>`,
-            to: params.to,
-            subject: `New Content in "${params.collectionName}" - Net Trailers`,
-            react: CollectionUpdateEmail({
-                userName: params.userName,
-                collectionName: params.collectionName,
-                collectionId: params.collectionId,
-                newItems: params.newItems,
-                totalNewItems: params.totalNewItems,
-            }),
-        })
-    }
-
-    /**
-     * Send new release notification
-     */
-    static async sendNewRelease(params: { to: string; userName?: string; releases: Content[] }) {
-        if (!this.isAvailable()) return null
-        return await resend!.emails.send({
-            from: `${APP_NAME} <${SENDER_EMAIL}>`,
-            to: params.to,
-            subject: `${params.releases.length} New ${params.releases.length === 1 ? 'Release' : 'Releases'} from Your Watchlist - Net Trailers`,
-            react: NewReleaseEmail({
-                userName: params.userName,
-                releases: params.releases,
-            }),
-        })
-    }
-
-    /**
-     * Send ranking comment notification
-     */
-    static async sendRankingComment(params: {
-        to: string
-        userName?: string
-        rankingTitle: string
-        rankingId: string
-        commenterName: string
-        commentText: string
-        commentId: string
-        isReply?: boolean
-        parentCommentText?: string
-    }) {
-        if (!this.isAvailable()) return null
-        return await resend!.emails.send({
-            from: `${APP_NAME} <${SENDER_EMAIL}>`,
-            to: params.to,
-            subject: params.isReply
-                ? `${params.commenterName} replied to your comment - Net Trailers`
-                : `${params.commenterName} commented on your ranking - Net Trailers`,
-            react: RankingCommentEmail({
-                userName: params.userName,
-                rankingTitle: params.rankingTitle,
-                rankingId: params.rankingId,
-                commenterName: params.commenterName,
-                commentText: params.commentText,
-                commentId: params.commentId,
-                isReply: params.isReply,
-                parentCommentText: params.parentCommentText,
-            }),
-        })
-    }
-
-    /**
-     * Send ranking like notification (batched)
-     */
-    static async sendRankingLike(params: {
-        to: string
-        userName?: string
-        rankingTitle: string
-        rankingId: string
-        likerNames: string[]
-        totalLikes: number
-    }) {
-        if (!this.isAvailable()) return null
-        return await resend!.emails.send({
-            from: `${APP_NAME} <${SENDER_EMAIL}>`,
-            to: params.to,
-            subject: `Your ranking "${params.rankingTitle}" got ${params.likerNames.length} new ${params.likerNames.length === 1 ? 'like' : 'likes'} - Net Trailers`,
-            react: RankingLikeEmail({
-                userName: params.userName,
-                rankingTitle: params.rankingTitle,
-                rankingId: params.rankingId,
-                likerNames: params.likerNames,
-                totalLikes: params.totalLikes,
-            }),
-        })
-    }
-
-    /**
-     * Send collection share notification
-     */
-    static async sendCollectionShare(params: {
-        to: string
-        senderName: string
-        collectionName: string
-        collectionDescription?: string
-        shareUrl: string
-        previewItems: Content[]
-        totalItems: number
-    }) {
-        if (!this.isAvailable()) return null
-        return await resend!.emails.send({
-            from: `${APP_NAME} <${SENDER_EMAIL}>`,
-            to: params.to,
-            subject: `${params.senderName} shared a collection with you - Net Trailers`,
-            react: CollectionShareEmail({
-                recipientEmail: params.to,
-                senderName: params.senderName,
-                collectionName: params.collectionName,
-                collectionDescription: params.collectionDescription,
-                shareUrl: params.shareUrl,
-                previewItems: params.previewItems,
-                totalItems: params.totalItems,
-            }),
-        })
-    }
-
-    /**
-     * Send weekly digest
-     */
-    static async sendWeeklyDigest(params: {
+    static async sendSocialDigest(params: {
         to: string
         userName: string
-        weekStart: string
-        weekEnd: string
-        stats: {
-            watchlistCount: number
-            collectionsCount: number
-            newRankings: number
-            totalInteractions: number
-        }
-        trendingContent: {
-            movies: Content[]
-            tvShows: Content[]
-        }
-        recommendations: Content[]
-        collectionUpdates: Array<{
-            name: string
-            id: string
-            newItemsCount: number
+        interactions: Array<{
+            type: 'comment' | 'like'
+            rankingId: string
+            rankingTitle: string
+            commenterName?: string
+            commentText?: string
+            commentId?: string
+            isReply?: boolean
+            parentCommentText?: string
+            likerNames?: string[]
         }>
-        communityHighlights: Array<{
-            type: 'ranking' | 'thread'
-            title: string
-            author: string
-            engagement: number
-        }>
+        unsubscribeToken?: string
     }) {
         if (!this.isAvailable()) return null
         return await resend!.emails.send({
             from: `${APP_NAME} <${SENDER_EMAIL}>`,
             to: params.to,
-            subject: `Your Week in Review: ${params.weekStart} - ${params.weekEnd} - Net Trailers`,
-            react: WeeklyDigestEmail({
+            subject: 'Your Rankings Got Some Action! - Net Trailers',
+            react: SocialDigestEmail({
                 userName: params.userName,
-                weekStart: params.weekStart,
-                weekEnd: params.weekEnd,
-                stats: params.stats,
-                trendingContent: params.trendingContent,
-                recommendations: params.recommendations,
-                collectionUpdates: params.collectionUpdates,
-                communityHighlights: params.communityHighlights,
+                interactions: params.interactions,
+                unsubscribeToken: params.unsubscribeToken,
             }),
         })
     }
@@ -290,6 +139,7 @@ export class EmailService {
         userName: string
         movies: Content[]
         tvShows: Content[]
+        unsubscribeToken?: string
     }) {
         if (!this.isAvailable()) return null
         return await resend!.emails.send({
@@ -300,6 +150,55 @@ export class EmailService {
                 userName: params.userName,
                 movies: params.movies,
                 tvShows: params.tvShows,
+                unsubscribeToken: params.unsubscribeToken,
+            }),
+        })
+    }
+
+    /**
+     * Send announcement email
+     */
+    static async sendAnnouncement(params: {
+        to: string
+        userName: string
+        subject: string
+        message: string
+        unsubscribeToken?: string
+    }) {
+        if (!this.isAvailable()) return null
+        return await resend!.emails.send({
+            from: `${APP_NAME} <${SENDER_EMAIL}>`,
+            to: params.to,
+            subject: params.subject,
+            react: AnnouncementEmail({
+                userName: params.userName,
+                subject: params.subject,
+                message: params.message,
+                unsubscribeToken: params.unsubscribeToken,
+            }),
+        })
+    }
+
+    /**
+     * Send custom email with rich HTML content
+     */
+    static async sendCustomEmail(params: {
+        to: string
+        userName: string
+        subject: string
+        htmlContent: string
+        unsubscribeToken?: string
+    }) {
+        if (!this.isAvailable()) return null
+        return await resend!.emails.send({
+            from: `${APP_NAME} <${SENDER_EMAIL}>`,
+            to: params.to,
+            subject: params.subject,
+            react: CustomEmail({
+                userName: params.userName,
+                subject: params.subject,
+                htmlContent: params.htmlContent,
+                unsubscribeToken: params.unsubscribeToken,
             }),
         })
     }

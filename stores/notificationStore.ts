@@ -87,7 +87,10 @@ export const useNotificationStore = create<NotificationState>()(
 
             // Load all notifications
             loadNotifications: async (userId: string | null) => {
-                notificationLog('[Notifications] Loading all notifications for user:', userId?.slice(0, 8))
+                notificationLog(
+                    '[Notifications] Loading all notifications for user:',
+                    userId?.slice(0, 8)
+                )
                 if (!ensureAuthUser(userId, 'load notifications')) {
                     set({
                         notifications: [],
@@ -102,10 +105,27 @@ export const useNotificationStore = create<NotificationState>()(
 
                 try {
                     const result = await getAllNotifications(userId)
-                    const notifications = result.data
+                    const rawNotifications = result.data
+
+                    // Deduplicate notifications by ID to prevent React key warnings
+                    const seen = new Set<string>()
+                    const notifications = rawNotifications.filter((notification) => {
+                        if (seen.has(notification.id)) {
+                            return false
+                        }
+                        seen.add(notification.id)
+                        return true
+                    })
+
                     const unreadCount = notifications.filter((n) => !n.isRead).length
 
-                    notificationLog('[Notifications] Loaded:', notifications.length, 'total,', unreadCount, 'unread')
+                    notificationLog(
+                        '[Notifications] Loaded:',
+                        notifications.length,
+                        'total,',
+                        unreadCount,
+                        'unread'
+                    )
                     set({
                         notifications,
                         unreadCount,
@@ -177,7 +197,11 @@ export const useNotificationStore = create<NotificationState>()(
                 userId: string | null,
                 request: CreateNotificationRequest
             ) => {
-                notificationLog('[Notifications] Creating notification:', request.type, request.title)
+                notificationLog(
+                    '[Notifications] Creating notification:',
+                    request.type,
+                    request.title
+                )
                 if (!ensureAuthUser(userId, 'create notification')) {
                     return
                 }
@@ -323,10 +347,20 @@ export const useNotificationStore = create<NotificationState>()(
 
                     // Re-subscribe after deletion completes
                     const unsubscribe = subscribeToNotifications(userId, (notifications) => {
-                        const unreadCount = notifications.filter((n) => !n.isRead).length
+                        // Deduplicate notifications by ID to prevent React key warnings
+                        const seen = new Set<string>()
+                        const uniqueNotifications = notifications.filter((notification) => {
+                            if (seen.has(notification.id)) {
+                                return false
+                            }
+                            seen.add(notification.id)
+                            return true
+                        })
+
+                        const unreadCount = uniqueNotifications.filter((n) => !n.isRead).length
 
                         set({
-                            notifications,
+                            notifications: uniqueNotifications,
                             unreadCount,
                             isLoading: false,
                         })
@@ -345,10 +379,20 @@ export const useNotificationStore = create<NotificationState>()(
 
                     // Re-subscribe even on error to restore real-time updates
                     const unsubscribe = subscribeToNotifications(userId, (notifications) => {
-                        const unreadCount = notifications.filter((n) => !n.isRead).length
+                        // Deduplicate notifications by ID to prevent React key warnings
+                        const seen = new Set<string>()
+                        const uniqueNotifications = notifications.filter((notification) => {
+                            if (seen.has(notification.id)) {
+                                return false
+                            }
+                            seen.add(notification.id)
+                            return true
+                        })
+
+                        const unreadCount = uniqueNotifications.filter((n) => !n.isRead).length
 
                         set({
-                            notifications,
+                            notifications: uniqueNotifications,
                             unreadCount,
                             isLoading: false,
                         })
@@ -375,7 +419,10 @@ export const useNotificationStore = create<NotificationState>()(
 
             // Subscribe to real-time updates
             subscribe: (userId: string | null) => {
-                notificationLog('[Notifications] Subscribing to real-time updates for user:', userId?.slice(0, 8))
+                notificationLog(
+                    '[Notifications] Subscribing to real-time updates for user:',
+                    userId?.slice(0, 8)
+                )
                 if (!ensureAuthUser(userId, 'subscribe to notifications')) {
                     return
                 }
@@ -389,11 +436,27 @@ export const useNotificationStore = create<NotificationState>()(
 
                 // Create new subscription
                 const unsubscribe = subscribeToNotifications(userId, (notifications) => {
-                    const unreadCount = notifications.filter((n) => !n.isRead).length
-                    notificationLog('[Notifications] Real-time update received:', notifications.length, 'notifications,', unreadCount, 'unread')
+                    // Deduplicate notifications by ID to prevent React key warnings
+                    const seen = new Set<string>()
+                    const uniqueNotifications = notifications.filter((notification) => {
+                        if (seen.has(notification.id)) {
+                            return false
+                        }
+                        seen.add(notification.id)
+                        return true
+                    })
+
+                    const unreadCount = uniqueNotifications.filter((n) => !n.isRead).length
+                    notificationLog(
+                        '[Notifications] Real-time update received:',
+                        uniqueNotifications.length,
+                        'notifications,',
+                        unreadCount,
+                        'unread'
+                    )
 
                     set({
-                        notifications,
+                        notifications: uniqueNotifications,
                         unreadCount,
                         isLoading: false,
                     })

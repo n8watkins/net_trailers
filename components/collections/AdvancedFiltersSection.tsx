@@ -71,9 +71,7 @@ export function AdvancedFiltersSection({ filters, onChange }: AdvancedFiltersSec
         if (query.trim().length < 2) return []
 
         try {
-            const response = await fetch(
-                `/api/search?query=${encodeURIComponent(query)}&type=person`
-            )
+            const response = await fetch(`/api/search/people?query=${encodeURIComponent(query)}`)
             if (!response.ok) throw new Error('Search failed')
             const data = await response.json()
             return data.results || []
@@ -279,16 +277,15 @@ export function AdvancedFiltersSection({ filters, onChange }: AdvancedFiltersSec
             <div>
                 <label className="block text-sm font-medium text-gray-200 mb-2">Cast & Crew</label>
                 {showHint && (
-                    <p className="text-xs text-gray-400 mb-2 flex items-center gap-1">
-                        💡 Type{' '}
-                        <code className="px-1 py-0.5 bg-gray-700 rounded text-blue-400">@</code> to
-                        tag actors or directors
+                    <p className="text-xs text-gray-400 mb-2">
+                        💡 Tip: Type full or partial names for best results (e.g., "Tom Cruise" not
+                        just "Tom")
                     </p>
                 )}
                 <div className="relative">
                     <input
                         type="text"
-                        placeholder="Type @ to search for people..."
+                        placeholder="Search for actors or directors (e.g., Tom Cruise, Christopher Nolan)..."
                         value={peopleInput}
                         onChange={(e) => handlePeopleInputChange(e.target.value)}
                         onKeyDown={handleKeyDown}

@@ -36,58 +36,37 @@ export default function UserCollectionsPage() {
             setError(null)
 
             try {
-                // Try to get profile data from API first (includes auth displayName fallback)
+                // Try to get profile data from API first (includes collections)
                 let profileDisplayName = 'User'
+                let userCollections: UserList[] = []
+
                 try {
                     const response = await fetch(`/api/public-profile/${userId}`)
                     if (response.ok) {
                         const payload = (await response.json()) as PublicProfilePayload
                         profileDisplayName = payload.profile.displayName
+                        userCollections = payload.collections
                     }
                 } catch (apiError) {
                     console.warn('[UserCollections] API failed, will use client-side data')
                 }
 
-                // Fetch user document for collections
-                const userDoc = await getDoc(doc(db, 'users', userId))
-
-                if (!userDoc.exists()) {
-                    throw new Error('User not found')
+                // Fallback to client-side lookup for display name if API failed
+                if (profileDisplayName === 'User') {
+                    try {
+                        const profileDoc = await getDoc(doc(db, 'profiles', userId))
+                        if (profileDoc.exists()) {
+                            const profileData = profileDoc.data()
+                            profileDisplayName = profileData?.displayName || 'User'
+                        }
+                    } catch (profileError) {
+                        console.warn('[UserCollections] Could not load profile, using default name')
+                    }
                 }
-
-                const userData = userDoc.data()
 
                 if (!isMounted) return
 
-                // Use API-derived displayName, or fallback to client-side lookup
-                if (profileDisplayName === 'User') {
-                    const profileDoc = await getDoc(doc(db, 'profiles', userId))
-                    const profileData = profileDoc.exists() ? profileDoc.data() : {}
-                    const legacyProfile = userData?.profile || {}
-                    profileDisplayName =
-                        profileData?.displayName ||
-                        legacyProfile.displayName ||
-                        userData.displayName ||
-                        'User'
-                }
-
                 setDisplayName(profileDisplayName)
-
-                // Public collections are stored in userCreatedWatchlists field (historical naming)
-                // Note: For authenticated users, collections are in customRows (Zustand store)
-                const publicCollections = (userData.userCreatedWatchlists as UserList[]) || []
-
-                // Filter to only show non-system collections
-                const userCollections = publicCollections
-                    .filter((c) => {
-                        if (c.isSystemCollection) return false
-                        // TMDB genre-based collections don't store items, they fetch dynamically
-                        if (c.collectionType === 'tmdb-genre') return true
-                        // Manual and AI-generated collections must have items
-                        return c.items && c.items.length > 0
-                    })
-                    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-
                 setCollections(userCollections)
             } catch (err) {
                 console.error('Error loading collections:', err)

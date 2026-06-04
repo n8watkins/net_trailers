@@ -267,6 +267,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
             {/* Avatar Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
+                data-tour="avatar-button"
                 className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-full bg-red-600 hover:bg-red-700 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.6)] focus:shadow-[0_0_15px_rgba(255,255,255,0.6)] transition-all duration-300"
                 aria-label="Profile menu"
                 aria-expanded={isOpen}

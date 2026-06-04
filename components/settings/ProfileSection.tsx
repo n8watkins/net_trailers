@@ -19,6 +19,7 @@ import {
     AtSymbolIcon,
     CheckCircleIcon,
     ExclamationCircleIcon,
+    PencilIcon,
 } from '@heroicons/react/24/outline'
 import type { User } from 'firebase/auth'
 import type { ProfileVisibility } from '../../types/profile'
@@ -71,6 +72,8 @@ interface ProfileSectionProps {
     isEmailAuth: boolean
     displayName: string
     setDisplayName: (name: string) => void
+    displayNameError?: string
+    isValidatingDisplayName?: boolean
     isSavingProfile: boolean
     onSaveProfile: () => Promise<void>
     // Username (profile URL slug)
@@ -90,12 +93,19 @@ interface ProfileSectionProps {
     profileUserId?: string
 }
 
+interface EditState {
+    displayName: boolean
+    username: boolean
+}
+
 const ProfileSection: React.FC<ProfileSectionProps> = ({
     user,
     isGoogleAuth,
     isEmailAuth,
     displayName,
     setDisplayName,
+    displayNameError,
+    isValidatingDisplayName,
     isSavingProfile,
     onSaveProfile,
     username,
@@ -112,6 +122,12 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
     profileUsername,
     profileUserId,
 }) => {
+    // Track which fields are in edit mode
+    const [isEditing, setIsEditing] = React.useState<EditState>({
+        displayName: false,
+        username: false,
+    })
+
     const getUserName = () => {
         if (user?.displayName) {
             return user.displayName.split(' ')[0]
@@ -123,6 +139,35 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
     }
 
     const hasChanges = displayName.trim() !== (user?.displayName || '')
+    const canSaveDisplayName = hasChanges && !displayNameError && !isValidatingDisplayName
+
+    const handleEditDisplayName = () => {
+        setIsEditing((prev) => ({ ...prev, displayName: true }))
+    }
+
+    const handleCancelDisplayName = () => {
+        setIsEditing((prev) => ({ ...prev, displayName: false }))
+        setDisplayName(user?.displayName || '')
+    }
+
+    const handleSaveDisplayName = async () => {
+        await onSaveProfile()
+        setIsEditing((prev) => ({ ...prev, displayName: false }))
+    }
+
+    const handleEditUsername = () => {
+        setIsEditing((prev) => ({ ...prev, username: true }))
+    }
+
+    const handleCancelUsername = () => {
+        setIsEditing((prev) => ({ ...prev, username: false }))
+        setUsername(profileUsername || '')
+    }
+
+    const handleSaveUsername = async () => {
+        await onSaveUsername()
+        setIsEditing((prev) => ({ ...prev, username: false }))
+    }
 
     return (
         <div className="p-6 lg:p-8">
@@ -189,17 +234,92 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
 
                         {/* Display Name */}
                         <div>
-                            <label className="block text-sm font-medium text-[#e5e5e5] mb-1.5">
-                                Display Name
-                            </label>
-                            <input
-                                type="text"
-                                value={displayName}
-                                onChange={(e) => setDisplayName(e.target.value)}
-                                placeholder="Enter your display name"
-                                className="inputClass w-full"
-                                disabled={isSavingProfile}
-                            />
+                            <div className="flex items-center justify-between mb-1.5">
+                                <label className="block text-sm font-medium text-[#e5e5e5]">
+                                    Display Name
+                                </label>
+                                {!isEditing.displayName && (
+                                    <button
+                                        onClick={handleEditDisplayName}
+                                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-[#b3b3b3] hover:text-white transition rounded-md hover:bg-[#1a1a1a]"
+                                    >
+                                        <PencilIcon className="w-3.5 h-3.5" />
+                                        Edit
+                                    </button>
+                                )}
+                            </div>
+                            {isEditing.displayName ? (
+                                <>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            value={displayName}
+                                            onChange={(e) => setDisplayName(e.target.value)}
+                                            placeholder="Enter your display name"
+                                            className={`inputClass w-full pr-10 ${
+                                                displayNameError
+                                                    ? 'border-red-500 focus:border-red-500'
+                                                    : ''
+                                            }`}
+                                            disabled={isSavingProfile}
+                                        />
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                            {isValidatingDisplayName ? (
+                                                <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                                            ) : displayNameError ? (
+                                                <ExclamationCircleIcon className="w-5 h-5 text-red-500" />
+                                            ) : displayName.trim() &&
+                                              displayName !== user?.displayName ? (
+                                                <CheckCircleIcon className="w-5 h-5 text-green-500" />
+                                            ) : null}
+                                        </div>
+                                    </div>
+                                    {displayNameError && (
+                                        <p className="text-xs text-red-400 mt-1.5">
+                                            {displayNameError}
+                                        </p>
+                                    )}
+                                    <p className="text-xs text-[#888] mt-1.5">
+                                        What others see in comments, rankings, and across the site.
+                                    </p>
+                                    <div className="flex gap-2 mt-3">
+                                        <button
+                                            onClick={handleSaveDisplayName}
+                                            disabled={isSavingProfile || !canSaveDisplayName}
+                                            className={`flex-1 py-2 px-4 rounded-md font-medium text-sm transition ${
+                                                isSavingProfile || !canSaveDisplayName
+                                                    ? 'bg-gray-700 cursor-not-allowed opacity-50 text-gray-400'
+                                                    : 'bg-red-600 hover:bg-red-700 text-white'
+                                            } flex items-center justify-center gap-2`}
+                                        >
+                                            {isSavingProfile ? (
+                                                <>
+                                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                    Saving...
+                                                </>
+                                            ) : (
+                                                'Save'
+                                            )}
+                                        </button>
+                                        <button
+                                            onClick={handleCancelDisplayName}
+                                            disabled={isSavingProfile}
+                                            className="px-4 py-2 rounded-md font-medium text-sm bg-[#1a1a1a] hover:bg-[#252525] text-white border border-[#454545] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="px-4 py-2.5 bg-[#1a1a1a] border border-[#454545] rounded-md text-white">
+                                        {user?.displayName || 'No display name set'}
+                                    </div>
+                                    <p className="text-xs text-[#888] mt-1.5">
+                                        What others see in comments, rankings, and across the site.
+                                    </p>
+                                </>
+                            )}
                         </div>
 
                         {/* Email (read-only) */}
@@ -237,110 +357,142 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                                 )}
                             </div>
                         </div>
-
-                        {/* Save Display Name Button */}
-                        <button
-                            onClick={onSaveProfile}
-                            disabled={isSavingProfile || !hasChanges}
-                            className={`w-full py-2.5 px-4 rounded-md font-medium text-sm transition ${
-                                isSavingProfile || !hasChanges
-                                    ? 'bg-gray-700 cursor-not-allowed opacity-50 text-gray-400'
-                                    : 'bg-red-600 hover:bg-red-700 text-white'
-                            } flex items-center justify-center gap-2`}
-                        >
-                            {isSavingProfile ? (
-                                <>
-                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                    Saving...
-                                </>
-                            ) : (
-                                'Save Display Name'
-                            )}
-                        </button>
                     </div>
 
-                    {/* Username Section (Profile URL) */}
+                    {/* Username Section (Custom Profile URL) */}
                     <div className="bg-[#0a0a0a] rounded-lg border border-[#313131] p-5 space-y-4">
-                        <div className="flex items-center gap-2">
-                            <AtSymbolIcon className="h-4 w-4 text-[#888]" />
-                            <h4 className="text-sm font-medium text-white">Profile URL</h4>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <AtSymbolIcon className="h-4 w-4 text-[#888]" />
+                                <h4 className="text-sm font-medium text-white">
+                                    Custom Profile URL
+                                </h4>
+                            </div>
+                            {!isEditing.username && (
+                                <button
+                                    onClick={handleEditUsername}
+                                    className="flex items-center gap-1.5 px-2 py-1 text-xs text-[#b3b3b3] hover:text-white transition rounded-md hover:bg-[#1a1a1a]"
+                                >
+                                    <PencilIcon className="w-3.5 h-3.5" />
+                                    Edit
+                                </button>
+                            )}
                         </div>
                         <p className="text-xs text-[#888]">
-                            This is your unique username used in your profile URL. It must be unique
-                            across all users.
+                            Set a custom username for your profile URL instead of using your user
+                            ID. Must be 3-20 characters (letters, numbers, underscores only).
                         </p>
 
-                        <div>
-                            <label className="block text-sm font-medium text-[#e5e5e5] mb-1.5">
-                                Username
-                            </label>
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value.toLowerCase())}
-                                    placeholder="your_username"
-                                    className={`inputClass w-full pr-10 ${
-                                        usernameError
-                                            ? 'border-red-500 focus:border-red-500'
-                                            : usernameAvailable
-                                              ? 'border-green-500 focus:border-green-500'
-                                              : ''
-                                    }`}
-                                    disabled={isSavingUsername}
-                                />
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                    {isCheckingUsername ? (
-                                        <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-                                    ) : usernameError ? (
-                                        <ExclamationCircleIcon className="w-5 h-5 text-red-500" />
-                                    ) : usernameAvailable ? (
-                                        <CheckCircleIcon className="w-5 h-5 text-green-500" />
-                                    ) : null}
+                        {isEditing.username ? (
+                            <>
+                                <div>
+                                    <label className="block text-sm font-medium text-[#e5e5e5] mb-1.5">
+                                        Username (URL Slug)
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            value={username}
+                                            onChange={(e) =>
+                                                setUsername(e.target.value.toLowerCase())
+                                            }
+                                            placeholder="your_username"
+                                            className={`inputClass w-full pr-10 ${
+                                                usernameError
+                                                    ? 'border-red-500 focus:border-red-500'
+                                                    : usernameAvailable
+                                                      ? 'border-green-500 focus:border-green-500'
+                                                      : ''
+                                            }`}
+                                            disabled={isSavingUsername}
+                                        />
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                            {isCheckingUsername ? (
+                                                <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                                            ) : usernameError ? (
+                                                <ExclamationCircleIcon className="w-5 h-5 text-red-500" />
+                                            ) : usernameAvailable ? (
+                                                <CheckCircleIcon className="w-5 h-5 text-green-500" />
+                                            ) : null}
+                                        </div>
+                                    </div>
+                                    {usernameError && (
+                                        <p className="text-xs text-red-400 mt-1.5">
+                                            {usernameError}
+                                        </p>
+                                    )}
+                                    {usernameAvailable &&
+                                        !usernameError &&
+                                        username !== profileUsername && (
+                                            <p className="text-xs text-green-400 mt-1.5">
+                                                Username is available!
+                                            </p>
+                                        )}
+                                    {username ? (
+                                        <p className="text-xs text-[#666] mt-1.5">
+                                            Profile URL: nettrailers.com/users/{username}
+                                        </p>
+                                    ) : (
+                                        <p className="text-xs text-[#666] mt-1.5">
+                                            {profileUserId
+                                                ? `Current: nettrailers.com/users/${profileUserId} (user ID)`
+                                                : 'No custom username set'}
+                                        </p>
+                                    )}
                                 </div>
-                            </div>
-                            {usernameError && (
-                                <p className="text-xs text-red-400 mt-1.5">{usernameError}</p>
-                            )}
-                            {usernameAvailable &&
-                                !usernameError &&
-                                username !== profileUsername && (
-                                    <p className="text-xs text-green-400 mt-1.5">
-                                        Username is available!
-                                    </p>
-                                )}
-                            <p className="text-xs text-[#666] mt-1.5">
-                                Your profile will be at: nettrailers.com/users/
-                                {username || 'your_username'}
-                            </p>
-                        </div>
 
-                        <button
-                            onClick={onSaveUsername}
-                            disabled={
-                                isSavingUsername ||
-                                !usernameAvailable ||
-                                usernameError !== undefined ||
-                                username === profileUsername
-                            }
-                            className={`w-full py-2.5 px-4 rounded-md font-medium text-sm transition ${
-                                isSavingUsername ||
-                                !usernameAvailable ||
-                                usernameError !== undefined ||
-                                username === profileUsername
-                                    ? 'bg-gray-700 cursor-not-allowed opacity-50 text-gray-400'
-                                    : 'bg-red-600 hover:bg-red-700 text-white'
-                            } flex items-center justify-center gap-2`}
-                        >
-                            {isSavingUsername ? (
-                                <>
-                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                    Saving...
-                                </>
-                            ) : (
-                                'Update Username'
-                            )}
-                        </button>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={handleSaveUsername}
+                                        disabled={
+                                            isSavingUsername ||
+                                            !usernameAvailable ||
+                                            usernameError !== undefined ||
+                                            username === profileUsername
+                                        }
+                                        className={`flex-1 py-2.5 px-4 rounded-md font-medium text-sm transition ${
+                                            isSavingUsername ||
+                                            !usernameAvailable ||
+                                            usernameError !== undefined ||
+                                            username === profileUsername
+                                                ? 'bg-gray-700 cursor-not-allowed opacity-50 text-gray-400'
+                                                : 'bg-red-600 hover:bg-red-700 text-white'
+                                        } flex items-center justify-center gap-2`}
+                                    >
+                                        {isSavingUsername ? (
+                                            <>
+                                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                Saving...
+                                            </>
+                                        ) : (
+                                            'Save'
+                                        )}
+                                    </button>
+                                    <button
+                                        onClick={handleCancelUsername}
+                                        disabled={isSavingUsername}
+                                        className="px-4 py-2 rounded-md font-medium text-sm bg-[#1a1a1a] hover:bg-[#252525] text-white border border-[#454545] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div className="px-4 py-2.5 bg-[#1a1a1a] border border-[#454545] rounded-md text-white">
+                                    {profileUsername || (
+                                        <span className="text-[#888]">No custom username set</span>
+                                    )}
+                                </div>
+                                <p className="text-xs text-[#666]">
+                                    {profileUsername
+                                        ? `Current: nettrailers.com/users/${profileUsername}`
+                                        : profileUserId
+                                          ? `Default: nettrailers.com/users/${profileUserId} (user ID)`
+                                          : 'No username configured'}
+                                </p>
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -425,13 +577,13 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                                                 }
                                             />
                                             <VisibilityToggle
-                                                id="showWatchLater"
-                                                label="Watch Later"
+                                                id="showWatchHistory"
+                                                label="Watch History"
                                                 icon={ClockIcon}
-                                                checked={
+                                                checked={Boolean(
                                                     visibility.enablePublicProfile &&
-                                                    visibility.showWatchLater
-                                                }
+                                                        visibility.showWatchHistory
+                                                )}
                                                 onChange={onVisibilityChange}
                                                 disabled={
                                                     isSavingVisibility ||
@@ -473,6 +625,20 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                                                 checked={
                                                     visibility.enablePublicProfile &&
                                                     visibility.showThreads
+                                                }
+                                                onChange={onVisibilityChange}
+                                                disabled={
+                                                    isSavingVisibility ||
+                                                    !visibility.enablePublicProfile
+                                                }
+                                            />
+                                            <VisibilityToggle
+                                                id="showThreadsVoted"
+                                                label="Threads Voted"
+                                                icon={HandThumbUpIcon}
+                                                checked={
+                                                    visibility.enablePublicProfile &&
+                                                    visibility.showThreadsVoted
                                                 }
                                                 onChange={onVisibilityChange}
                                                 disabled={

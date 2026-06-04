@@ -11,7 +11,6 @@ import {
     createUnauthorizedResponse,
     createForbiddenResponse,
 } from '@/utils/adminMiddleware'
-import { applyCsrfProtection } from '@/lib/csrfProtection'
 
 /**
  * Get the start of the current week (Monday at 00:00:00)
@@ -44,12 +43,6 @@ function countUsersInPeriod(users: Array<{ createdAt: string }>, periodStart: nu
 
 export async function POST(request: NextRequest) {
     try {
-        // Apply CSRF protection
-        const csrfResponse = applyCsrfProtection(request)
-        if (csrfResponse) {
-            return csrfResponse
-        }
-
         // Validate admin access via Firebase Auth
         const authResult = await validateAdminRequest(request)
         if (!authResult.authorized) {
@@ -58,7 +51,7 @@ export async function POST(request: NextRequest) {
                 : createUnauthorizedResponse(authResult.error)
         }
 
-        console.log('🔍 Counting existing Firebase Auth users...')
+        console.log('👑 🔍 Counting existing Firebase Auth users...')
 
         // Get Firebase Admin instances
         const auth = getAdminAuth()
@@ -83,13 +76,13 @@ export async function POST(request: NextRequest) {
             })
 
             pageToken = listUsersResult.pageToken
-            console.log(`   Found ${listUsersResult.users.length} users in this batch...`)
+            console.log(`👑    Found ${listUsersResult.users.length} users in this batch...`)
         } while (pageToken)
 
-        console.log(`✅ Total users in Firebase Auth: ${userCount}`)
+        console.log(`👑 ✅ Total users in Firebase Auth: ${userCount}`)
 
         // Update system/stats document
-        console.log('💾 Updating system/stats document in Firestore...')
+        console.log('👑 🔥 Updating system/stats document in Firestore...')
 
         const systemStatsRef = db.doc('system/stats')
         const existingDoc = await systemStatsRef.get()
@@ -126,10 +119,10 @@ export async function POST(request: NextRequest) {
             { merge: true }
         )
 
-        console.log(`✅ Updated system/stats:`)
-        console.log(`   Total accounts: ${userCount}`)
-        console.log(`   Signups this week: ${signupsThisWeek}`)
-        console.log(`   Signups this month: ${signupsThisMonth}`)
+        console.log(`👑 ✅ Updated system/stats:`)
+        console.log(`👑    Total accounts: ${userCount}`)
+        console.log(`👑    Signups this week: ${signupsThisWeek}`)
+        console.log(`👑    Signups this month: ${signupsThisMonth}`)
 
         return NextResponse.json({
             success: true,
@@ -141,7 +134,7 @@ export async function POST(request: NextRequest) {
             message: `Account statistics initialized. Found ${userCount} users (${signupsThisWeek} this week, ${signupsThisMonth} this month).`,
         })
     } catch (error) {
-        console.error('Error initializing account stats:', error)
+        console.error('👑 ❌ Error initializing account stats:', error)
         return NextResponse.json(
             {
                 error: 'Failed to initialize account stats',

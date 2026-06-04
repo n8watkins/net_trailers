@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
     XMarkIcon,
     AcademicCapIcon,
@@ -11,25 +11,42 @@ import {
     ShareIcon,
     TrophyIcon,
     MicrophoneIcon,
+    FunnelIcon,
 } from '@heroicons/react/24/outline'
 import { HandThumbUpIcon, RectangleStackIcon } from '@heroicons/react/24/solid'
+import { useRouter, usePathname } from 'next/navigation'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import { useModalStore } from '../../stores/modalStore'
 
 interface TutorialModalProps {
     isOpen: boolean
     onClose: () => void
+    onStartTour?: () => void
 }
 
-const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
+const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartTour }) => {
+    const router = useRouter()
+    const pathname = usePathname()
     const { isGuest } = useAuthStatus()
     const { openAuthModal } = useModalStore()
     const [activeTab, setActiveTab] = useState<'basics' | 'advanced' | 'community'>('basics')
+    const waitingToStartTourRef = useRef<boolean>(false)
 
     const handleSignUp = () => {
         onClose()
         openAuthModal('signup')
     }
+
+    // Start tour when we reach home page (if waiting)
+    useEffect(() => {
+        if (waitingToStartTourRef.current && pathname === '/' && onStartTour) {
+            waitingToStartTourRef.current = false
+            // Small delay to ensure page is fully rendered
+            setTimeout(() => {
+                onStartTour()
+            }, 300)
+        }
+    }, [pathname, onStartTour])
 
     if (!isOpen) return null
 
@@ -129,7 +146,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
                                 </p>
                             </div>
 
-                            <div className="space-y-2">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <FeatureItem
                                     icon={<HandThumbUpIcon className="w-5 h-5 text-white" />}
                                     title="Like & Dislike Content"
@@ -232,7 +249,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
                                         </p>
                                     </div>
 
-                                    <div className="space-y-2">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         <FeatureItem
                                             icon={
                                                 <HandThumbUpIcon className="w-5 h-5 text-white" />
@@ -290,7 +307,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
                                         </p>
                                     </div>
 
-                                    <div className="space-y-2">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         <FeatureItem
                                             icon={
                                                 <SparklesIcon className="w-5 h-5 text-blue-400" />
@@ -306,11 +323,9 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
                                             description="Use voice input for hands-free search and AI queries"
                                         />
                                         <FeatureItem
-                                            icon={
-                                                <RectangleStackIcon className="w-5 h-5 text-cyan-400" />
-                                            }
-                                            title="Auto-Updating Collections"
-                                            description="Collections that refresh daily with new matching content"
+                                            icon={<FunnelIcon className="w-5 h-5 text-cyan-400" />}
+                                            title="Advanced Filters"
+                                            description="Filter collections by year, rating, cast, director, and popularity"
                                         />
                                         <FeatureItem
                                             icon={<ShareIcon className="w-5 h-5 text-yellow-400" />}
@@ -356,7 +371,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
                                         </p>
                                     </div>
 
-                                    <div className="space-y-2">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         <FeatureItem
                                             icon={
                                                 <TrophyIcon className="w-5 h-5 text-yellow-400" />
@@ -416,6 +431,13 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
                                             title="Like & Comment"
                                             description="Engage with rankings and forum posts - build community connections"
                                         />
+                                        <FeatureItem
+                                            icon={
+                                                <MagnifyingGlassIcon className="w-5 h-5 text-cyan-400" />
+                                            }
+                                            title="Explore Rankings"
+                                            description="Create top 10 lists and discover what the community loves most"
+                                        />
                                     </div>
                                 </>
                             )}
@@ -429,6 +451,43 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
                                     Integration
                                 </p>
                             </div>
+
+                            {/* Interactive Tour CTA */}
+                            {onStartTour && (
+                                <div className="mt-6 p-5 bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-xl border-2 border-orange-500/40">
+                                    <div className="flex items-center justify-between gap-4">
+                                        <div className="flex-1">
+                                            <h4 className="text-white font-bold text-lg mb-1 flex items-center gap-2">
+                                                <span className="text-2xl">🚀</span>
+                                                New Here? Take a Quick Tour!
+                                            </h4>
+                                            <p className="text-gray-300 text-sm">
+                                                60-second interactive walkthrough highlighting key
+                                                features
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                onClose()
+
+                                                // If already on home page, start tour immediately
+                                                if (pathname === '/') {
+                                                    setTimeout(() => {
+                                                        onStartTour()
+                                                    }, 300)
+                                                } else {
+                                                    // Navigate to home page, useEffect will start tour when we arrive
+                                                    waitingToStartTourRef.current = true
+                                                    router.push('/')
+                                                }
+                                            }}
+                                            className="flex-shrink-0 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold rounded-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-lg hover:shadow-orange-500/50 hover:scale-105"
+                                        >
+                                            Start Tour
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </>
                     )}
                 </div>

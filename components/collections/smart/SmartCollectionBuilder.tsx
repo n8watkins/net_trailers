@@ -294,7 +294,7 @@ function convertSuggestionsToFormData(
                 break
 
             case 'director':
-                formData.advancedFilters!.withDirector = String(suggestion.value)
+                formData.advancedFilters!.withDirector = [String(suggestion.value)]
                 break
 
             case 'actor':

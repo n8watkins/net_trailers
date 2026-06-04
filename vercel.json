@@ -2,7 +2,15 @@
     "crons": [
         {
             "path": "/api/cron/update-trending",
-            "schedule": "0 2 * * *"
+            "schedule": "0 2 * * 1"
+        },
+        {
+            "path": "/api/cron/refresh-collection-cache",
+            "schedule": "0 2 * * 0"
+        },
+        {
+            "path": "/api/cron/social-digest",
+            "schedule": "0 2 * * 3"
         }
     ]
 }

@@ -403,7 +403,8 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                         width={140}
                         height={70}
                         alt="NetTrailers Logo"
-                        className="cursor-pointer object-contain select-none w-[100px] h-auto sm:w-[120px] md:w-[140px]"
+                        style={{ height: 'auto' }}
+                        className="cursor-pointer object-contain select-none w-[100px] sm:w-[120px] md:w-[140px]"
                         priority
                         onClick={() => {
                             if (pathname === '/') {
@@ -459,7 +460,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
 
                         {/* Search Bar in Navigation */}
                         <div className="flex items-center search-container">
-                            <div className="w-full max-w-96">
+                            <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl">
                                 <SearchBar
                                     placeholder="Search movies and shows..."
                                     className="w-full"
@@ -559,11 +560,22 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                             : pathname.startsWith(item.href)
                                     const Icon = isActive ? item.iconSolid : item.icon
 
+                                    // Add data-tour attributes for interactive tour
+                                    const dataTourAttr =
+                                        item.label === 'Collections'
+                                            ? 'collections-link'
+                                            : item.label === 'Rankings'
+                                              ? 'community-link'
+                                              : item.label === 'Settings'
+                                                ? 'settings-link'
+                                                : undefined
+
                                     return (
                                         <Link
                                             key={item.href}
                                             href={item.href}
                                             title={item.label}
+                                            data-tour={dataTourAttr}
                                             className={`group relative flex items-center justify-center gap-2 whitespace-nowrap border-b-2 px-2 sm:px-1 py-2 sm:py-3 text-sm font-medium transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 ${
                                                 isActive
                                                     ? 'border-red-600 text-red-600'

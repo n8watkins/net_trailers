@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import useUserData from '../../hooks/useUserData'
 import SubPageLayout from '../../components/layout/SubPageLayout'
 import {
@@ -9,22 +9,45 @@ import {
     SparklesIcon,
     PencilSquareIcon,
     Squares2X2Icon,
+    PlusIcon,
 } from '@heroicons/react/24/solid'
-import { XMarkIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, MicrophoneIcon } from '@heroicons/react/24/outline'
 import NetflixLoader from '../../components/common/NetflixLoader'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import CollectionBrowseCard from '../../components/collections/CollectionBrowseCard'
+import { useVoiceInput } from '../../hooks/useVoiceInput'
+import { useToast } from '../../hooks/useToast'
+import { useModalStore } from '../../stores/modalStore'
 
-type FilterValue = 'all' | 'auto' | 'manual' | 'ai'
+type FilterValue = 'all' | 'manual' | 'ai'
 
 const Collections = () => {
     const userData = useUserData()
     const { isLoading } = useAuthStatus()
     const { getAllLists } = userData
+    const { showError } = useToast()
+    const openCollectionBuilderModal = useModalStore((state) => state.openCollectionBuilderModal)
 
     // State
     const [searchQuery, setSearchQuery] = useState('')
     const [collectionFilter, setCollectionFilter] = useState<FilterValue>('all')
+    const [isMounted, setIsMounted] = useState(false)
+
+    // Voice input
+    const { isListening, isSupported, transcript, startListening, stopListening } = useVoiceInput({
+        onResult: (transcript) => {
+            setSearchQuery(transcript)
+        },
+        onError: (error) => {
+            showError(error)
+        },
+        sourceId: 'collections-search',
+    })
+
+    // Track client-side mount
+    useEffect(() => {
+        setIsMounted(true)
+    }, [])
 
     // Get all available lists
     const allLists = useMemo(() => {
@@ -36,9 +59,7 @@ const Collections = () => {
         let filtered = allLists
 
         // Apply type filter
-        if (collectionFilter === 'auto') {
-            filtered = filtered.filter((list) => list.autoUpdateEnabled === true)
-        } else if (collectionFilter === 'manual') {
+        if (collectionFilter === 'manual') {
             filtered = filtered.filter((list) => list.collectionType === 'manual')
         } else if (collectionFilter === 'ai') {
             filtered = filtered.filter((list) => list.collectionType === 'ai-generated')
@@ -66,7 +87,6 @@ const Collections = () => {
     const collectionStats = useMemo(() => {
         return {
             total: allLists.length,
-            auto: allLists.filter((list) => list.autoUpdateEnabled === true).length,
             manual: allLists.filter((list) => list.collectionType === 'manual').length,
             ai: allLists.filter((list) => list.collectionType === 'ai-generated').length,
         }
@@ -85,7 +105,7 @@ const Collections = () => {
                 {/* Content Container */}
                 <div className="relative z-10">
                     {/* Cinematic Hero Header */}
-                    <div className="relative overflow-hidden pt-4">
+                    <div className="relative overflow-hidden pt-12">
                         {/* Animated Background Gradients */}
                         <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900/80 to-black" />
                         <div
@@ -99,22 +119,25 @@ const Collections = () => {
                         <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60" />
 
                         {/* Hero Content */}
-                        <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-6">
-                            {/* Icon with glow */}
-                            <div className="relative mb-4">
-                                <div className="absolute inset-0 bg-blue-500/30 blur-2xl scale-150" />
-                                <RectangleStackIcon className="relative w-16 h-16 text-blue-400 drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
+                        <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-4">
+                            {/* Title with inline icon */}
+                            <div className="flex items-center gap-4 mb-2">
+                                {/* Icon with glow */}
+                                <div className="relative">
+                                    <div className="absolute inset-0 bg-blue-500/30 blur-2xl scale-150" />
+                                    <RectangleStackIcon className="relative w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 text-blue-400 drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
+                                </div>
+
+                                {/* Title */}
+                                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white text-center tracking-tight">
+                                    <span className="bg-gradient-to-r from-blue-200 via-cyan-100 to-blue-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
+                                        Collections
+                                    </span>
+                                </h1>
                             </div>
 
-                            {/* Title */}
-                            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-2 text-center tracking-tight">
-                                <span className="bg-gradient-to-r from-blue-200 via-cyan-100 to-blue-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
-                                    Collections
-                                </span>
-                            </h1>
-
                             {/* Subtitle with collection count */}
-                            <p className="text-base sm:text-lg text-gray-300 mb-6 text-center max-w-2xl">
+                            <p className="text-base sm:text-lg text-gray-300 mb-4 text-center max-w-2xl">
                                 Browse and manage your curated content collections
                                 {!isLoading && collectionStats.total > 0 && (
                                     <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30">
@@ -123,11 +146,21 @@ const Collections = () => {
                                 )}
                             </p>
 
+                            {/* Create Collection Button */}
+                            <div className="mb-5">
+                                <button
+                                    onClick={() => openCollectionBuilderModal()}
+                                    className="group relative px-8 py-3 rounded-xl font-bold transition-all duration-300 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:shadow-[0_0_30px_rgba(59,130,246,0.6)] scale-100 hover:scale-105 flex items-center gap-2"
+                                >
+                                    <PlusIcon className="w-5 h-5" />
+                                    Create Collection
+                                </button>
+                            </div>
+
                             {/* Filter Pills */}
                             <div className="flex flex-wrap gap-2 items-center justify-center mb-5 overflow-visible pb-2 px-4 min-h-[44px]">
                                 {[
                                     { value: 'all', label: 'All', icon: Squares2X2Icon },
-                                    { value: 'auto', label: 'Auto-Update', icon: SparklesIcon },
                                     { value: 'manual', label: 'Manual', icon: PencilSquareIcon },
                                     {
                                         value: 'ai',
@@ -172,7 +205,7 @@ const Collections = () => {
                             </div>
 
                             {/* Enhanced Search Bar */}
-                            <div className="w-full max-w-3xl relative">
+                            <div className="w-full max-w-4xl relative">
                                 <div className="relative group">
                                     <MagnifyingGlassIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 z-10 transition-colors group-focus-within:text-blue-400" />
                                     <input
@@ -180,16 +213,40 @@ const Collections = () => {
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         placeholder="Search collections..."
-                                        className="w-full pl-14 pr-14 py-4 bg-zinc-900/40 backdrop-blur-lg border border-zinc-800/50 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:shadow-[0_0_25px_rgba(59,130,246,0.3)] transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700"
+                                        className={`w-full pl-14 ${isMounted && isSupported ? 'pr-24' : 'pr-14'} py-4 bg-zinc-900/40 backdrop-blur-lg border border-zinc-800/50 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:shadow-[0_0_25px_rgba(59,130,246,0.3)] transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700`}
                                     />
-                                    {searchQuery && (
-                                        <button
-                                            onClick={() => setSearchQuery('')}
-                                            className="absolute right-5 top-1/2 -translate-y-1/2 z-10 text-gray-400 hover:text-white transition-colors"
-                                        >
-                                            <XMarkIcon className="w-6 h-6" />
-                                        </button>
-                                    )}
+                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 z-10 flex items-center gap-2">
+                                        {isMounted && isSupported && (
+                                            <button
+                                                type="button"
+                                                onClick={async () => {
+                                                    if (isListening) {
+                                                        stopListening()
+                                                    } else {
+                                                        await startListening()
+                                                    }
+                                                }}
+                                                className={`p-1.5 rounded-lg transition-all ${
+                                                    isListening
+                                                        ? 'bg-blue-500 text-white animate-pulse'
+                                                        : 'text-gray-400 hover:text-blue-400 hover:bg-blue-500/10'
+                                                }`}
+                                                title={
+                                                    isListening ? 'Stop listening' : 'Voice search'
+                                                }
+                                            >
+                                                <MicrophoneIcon className="w-5 h-5" />
+                                            </button>
+                                        )}
+                                        {searchQuery && (
+                                            <button
+                                                onClick={() => setSearchQuery('')}
+                                                className="text-gray-400 hover:text-white transition-colors"
+                                            >
+                                                <XMarkIcon className="w-6 h-6" />
+                                            </button>
+                                        )}
+                                    </div>
 
                                     {/* Glowing border effect on focus */}
                                     <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-500 opacity-0 group-focus-within:opacity-20 blur-xl transition-opacity duration-300 -z-10" />
@@ -199,7 +256,7 @@ const Collections = () => {
                     </div>
 
                     {/* Main Content Area */}
-                    <div className="px-6 sm:px-8 lg:px-12 py-8 space-y-6">
+                    <div className="px-6 sm:px-8 lg:px-12 py-4 space-y-6">
                         {/* Loading state */}
                         {isLoading && (
                             <div className="py-16">
@@ -220,7 +277,7 @@ const Collections = () => {
                                     {searchQuery
                                         ? 'No collections match your search'
                                         : collectionFilter !== 'all'
-                                          ? `No ${collectionFilter === 'auto' ? 'auto-updating' : collectionFilter === 'ai' ? 'AI-generated' : 'manual'} collections`
+                                          ? `No ${collectionFilter === 'ai' ? 'AI-generated' : 'manual'} collections`
                                           : 'No collections yet'}
                                 </h3>
                                 <p className="text-gray-400 mb-8 max-w-md text-lg">

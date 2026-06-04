@@ -13,6 +13,17 @@ export type CollectionType =
     | 'manual' // Manually curated by user (static items array)
 
 /**
+ * Cache metadata for actor/director cascading collections
+ * Tracks cached content and refresh status
+ */
+export interface CacheMetadata {
+    lastFetched: number // Unix timestamp of last cache build/refresh
+    totalResultsAvailable: number // Total TMDB results available (for reference)
+    cacheSource: 'initial' | 'refresh' | 'manual' // How the cache was created
+    needsRefresh: boolean // Flag for weekly cron job to check
+}
+
+/**
  * Advanced filter options for TMDB-based collections
  */
 export interface AdvancedFilters {
@@ -33,8 +44,13 @@ export interface AdvancedFilters {
     voteCount?: number // 0-4 (index in vote count scale)
 
     // Cast/Crew filters
-    withCast?: string[] // Actor names or TMDB person IDs
-    withDirector?: string // Director name or TMDB person ID
+    withCast?: string[] // Actor display names (for UI)
+    withDirector?: string[] // Director display names (for UI) - updated to array for multiple directors
+    withCastIds?: number[] // TMDB person IDs for API calls (cascading logic)
+    withDirectorIds?: number[] // TMDB person IDs for API calls (cascading logic) - updated to array for multiple directors
+
+    // Legacy fields for backward compatibility
+    withDirectorId?: number // Deprecated - use withDirectorIds instead
 
     // Curated content list (Gemini AI recommendations)
     contentIds?: number[] // Specific TMDB IDs for concept-based collections
@@ -73,12 +89,6 @@ export interface UserList {
     advancedFilters?: AdvancedFilters // Advanced filtering options
     isSpecialCollection?: boolean // true for Trending/Top Rated that don't use genre filtering
 
-    // Auto-update settings (for TMDB-based collections)
-    autoUpdateEnabled?: boolean // Allow auto-updates from TMDB
-    updateFrequency?: 'daily' | 'weekly' | 'never' // How often to check for new content
-    lastCheckedAt?: number // Last time we checked TMDB for new content
-    lastUpdateCount?: number // Number of items added in last update
-
     // AI-generated collection metadata (for collectionType: 'ai-generated')
     originalQuery?: string // Original search query for AI-generated collections
     canGenerateMore?: boolean // Can generate more similar content (infinite collection)
@@ -94,6 +104,10 @@ export interface UserList {
 
     // Public profile visibility
     showOnPublicProfile?: boolean // Show on user's public profile (default: true)
+
+    // Actor/Director cascading cache (first 50 items for zero-TMDB-call serving)
+    cachedContentIds?: number[] // TMDB content IDs for first 50 results (pages 1-3)
+    cacheMetadata?: CacheMetadata // Cache tracking metadata
 }
 
 // DEPRECATED - OLD SCHEMA
@@ -134,10 +148,6 @@ export interface CreateListRequest {
     mediaType?: 'movie' | 'tv' | 'both'
     advancedFilters?: AdvancedFilters
 
-    // Auto-update settings
-    autoUpdateEnabled?: boolean
-    updateFrequency?: 'daily' | 'weekly' | 'never'
-
     // AI-generated metadata
     originalQuery?: string
     canGenerateMore?: boolean
@@ -161,10 +171,6 @@ export interface UpdateListRequest {
     genreLogic?: 'AND' | 'OR'
     mediaType?: 'movie' | 'tv' | 'both'
     advancedFilters?: AdvancedFilters
-
-    // Auto-update settings
-    autoUpdateEnabled?: boolean
-    updateFrequency?: 'daily' | 'weekly' | 'never'
 
     // Infinite content settings
     canGenerateMore?: boolean
@@ -254,12 +260,6 @@ export interface UserCollection extends BaseCollectionConfig {
     createdAt: number // Unix timestamp
     updatedAt: number // Unix timestamp
     advancedFilters?: AdvancedFilters // Advanced filtering options
-
-    // Auto-update settings
-    autoUpdateEnabled?: boolean // Owner setting: allow auto-updates from TMDB
-    updateFrequency?: 'daily' | 'weekly' | 'never' // How often to check for new content
-    lastCheckedAt?: number // Last time we checked TMDB for new content
-    lastUpdateCount?: number // Number of items added in last update
 }
 
 /**
@@ -278,11 +278,6 @@ export interface DisplayCollection extends BaseCollectionConfig {
     color?: string // Optional theme color for the collection
     emoji?: string // Optional emoji icon for the collection
     displayAsRow?: boolean // Display collection as a row on home/browse pages
-    // Auto-update fields - Only present for user collections
-    autoUpdateEnabled?: boolean
-    updateFrequency?: 'daily' | 'weekly' | 'never'
-    lastCheckedAt?: number
-    lastUpdateCount?: number
     // Public profile visibility
     showOnPublicProfile?: boolean
 }
@@ -314,8 +309,6 @@ export interface CollectionFormData {
     mediaType: 'movie' | 'tv' | 'both'
     enabled: boolean
     advancedFilters?: AdvancedFilters
-    autoUpdateEnabled?: boolean
-    updateFrequency?: 'daily' | 'weekly' | 'never'
     previewContent?: any[] // Preview content from TMDB (for collections)
     displayAsRow?: boolean // Whether to display the collection as a row on home
     enableInfiniteContent?: boolean // Whether to allow infinite TMDB content

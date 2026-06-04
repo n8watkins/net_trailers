@@ -33,7 +33,6 @@ import { RankingComment, CreateCommentRequest, RANKING_CONSTRAINTS } from '../..
 import { NotFoundError, UnauthorizedError, ValidationError } from './errors'
 import { validateCommentText, validateUserId, validateRankingId } from './validation'
 import { PaginatedResult, createPaginatedResult } from '../../types/pagination'
-import { EmailService } from '../../lib/email/email-service'
 
 const COLLECTIONS = {
     comments: 'ranking_comments',
@@ -157,12 +156,12 @@ export async function createComment(
         })
     })
 
-    // Send email notification after successful comment creation
+    // Create notification for batching (will be sent via daily social digest)
     // Don't await to avoid blocking the comment creation
-    sendCommentEmailNotification(userId, username, comment, request.parentCommentId ?? null).catch(
+    createCommentNotification(userId, username, comment, request.parentCommentId ?? null).catch(
         (error) => {
-            console.error('Error sending comment email notification:', error)
-            // Don't throw - email failure shouldn't fail comment creation
+            console.error('🔔 ❌ Error creating comment notification:', error)
+            // Don't throw - notification failure shouldn't fail comment creation
         }
     )
 
@@ -170,10 +169,11 @@ export async function createComment(
 }
 
 /**
- * Send email notification for new comment/reply
+ * Create notification for new comment/reply
  * Notifies ranking owner for comments, or parent comment author for replies
+ * Notifications are batched and sent via daily social digest email
  */
-async function sendCommentEmailNotification(
+async function createCommentNotification(
     commenterId: string,
     commenterName: string,
     comment: RankingComment,
@@ -242,22 +242,35 @@ async function sendCommentEmailNotification(
             return
         }
 
-        // Send email using EmailService
-        await EmailService.sendRankingComment({
-            to: email,
-            userName: username,
-            rankingTitle: ranking.title,
+        // Create notification in user's notifications subcollection (will be batched in daily digest)
+        const notificationId = nanoid(12)
+        const notificationRef = doc(db, 'users', recipientId, 'notifications', notificationId)
+        await setDoc(notificationRef, {
+            id: notificationId,
+            userId: recipientId,
+            type: 'ranking_comment',
+            title: isReply
+                ? `${commenterName} replied to your comment`
+                : `${commenterName} commented on your ranking`,
+            message: ranking.title,
             rankingId: comment.rankingId,
-            commenterName,
+            rankingTitle: ranking.title,
+            commenterName: commenterName,
             commentText: comment.text,
             commentId: comment.id,
             isReply,
-            parentCommentText,
+            parentCommentText: parentCommentText ?? null,
+            actionUrl: `/rankings/${comment.rankingId}#comment-${comment.id}`, // Link to ranking with comment anchor
+            emailSent: false,
+            createdAt: Date.now(),
+            isRead: false,
         })
 
-        console.log(`Sent comment email notification to ${email} for ranking "${ranking.title}"`)
+        console.log(
+            `🔔 ✅ Created comment notification for user ${recipientId} on ranking "${ranking.title}"`
+        )
     } catch (error) {
-        console.error('Error in sendCommentEmailNotification:', error)
+        console.error('🔔 ❌ Error in createCommentNotification:', error)
         throw error
     }
 }
@@ -296,7 +309,7 @@ export async function getRankingComments(
         const lastDoc = snapshot.docs[snapshot.docs.length - 1] || null
         return createPaginatedResult(comments, lastDoc, limit)
     } catch (error) {
-        console.error('Error getting ranking comments:', error)
+        console.error('🔥 ❌ Error getting ranking comments:', error)
         throw error
     }
 }
@@ -338,7 +351,7 @@ export async function getPositionComments(
         const lastDoc = snapshot.docs[snapshot.docs.length - 1] || null
         return createPaginatedResult(comments, lastDoc, limit)
     } catch (error) {
-        console.error('Error getting position comments:', error)
+        console.error('🔥 ❌ Error getting position comments:', error)
         throw error
     }
 }
@@ -430,7 +443,7 @@ export async function likeComment(userId: string, commentId: string): Promise<vo
             })
         })
     } catch (error) {
-        console.error('Error liking comment:', error)
+        console.error('🔥 ❌ Error liking comment:', error)
         throw error
     }
 }
@@ -460,7 +473,7 @@ export async function unlikeComment(userId: string, commentId: string): Promise<
             })
         })
     } catch (error) {
-        console.error('Error unliking comment:', error)
+        console.error('🔥 ❌ Error unliking comment:', error)
         throw error
     }
 }
@@ -476,7 +489,7 @@ export async function hasUserLikedComment(userId: string, commentId: string): Pr
 
         return likeDoc.exists()
     } catch (error) {
-        console.error('Error checking if user liked comment:', error)
+        console.error('🔥 ❌ Error checking if user liked comment:', error)
         return false
     }
 }
@@ -514,7 +527,7 @@ export async function getUserComments(
         const lastDoc = snapshot.docs[snapshot.docs.length - 1] || null
         return createPaginatedResult(comments, lastDoc, limit)
     } catch (error) {
-        console.error('Error getting user comments:', error)
+        console.error('🔥 ❌ Error getting user comments:', error)
         throw error
     }
 }
@@ -588,7 +601,7 @@ export async function updateRankingCommentsUsername(
             }
         }
     } catch (error) {
-        console.error('Error updating ranking comment usernames:', error)
+        console.error('🔥 ❌ Error updating ranking comment usernames:', error)
         throw error
     }
 }

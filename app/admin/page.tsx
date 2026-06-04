@@ -1,13 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { auth } from '@/firebase'
 import { useSessionStore } from '@/stores/sessionStore'
 import { getAccountStats } from '@/utils/accountLimits'
 import { Users, Settings, PlayCircle, RefreshCw, CalendarDays, Eye } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
-import type { AdminStats, TrendingStats, ActivityStats, ActiveUser } from '@/types/admin'
+import type { AdminStats, ActivityStats, ActiveUser } from '@/types/admin'
+import CronJobsPanel from '@/components/admin/CronJobsPanel'
+import EmailComposer from '@/components/admin/EmailComposer'
+import EmailHistory from '@/components/admin/EmailHistory'
 
 // Admin check is done server-side via API routes
 // Client-side verification happens through API calls, not exposed UIDs
@@ -21,52 +24,104 @@ export default function AdminDashboard() {
     const isAuth = sessionType === 'authenticated'
     const { showSuccess, showError } = useToast()
     const [stats, setStats] = useState<AdminStats | null>(null)
-    const [trendingStats, setTrendingStats] = useState<TrendingStats | null>(null)
     const [activityStats, setActivityStats] = useState<ActivityStats | null>(null)
     const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([])
     const [loading, setLoading] = useState(false)
     const [statsLoading, setStatsLoading] = useState(true)
     const [lastTrendingRun, setLastTrendingRun] = useState<Date | null>(null)
     const [isAdminUser, setIsAdminUser] = useState<boolean | null>(null)
+    const hasCheckedRef = useRef(false)
 
     // Check admin status via server-side API
     useEffect(() => {
         const checkAdminStatus = async () => {
-            if (!isInitialized || !isAuth || !userId) {
-                setIsAdminUser(false)
-                router.push('/')
+            console.log('🔍 Admin page - Check status:', {
+                isInitialized,
+                isAuth,
+                userId,
+                sessionType,
+                isAdminUser,
+                hasChecked: hasCheckedRef.current,
+            })
+
+            // Don't re-check if already checked
+            if (hasCheckedRef.current) {
+                console.log('🔍 Already checked admin status, skipping')
                 return
             }
 
+            if (!isInitialized) {
+                console.log('🔍 Waiting for session to initialize...')
+                return
+            }
+
+            if (!isAuth || !userId) {
+                console.log('🔍 Not authenticated, marking as not admin')
+                setIsAdminUser(false)
+                hasCheckedRef.current = true
+                return
+            }
+
+            // Mark as checked to prevent re-runs
+            hasCheckedRef.current = true
+
             try {
-                const user = auth.currentUser
+                console.log('🔍 Getting Firebase user...')
+
+                // Wait for Firebase Auth to be ready
+                let user = auth.currentUser
                 if (!user) {
+                    console.log('🔍 Firebase user not ready, waiting for auth state...')
+                    // Wait for auth state to settle
+                    user = await new Promise((resolve) => {
+                        const unsubscribe = auth.onAuthStateChanged((user) => {
+                            unsubscribe()
+                            resolve(user)
+                        })
+                    })
+                }
+
+                if (!user) {
+                    console.log('🔍 No Firebase user found')
                     setIsAdminUser(false)
-                    router.push('/')
                     return
                 }
 
+                console.log('🔍 Firebase user found:', user.uid)
+
+                console.log('🔍 Getting ID token...')
                 const idToken = await user.getIdToken()
+                console.log('🔍 Calling /api/admin/check...')
                 const response = await fetch('/api/admin/check', {
                     headers: { Authorization: `Bearer ${idToken}` },
                 })
 
+                console.log('🔍 Admin check response:', response.status)
                 const data = await response.json()
+                console.log('🔍 Admin check data:', data)
                 setIsAdminUser(data.isAdmin === true)
 
                 if (!data.isAdmin) {
-                    console.log('Admin check failed: User is not an admin')
-                    router.push('/')
+                    console.log('🔍 Admin check failed: User is not an admin')
+                } else {
+                    console.log('🔍 Admin check passed!')
                 }
             } catch (error) {
-                console.error('Admin check error:', error)
+                console.error('🔍 Admin check error:', error)
                 setIsAdminUser(false)
-                router.push('/')
             }
         }
 
         checkAdminStatus()
-    }, [isAuth, userId, isInitialized, router])
+    }, [isAuth, userId, isInitialized, sessionType])
+
+    // Redirect if not admin (only after check completes)
+    useEffect(() => {
+        if (isAdminUser === false) {
+            console.log('🔍 Redirecting to home - not admin')
+            router.push('/')
+        }
+    }, [isAdminUser, router])
 
     // Load stats - wait for admin check to complete
     useEffect(() => {
@@ -80,7 +135,7 @@ export default function AdminDashboard() {
         })
 
         return () => unsubscribe()
-    }, [isAuth, userId])
+    }, [isAuth, userId, isAdminUser])
 
     const loadAllStats = async () => {
         setStatsLoading(true)
@@ -115,13 +170,12 @@ export default function AdminDashboard() {
                 })
                 if (trendingResponse.ok) {
                     const trendingData = await trendingResponse.json()
-                    setTrendingStats(trendingData)
                     setLastTrendingRun(trendingData.lastRun ? new Date(trendingData.lastRun) : null)
                 } else {
                     console.error('Failed to load trending stats')
                 }
-            } catch (error) {
-                console.error('Error loading trending stats:', error)
+            } catch (_error) {
+                console.error('Error loading trending stats:', _error)
             }
 
             // Load activity stats
@@ -137,23 +191,25 @@ export default function AdminDashboard() {
 
                     // Get unique users from activities
                     const userMap = new Map<string, ActiveUser>()
-                    activityData.activities.forEach((activity: any) => {
-                        if (activity.userId && activity.userEmail) {
-                            if (!userMap.has(activity.userId)) {
-                                userMap.set(activity.userId, {
-                                    userId: activity.userId,
-                                    email: activity.userEmail,
-                                    lastActive: activity.timestamp,
-                                    activityCount: 0,
-                                })
-                            }
-                            const user = userMap.get(activity.userId)!
-                            user.activityCount++
-                            if (activity.timestamp > user.lastActive) {
-                                user.lastActive = activity.timestamp
+                    activityData.activities.forEach(
+                        (activity: { userId?: string; userEmail?: string; timestamp: number }) => {
+                            if (activity.userId && activity.userEmail) {
+                                if (!userMap.has(activity.userId)) {
+                                    userMap.set(activity.userId, {
+                                        userId: activity.userId,
+                                        email: activity.userEmail,
+                                        lastActive: activity.timestamp,
+                                        activityCount: 0,
+                                    })
+                                }
+                                const user = userMap.get(activity.userId)!
+                                user.activityCount++
+                                if (activity.timestamp > user.lastActive) {
+                                    user.lastActive = activity.timestamp
+                                }
                             }
                         }
-                    })
+                    )
 
                     // Sort by most recent activity
                     const users = Array.from(userMap.values()).sort(
@@ -212,8 +268,48 @@ export default function AdminDashboard() {
             } else {
                 showError(result.error || 'Failed to run trending check')
             }
-        } catch (error) {
+        } catch (_error) {
             showError('Failed to run trending check')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const seedSocialNotifications = async () => {
+        setLoading(true)
+        try {
+            // Get Firebase user and ID token
+            const user = auth.currentUser
+            if (!user) {
+                showError('Authentication required - please refresh the page')
+                setLoading(false)
+                return
+            }
+
+            const idToken = await user.getIdToken()
+            if (!idToken) {
+                showError('Failed to get authentication token')
+                setLoading(false)
+                return
+            }
+
+            const response = await fetch('/api/admin/seed-social', {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${idToken}`,
+                },
+            })
+            const result = await response.json()
+
+            if (response.ok) {
+                showSuccess(
+                    `Social seeding complete: ${result.commentsCreated} comments, ${result.likesCreated} likes, ${result.notificationsCreated} notifications created`
+                )
+            } else {
+                showError(result.error || 'Failed to seed social notifications')
+            }
+        } catch (_error) {
+            showError('Failed to seed social notifications')
         } finally {
             setLoading(false)
         }
@@ -252,15 +348,25 @@ export default function AdminDashboard() {
             } else {
                 showError('Failed to reset accounts')
             }
-        } catch (error) {
+        } catch (_error) {
             showError('Failed to reset accounts')
         } finally {
             setLoading(false)
         }
     }
 
-    // Show loading while session initializes or stats are loading
-    if (!isInitialized || statsLoading) {
+    // Debug render state
+    console.log('🎨 Render state:', {
+        isInitialized,
+        isAdminUser,
+        isAuth,
+        userId: userId?.substring(0, 10),
+        statsLoading,
+    })
+
+    // Show loading while session initializes or admin check is pending
+    if (!isInitialized || isAdminUser === null) {
+        console.log('🎨 Showing loading screen (admin check pending)')
         return (
             <div className="min-h-screen bg-gray-900 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
@@ -273,12 +379,28 @@ export default function AdminDashboard() {
 
     // Show unauthorized if not admin (admin check done server-side)
     if (!isAuth || !userId || isAdminUser === false) {
+        console.log('🎨 Showing unauthorized screen')
         return (
             <div className="min-h-screen bg-gray-900 flex items-center justify-center">
                 <div className="text-white text-xl">Unauthorized</div>
             </div>
         )
     }
+
+    // Show loading while stats are loading (but admin is confirmed)
+    if (statsLoading) {
+        console.log('🎨 Showing stats loading screen')
+        return (
+            <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                    <div className="text-white text-xl">Loading statistics...</div>
+                </div>
+            </div>
+        )
+    }
+
+    console.log('🎨 Showing admin dashboard!')
 
     return (
         <div className="min-h-screen bg-gray-900 p-8">
@@ -397,6 +519,25 @@ export default function AdminDashboard() {
                                 >
                                     <RefreshCw className="h-4 w-4" />
                                     {loading ? 'Running...' : 'Trigger Demo'}
+                                </button>
+                            </div>
+
+                            {/* Social Notifications Seed */}
+                            <div className="p-4 bg-gray-900 rounded-lg">
+                                <h3 className="text-sm font-medium text-gray-300 mb-2">
+                                    Seed Social Notifications
+                                </h3>
+                                <p className="text-xs text-gray-500 mb-3">
+                                    Create comments and likes on rankings to generate social
+                                    notifications
+                                </p>
+                                <button
+                                    onClick={seedSocialNotifications}
+                                    disabled={loading}
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 text-white rounded-lg transition"
+                                >
+                                    <Users className="h-4 w-4" />
+                                    {loading ? 'Seeding...' : 'Seed Social Notifications'}
                                 </button>
                             </div>
 
@@ -532,6 +673,21 @@ export default function AdminDashboard() {
                     ) : (
                         <p className="text-gray-400">No user activity recorded this month</p>
                     )}
+                </div>
+
+                {/* Email Management */}
+                <div className="mt-8 bg-gray-800 rounded-xl p-6">
+                    <EmailComposer />
+                </div>
+
+                {/* Email History */}
+                <div className="mt-8 bg-gray-800 rounded-xl p-6">
+                    <EmailHistory />
+                </div>
+
+                {/* Cron Jobs Management */}
+                <div className="mt-8">
+                    <CronJobsPanel />
                 </div>
 
                 {/* System Logs */}

@@ -11,7 +11,7 @@ export type AvatarSource = 'google' | 'custom' | 'generated'
 export interface ProfileVisibility {
     enablePublicProfile: boolean // Master toggle - when off, all sections hidden
     showLikedContent: boolean // Show liked movies/shows
-    showWatchLater: boolean // Show watch later preview
+    showWatchHistory: boolean // Show watch history preview
     showRankings: boolean // Show public rankings
     showCollections: boolean // Show shared collections
     showThreads: boolean // Show forum threads created
@@ -26,7 +26,7 @@ export interface ProfileVisibility {
 export const DEFAULT_PROFILE_VISIBILITY: ProfileVisibility = {
     enablePublicProfile: true,
     showLikedContent: true,
-    showWatchLater: true,
+    showWatchHistory: true,
     showRankings: true,
     showCollections: true,
     showThreads: true,
@@ -45,7 +45,8 @@ export interface UserProfile {
     email: string // Private (not shown publicly)
 
     // Identity
-    displayName: string // User's display name shown in UI
+    displayName: string // User's display name shown in UI (flexible, can include spaces/special chars)
+    username?: string // Optional URL slug for profile link (strict validation, unique)
 
     // Avatar system
     avatarUrl: string // Current avatar URL
@@ -78,6 +79,7 @@ export interface UserProfile {
  */
 export interface UpdateProfileRequest {
     displayName?: string
+    username?: string // Optional URL slug (validated separately)
     description?: string
     favoriteGenres?: string[]
     isPublic?: boolean // @deprecated - use visibility instead
@@ -115,10 +117,17 @@ export interface UsernameAvailability {
  * Profile validation constraints
  */
 export const PROFILE_CONSTRAINTS = {
-    // Username
+    // Display Name (flexible, user-friendly)
+    MIN_DISPLAY_NAME_LENGTH: 1,
+    MAX_DISPLAY_NAME_LENGTH: 50,
+
+    // Username (strict, for URL slugs)
     MIN_USERNAME_LENGTH: 3,
     MAX_USERNAME_LENGTH: 20,
     USERNAME_PATTERN: /^[a-zA-Z0-9_]+$/,
+
+    // Display Name (strict pattern to prevent character substitution)
+    DISPLAY_NAME_PATTERN: /^[a-zA-Z0-9\s\-'.]+$/,
 
     // Description
     MAX_DESCRIPTION_LENGTH: 300,
@@ -140,6 +149,10 @@ export const PROFILE_CONSTRAINTS = {
  * Profile validation errors
  */
 export type ProfileValidationError =
+    | 'DISPLAY_NAME_REQUIRED'
+    | 'DISPLAY_NAME_TOO_SHORT'
+    | 'DISPLAY_NAME_TOO_LONG'
+    | 'DISPLAY_NAME_INAPPROPRIATE'
     | 'USERNAME_TOO_SHORT'
     | 'USERNAME_TOO_LONG'
     | 'USERNAME_INVALID_CHARS'
@@ -246,6 +259,7 @@ export async function validateAvatarDimensions(file: File): Promise<{
 
 /**
  * Default profile for new users
+ * Username is optional and not set by default (users can set it later)
  */
 export function createDefaultProfile(
     userId: string,
@@ -258,6 +272,7 @@ export function createDefaultProfile(
         userId,
         email,
         displayName,
+        // username is optional, not set by default
         avatarUrl:
             googlePhotoUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${displayName}`,
         avatarSource: googlePhotoUrl ? 'google' : 'generated',

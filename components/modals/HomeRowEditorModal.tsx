@@ -55,10 +55,6 @@ interface DisplayRow {
     displayAsRow?: boolean
     createdAt?: number
     updatedAt?: number
-    autoUpdateEnabled?: boolean
-    updateFrequency?: 'daily' | 'weekly' | 'never'
-    lastCheckedAt?: number
-    lastUpdateCount?: number
     showOnPublicProfile?: boolean
 }
 
@@ -138,10 +134,11 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
             displayAsRow: col.displayAsRow,
             createdAt: col.createdAt,
             updatedAt: col.updatedAt,
-            autoUpdateEnabled: col.autoUpdateEnabled,
-            updateFrequency: col.updateFrequency,
-            lastCheckedAt: col.lastCheckedAt,
-            lastUpdateCount: col.lastUpdateCount,
+            // NOTE: Auto-update feature was removed during refactor
+            // autoUpdateEnabled: col.autoUpdateEnabled,
+            // updateFrequency: col.updateFrequency,
+            // lastCheckedAt: col.lastCheckedAt,
+            // lastUpdateCount: col.lastUpdateCount,
             showOnPublicProfile: col.showOnPublicProfile,
         }),
         []
@@ -604,7 +601,7 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
 
                 <div
                     ref={modalContainerRef}
-                    className="relative bg-gradient-to-br from-zinc-900/95 via-black/95 to-zinc-900/95 backdrop-blur-xl rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl border border-zinc-800/50"
+                    className="relative bg-gradient-to-br from-zinc-900/95 via-black/95 to-zinc-900/95 backdrop-blur-xl rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl border border-zinc-800/50"
                 >
                     {/* Cinematic Header */}
                     <div className="relative overflow-hidden">
@@ -625,7 +622,7 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
                                 </div>
                                 <h2
                                     id="row-editor-modal-title"
-                                    className="text-2xl font-black text-white"
+                                    className="text-xl font-black text-white"
                                 >
                                     <span className="bg-gradient-to-r from-purple-200 via-violet-100 to-purple-200 bg-clip-text text-transparent">
                                         Edit Displayed Collections
@@ -637,7 +634,7 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
                                 {!isGuest && (
                                     <button
                                         onClick={handleCreate}
-                                        className="group relative flex items-center gap-2 px-4 py-2.5 bg-purple-600/90 hover:bg-purple-500 text-white rounded-xl transition-all duration-300 text-sm font-bold shadow-[0_0_10px_rgba(168,85,247,0.3)] hover:shadow-[0_0_15px_rgba(168,85,247,0.5)] hover:scale-105"
+                                        className="group relative flex items-center gap-2 px-4 py-2.5 bg-purple-600/90 hover:bg-purple-500 text-white rounded-xl transition-all duration-300 text-xs font-bold shadow-[0_0_10px_rgba(168,85,247,0.3)] hover:shadow-[0_0_15px_rgba(168,85,247,0.5)] hover:scale-105"
                                     >
                                         <PlusIcon className="w-4 h-4" />
                                         Create Collection
@@ -646,17 +643,10 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
                                 )}
                                 <button
                                     onClick={handleResetDefaultRows}
-                                    className="flex items-center gap-2 px-4 py-2.5 bg-zinc-800/60 hover:bg-zinc-700/80 text-white rounded-xl transition-all duration-300 text-sm font-bold border border-zinc-700/50 hover:border-zinc-600 hover:scale-105"
+                                    className="flex items-center gap-2 px-4 py-2.5 bg-zinc-800/60 hover:bg-zinc-700/80 text-white rounded-xl transition-all duration-300 text-xs font-bold border border-zinc-700/50 hover:border-zinc-600 hover:scale-105"
                                 >
                                     <ArrowPathIcon className="w-4 h-4" />
                                     Reset Defaults
-                                </button>
-                                <button
-                                    onClick={onClose}
-                                    className="flex items-center justify-center w-10 h-10 bg-zinc-800/60 hover:bg-zinc-700/80 text-white rounded-xl transition-all duration-300 border border-zinc-700/50 hover:border-zinc-600 hover:scale-105"
-                                    aria-label="Close modal"
-                                >
-                                    <XMarkIcon className="w-5 h-5" />
                                 </button>
                             </div>
                         </div>
@@ -668,7 +658,7 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
                         <div className="flex gap-2 mb-6">
                             <button
                                 onClick={() => setDisplayFilter('all')}
-                                className={`group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border ${
+                                className={`group relative rounded-full px-5 py-2.5 text-xs font-bold transition-all duration-300 backdrop-blur-md border ${
                                     displayFilter === 'all'
                                         ? 'bg-purple-500/90 text-white border-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.3)] scale-105'
                                         : 'bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105'
@@ -681,7 +671,7 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
                             </button>
                             <button
                                 onClick={() => setDisplayFilter('shown')}
-                                className={`group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border ${
+                                className={`group relative rounded-full px-5 py-2.5 text-xs font-bold transition-all duration-300 backdrop-blur-md border ${
                                     displayFilter === 'shown'
                                         ? 'bg-green-500/90 text-white border-green-400 shadow-[0_0_10px_rgba(34,197,94,0.3)] scale-105'
                                         : 'bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105'
@@ -694,7 +684,7 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
                             </button>
                             <button
                                 onClick={() => setDisplayFilter('hidden')}
-                                className={`group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border ${
+                                className={`group relative rounded-full px-5 py-2.5 text-xs font-bold transition-all duration-300 backdrop-blur-md border ${
                                     displayFilter === 'hidden'
                                         ? 'bg-zinc-600/90 text-white border-zinc-500 shadow-[0_0_10px_rgba(113,113,122,0.3)] scale-105'
                                         : 'bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105'

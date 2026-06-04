@@ -30,6 +30,12 @@ export default function NotificationPanel() {
     const notifications = useMemo(() => {
         const seen = new Set<string>()
         return rawNotifications.filter((notification) => {
+            // Filter out notifications without IDs
+            if (!notification?.id) {
+                console.warn('⚠️  Notification missing ID:', notification)
+                return false
+            }
+            // Filter out duplicates
             if (seen.has(notification.id)) {
                 return false
             }
@@ -167,8 +173,14 @@ export default function NotificationPanel() {
                     </div>
                 ) : (
                     <div>
-                        {notifications.map((notification) => (
-                            <NotificationItem key={notification.id} notification={notification} />
+                        {notifications.map((notification, index) => (
+                            <NotificationItem
+                                key={
+                                    notification.id ||
+                                    `notification-${index}-${notification.createdAt}`
+                                }
+                                notification={notification}
+                            />
                         ))}
                     </div>
                 )}

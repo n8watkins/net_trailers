@@ -19,20 +19,27 @@ interface TMDBDiscoverResponse {
 
 /**
  * Check TMDB for new content matching a collection's criteria
+ * NOTE: Auto-update feature was removed during refactor. This function is deprecated.
  *
  * @param collection - CustomRow to check for updates
  * @returns Array of new TMDB content IDs
+ * @deprecated Auto-update feature has been removed
  */
 export async function checkForNewContent(collection: CustomRow): Promise<number[]> {
+    // NOTE: Auto-update feature was removed during refactor
+    // This function is kept for backward compatibility but will always return empty array
+    return []
+
     // Don't check if auto-update is disabled
-    if (!collection.autoUpdateEnabled) {
-        return []
-    }
+    // if (!collection.autoUpdateEnabled) {
+    //     return []
+    // }
 
     // Special handling for curated collections (contentIds-based)
     if (
         collection.advancedFilters?.contentIds &&
-        collection.advancedFilters.contentIds.length > 0
+        Array.isArray(collection.advancedFilters!.contentIds) &&
+        collection.advancedFilters!.contentIds!.length > 0
     ) {
         // Curated collections don't auto-update from TMDB
         // They're manually curated, so no new content to discover
@@ -122,28 +129,29 @@ function buildDiscoverParams(
         }
     }
 
+    // NOTE: Auto-update feature was removed during refactor
     // Release date filter - only get content released after last check
-    if (collection.lastCheckedAt) {
-        const lastCheckDate = new Date(collection.lastCheckedAt)
-        const formattedDate = lastCheckDate.toISOString().split('T')[0] // YYYY-MM-DD
-
-        if (mediaType === 'movie') {
-            params['primary_release_date.gte'] = formattedDate
-        } else {
-            params['first_air_date.gte'] = formattedDate
-        }
-    } else {
-        // If never checked, get content from last 30 days
-        const thirtyDaysAgo = new Date()
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-        const formattedDate = thirtyDaysAgo.toISOString().split('T')[0]
-
-        if (mediaType === 'movie') {
-            params['primary_release_date.gte'] = formattedDate
-        } else {
-            params['first_air_date.gte'] = formattedDate
-        }
-    }
+    // if (collection.lastCheckedAt) {
+    //     const lastCheckDate = new Date(collection.lastCheckedAt)
+    //     const formattedDate = lastCheckDate.toISOString().split('T')[0] // YYYY-MM-DD
+    //
+    //     if (mediaType === 'movie') {
+    //         params['primary_release_date.gte'] = formattedDate
+    //     } else {
+    //         params['first_air_date.gte'] = formattedDate
+    //     }
+    // } else {
+    //     // If never checked, get content from last 30 days
+    //     const thirtyDaysAgo = new Date()
+    //     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+    //     const formattedDate = thirtyDaysAgo.toISOString().split('T')[0]
+    //
+    //     if (mediaType === 'movie') {
+    //         params['primary_release_date.gte'] = formattedDate
+    //     } else {
+    //         params['first_air_date.gte'] = formattedDate
+    //     }
+    // }
 
     // Advanced filters
     if (collection.advancedFilters) {
@@ -218,20 +226,23 @@ function applyAdvancedFilters(
         }
     }
 
-    if (filters.withDirector) {
-        // Only use if it's a numeric ID
-        if (!isNaN(Number(filters.withDirector))) {
-            params.with_crew = filters.withDirector
+    if (filters.withDirector && filters.withDirector.length > 0) {
+        // Use first director if it's a numeric ID
+        const firstDirector = filters.withDirector[0]
+        if (!isNaN(Number(firstDirector))) {
+            params.with_crew = firstDirector
         }
     }
 }
 
 /**
  * Add new content IDs to a collection
+ * NOTE: Auto-update feature was removed during refactor. This function is deprecated.
  *
  * @param collection - CustomRow to update
  * @param newContentIds - Array of TMDB IDs to add
  * @returns Updated collection with new content
+ * @deprecated Auto-update feature has been removed
  */
 export function addContentToCollection(collection: CustomRow, newContentIds: number[]): CustomRow {
     if (newContentIds.length === 0) {
@@ -247,81 +258,95 @@ export function addContentToCollection(collection: CustomRow, newContentIds: num
     // Merge and deduplicate
     const updatedIds = Array.from(new Set([...existingIds, ...newContentIds]))
 
-    // Update collection
+    // Update collection (without auto-update fields that were removed)
     return {
         ...collection,
         advancedFilters: {
             ...advancedFilters,
             contentIds: updatedIds,
         },
-        lastCheckedAt: Date.now(),
-        lastUpdateCount: newContentIds.length,
+        // NOTE: Auto-update feature was removed during refactor
+        // lastCheckedAt: Date.now(),
+        // lastUpdateCount: newContentIds.length,
         updatedAt: Date.now(),
     }
 }
 
 /**
  * Get collections that need to be checked for updates
+ * NOTE: Auto-update feature was removed during refactor. This function is deprecated.
  *
  * @param allCollections - Array of all CustomRows
  * @returns Collections that are due for update check
+ * @deprecated Auto-update feature has been removed
  */
 export function getCollectionsDueForUpdate(allCollections: CustomRow[]): CustomRow[] {
-    const now = Date.now()
+    // NOTE: Auto-update feature was removed during refactor
+    // This function is kept for backward compatibility but will always return empty array
+    return []
 
-    return allCollections.filter((collection) => {
-        // Must have auto-update enabled
-        if (!collection.autoUpdateEnabled) {
-            return false
-        }
-
-        // Skip if frequency is 'never'
-        if (collection.updateFrequency === 'never') {
-            return false
-        }
-
-        // If never checked, include it
-        if (!collection.lastCheckedAt) {
-            return true
-        }
-
-        // Check based on frequency
-        const timeSinceLastCheck = now - collection.lastCheckedAt
-        const oneDayMs = 24 * 60 * 60 * 1000
-        const oneWeekMs = 7 * oneDayMs
-
-        if (collection.updateFrequency === 'daily') {
-            return timeSinceLastCheck >= oneDayMs
-        } else if (collection.updateFrequency === 'weekly') {
-            return timeSinceLastCheck >= oneWeekMs
-        }
-
-        return false
-    })
+    // const now = Date.now()
+    //
+    // return allCollections.filter((collection) => {
+    //     // Must have auto-update enabled
+    //     if (!collection.autoUpdateEnabled) {
+    //         return false
+    //     }
+    //
+    //     // Skip if frequency is 'never'
+    //     if (collection.updateFrequency === 'never') {
+    //         return false
+    //     }
+    //
+    //     // If never checked, include it
+    //     if (!collection.lastCheckedAt) {
+    //         return true
+    //     }
+    //
+    //     // Check based on frequency
+    //     const timeSinceLastCheck = now - collection.lastCheckedAt
+    //     const oneDayMs = 24 * 60 * 60 * 1000
+    //     const oneWeekMs = 7 * oneDayMs
+    //
+    //     if (collection.updateFrequency === 'daily') {
+    //         return timeSinceLastCheck >= oneDayMs
+    //     } else if (collection.updateFrequency === 'weekly') {
+    //         return timeSinceLastCheck >= oneWeekMs
+    //     }
+    //
+    //     return false
+    // })
 }
 
 /**
  * Validate collection can be auto-updated
+ * NOTE: Auto-update feature was removed during refactor. This function is deprecated.
  *
  * @param collection - CustomRow to validate
  * @returns True if collection can be auto-updated
+ * @deprecated Auto-update feature has been removed
  */
 export function canAutoUpdate(collection: CustomRow): boolean {
+    // NOTE: Auto-update feature was removed during refactor
+    // This function is kept for backward compatibility but will always return false
+    return false
+
     // Can't auto-update if disabled
-    if (!collection.autoUpdateEnabled) {
-        return false
-    }
+    // if (!collection.autoUpdateEnabled) {
+    //     return false
+    // }
 
     // Can't auto-update curated collections (manually selected content)
     if (
         collection.advancedFilters?.contentIds &&
-        collection.advancedFilters.contentIds.length > 0
+        Array.isArray(collection.advancedFilters!.contentIds) &&
+        collection.advancedFilters!.contentIds!.length > 0
     ) {
         // Exception: If it has other filters too, it might be discoverable
         const hasOtherFilters =
             collection.genres.length > 0 ||
-            collection.advancedFilters.yearMin !== undefined ||
-            collection.advancedFilters.ratingMin !== undefined
+            collection.advancedFilters?.yearMin !== undefined ||
+            collection.advancedFilters?.ratingMin !== undefined
 
         if (!hasOtherFilters) {
             return false

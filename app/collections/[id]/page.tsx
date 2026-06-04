@@ -13,7 +13,9 @@ import {
     ChevronDownIcon,
     TrashIcon,
 } from '@heroicons/react/24/solid'
-import { XMarkIcon, RectangleStackIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, RectangleStackIcon, MicrophoneIcon } from '@heroicons/react/24/outline'
+import { useVoiceInput } from '../../../hooks/useVoiceInput'
+import { useToast } from '../../../hooks/useToast'
 import { Content } from '../../../typings'
 import { getTitle } from '../../../typings'
 import ContentCard from '../../../components/common/ContentCard'
@@ -55,7 +57,25 @@ const CollectionPage = ({ params }: CollectionPageProps) => {
     const [showEditor, setShowEditor] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
     const [showManageDropdown, setShowManageDropdown] = useState(false)
+    const [isMounted, setIsMounted] = useState(false)
     const manageDropdownRef = useRef<HTMLDivElement>(null)
+    const { showError } = useToast()
+
+    // Voice input
+    const { isListening, isSupported, transcript, startListening, stopListening } = useVoiceInput({
+        onResult: (transcript) => {
+            setSearchQuery(transcript)
+        },
+        onError: (error) => {
+            showError(error)
+        },
+        sourceId: 'collection-search',
+    })
+
+    // Track client-side mount
+    useEffect(() => {
+        setIsMounted(true)
+    }, [])
 
     // Handle click outside to close dropdown
     useEffect(() => {
@@ -402,7 +422,7 @@ const CollectionPage = ({ params }: CollectionPageProps) => {
                     {/* Content Container */}
                     <div className="relative z-10">
                         {/* Cinematic Hero Header */}
-                        <div className="relative overflow-hidden pt-4">
+                        <div className="relative overflow-hidden pt-12">
                             {/* Animated Background Gradients */}
                             <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900/80 to-black" />
                             <div
@@ -416,28 +436,31 @@ const CollectionPage = ({ params }: CollectionPageProps) => {
                             <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60" />
 
                             {/* Hero Content */}
-                            <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-6">
-                                {/* Icon with glow */}
-                                <div className="relative mb-4">
-                                    <div className="absolute inset-0 bg-blue-500/30 blur-2xl scale-150" />
-                                    {selectedList?.emoji ? (
-                                        <span className="relative text-6xl drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]">
-                                            {selectedList.emoji}
+                            <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-4">
+                                {/* Title with inline icon */}
+                                <div className="flex items-center gap-4 mb-2">
+                                    {/* Icon with glow */}
+                                    <div className="relative">
+                                        <div className="absolute inset-0 bg-blue-500/30 blur-2xl scale-150" />
+                                        {selectedList?.emoji ? (
+                                            <span className="relative text-5xl sm:text-6xl drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]">
+                                                {selectedList.emoji}
+                                            </span>
+                                        ) : (
+                                            <RectangleStackIcon className="relative w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 text-blue-400 drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
+                                        )}
+                                    </div>
+
+                                    {/* Title */}
+                                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white text-center tracking-tight">
+                                        <span className="bg-gradient-to-r from-blue-200 via-cyan-100 to-blue-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
+                                            {selectedList?.name || 'Collection'}
                                         </span>
-                                    ) : (
-                                        <RectangleStackIcon className="relative w-16 h-16 text-blue-400 drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
-                                    )}
+                                    </h1>
                                 </div>
 
-                                {/* Title */}
-                                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-2 text-center tracking-tight">
-                                    <span className="bg-gradient-to-r from-blue-200 via-cyan-100 to-blue-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
-                                        {selectedList?.name || 'Collection'}
-                                    </span>
-                                </h1>
-
                                 {/* Subtitle with item count */}
-                                <p className="text-base sm:text-lg text-gray-300 mb-6 text-center max-w-2xl">
+                                <p className="text-base sm:text-lg text-gray-300 mb-4 text-center max-w-2xl">
                                     {selectedList?.description || 'Your curated collection'}
                                     {!isLoading &&
                                         selectedList &&
@@ -575,7 +598,7 @@ const CollectionPage = ({ params }: CollectionPageProps) => {
                                 </div>
 
                                 {/* Enhanced Search Bar */}
-                                <div className="w-full max-w-3xl relative">
+                                <div className="w-full max-w-4xl relative">
                                     <div className="relative group">
                                         <MagnifyingGlassIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 z-10 transition-colors group-focus-within:text-blue-400" />
                                         <input
@@ -602,7 +625,7 @@ const CollectionPage = ({ params }: CollectionPageProps) => {
                         </div>
 
                         {/* Main Content Area */}
-                        <div className="px-6 sm:px-8 lg:px-12 py-8 space-y-6">
+                        <div className="px-6 sm:px-8 lg:px-12 py-4 space-y-6">
                             {/* Loading state */}
                             {isLoading && (
                                 <div className="py-16">

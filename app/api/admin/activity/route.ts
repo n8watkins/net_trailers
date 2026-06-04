@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
             },
         })
     } catch (error) {
-        console.error('Error fetching activity:', error)
+        console.error('👑 ❌ Error fetching activity:', error)
         return NextResponse.json(
             {
                 error: 'Failed to fetch activity',
@@ -211,9 +211,12 @@ export async function POST(request: NextRequest) {
             db = getAdminDb()
         } catch (dbError) {
             // Log the specific Firebase Admin initialization error
-            console.error('[Activity Tracking] Firebase Admin initialization failed:', dbError)
             console.error(
-                '[Activity Tracking] Check FIREBASE_ADMIN_PRIVATE_KEY and FIREBASE_ADMIN_CLIENT_EMAIL environment variables'
+                '🔥 ❌ [Activity Tracking] Firebase Admin initialization failed:',
+                dbError
+            )
+            console.error(
+                '🔥 ❌ [Activity Tracking] Check FIREBASE_ADMIN_PRIVATE_KEY and FIREBASE_ADMIN_CLIENT_EMAIL environment variables'
             )
 
             // Return 503 Service Unavailable (not 500) - this is a configuration issue, not a code bug
@@ -242,13 +245,13 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ success: true })
     } catch (error) {
-        console.error('[Activity Tracking] Error recording activity:', error)
+        console.error('🔥 ❌ [Activity Tracking] Error recording activity:', error)
 
         // Log additional context for debugging
         if (error instanceof Error) {
-            console.error('[Activity Tracking] Error name:', error.name)
-            console.error('[Activity Tracking] Error message:', error.message)
-            console.error('[Activity Tracking] Error stack:', error.stack)
+            console.error('🔥 ❌ [Activity Tracking] Error name:', error.name)
+            console.error('🔥 ❌ [Activity Tracking] Error message:', error.message)
+            console.error('🔥 ❌ [Activity Tracking] Error stack:', error.stack)
         }
 
         return NextResponse.json(

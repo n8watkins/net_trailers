@@ -229,11 +229,11 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
                             <h1 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight">
                                 {getTitle(featuredContent)}
                             </h1>
-                            <div className="flex items-center space-x-2 mb-2">
-                                <span className="text-xs md:text-sm text-gray-300">
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className="px-3 py-1.5 text-sm md:text-base bg-zinc-800/70 backdrop-blur-sm border border-zinc-700/50 rounded-full text-gray-200 font-semibold">
                                     {getContentType(featuredContent)}
                                 </span>
-                                <span className="text-xs md:text-sm text-gray-300">
+                                <span className="px-3 py-1.5 text-sm md:text-base bg-zinc-800/70 backdrop-blur-sm border border-zinc-700/50 rounded-full text-gray-200 font-semibold">
                                     {getYear(featuredContent)}
                                 </span>
                             </div>
@@ -259,7 +259,7 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
                     {/* Buttons*/}
                     <div className="flex gap-2 sm:gap-3 md:gap-4 pt-3 md:pt-4">
                         <button
-                            className="bannerButton bg-white text-black hover:bg-white/80 transition-all duration-200 font-bold"
+                            className="bannerButton bg-white text-black hover:bg-white/90 hover:scale-105 transition-all duration-200 font-bold"
                             onClick={() => {
                                 if (featuredContent) {
                                     // Play mode - autoPlay=true, autoPlayWithSound=true (starts with sound)

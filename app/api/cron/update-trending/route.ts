@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { getAdminDb } from '@/lib/firebase-admin'
-import { compareTrendingContent, getTrendingTitle } from '@/utils/trendingComparison'
 import { validateAdminRequest } from '@/utils/adminMiddleware'
+import { EmailService } from '@/lib/email/email-service'
+import { Content } from '@/typings'
+import { generateUnsubscribeToken } from '../../email/unsubscribe/route'
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY
 const CRON_SECRET = process.env.CRON_SECRET
@@ -50,9 +52,7 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: 'TMDB API key not configured' }, { status: 500 })
         }
 
-        // Check for demo mode (admin only)
-        const { searchParams } = new URL(req.url)
-        const isDemoMode = searchParams.get('demo') === 'true' && isAdmin
+        console.log('📊 [Trending] Starting weekly trending digest')
 
         // Fetch current trending from TMDB
         const [moviesRes, tvRes] = await Promise.all([
@@ -67,118 +67,177 @@ export async function GET(req: NextRequest) {
         const moviesData = await moviesRes.json()
         const tvData = await tvRes.json()
 
-        // Get previous snapshot
-        const db = getAdminDb()
-        const trendingDoc = await db.doc('system/trending').get()
-        const previousData = trendingDoc.data() || {}
+        console.log(
+            `📊 [Trending] Fetched ${moviesData.results.length} movies, ${tvData.results.length} TV shows`
+        )
 
-        let newMovies = []
-        let newShows = []
+        // Check if admin-only mode is enabled via query parameter
+        const { searchParams } = new URL(req.url)
+        const adminOnlyParam = searchParams.get('adminOnly')
+        const adminOnly = adminOnlyParam === 'true'
 
-        if (isDemoMode) {
-            // Demo mode: Always find at least one new item
-            console.log('[Trending] Running in DEMO mode')
-            newMovies = moviesData.results.slice(0, 1)
-            newShows = tvData.results.slice(0, 1)
+        // Get admin UID from environment variable
+        const ADMIN_UID = process.env.ADMIN_UID
+
+        if (adminOnly) {
+            console.log(`📊 [Trending] Running in ADMIN-ONLY mode`)
         } else {
-            // Production mode: Real comparison
-            newMovies = compareTrendingContent(
-                previousData.moviesSnapshot || [],
-                moviesData.results
-            )
-            newShows = compareTrendingContent(previousData.tvSnapshot || [], tvData.results)
+            console.log(`📊 [Trending] Running in ALL USERS mode`)
         }
 
-        console.log(`[Trending] Found ${newMovies.length} new movies, ${newShows.length} new shows`)
-
-        // Create notifications for users
-        let notificationCount = 0
+        // Send weekly digest emails to all opted-in users
+        let emailsSent = 0
         let skippedUsers = 0
 
-        if (newMovies.length > 0 || newShows.length > 0) {
-            // Get timestamp when trending data was last fetched
-            const trendingTimestamp = previousData.lastRun || 0
+        const db = getAdminDb()
+        const usersSnapshot = await db.collection('users').get()
 
-            // Get all users
-            const usersSnapshot = await db.collection('users').get()
+        for (const userDoc of usersSnapshot.docs) {
+            const userData = userDoc.data()
+            const userId = userDoc.id
 
-            for (const userDoc of usersSnapshot.docs) {
-                const userData = userDoc.data()
-                const watchlist = userData.watchlist || []
+            // ADMIN ONLY MODE: Skip all users except admin
+            if (adminOnly && (!ADMIN_UID || userId !== ADMIN_UID)) {
+                console.log(`📊 [Trending] Skipping non-admin user: ${userId}`)
+                skippedUsers++
+                continue
+            }
 
-                // Check if user has opted into trending notifications
-                const trendingEnabled = userData.notifications?.types?.trending_update ?? false
-                if (!trendingEnabled) {
-                    skippedUsers++
-                    continue
-                }
+            // Check if user has opted into trending notifications AND email
+            const trendingEnabled = userData.notifications?.types?.trending_update ?? false
+            const emailEnabled = userData.notifications?.email ?? false
 
-                // Check if user has logged in since last trending update
-                // Only notify about items that became trending AFTER their last login
-                const lastLoginAt = userData.lastLoginAt || 0
-                if (lastLoginAt >= trendingTimestamp) {
-                    // User already saw the previous trending data, skip
-                    skippedUsers++
-                    continue
-                }
+            if (!trendingEnabled || !emailEnabled || !userData.email) {
+                skippedUsers++
+                continue
+            }
 
-                // Check if user has any new trending items in watchlist
-                const matchingMovies = newMovies.filter((movie: any) =>
-                    watchlist.some(
-                        (item: any) => item.id === movie.id && item.media_type === 'movie'
+            try {
+                // Generate unsubscribe token for this user
+                let unsubscribeToken: string | undefined
+                try {
+                    unsubscribeToken = await generateUnsubscribeToken(userDoc.id)
+                } catch (tokenError) {
+                    console.warn(
+                        `⚠️  [Trending] Failed to generate unsubscribe token for ${userDoc.id}:`,
+                        tokenError
                     )
-                )
-                const matchingShows = newShows.filter((show: any) =>
-                    watchlist.some((item: any) => item.id === show.id && item.media_type === 'tv')
-                )
-
-                // Create notifications for matches (max 3 per user)
-                const totalMatches = [...matchingMovies, ...matchingShows].slice(0, 3)
-
-                for (const item of totalMatches) {
-                    const isMovie = item.title !== undefined
-                    const title = getTrendingTitle(item)
-
-                    await db.collection(`users/${userDoc.id}/notifications`).add({
-                        type: 'trending_update',
-                        title: 'Now Trending!',
-                        message: `${title} is trending this week`,
-                        contentId: item.id,
-                        mediaType: isMovie ? 'movie' : 'tv',
-                        imageUrl: item.poster_path
-                            ? `https://image.tmdb.org/t/p/w92${item.poster_path}`
-                            : null,
-                        isRead: false,
-                        createdAt: Date.now(),
-                        expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days
-                    })
-                    notificationCount++
+                    // Continue without token - email will link to settings page instead
                 }
+
+                // Prepare trending content for email (top 5 of each)
+                const trendingMovies = moviesData.results.slice(0, 5).map((m: any) => ({
+                    ...m,
+                    media_type: 'movie' as const,
+                }))
+                const trendingShows = tvData.results.slice(0, 5).map((s: any) => ({
+                    ...s,
+                    media_type: 'tv' as const,
+                }))
+
+                await EmailService.sendTrendingContent({
+                    to: userData.email,
+                    userName: userData.displayName || userData.email.split('@')[0],
+                    movies: trendingMovies as Content[],
+                    tvShows: trendingShows as Content[],
+                    unsubscribeToken,
+                })
+                emailsSent++
+                console.log(`📧 [Trending] Sent email to ${userData.email}`)
+            } catch (emailError) {
+                console.error(
+                    `📧 ❌ [Trending] Failed to send email to ${userData.email}:`,
+                    emailError
+                )
             }
         }
 
-        console.log(`[Trending] Skipped ${skippedUsers} users (opted out or already seen)`)
+        console.log(`📊 [Trending] Skipped ${skippedUsers} users (opted out or no email)`)
+        console.log(`📧 [Trending] Sent ${emailsSent} weekly digest emails`)
 
-        console.log(`[Trending] Created ${notificationCount} notifications`)
+        // Create in-app notifications for all users with trending notifications enabled
+        console.log('🔔 [Trending] Creating in-app notifications...')
+        let notificationsCreated = 0
+        let notificationsSkipped = 0
 
-        // Update snapshot
-        await db.doc('system/trending').set({
-            moviesSnapshot: moviesData.results,
-            tvSnapshot: tvData.results,
-            lastRun: Date.now(),
-            lastNewItems: newMovies.length + newShows.length,
-            totalNotifications: (previousData.totalNotifications || 0) + notificationCount,
-            demoMode: isDemoMode,
-        })
+        // Import notification utilities
+        const { createNotification } = await import('@/utils/firestore/notifications')
+
+        // Prepare top trending items (top 3 movies + top 3 TV shows)
+        const topMovies = moviesData.results.slice(0, 3)
+        const topShows = tvData.results.slice(0, 3)
+        const allTrendingItems = [
+            ...topMovies.map((m: any) => ({ ...m, media_type: 'movie' })),
+            ...topShows.map((s: any) => ({ ...s, media_type: 'tv' })),
+        ]
+
+        console.log(`🔔 [Trending] Will notify about ${allTrendingItems.length} trending items`)
+
+        for (const userDoc of usersSnapshot.docs) {
+            const userData = userDoc.data()
+            const userId = userDoc.id
+
+            // ADMIN ONLY MODE: Skip all users except admin
+            if (adminOnly && (!ADMIN_UID || userId !== ADMIN_UID)) {
+                continue
+            }
+
+            // Check if user has in-app trending notifications enabled
+            const trendingEnabled = userData.notifications?.types?.trending_update ?? false
+
+            if (!trendingEnabled) {
+                notificationsSkipped++
+                continue
+            }
+
+            try {
+                // Create individual notification for each trending item
+                for (const item of allTrendingItems) {
+                    const title = item.title || item.name
+                    const mediaType = item.media_type === 'movie' ? 'movie' : 'tv'
+
+                    await createNotification(userId, {
+                        type: 'trending_update',
+                        title: 'Now Trending! 🔥',
+                        message: `${title} is currently trending this week!`,
+                        contentId: item.id,
+                        mediaType: mediaType,
+                        imageUrl: item.poster_path
+                            ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
+                            : undefined,
+                        actionUrl: `/${mediaType}/${item.id}`,
+                        expiresIn: 7, // Expire after 7 days
+                    })
+
+                    notificationsCreated++
+
+                    // Small delay between notifications to avoid rate limiting
+                    await new Promise((resolve) => setTimeout(resolve, 50))
+                }
+
+                console.log(
+                    `🔔 [Trending] Created ${allTrendingItems.length} notifications for user ${userId}`
+                )
+            } catch (notifError) {
+                console.error(
+                    `🔔 ❌ [Trending] Failed to create notifications for ${userId}:`,
+                    notifError
+                )
+            }
+        }
+
+        console.log(`🔔 [Trending] Created ${notificationsCreated} total in-app notifications`)
+        console.log(`🔔 [Trending] Skipped ${notificationsSkipped} users (trending disabled)`)
 
         return NextResponse.json({
             success: true,
-            newItems: newMovies.length + newShows.length,
-            notifications: notificationCount,
-            demoMode: isDemoMode,
+            emailsSent,
+            notificationsCreated,
+            totalUsers: usersSnapshot.size,
+            skippedUsers,
         })
     } catch (error) {
-        console.error('Trending update error:', error)
+        console.error('📊 ❌ Trending update error:', error)
         return NextResponse.json(
             {
                 error: 'Failed to update trending',
