@@ -72,9 +72,6 @@
         "react-hook-form": "^7.43.0",
         "react-player": "^2.11.2",
         "resend": "^6.12.4",
-        "tailwind-scrollbar-hide": "^1.1.7",
-        "tailwindcss-autofill": "^1.0.2",
-        "tailwindcss-shadow-fill": "^1.0.1",
         "uuid": "^13.0.0",
         "zod": "^3.25.76",
         "zustand": "^5.0.8"
@@ -83,6 +80,7 @@
         "@eslint/compat": "^1.4.0",
         "@eslint/js": "^9.38.0",
         "@next/bundle-analyzer": "^15.5.3",
+        "@tailwindcss/postcss": "^4.3.0",
         "@testing-library/jest-dom": "^6.8.0",
         "@testing-library/react": "^16.3.0",
         "@types/jest": "^30.0.0",
@@ -104,8 +102,8 @@
         "node-mocks-http": "^1.17.2",
         "postcss": "^8.5.6",
         "prettier": "^3.6.2",
-        "tailwind-scrollbar": "^2.1.0",
-        "tailwindcss": "^3.4.17",
+        "tailwind-scrollbar": "^4.0.2",
+        "tailwindcss": "^4.3.0",
         "typescript": "^5.9.3",
         "typescript-eslint": "^8.46.2"
     },

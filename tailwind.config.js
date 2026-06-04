@@ -152,10 +152,5 @@ module.exports = {
             },
         },
     },
-    plugins: [
-        require('tailwind-scrollbar-hide'),
-        require('tailwind-scrollbar')({ nocompatible: true }),
-        require('tailwindcss-autofill'),
-        require('tailwindcss-shadow-fill'),
-    ],
+    plugins: [],
 }
