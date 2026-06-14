@@ -159,7 +159,7 @@ Response: Just the name, nothing else. Make it LEGENDARY.`
                 contents: [{ parts: [{ text: prompt }] }],
                 generationConfig: {
                     temperature: 0.9,
-                    maxOutputTokens: 5000, // Gemini 2.5 thinking mode uses 999+ tokens, need large allocation
+                    maxOutputTokens: 5000, // thinking mode can use 999+ tokens, need large allocation
                 },
             },
             apiKey,

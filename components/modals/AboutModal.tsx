@@ -186,7 +186,7 @@ const AboutModal: React.FC<AboutModalProps> = ({
             activeBorder: 'border-yellow-400',
             activeGlow: 'shadow-[0_0_25px_rgba(250,204,21,0.5)]',
             details: [
-                'Google Gemini 2.5 Flash integration for natural language query parsing',
+                'Google Gemini 3.1 Flash Lite integration for natural language query parsing',
                 'Web Speech API voice input with live transcription feedback',
                 'Semantic concept understanding ("rainy day vibes", "mind-bending thrillers")',
                 'Save AI search results as custom collections',
