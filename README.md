@@ -825,7 +825,7 @@ getReleaseDate(content)
 - **Input sanitization**: XSS protection on all Gemini AI routes
 - **Caching**: Client-side cache store + server-side caching for improved performance
 
-### AI Integration (Google Gemini 2.5 Flash)
+### AI Integration (Google Gemini 3.1 Flash Lite)
 
 **Smart Search Flow**:
 

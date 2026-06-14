@@ -1,36 +1,20 @@
 /**
- * Gemini Multi-Model Fallback Router
+ * Gemini Model Router
  *
- * Attempts multiple Gemini models in priority order, automatically falling back
- * when rate limits are hit. Tracks timing and metadata for each attempt.
+ * Standardized on a single model: gemini-3.1-flash-lite. There are no fallback
+ * models. The retry/backoff logic remains so rate-limit errors are retried
+ * against the same model. Tracks timing and metadata for each attempt.
  *
- * Priority order:
- * 1. gemini-2.5-flash (best quality)
- * 2. gemini-2.5-flash-lite (fastest, highest quota)
- * 3. gemini-2.0-flash (fallback)
- * 4. gemini-2.0-flash-lite (fallback)
- * 5. gemini-2.5-pro (last resort, most powerful but lowest quota)
+ * Model: gemini-3.1-flash-lite (only — no fallbacks)
  */
 
 import { apiLog, apiWarn, apiError } from '@/utils/debugLogger'
 
-// Model priority order (highest → lowest)
-const DEFAULT_MODEL_PRIORITY = [
-    'gemini-2.5-flash',
-    'gemini-2.5-flash-lite',
-    'gemini-2.0-flash',
-    'gemini-2.0-flash-lite',
-    'gemini-2.5-pro',
-] as const
+// Standardized on a single model — no fallbacks.
+const DEFAULT_MODEL_PRIORITY = ['gemini-3.1-flash-lite'] as const
 
-// Flash-Lite priority order (for high-frequency endpoints like name generation)
-const FLASH_LITE_PRIORITY = [
-    'gemini-2.5-flash-lite', // Start here - 1,000 RPD quota!
-    'gemini-2.5-flash',
-    'gemini-2.0-flash-lite',
-    'gemini-2.0-flash',
-    'gemini-2.5-pro',
-] as const
+// Kept as a separate export for endpoints that import it; same single model.
+const FLASH_LITE_PRIORITY = ['gemini-3.1-flash-lite'] as const
 
 type GeminiModel = (typeof DEFAULT_MODEL_PRIORITY)[number]
 

@@ -1,14 +1,14 @@
 # Gemini API Usage Documentation
 
 **Last Updated**: 2025-01-18
-**Model**: `gemini-2.0-flash-001`
+**Model**: `gemini-3.1-flash-lite` (only — no fallbacks)
 **Total Endpoints**: 6
 
 ---
 
 ## Overview
 
-NetTrailers uses Google Gemini AI across 6 API endpoints to power intelligent content discovery, creative naming, and semantic search. All endpoints use **Gemini 2.0 Flash** for fast, cost-effective responses.
+NetTrailers uses Google Gemini AI across 6 API endpoints to power intelligent content discovery, creative naming, and semantic search. All endpoints use **Gemini 3.1 Flash Lite** (only — no fallbacks) for fast, cost-effective responses.
 
 ### Rate Limiting
 
@@ -259,7 +259,7 @@ Genres: [Sci-Fi]
 ### Prompt Strategy
 
 - **Temperature**: 0.9 (high creativity)
-- **Max tokens**: 5000 (Gemini 2.0's thinking mode uses 999+ tokens internally)
+- **Max tokens**: 5000 (Gemini's thinking mode uses 999+ tokens internally)
 - **Top K**: 40, **Top P**: 0.95
 - **Instructions**:
     - ULTRA SHORT (1-3 words MAX)
@@ -741,15 +741,15 @@ As of **2025-01-18**, the following endpoints now filter hidden content:
 
 ## Model Information
 
-### Gemini 2.0 Flash
+### Gemini 3.1 Flash Lite
 
 - **Speed**: ~1-2 seconds per response
-- **Cost**: Low (Flash tier)
+- **Cost**: Low (Flash Lite tier)
 - **Context**: 1M token context window
 - **Output**: Up to 8192 tokens
 - **Thinking mode**: Automatically used for complex reasoning (uses extra tokens internally)
 
-### Why Gemini 2.0 Flash?
+### Why Gemini 3.1 Flash Lite?
 
 - **Speed**: Fast enough for real-time search
 - **Cost-effective**: Budget-friendly for high-volume requests
@@ -789,7 +789,7 @@ Some endpoints (like `/api/surprise-query`) have fallback mechanisms to provide 
 
 ### Potential Additions
 
-1. **Image analysis**: Gemini 2.0 supports image input (poster-based search)
+1. **Image analysis**: Gemini supports image input (poster-based search)
 2. **Video trailers**: Could analyze trailer content for mood/genre
 3. **Longer context**: Use conversation history for better personalization
 4. **Multimodal search**: "Find movies like this poster"

@@ -237,7 +237,7 @@ The app handles both movies and TV shows through a unified type system:
 
 ### Smart Search (AI-Powered)
 
-- **Natural language query understanding** powered by Google Gemini 2.5 Flash
+- **Natural language query understanding** powered by Google Gemini 3.1 Flash Lite
 - **Voice input** with live transcription using Web Speech API
 - **Semantic concept recognition** ("rainy day vibes", "mind-bending thrillers")
 - **Auto-detection** of media type preferences
