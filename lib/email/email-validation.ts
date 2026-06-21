@@ -26,7 +26,9 @@ const MAX_HTML_LENGTH = 50000
  */
 const CUSTOM_HTML_SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
     allowedTags: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'a'],
-    allowedAttributes: { a: ['href', 'title'], '*': ['title'] },
+    // Minimal surface — only links carry attributes (href + title). No global
+    // `*` allowance, matching the old DOMPurify allowlist (href, title).
+    allowedAttributes: { a: ['href', 'title'] },
     allowedSchemes: ['https'], // HTTPS only, no HTTP/javascript/data
     disallowedTagsMode: 'discard',
     allowProtocolRelative: false,

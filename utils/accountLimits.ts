@@ -53,42 +53,6 @@ export async function getAccountStats(): Promise<AccountStats> {
 }
 
 /**
- * Check if account creation is allowed.
- * Auth.js creates the user row before we can gate it here, so this is
- * informational. To enforce the limit, call this from the signIn callback
- * or a post-sign-in server action.
- */
-export async function canCreateAccount(): Promise<{
-    allowed: boolean
-    reason?: string
-    stats?: AccountStats
-}> {
-    const stats = await getAccountStats()
-
-    if (stats.totalAccounts >= stats.maxAccounts) {
-        return {
-            allowed: false,
-            reason: `Account limit reached (${stats.maxAccounts} max). This is a portfolio project with limited capacity.`,
-            stats,
-        }
-    }
-
-    return { allowed: true, stats }
-}
-
-/**
- * Record a new account creation.
- * With Turso, account creation is handled by Auth.js automatically (it inserts
- * the user row). This function is a no-op kept for call-site compatibility;
- * callers that previously relied on the Firestore signupLog can be removed.
- */
-export async function recordAccountCreation(userId: string, email: string) {
-    // Auth.js already inserted the row. Nothing else to do.
-    console.log('Account creation recorded (Turso user row created by Auth.js):', { userId, email })
-    return { success: true }
-}
-
-/**
  * Get account usage statistics for public display.
  */
 export async function getPublicAccountStats(): Promise<{

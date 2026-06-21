@@ -92,17 +92,6 @@ export class AuthStorageService {
         }
     }
 
-    // Update a single top-level field
-    static async updateUserDataField(
-        userId: string,
-        fieldPath: string,
-        value: unknown
-    ): Promise<void> {
-        const current = await this.loadUserData(userId)
-        const updated = { ...current, [fieldPath]: value } as AuthPreferences
-        await this.saveUserData(userId, updated)
-    }
-
     // Clear user data (reset to defaults but keep account)
     static async clearUserData(userId: string): Promise<AuthPreferences> {
         try {
