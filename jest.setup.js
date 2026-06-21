@@ -23,36 +23,22 @@ jest.mock('next/navigation', () => ({
     },
 }))
 
-// Mock Firebase
-jest.mock('./firebase', () => ({
+// Mock Auth.js client hooks (default: signed out)
+jest.mock('next-auth/react', () => ({
     __esModule: true,
-    default: {},
-    auth: {
-        currentUser: null,
-        onAuthStateChanged: jest.fn(),
-        signInWithEmailAndPassword: jest.fn(),
-        createUserWithEmailAndPassword: jest.fn(),
-        signOut: jest.fn(),
-    },
-    db: {},
+    useSession: () => ({ data: null, status: 'unauthenticated' }),
+    signIn: jest.fn(),
+    signOut: jest.fn(),
+    SessionProvider: ({ children }) => children,
 }))
 
-// Mock Firebase Firestore functions
-jest.mock('firebase/firestore', () => ({
-    doc: jest.fn(),
-    setDoc: jest.fn(),
-    getDoc: jest.fn(() => Promise.resolve({ exists: () => false })),
-    updateDoc: jest.fn(),
-    deleteDoc: jest.fn(),
-}))
-
-// Mock environment variables
-process.env.NEXT_PUBLIC_FIREBASE_API_KEY = 'test-api-key'
-process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN = 'test.firebaseapp.com'
-process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID = 'test-project'
-process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET = 'test.appspot.com'
-process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID = '123456789'
-process.env.NEXT_PUBLIC_FIREBASE_APP_ID = 'test-app-id'
+// Environment variables for the Turso + Auth.js stack
+// (in-memory libSQL so importing the db client never throws in tests)
+process.env.TURSO_DATABASE_URL = 'file::memory:'
+process.env.AUTH_SECRET = 'test-auth-secret'
+process.env.AUTH_GITHUB_ID = 'test-github-id'
+process.env.AUTH_GITHUB_SECRET = 'test-github-secret'
+process.env.ADMIN_GITHUB_LOGIN = 'test-admin'
 process.env.TMDB_API_KEY = 'test-tmdb-api-key'
 process.env.NEXT_PUBLIC_BASE_URL = 'http://localhost:3000'
 
