@@ -243,11 +243,7 @@ export async function getPositionComments(
  * When deleting a top-level comment all its reply rows are also deleted.
  * The ranking's `comments` counter is decremented by the total rows removed.
  */
-export async function deleteComment(
-    userId: string,
-    commentId: string,
-    rankingOwnerId: string
-): Promise<void> {
+export async function deleteComment(userId: string, commentId: string): Promise<void> {
     await db.transaction(async (tx) => {
         // Fetch comment to verify existence + ownership
         const commentRows = await tx
@@ -261,6 +257,15 @@ export async function deleteComment(
         }
 
         const comment = commentRows[0]
+
+        // The ranking owner may also delete comments — look up the REAL owner
+        // server-side (never trust a client-supplied id).
+        const rankingRows = await tx
+            .select({ userId: rankings.userId })
+            .from(rankings)
+            .where(eq(rankings.id, comment.rankingId))
+            .limit(1)
+        const rankingOwnerId = rankingRows[0]?.userId
 
         if (comment.userId !== userId && rankingOwnerId !== userId) {
             throw new Error('Unauthorized: you cannot delete this comment')

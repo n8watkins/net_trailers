@@ -11,7 +11,7 @@ import { deleteComment } from '@/db/queries/rankingComments'
 
 export const DELETE = withAuth(
     async (
-        request: NextRequest,
+        _request: NextRequest,
         userId: string,
         context?: { params: Promise<{ commentId: string }> }
     ) => {
@@ -24,19 +24,10 @@ export const DELETE = withAuth(
             )
         }
 
-        // The ranking owner ID is passed in the body so the server can apply
-        // the "ranking owner may also delete" rule without an extra DB lookup.
-        let rankingOwnerId: string | undefined
         try {
-            const body = await request.json()
-            rankingOwnerId = (body as { rankingOwnerId?: string }).rankingOwnerId
-        } catch {
-            // Body is optional — if not supplied ownership check falls back to
-            // comment-owner-only.
-        }
-
-        try {
-            await deleteComment(userId, commentId, rankingOwnerId ?? userId)
+            // Authorization (comment author OR ranking owner) is verified
+            // server-side inside deleteComment — no client-supplied owner id.
+            await deleteComment(userId, commentId)
             return NextResponse.json({ success: true })
         } catch (error) {
             const msg = error instanceof Error ? error.message : 'Failed to delete comment'
