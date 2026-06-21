@@ -68,7 +68,12 @@ export const POST = withAuth(
             return NextResponse.json({ success: true, poll })
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to vote'
-            const status = message === 'Poll not found' ? 404 : 500
+            const status =
+                message === 'Poll not found'
+                    ? 404
+                    : message === 'No valid option selected'
+                      ? 400 // client sent ids that match none of the poll's options
+                      : 500
             console.error('[POST /api/polls/[id]/vote] error:', error)
             return NextResponse.json({ success: false, error: message }, { status })
         }
