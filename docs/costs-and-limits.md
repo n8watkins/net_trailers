@@ -1,5 +1,13 @@
 # Notification Costs & Account Limits - Complete Breakdown
 
+> ⚠️ **Superseded — historical (Firebase-era).** The cost figures below are for
+> the former **Firebase / Firestore** backend. The app now runs on **Turso
+> (libSQL) + Drizzle**, which has its own separate pricing and free tier, so
+> these Firestore read/write/storage numbers no longer apply. The account cap
+> still exists — enforced in the `auth.ts` `signIn` callback
+> (`NEXT_PUBLIC_MAX_TOTAL_ACCOUNTS`). See `CLAUDE.md` for the current stack.
+> Kept for reference only.
+
 ## 📊 Notification Costs Breakdown
 
 ### Firestore Pricing (as of 2024)

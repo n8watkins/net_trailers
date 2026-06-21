@@ -1,5 +1,12 @@
 # Notification System - Complete Guide
 
+> ⚠️ **Superseded — historical (Firebase-era).** This guide references Firestore
+> storage, security rules, `onSnapshot`, and Firebase cost/budget alerts that no
+> longer apply. Notifications now live in the Turso `notifications` table and are
+> delivered by **polling `/api/notifications` every 30s**. For current behavior
+> see [docs/current/NOTIFICATION_SYSTEM.md](./current/NOTIFICATION_SYSTEM.md).
+> Kept for reference only.
+
 ## 🎯 START HERE: MASTER-PLAN.md
 
 **📖 [MASTER-PLAN.md](./MASTER-PLAN.md)** - Complete overview of all plans, implementation roadmap, and documentation references.

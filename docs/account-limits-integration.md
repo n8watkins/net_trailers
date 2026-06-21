@@ -1,5 +1,13 @@
 # Account Limits Integration Guide
 
+> ⚠️ **Superseded — historical (Firebase-era).** This guide describes a Firebase
+> Auth + Firestore + `canCreateAccount()` approach that is no longer used. The
+> total-signup cap is now enforced directly in the Auth.js `signIn` callback in
+> `auth.ts` — it counts rows in the Turso `user` table and blocks brand-new
+> signups once `NEXT_PUBLIC_MAX_TOTAL_ACCOUNTS` (default 50) is reached. There is
+> no `canCreateAccount()` and no `firestore.rules`. See `CLAUDE.md` for the
+> current auth model. Kept for reference only.
+
 ## Overview
 
 This guide shows how to integrate the account limiting system into your existing authentication flow to prevent abuse and unexpected costs.
