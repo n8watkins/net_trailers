@@ -105,11 +105,11 @@ const nextConfig = {
                         key: 'Content-Security-Policy',
                         value: [
                             "default-src 'self'",
-                            "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.youtube.com https://www.gstatic.com https://vercel.live https://va.vercel-scripts.com",
+                            "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://www.youtube.com https://www.gstatic.com https://vercel.live https://va.vercel-scripts.com",
                             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://vercel.live",
                             "img-src 'self' data: https: blob:",
                             "font-src 'self' data: https://fonts.gstatic.com https://vercel.live https://assets.vercel.com",
-                            "connect-src 'self' https://api.themoviedb.org https://*.sentry.io https://vercel.live https://va.vercel-scripts.com https://vitals.vercel-insights.com https://www.youtube.com https://youtubei.googleapis.com https://*.pusher.com wss://*.pusher.com",
+                            "connect-src 'self' https://api.themoviedb.org https://www.google-analytics.com https://*.sentry.io https://vercel.live https://va.vercel-scripts.com https://vitals.vercel-insights.com https://www.youtube.com https://youtubei.googleapis.com https://*.pusher.com wss://*.pusher.com",
                             "frame-src 'self' https://www.youtube.com https://vercel.live",
                             "media-src 'self' https:",
                             "object-src 'none'",
