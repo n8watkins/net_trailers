@@ -1,9 +1,10 @@
 /**
  * Auth.js (NextAuth v5) configuration.
  *
- * GitHub-only authentication backed by the Turso/Drizzle adapter. Replaces
- * Firebase Auth. Database session strategy so `session.user.id` is the
- * canonical Turso user id used for all ownership checks.
+ * Authentication via GitHub OAuth and passwordless email magic links (Resend),
+ * backed by the Turso/Drizzle adapter. Replaces Firebase Auth. Database session
+ * strategy so `session.user.id` is the canonical Turso user id used for all
+ * ownership checks.
  *
  * Admin is identified by GitHub login (ADMIN_GITHUB_LOGIN) rather than a
  * generated user id, so it can be configured before the first sign-in.
@@ -12,6 +13,7 @@
 import { DrizzleAdapter } from '@auth/drizzle-adapter'
 import NextAuth from 'next-auth'
 import GitHub from 'next-auth/providers/github'
+import Resend from 'next-auth/providers/resend'
 
 import { db } from '@/db'
 import { accounts, sessions, users, verificationTokens } from '@/db/schema'
@@ -42,6 +44,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     githubLogin: profile.login,
                 }
             },
+        }),
+        // Passwordless email magic links via Resend (uses the verificationToken table).
+        Resend({
+            apiKey: process.env.RESEND_API_KEY,
+            from: process.env.RESEND_SENDER_EMAIL || 'onboarding@resend.dev',
         }),
     ],
     callbacks: {

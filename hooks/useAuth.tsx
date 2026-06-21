@@ -33,6 +33,8 @@ interface iAuth {
     isAdmin: boolean
     error: string | null
     signInWithGitHub: () => Promise<void>
+    /** Send a passwordless magic-link sign-in email. Resolves once the email is sent. */
+    signInWithEmail: (email: string) => Promise<void>
     logOut: () => Promise<void>
 }
 
@@ -44,6 +46,8 @@ const defaultValue: iAuth = {
     error: null,
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     signInWithGitHub: async () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    signInWithEmail: async () => {},
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     logOut: async () => {},
 }
@@ -81,6 +85,11 @@ function AuthStateProvider({ children }: AuthProviderProps) {
             error: null,
             signInWithGitHub: async () => {
                 await signIn('github')
+            },
+            signInWithEmail: async (email: string) => {
+                // Sends the magic-link email; does not redirect so the modal can
+                // show a "check your inbox" message.
+                await signIn('resend', { email, redirect: false })
             },
             logOut: async () => {
                 await signOut({ redirect: false })
