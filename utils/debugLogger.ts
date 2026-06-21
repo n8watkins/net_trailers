@@ -44,10 +44,10 @@ export function devError(...args: any[]): void {
 }
 
 /**
- * Auth Logging (Firebase auth, session initialization)
+ * Auth Logging (sign-in flow, session initialization)
  */
 export function authLog(...args: any[]): void {
-    if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showFirebaseDebug')) {
+    if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showAuthDebug')) {
         console.log(...args)
     }
 }
@@ -97,33 +97,6 @@ export function cacheLog(...args: any[]): void {
 
 export function cacheError(...args: any[]): void {
     console.error('[Cache Error]', ...args)
-}
-
-/**
- * Firebase Tracker Logging (Firebase call tracking, quota monitoring)
- */
-export function firebaseLog(...args: any[]): void {
-    if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showFirebaseTracker')) {
-        console.log(...args)
-    }
-}
-
-export function firebaseWarn(...args: any[]): void {
-    if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showFirebaseTracker')) {
-        console.warn(...args)
-    }
-}
-
-export function firebaseGroup(label: string): void {
-    if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showFirebaseTracker')) {
-        console.group(label)
-    }
-}
-
-export function firebaseGroupEnd(): void {
-    if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showFirebaseTracker')) {
-        console.groupEnd()
-    }
 }
 
 /**
@@ -201,7 +174,7 @@ export function apiError(...args: any[]): void {
 }
 
 /**
- * Watch History Logging (watch history tracking, Firestore sync)
+ * Watch History Logging (watch history tracking, sync)
  */
 export function watchHistoryLog(...args: any[]): void {
     if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showWatchHistoryDebug')) {

@@ -5,14 +5,12 @@
  * Runs pre-flight checks to detect issues early.
  *
  * Key Features:
- * - Firebase initialization check (firebase.ts kept for existing SDK usage)
- * - Storage availability checks
+ * - Storage availability checks (localStorage, IndexedDB)
  * - Storage quota monitoring
  * - Detailed warnings and errors
  *
- * Note: Firestore cache health check removed — FirestoreCacheHealth was part
- * of the Firebase persistence layer that has been removed. Data is now served
- * from Turso/SQLite via API routes.
+ * Data is served from Turso/SQLite via API routes, so there are no
+ * client-side database health checks here.
  */
 
 import { StorageQuotaManager } from './storageQuota'
@@ -20,10 +18,8 @@ import { StorageQuotaManager } from './storageQuota'
 export interface HealthCheckResult {
     healthy: boolean
     checks: {
-        firebase: boolean
         localStorage: boolean
         indexedDB: boolean
-        firestoreCache: boolean
         storageQuota: boolean
     }
     warnings: string[]
@@ -40,10 +36,8 @@ export class AppHealthMonitor {
         const result: HealthCheckResult = {
             healthy: true,
             checks: {
-                firebase: false,
                 localStorage: false,
                 indexedDB: false,
-                firestoreCache: true, // No longer checked — always pass
                 storageQuota: false,
             },
             warnings: [],
@@ -51,12 +45,7 @@ export class AppHealthMonitor {
             timestamp: Date.now(),
         }
 
-        // Check 1: Firebase — always passes now (Firebase SDK is initialised by
-        // firebase.ts on import; health of user data is now Turso/API-based).
-        result.checks.firebase = true
-        console.log('[HealthCheck] Firebase check skipped (data layer is Turso/API)')
-
-        // Check 2: localStorage available
+        // Check 1: localStorage available
         try {
             const testKey = '_health_test_' + Date.now()
             localStorage.setItem(testKey, 'test')
@@ -69,7 +58,7 @@ export class AppHealthMonitor {
             console.error('[HealthCheck] localStorage not available:', error)
         }
 
-        // Check 3: IndexedDB available
+        // Check 2: IndexedDB available
         result.checks.indexedDB = 'indexedDB' in window
         if (!result.checks.indexedDB) {
             result.warnings.push('IndexedDB not available')
@@ -78,7 +67,7 @@ export class AppHealthMonitor {
             console.log('[HealthCheck] IndexedDB available')
         }
 
-        // Check 4: Storage quota
+        // Check 3: Storage quota
         try {
             const quota = await StorageQuotaManager.getQuotaInfo()
             result.checks.storageQuota = !quota.critical
@@ -130,12 +119,10 @@ export class AppHealthMonitor {
     static runQuickHealthCheck(): {
         localStorage: boolean
         indexedDB: boolean
-        firebase: boolean
     } {
         const checks = {
             localStorage: false,
             indexedDB: false,
-            firebase: false,
         }
 
         // localStorage
@@ -150,9 +137,6 @@ export class AppHealthMonitor {
 
         // IndexedDB
         checks.indexedDB = 'indexedDB' in window
-
-        // Firebase — always true (data layer is now Turso/API)
-        checks.firebase = true
 
         return checks
     }

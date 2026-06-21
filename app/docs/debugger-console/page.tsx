@@ -12,12 +12,12 @@ export default function DebugDocumentation() {
     }
 
     const [expandedCategories, setExpandedCategories] = useState({
-        firebase: true,
+        sync: true,
         ui: true,
         features: true,
     })
 
-    const toggleCategory = (category: 'firebase' | 'ui' | 'features') => {
+    const toggleCategory = (category: 'sync' | 'ui' | 'features') => {
         setExpandedCategories((prev) => ({ ...prev, [category]: !prev[category] }))
     }
 
@@ -73,37 +73,31 @@ export default function DebugDocumentation() {
                     </div>
                 </section>
 
-                {/* Firebase & Data Category */}
+                {/* Data & Sync Category */}
                 <section className="mb-6">
                     <button
-                        onClick={() => toggleCategory('firebase')}
+                        onClick={() => toggleCategory('sync')}
                         className="flex items-center gap-3 mb-4 w-full text-left group"
                     >
                         <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center border border-orange-500/30">
                             <span className="text-orange-500 text-xl">🔥</span>
                         </div>
                         <h2 className="text-2xl font-semibold text-orange-400 group-hover:text-orange-300 transition-colors flex-1">
-                            Firebase &amp; Data
+                            Data &amp; Sync
                         </h2>
-                        {expandedCategories.firebase ? (
+                        {expandedCategories.sync ? (
                             <ChevronDownIcon className="w-6 h-6 text-gray-500" />
                         ) : (
                             <ChevronRightIcon className="w-6 h-6 text-gray-500" />
                         )}
                     </button>
 
-                    {expandedCategories.firebase && (
+                    {expandedCategories.sync && (
                         <div className="grid gap-4">
-                            <DebugOption
-                                slug="tracker"
-                                name="Tracker"
-                                description="Shows a floating overlay tracking all Firebase operations (reads, writes, deletes) with detailed call stacks, timing, and data size."
-                                color="orange"
-                            />
                             <DebugOption
                                 slug="auth"
                                 name="Auth"
-                                description="Logs Firebase authentication flow events including sign-in, sign-out, token refresh, and user state changes."
+                                description="Logs authentication flow events including sign-in, sign-out, session changes, and user state changes."
                                 color="blue"
                             />
                             <DebugOption
@@ -127,7 +121,7 @@ export default function DebugDocumentation() {
                             <DebugOption
                                 slug="watch-history"
                                 name="Watch History"
-                                description="Logs watch history tracking operations and Firestore synchronization events for user viewing data."
+                                description="Logs watch history tracking operations and synchronization events for user viewing data."
                                 color="sky"
                             />
                         </div>
@@ -233,7 +227,7 @@ export default function DebugDocumentation() {
                             <DebugOption
                                 slug="notifications"
                                 name="Notif"
-                                description="Logs notification system operations including Firestore listeners, real-time updates, and notification creation/dismissal."
+                                description="Logs notification system operations including polling updates and notification creation/dismissal."
                                 color="pink"
                             />
                             <DebugOption
@@ -280,7 +274,7 @@ export default function DebugDocumentation() {
                         />
                         <DataAction
                             name="Delete Data"
-                            description="Permanently deletes all user data including collections, ratings, and watch history from Firestore. This is a destructive action used for testing data deletion flows."
+                            description="Permanently deletes all user data including collections, ratings, and watch history from the database. This is a destructive action used for testing data deletion flows."
                             color="red"
                             icon="⚠️"
                             note="Requires confirmation and is irreversible"
@@ -348,8 +342,8 @@ export default function DebugDocumentation() {
                         <li className="flex gap-3">
                             <span className="text-green-500 flex-shrink-0">✓</span>
                             <span>
-                                Use the Firebase Tracker to identify performance bottlenecks and
-                                excessive database reads
+                                Enable the API/Server logs to trace data fetches and spot slow
+                                endpoints
                             </span>
                         </li>
                         <li className="flex gap-3">

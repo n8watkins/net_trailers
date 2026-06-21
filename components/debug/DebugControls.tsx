@@ -24,8 +24,7 @@ import { useNotificationStore } from '../../stores/notificationStore'
 import { useSessionStore } from '../../stores/sessionStore'
 
 interface DebugSettings {
-    showFirebaseTracker: boolean
-    showFirebaseDebug: boolean
+    showAuthDebug: boolean
     showSessionDebug: boolean
     showGuestDebug: boolean
     showCacheDebug: boolean
@@ -51,7 +50,7 @@ interface Position {
 }
 
 interface CategoryState {
-    firebase: boolean
+    sync: boolean
     ui: boolean
     features: boolean
     data: boolean
@@ -59,7 +58,7 @@ interface CategoryState {
     cron: boolean
 }
 
-type DebugCategory = 'firebase' | 'ui' | 'features' | 'data' | 'email' | 'cron'
+type DebugCategory = 'sync' | 'ui' | 'features' | 'data' | 'email' | 'cron'
 
 // Static color map for Tailwind - dynamic class names don't work with Tailwind's purge
 const COLOR_CLASSES: Record<string, { enabled: string; disabled: string }> = {
@@ -135,8 +134,7 @@ const COLOR_CLASSES: Record<string, { enabled: string; disabled: string }> = {
 
 export default function DebugControls() {
     const [settings, setSettings] = useState<DebugSettings>({
-        showFirebaseTracker: false,
-        showFirebaseDebug: false,
+        showAuthDebug: false,
         showSessionDebug: false,
         showGuestDebug: false,
         showCacheDebug: false,
@@ -196,7 +194,7 @@ export default function DebugControls() {
 
     // Category expand/collapse state
     const [expandedCategories, setExpandedCategories] = useState<CategoryState>({
-        firebase: true,
+        sync: true,
         ui: true,
         features: true,
         data: true,
@@ -363,10 +361,9 @@ export default function DebugControls() {
     // Get settings for a category
     const getCategorySettings = (category: DebugCategory): (keyof DebugSettings)[] => {
         switch (category) {
-            case 'firebase':
+            case 'sync':
                 return [
-                    'showFirebaseTracker',
-                    'showFirebaseDebug',
+                    'showAuthDebug',
                     'showSessionDebug',
                     'showGuestDebug',
                     'showCacheDebug',
@@ -671,25 +668,13 @@ export default function DebugControls() {
 
                 {/* Categories - Always show selected items, expand on hover */}
                 <div className="flex flex-col gap-2.5 min-w-0">
-                    {/* Firebase & Data Category */}
+                    {/* Data & Sync Category */}
                     {renderCategory(
-                        'firebase',
-                        'Firebase & Data',
+                        'sync',
+                        'Data & Sync',
                         <FireIcon className="w-3.5 h-3.5 text-orange-500" />,
                         <>
-                            {renderButton(
-                                'showFirebaseTracker',
-                                'Tracker',
-                                'Toggle Firebase Call Tracker',
-                                'orange',
-                                <FireIcon className="w-3 h-3" />
-                            )}
-                            {renderButton(
-                                'showFirebaseDebug',
-                                'Auth',
-                                'Toggle Auth Flow Logs',
-                                'blue'
-                            )}
+                            {renderButton('showAuthDebug', 'Auth', 'Toggle Auth Flow Logs', 'blue')}
                             {renderButton(
                                 'showSessionDebug',
                                 'Session',
@@ -701,7 +686,7 @@ export default function DebugControls() {
                             {renderButton(
                                 'showWatchHistoryDebug',
                                 'Watch History',
-                                'Toggle Watch History & Firestore Sync Logs',
+                                'Toggle Watch History & Sync Logs',
                                 'sky'
                             )}
                         </>
@@ -761,7 +746,7 @@ export default function DebugControls() {
                             {renderButton(
                                 'showCacheHealth',
                                 'Cache Health',
-                                'Toggle Firestore Cache Health Panel',
+                                'Toggle Cache Health Panel',
                                 'cyan'
                             )}
                             {renderButton(
@@ -1100,8 +1085,7 @@ export default function DebugControls() {
 // Export a hook to use debug settings in other components
 export function useDebugSettings() {
     const [settings, setSettings] = useState<DebugSettings>({
-        showFirebaseTracker: false,
-        showFirebaseDebug: false,
+        showAuthDebug: false,
         showSessionDebug: false,
         showGuestDebug: false,
         showCacheDebug: false,

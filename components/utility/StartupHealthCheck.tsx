@@ -72,10 +72,8 @@ export default function StartupHealthCheck() {
                     <div>
                         <div className="font-semibold text-white mb-2">System Checks:</div>
                         <div className="space-y-1">
-                            <CheckItem label="Firebase" passed={checks.firebase} />
                             <CheckItem label="localStorage" passed={checks.localStorage} />
                             <CheckItem label="IndexedDB" passed={checks.indexedDB} />
-                            <CheckItem label="Firestore Cache" passed={checks.firestoreCache} />
                             <CheckItem label="Storage Quota" passed={checks.storageQuota} />
                         </div>
                     </div>
