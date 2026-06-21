@@ -300,25 +300,21 @@ export async function deleteRankingWithCascade(rankingId: string): Promise<{
  */
 export async function likeRanking(userId: string, rankingId: string): Promise<boolean> {
     return await db.transaction(async (tx) => {
-        // Check for existing like
-        const existing = await tx
-            .select({ id: rankingLikes.id })
-            .from(rankingLikes)
-            .where(and(eq(rankingLikes.userId, userId), eq(rankingLikes.rankingId, rankingId)))
-            .limit(1)
+        // Insert-or-noop on the unique (rankingId, userId) index. This is
+        // race-safe: two concurrent likes can't both insert, so the counter
+        // (bumped only when a row was actually inserted) stays consistent with
+        // the real like count.
+        const inserted = await tx
+            .insert(rankingLikes)
+            .values({ rankingId, userId, createdAt: Date.now() })
+            .onConflictDoNothing()
+            .returning({ id: rankingLikes.id })
 
-        if (existing.length > 0) {
+        if (inserted.length === 0) {
             return false // Already liked
         }
 
-        // Insert like record
-        await tx.insert(rankingLikes).values({
-            rankingId,
-            userId,
-            createdAt: Date.now(),
-        })
-
-        // Increment counter — sql`` prevents N+1 read-modify-write race
+        // Increment counter — sql`` prevents read-modify-write race
         await tx
             .update(rankings)
             .set({ likes: sql`${rankings.likes} + 1` })

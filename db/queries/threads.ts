@@ -11,7 +11,7 @@
  * Auth.js session (via currentUserId()), never a client-supplied value.
  */
 
-import { and, asc, desc, eq, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { threadLikes, threadReplies, threads, replyLikes } from '@/db/schema'
@@ -279,23 +279,22 @@ export async function deleteThread(
 
 export async function likeThread(userId: string, threadId: string): Promise<void> {
     await db.transaction(async (tx) => {
-        // Idempotent: insert only if the like row doesn't already exist
-        await tx
+        // Insert only if the (threadId, userId) like doesn't already exist — the
+        // unique index makes this a no-op conflict on a double-like. Bump the
+        // denormalised counter ONLY when a row was actually inserted, so a
+        // concurrent double-POST can never inflate it past the real like count.
+        const inserted = await tx
             .insert(threadLikes)
             .values({ threadId, userId, createdAt: Date.now() })
             .onConflictDoNothing()
+            .returning({ id: threadLikes.id })
 
-        // Only increment if the row was actually new — check row count after insert
-        // We use a subquery count to decide whether to bump, but the simpler
-        // approach is to always attempt the increment and rely on the unique index
-        // on (threadId, userId) to guard double-counting:
-        // Re-query the like to see if it now exists (it might have existed before).
-        // Actually the safest pattern: just do the bump — the UI calls likeThread
-        // only when the user hasn't liked yet (checked client-side & route guard).
-        await tx
-            .update(threads)
-            .set({ likes: sql`${threads.likes} + 1` })
-            .where(eq(threads.id, threadId))
+        if (inserted.length > 0) {
+            await tx
+                .update(threads)
+                .set({ likes: sql`${threads.likes} + 1` })
+                .where(eq(threads.id, threadId))
+        }
     })
 }
 
@@ -339,16 +338,14 @@ export async function getLikedThreadIds(
 ): Promise<Set<string>> {
     if (!userId || threadIds.length === 0) return new Set()
 
-    // Build an IN clause by filtering client-side after fetching user's likes
-    // for the relevant threads. For small lists this is fine; for large lists
-    // a proper SQL IN clause would be better.
+    // Scope the query to the requested threads (uses the leading-userId index)
+    // instead of pulling the user's entire like history on every forum-feed load.
     const rows = await db
         .select({ threadId: threadLikes.threadId })
         .from(threadLikes)
-        .where(eq(threadLikes.userId, userId))
+        .where(and(eq(threadLikes.userId, userId), inArray(threadLikes.threadId, threadIds)))
 
-    const liked = new Set(rows.map((r) => r.threadId))
-    return new Set(threadIds.filter((id) => liked.has(id)))
+    return new Set(rows.map((r) => r.threadId))
 }
 
 /* -------------------------------------------------------------------------- */
@@ -493,15 +490,20 @@ export async function deleteReply(
 
 export async function likeReply(userId: string, replyId: string): Promise<void> {
     await db.transaction(async (tx) => {
-        await tx
+        // Bump the counter only when a new like row was actually inserted (the
+        // unique index turns a double-like into a no-op conflict).
+        const inserted = await tx
             .insert(replyLikes)
             .values({ replyId, userId, createdAt: Date.now() })
             .onConflictDoNothing()
+            .returning({ id: replyLikes.id })
 
-        await tx
-            .update(threadReplies)
-            .set({ likes: sql`${threadReplies.likes} + 1` })
-            .where(eq(threadReplies.id, replyId))
+        if (inserted.length > 0) {
+            await tx
+                .update(threadReplies)
+                .set({ likes: sql`${threadReplies.likes} + 1` })
+                .where(eq(threadReplies.id, replyId))
+        }
     })
 }
 

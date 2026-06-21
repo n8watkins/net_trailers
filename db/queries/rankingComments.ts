@@ -314,21 +314,17 @@ export async function deleteComment(userId: string, commentId: string): Promise<
  */
 export async function likeComment(userId: string, commentId: string): Promise<boolean> {
     return await db.transaction(async (tx) => {
-        const existing = await tx
-            .select({ id: commentLikes.id })
-            .from(commentLikes)
-            .where(and(eq(commentLikes.userId, userId), eq(commentLikes.commentId, commentId)))
-            .limit(1)
+        // Insert-or-noop on the unique (commentId, userId) index — race-safe;
+        // the counter is bumped only when a new like row was inserted.
+        const inserted = await tx
+            .insert(commentLikes)
+            .values({ commentId, userId, createdAt: Date.now() })
+            .onConflictDoNothing()
+            .returning({ id: commentLikes.id })
 
-        if (existing.length > 0) {
+        if (inserted.length === 0) {
             return false // Already liked
         }
-
-        await tx.insert(commentLikes).values({
-            commentId,
-            userId,
-            createdAt: Date.now(),
-        })
 
         await tx
             .update(rankingComments)

@@ -26,7 +26,7 @@
  * `thread_replies`).
  */
 
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, inArray } from 'drizzle-orm'
 
 import { db } from '@/db'
 import {
@@ -308,47 +308,46 @@ export async function buildPublicProfilePayload(
             .orderBy(desc(pollVotes.votedAt))
             .limit(25)
 
-        const votedSummaries = (
-            await Promise.all(
-                voteRows.map(async (vote) => {
-                    const pollRows2 = await db
-                        .select()
-                        .from(polls)
-                        .where(eq(polls.id, vote.pollId))
-                        .limit(1)
+        // Batch-fetch the voted polls in one query instead of one per vote.
+        const votedPollIds = [...new Set(voteRows.map((v) => v.pollId))]
+        const votedPollRows = votedPollIds.length
+            ? await db.select().from(polls).where(inArray(polls.id, votedPollIds))
+            : []
+        const votedPollById = new Map(votedPollRows.map((p) => [p.id, p]))
 
-                    const p = pollRows2[0]
-                    if (!p || p.userId === userId) return null
+        const votedSummaries = voteRows
+            .map((vote) => {
+                const p = votedPollById.get(vote.pollId)
+                if (!p || p.userId === userId) return null
 
-                    const summary: PollSummary = {
-                        id: p.id,
-                        question: p.question,
-                        category: p.category as PollSummary['category'],
-                        userId: p.userId,
-                        userName: p.userName ?? 'Anonymous',
-                        userAvatar: p.userAvatar ?? undefined,
-                        totalVotes: p.totalVotes,
-                        isMultipleChoice: p.isMultipleChoice,
-                        allowAddOptions: p.allowAddOptions,
-                        options: Array.isArray(p.options)
-                            ? p.options.map((o: unknown): PollOptionSummary => {
-                                  const opt = o as Record<string, unknown>
-                                  return {
-                                      id: (opt.id as string) ?? '',
-                                      text: (opt.text as string) ?? '',
-                                      votes: (opt.votes as number) ?? 0,
-                                      percentage: (opt.percentage as number) ?? 0,
-                                  }
-                              })
-                            : [],
-                        createdAt: p.createdAt,
-                        expiresAt: p.expiresAt ?? null,
-                        votedAt: vote.votedAt,
-                    }
-                    return summary
-                })
-            )
-        ).filter((s): s is PollSummary => s !== null)
+                const summary: PollSummary = {
+                    id: p.id,
+                    question: p.question,
+                    category: p.category as PollSummary['category'],
+                    userId: p.userId,
+                    userName: p.userName ?? 'Anonymous',
+                    userAvatar: p.userAvatar ?? undefined,
+                    totalVotes: p.totalVotes,
+                    isMultipleChoice: p.isMultipleChoice,
+                    allowAddOptions: p.allowAddOptions,
+                    options: Array.isArray(p.options)
+                        ? p.options.map((o: unknown): PollOptionSummary => {
+                              const opt = o as Record<string, unknown>
+                              return {
+                                  id: (opt.id as string) ?? '',
+                                  text: (opt.text as string) ?? '',
+                                  votes: (opt.votes as number) ?? 0,
+                                  percentage: (opt.percentage as number) ?? 0,
+                              }
+                          })
+                        : [],
+                    createdAt: p.createdAt,
+                    expiresAt: p.expiresAt ?? null,
+                    votedAt: vote.votedAt,
+                }
+                return summary
+            })
+            .filter((s): s is PollSummary => s !== null)
 
         // Deduplicate by poll id (keep most-recently-voted entry per poll).
         const uniqueVoted = votedSummaries.reduce<Record<string, PollSummary>>((acc, poll) => {
@@ -373,41 +372,39 @@ export async function buildPublicProfilePayload(
             .where(eq(threadLikes.userId, userId))
             .limit(25)
 
-        votedThreadSummaries = (
-            await Promise.all(
-                likeRows.map(async (like) => {
-                    const threadRows2 = await db
-                        .select()
-                        .from(threads)
-                        .where(eq(threads.id, like.threadId))
-                        .limit(1)
+        // Batch-fetch the liked threads in one query instead of one per like.
+        const likedThreadIds = [...new Set(likeRows.map((l) => l.threadId))]
+        const likedThreadRows = likedThreadIds.length
+            ? await db.select().from(threads).where(inArray(threads.id, likedThreadIds))
+            : []
+        const likedThreadById = new Map(likedThreadRows.map((t) => [t.id, t]))
 
-                    const t = threadRows2[0]
-                    if (!t || t.userId === userId) return null
+        votedThreadSummaries = likeRows
+            .map((like) => {
+                const t = likedThreadById.get(like.threadId)
+                if (!t || t.userId === userId) return null
 
-                    const summary: ThreadSummary = {
-                        id: t.id,
-                        title: t.title,
-                        content: t.content,
-                        category: t.category as ThreadSummary['category'],
-                        userId: t.userId,
-                        userName: t.userName ?? 'Anonymous',
-                        userAvatar: t.userAvatar ?? undefined,
-                        likes: t.likes,
-                        views: t.views,
-                        replyCount: t.replyCount,
-                        createdAt: t.createdAt,
-                        updatedAt: t.updatedAt,
-                        lastReplyAt: t.lastReplyAt ?? undefined,
-                        lastReplyBy: (t.lastReplyBy as ThreadSummary['lastReplyBy']) ?? undefined,
-                        tags: (t.tags as string[] | undefined) ?? undefined,
-                        isPinned: t.isPinned,
-                        isLocked: t.isLocked,
-                    }
-                    return summary
-                })
-            )
-        )
+                const summary: ThreadSummary = {
+                    id: t.id,
+                    title: t.title,
+                    content: t.content,
+                    category: t.category as ThreadSummary['category'],
+                    userId: t.userId,
+                    userName: t.userName ?? 'Anonymous',
+                    userAvatar: t.userAvatar ?? undefined,
+                    likes: t.likes,
+                    views: t.views,
+                    replyCount: t.replyCount,
+                    createdAt: t.createdAt,
+                    updatedAt: t.updatedAt,
+                    lastReplyAt: t.lastReplyAt ?? undefined,
+                    lastReplyBy: (t.lastReplyBy as ThreadSummary['lastReplyBy']) ?? undefined,
+                    tags: (t.tags as string[] | undefined) ?? undefined,
+                    isPinned: t.isPinned,
+                    isLocked: t.isLocked,
+                }
+                return summary
+            })
             .filter((s): s is ThreadSummary => s !== null)
             .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
             .slice(0, 10)

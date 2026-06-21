@@ -13,7 +13,7 @@
  */
 
 import { sql } from 'drizzle-orm'
-import { index, integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import type { AdapterAccountType } from 'next-auth/adapters'
 
 import type { Content } from '@/typings'
@@ -270,7 +270,9 @@ export const rankingLikes = sqliteTable(
             .references(() => users.id, { onDelete: 'cascade' }),
         createdAt: integer('createdAt').notNull(),
     },
-    (t) => [index('ranking_likes_ranking_user_idx').on(t.rankingId, t.userId)]
+    // UNIQUE so a double-like conflicts (onConflictDoNothing) instead of
+    // inserting a duplicate row + inflating the denormalised counter.
+    (t) => [uniqueIndex('ranking_likes_ranking_user_idx').on(t.rankingId, t.userId)]
 )
 
 export const commentLikes = sqliteTable(
@@ -283,7 +285,7 @@ export const commentLikes = sqliteTable(
             .references(() => users.id, { onDelete: 'cascade' }),
         createdAt: integer('createdAt').notNull(),
     },
-    (t) => [index('comment_likes_comment_user_idx').on(t.commentId, t.userId)]
+    (t) => [uniqueIndex('comment_likes_comment_user_idx').on(t.commentId, t.userId)]
 )
 
 /* -------------------------------------------------------------------------- */
@@ -355,7 +357,12 @@ export const threadLikes = sqliteTable(
             .references(() => users.id, { onDelete: 'cascade' }),
         createdAt: integer('createdAt').notNull(),
     },
-    (t) => [index('thread_likes_thread_user_idx').on(t.threadId, t.userId)]
+    (t) => [
+        uniqueIndex('thread_likes_thread_user_idx').on(t.threadId, t.userId),
+        // Leading-userId index for the "threads liked by user" lookups
+        // (getLikedThreadIds, public-profile "threads voted").
+        index('thread_likes_user_idx').on(t.userId),
+    ]
 )
 
 export const replyLikes = sqliteTable(
@@ -368,7 +375,7 @@ export const replyLikes = sqliteTable(
             .references(() => users.id, { onDelete: 'cascade' }),
         createdAt: integer('createdAt').notNull(),
     },
-    (t) => [index('reply_likes_reply_user_idx').on(t.replyId, t.userId)]
+    (t) => [uniqueIndex('reply_likes_reply_user_idx').on(t.replyId, t.userId)]
 )
 
 export const polls = sqliteTable(
@@ -409,7 +416,12 @@ export const pollVotes = sqliteTable(
         optionIds: text('optionIds', { mode: 'json' }).$type<string[]>().notNull(),
         votedAt: integer('votedAt').notNull(),
     },
-    (t) => [index('poll_votes_poll_user_idx').on(t.pollId, t.userId)]
+    (t) => [
+        // UNIQUE: one vote row per (poll, user).
+        uniqueIndex('poll_votes_poll_user_idx').on(t.pollId, t.userId),
+        // Leading-userId index for "polls voted by user" (public profile).
+        index('poll_votes_user_idx').on(t.userId),
+    ]
 )
 
 /* -------------------------------------------------------------------------- */
