@@ -1,40 +1,33 @@
 /**
  * Ranking Store (Zustand)
  *
- * Manages ranking state with Firestore sync
- * Guest users can view but cannot create/edit rankings
+ * Manages ranking state — previously backed by Firestore, now backed by the
+ * Turso/Drizzle API routes under /api/rankings/**.
+ *
+ * All mutating calls use authenticatedFetch() (cookie-based Auth.js session).
+ * Public reads (community feed, single ranking, comments) use plain fetch.
+ *
+ * Exported action signatures are unchanged so all callers continue to work.
  */
 
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
+
+import { authenticatedFetch } from '@/lib/authenticatedFetch'
 import {
-    Ranking,
-    RankingComment,
-    RankingLike,
-    CreateRankingRequest,
-    UpdateRankingRequest,
-    ReorderRankingRequest,
-    CreateCommentRequest,
     canCreateRankings,
-} from '../types/rankings'
-import {
-    getUserRankings,
-    getPublicRankings,
-    getRanking,
-    createRanking as createRankingInFirestore,
-    updateRanking as updateRankingInFirestore,
-    deleteRanking as deleteRankingInFirestore,
-    likeRanking as likeRankingInFirestore,
-    unlikeRanking as unlikeRankingInFirestore,
-    incrementRankingView,
-} from '../utils/firestore/rankings'
-import {
-    getRankingComments,
-    createComment as createCommentInFirestore,
-    deleteComment as deleteCommentInFirestore,
-    likeComment as likeCommentInFirestore,
-    unlikeComment as unlikeCommentInFirestore,
-} from '../utils/firestore/rankingComments'
+    type CreateCommentRequest,
+    type CreateRankingRequest,
+    type Ranking,
+    type RankingComment,
+    type RankingLike,
+    type ReorderRankingRequest,
+    type UpdateRankingRequest,
+} from '@/types/rankings'
+
+/* -------------------------------------------------------------------------- */
+/*  Helpers                                                                    */
+/* -------------------------------------------------------------------------- */
 
 const GUEST_ID_PREFIX = 'guest_'
 
@@ -46,31 +39,42 @@ function ensureAuthUser(userId: string | null | undefined, action: string): user
         console.warn(`Cannot ${action}: No user ID`)
         return false
     }
-
     if (isGuestUserId(userId)) {
         console.warn(`Cannot ${action}: Authentication required`)
         return false
     }
-
     return true
 }
 
+/** Thin wrapper: throw on non-ok responses with the server error message. */
+async function expectOk(res: Response): Promise<unknown> {
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok) {
+        throw new Error((json as { error?: string }).error || `Request failed (${res.status})`)
+    }
+    return json
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Store types (unchanged public surface)                                     */
+/* -------------------------------------------------------------------------- */
+
 interface RankingState {
     // State
-    rankings: Ranking[] // User's rankings or browsed rankings
-    communityRankings: Ranking[] // Public rankings for community page
-    currentRanking: Ranking | null // Currently viewed ranking
-    comments: RankingComment[] // Comments for current ranking
-    likes: RankingLike[] // User's likes
-    viewedRankings: Set<string> // Track viewed rankings to prevent duplicate view tracking
+    rankings: Ranking[]
+    communityRankings: Ranking[]
+    currentRanking: Ranking | null
+    comments: RankingComment[]
+    likes: RankingLike[]
+    viewedRankings: Set<string>
     isLoading: boolean
     error: string | null
 
-    // Filters & pagination
+    // Filters
     sortBy: 'recent' | 'popular' | 'most-liked' | 'most-viewed'
     filterByMediaType: 'all' | 'movie' | 'tv'
 
-    // Actions - Rankings CRUD
+    // Rankings CRUD
     loadUserRankings: (userId: string | null) => Promise<void>
     loadCommunityRankings: (limit?: number) => Promise<void>
     loadRanking: (rankingId: string, userId?: string | null) => Promise<void>
@@ -85,12 +89,12 @@ interface RankingState {
     reorderRanking: (userId: string | null, request: ReorderRankingRequest) => Promise<void>
     deleteRanking: (userId: string | null, rankingId: string) => Promise<void>
 
-    // Actions - Engagement
+    // Engagement
     likeRanking: (userId: string | null, rankingId: string, userName: string) => Promise<void>
     unlikeRanking: (userId: string | null, rankingId: string) => Promise<void>
     incrementView: (rankingId: string, userId?: string | null) => Promise<void>
 
-    // Actions - Comments
+    // Comments
     loadComments: (rankingId: string, limit?: number) => Promise<void>
     createComment: (
         userId: string | null,
@@ -114,10 +118,16 @@ interface RankingState {
     setError: (error: string | null) => void
 }
 
+/* -------------------------------------------------------------------------- */
+/*  Store implementation                                                       */
+/* -------------------------------------------------------------------------- */
+
 export const useRankingStore = create<RankingState>()(
     devtools(
         (set, get) => ({
-            // Initial state
+            // ----------------------------------------------------------------
+            //  Initial state
+            // ----------------------------------------------------------------
             rankings: [],
             communityRankings: [],
             currentRanking: null,
@@ -129,18 +139,20 @@ export const useRankingStore = create<RankingState>()(
             sortBy: 'recent',
             filterByMediaType: 'all',
 
-            // Load user's rankings
-            loadUserRankings: async (userId: string | null) => {
+            // ----------------------------------------------------------------
+            //  Load user's own rankings (authenticated)
+            // ----------------------------------------------------------------
+            loadUserRankings: async (userId) => {
                 if (!userId) {
                     set({ rankings: [], isLoading: false })
                     return
                 }
 
                 set({ isLoading: true, error: null })
-
                 try {
-                    const rankings = await getUserRankings(userId)
-                    set({ rankings, isLoading: false })
+                    const res = await authenticatedFetch('/api/rankings?scope=mine')
+                    const json = (await expectOk(res)) as { data: Ranking[] }
+                    set({ rankings: json.data, isLoading: false })
                 } catch (error) {
                     console.error('Error loading user rankings:', error)
                     set({
@@ -150,13 +162,18 @@ export const useRankingStore = create<RankingState>()(
                 }
             },
 
-            // Load community rankings (public only)
+            // ----------------------------------------------------------------
+            //  Load public community rankings
+            // ----------------------------------------------------------------
             loadCommunityRankings: async (limit = 50) => {
                 set({ isLoading: true, error: null })
-
+                const sortBy = get().sortBy
                 try {
-                    const result = await getPublicRankings(get().sortBy, limit)
-                    set({ communityRankings: result.data, isLoading: false })
+                    const res = await fetch(`/api/rankings?sort=${sortBy}&limit=${limit}`, {
+                        credentials: 'same-origin',
+                    })
+                    const json = (await expectOk(res)) as { data: Ranking[] }
+                    set({ communityRankings: json.data, isLoading: false })
                 } catch (error) {
                     console.error('Error loading community rankings:', error)
                     set({
@@ -169,25 +186,27 @@ export const useRankingStore = create<RankingState>()(
                 }
             },
 
-            // Load specific ranking
-            loadRanking: async (rankingId: string, userId?: string | null) => {
+            // ----------------------------------------------------------------
+            //  Load a single ranking
+            // ----------------------------------------------------------------
+            loadRanking: async (rankingId, userId) => {
                 set({ isLoading: true, error: null })
-
                 try {
-                    const ranking = await getRanking(rankingId)
+                    const res = await fetch(`/api/rankings/${rankingId}`, {
+                        credentials: 'same-origin',
+                    })
 
-                    if (!ranking) {
+                    if (res.status === 403) {
+                        set({ error: 'This ranking is private', isLoading: false })
+                        return
+                    }
+                    if (res.status === 404) {
                         set({ error: 'Ranking not found', isLoading: false })
                         return
                     }
 
-                    // Check if private and user is not owner
-                    if (!ranking.isPublic && ranking.userId !== userId) {
-                        set({ error: 'This ranking is private', isLoading: false })
-                        return
-                    }
-
-                    set({ currentRanking: ranking, isLoading: false })
+                    const json = (await expectOk(res)) as { ranking: Ranking }
+                    set({ currentRanking: json.ranking, isLoading: false })
                 } catch (error) {
                     console.error('Error loading ranking:', error)
                     set({
@@ -197,37 +216,29 @@ export const useRankingStore = create<RankingState>()(
                 }
             },
 
-            // Create new ranking
-            createRanking: async (
-                userId: string | null,
-                displayName: string,
-                username: string | undefined,
-                userAvatar: string | undefined,
-                request: CreateRankingRequest
-            ) => {
+            // ----------------------------------------------------------------
+            //  Create ranking
+            // ----------------------------------------------------------------
+            createRanking: async (userId, displayName, username, userAvatar, request) => {
                 if (!ensureAuthUser(userId, 'create ranking')) {
                     set({ error: 'Authentication required to create rankings' })
                     return null
                 }
-
                 if (!canCreateRankings(isGuestUserId(userId))) {
                     set({ error: 'Guest users cannot create rankings' })
                     return null
                 }
 
                 set({ isLoading: true, error: null })
-
                 try {
-                    const newRanking = await createRankingInFirestore(
-                        userId,
-                        displayName,
-                        username,
-                        userAvatar,
-                        request
-                    )
+                    const res = await authenticatedFetch('/api/rankings', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ displayName, username, userAvatar, ...request }),
+                    })
+                    const json = (await expectOk(res)) as { ranking: Ranking }
+                    const newRanking = json.ranking
 
-                    // Add the new ranking to local state directly (don't reload from Firestore)
-                    // This avoids race conditions when updateRanking is called immediately after
                     set((state) => ({
                         rankings: [newRanking, ...state.rankings],
                         isLoading: false,
@@ -244,26 +255,32 @@ export const useRankingStore = create<RankingState>()(
                 }
             },
 
-            // Update existing ranking
-            updateRanking: async (userId: string | null, request: UpdateRankingRequest) => {
+            // ----------------------------------------------------------------
+            //  Update ranking
+            // ----------------------------------------------------------------
+            updateRanking: async (userId, request) => {
                 if (!ensureAuthUser(userId, 'update ranking')) {
                     set({ error: 'Authentication required' })
                     return
                 }
 
                 set({ isLoading: true, error: null })
-
                 try {
-                    await updateRankingInFirestore(userId, request.id, request)
+                    const { id: rankingId, ...updates } = request
+                    const res = await authenticatedFetch(`/api/rankings/${rankingId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updates),
+                    })
+                    await expectOk(res)
 
-                    // Update local state
                     set((state) => ({
                         rankings: state.rankings.map((r) =>
-                            r.id === request.id ? { ...r, ...request, updatedAt: Date.now() } : r
+                            r.id === rankingId ? { ...r, ...updates, updatedAt: Date.now() } : r
                         ),
                         currentRanking:
-                            state.currentRanking?.id === request.id
-                                ? { ...state.currentRanking, ...request, updatedAt: Date.now() }
+                            state.currentRanking?.id === rankingId
+                                ? { ...state.currentRanking, ...updates, updatedAt: Date.now() }
                                 : state.currentRanking,
                         isLoading: false,
                     }))
@@ -276,29 +293,33 @@ export const useRankingStore = create<RankingState>()(
                 }
             },
 
-            // Reorder items in ranking
-            reorderRanking: async (userId: string | null, request: ReorderRankingRequest) => {
+            // ----------------------------------------------------------------
+            //  Reorder ranking items (optimistic)
+            // ----------------------------------------------------------------
+            reorderRanking: async (userId, request) => {
                 if (!ensureAuthUser(userId, 'reorder ranking')) {
                     set({ error: 'Authentication required' })
                     return
                 }
 
-                try {
-                    // Optimistic update
-                    set((state) => ({
-                        currentRanking: state.currentRanking
-                            ? {
-                                  ...state.currentRanking,
-                                  rankedItems: request.rankedItems,
-                                  updatedAt: Date.now(),
-                              }
-                            : null,
-                    }))
+                // Optimistic update
+                set((state) => ({
+                    currentRanking: state.currentRanking
+                        ? {
+                              ...state.currentRanking,
+                              rankedItems: request.rankedItems,
+                              updatedAt: Date.now(),
+                          }
+                        : null,
+                }))
 
-                    await updateRankingInFirestore(userId, request.rankingId, {
-                        id: request.rankingId,
-                        rankedItems: request.rankedItems,
+                try {
+                    const res = await authenticatedFetch(`/api/rankings/${request.rankingId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ rankedItems: request.rankedItems }),
                     })
+                    await expectOk(res)
                 } catch (error) {
                     console.error('Error reordering ranking:', error)
                     set({
@@ -307,19 +328,22 @@ export const useRankingStore = create<RankingState>()(
                 }
             },
 
-            // Delete ranking
-            deleteRanking: async (userId: string | null, rankingId: string) => {
+            // ----------------------------------------------------------------
+            //  Delete ranking
+            // ----------------------------------------------------------------
+            deleteRanking: async (userId, rankingId) => {
                 if (!ensureAuthUser(userId, 'delete ranking')) {
                     set({ error: 'Authentication required' })
                     return
                 }
 
                 set({ isLoading: true, error: null })
-
                 try {
-                    await deleteRankingInFirestore(userId, rankingId)
+                    const res = await authenticatedFetch(`/api/rankings/${rankingId}`, {
+                        method: 'DELETE',
+                    })
+                    await expectOk(res)
 
-                    // Update local state
                     set((state) => ({
                         rankings: state.rankings.filter((r) => r.id !== rankingId),
                         currentRanking:
@@ -335,123 +359,126 @@ export const useRankingStore = create<RankingState>()(
                 }
             },
 
-            // Like ranking
-            likeRanking: async (userId: string | null, rankingId: string, userName: string) => {
+            // ----------------------------------------------------------------
+            //  Like ranking (optimistic)
+            // ----------------------------------------------------------------
+            likeRanking: async (userId, rankingId, _userName) => {
                 if (!ensureAuthUser(userId, 'like ranking')) {
                     set({ error: 'Authentication required to like rankings' })
                     return
                 }
 
-                // Save original state for rollback
-                const originalLikes = get().currentRanking?.likes || 0
+                const originalLikes = get().currentRanking?.likes ?? 0
+
+                // Optimistic
+                set((state) => ({
+                    currentRanking: state.currentRanking
+                        ? { ...state.currentRanking, likes: state.currentRanking.likes + 1 }
+                        : null,
+                }))
 
                 try {
-                    // Optimistic update
-                    set((state) => ({
-                        currentRanking: state.currentRanking
-                            ? {
-                                  ...state.currentRanking,
-                                  likes: state.currentRanking.likes + 1,
-                              }
-                            : null,
-                    }))
-
-                    await likeRankingInFirestore(userId, rankingId, userName)
+                    const res = await authenticatedFetch(`/api/rankings/${rankingId}/like`, {
+                        method: 'POST',
+                    })
+                    await expectOk(res)
                 } catch (error) {
                     console.error('Error liking ranking:', error)
-                    // Rollback on failure
+                    // Rollback
                     set((state) => ({
                         currentRanking: state.currentRanking
-                            ? {
-                                  ...state.currentRanking,
-                                  likes: originalLikes,
-                              }
+                            ? { ...state.currentRanking, likes: originalLikes }
                             : null,
                         error: error instanceof Error ? error.message : 'Failed to like ranking',
                     }))
                 }
             },
 
-            // Unlike ranking
-            unlikeRanking: async (userId: string | null, rankingId: string) => {
+            // ----------------------------------------------------------------
+            //  Unlike ranking (optimistic)
+            // ----------------------------------------------------------------
+            unlikeRanking: async (userId, rankingId) => {
                 if (!ensureAuthUser(userId, 'unlike ranking')) {
                     set({ error: 'Authentication required' })
                     return
                 }
 
-                // Save original state for rollback
-                const originalLikes = get().currentRanking?.likes || 0
+                const originalLikes = get().currentRanking?.likes ?? 0
+
+                // Optimistic
+                set((state) => ({
+                    currentRanking: state.currentRanking
+                        ? {
+                              ...state.currentRanking,
+                              likes: Math.max(0, state.currentRanking.likes - 1),
+                          }
+                        : null,
+                }))
 
                 try {
-                    // Optimistic update
-                    set((state) => ({
-                        currentRanking: state.currentRanking
-                            ? {
-                                  ...state.currentRanking,
-                                  likes: Math.max(0, state.currentRanking.likes - 1),
-                              }
-                            : null,
-                    }))
-
-                    await unlikeRankingInFirestore(userId, rankingId)
+                    const res = await authenticatedFetch(`/api/rankings/${rankingId}/like`, {
+                        method: 'DELETE',
+                    })
+                    await expectOk(res)
                 } catch (error) {
                     console.error('Error unliking ranking:', error)
-                    // Rollback on failure
+                    // Rollback
                     set((state) => ({
                         currentRanking: state.currentRanking
-                            ? {
-                                  ...state.currentRanking,
-                                  likes: originalLikes,
-                              }
+                            ? { ...state.currentRanking, likes: originalLikes }
                             : null,
                         error: error instanceof Error ? error.message : 'Failed to unlike ranking',
                     }))
                 }
             },
 
-            // Increment view count
-            incrementView: async (rankingId: string, userId?: string | null) => {
-                // Check if already viewed in this session
+            // ----------------------------------------------------------------
+            //  Increment view (per-session deduplication)
+            // ----------------------------------------------------------------
+            incrementView: async (rankingId, _userId) => {
                 const state = get()
                 if (state.viewedRankings.has(rankingId)) {
-                    return // Already viewed, skip
+                    return // Already viewed in this session
                 }
 
+                // Mark viewed before request to prevent races
+                set((s) => ({
+                    viewedRankings: new Set(s.viewedRankings).add(rankingId),
+                }))
+
                 try {
-                    // Mark as viewed before API call to prevent race conditions
-                    set((state) => ({
-                        viewedRankings: new Set(state.viewedRankings).add(rankingId),
-                    }))
+                    await fetch(`/api/rankings/${rankingId}/view`, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                    })
 
-                    await incrementRankingView(rankingId, userId || undefined)
-
-                    // Update local state
-                    set((state) => ({
-                        currentRanking: state.currentRanking
-                            ? {
-                                  ...state.currentRanking,
-                                  views: state.currentRanking.views + 1,
-                              }
+                    set((s) => ({
+                        currentRanking: s.currentRanking
+                            ? { ...s.currentRanking, views: s.currentRanking.views + 1 }
                             : null,
                     }))
                 } catch (error) {
                     console.error('Error incrementing view:', error)
-                    // On failure, remove from viewedRankings to allow retry
-                    set((state) => {
-                        const newSet = new Set(state.viewedRankings)
-                        newSet.delete(rankingId)
-                        return { viewedRankings: newSet }
+                    // Allow retry on failure
+                    set((s) => {
+                        const updated = new Set(s.viewedRankings)
+                        updated.delete(rankingId)
+                        return { viewedRankings: updated }
                     })
                 }
             },
 
-            // Load comments
-            loadComments: async (rankingId: string, limit = 20) => {
+            // ----------------------------------------------------------------
+            //  Load comments
+            // ----------------------------------------------------------------
+            loadComments: async (rankingId, limit = 20) => {
                 set({ error: null })
-
                 try {
-                    const result = await getRankingComments(rankingId, limit)
-                    set({ comments: result.data })
+                    const res = await fetch(`/api/rankings/${rankingId}/comments?limit=${limit}`, {
+                        credentials: 'same-origin',
+                    })
+                    const json = (await expectOk(res)) as { data: RankingComment[] }
+                    set({ comments: json.data })
                 } catch (error) {
                     console.error('Error loading comments:', error)
                     set({
@@ -460,22 +487,27 @@ export const useRankingStore = create<RankingState>()(
                 }
             },
 
-            // Create comment
-            createComment: async (
-                userId: string | null,
-                username: string,
-                userAvatar: string | undefined,
-                request: CreateCommentRequest
-            ) => {
+            // ----------------------------------------------------------------
+            //  Create comment
+            // ----------------------------------------------------------------
+            createComment: async (userId, username, userAvatar, request) => {
                 if (!ensureAuthUser(userId, 'comment on ranking')) {
                     set({ error: 'Authentication required to comment' })
                     return
                 }
 
                 try {
-                    await createCommentInFirestore(userId, username, userAvatar, request)
+                    const res = await authenticatedFetch(
+                        `/api/rankings/${request.rankingId}/comments`,
+                        {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ userName: username, userAvatar, ...request }),
+                        }
+                    )
+                    await expectOk(res)
 
-                    // Update local state
+                    // Update comment count and reload comments
                     set((state) => ({
                         currentRanking: state.currentRanking
                             ? {
@@ -485,7 +517,6 @@ export const useRankingStore = create<RankingState>()(
                             : null,
                     }))
 
-                    // Reload comments
                     await get().loadComments(request.rankingId)
                 } catch (error) {
                     console.error('Error creating comment:', error)
@@ -495,23 +526,23 @@ export const useRankingStore = create<RankingState>()(
                 }
             },
 
-            // Delete comment
-            deleteComment: async (
-                userId: string | null,
-                commentId: string,
-                rankingOwnerId: string
-            ) => {
+            // ----------------------------------------------------------------
+            //  Delete comment
+            // ----------------------------------------------------------------
+            deleteComment: async (userId, commentId, rankingOwnerId) => {
                 if (!ensureAuthUser(userId, 'delete comment')) {
                     set({ error: 'Authentication required' })
                     return
                 }
 
                 try {
-                    // Authorization is handled server-side in Firestore function
-                    // Client-side checks use potentially stale data and create false sense of security
-                    await deleteCommentInFirestore(userId, commentId, rankingOwnerId)
+                    const res = await authenticatedFetch(`/api/rankings/comments/${commentId}`, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ rankingOwnerId }),
+                    })
+                    await expectOk(res)
 
-                    // Update local state
                     set((state) => ({
                         comments: state.comments.filter((c) => c.id !== commentId),
                         currentRanking: state.currentRanking
@@ -529,17 +560,22 @@ export const useRankingStore = create<RankingState>()(
                 }
             },
 
-            // Like comment
-            likeComment: async (userId: string | null, commentId: string) => {
+            // ----------------------------------------------------------------
+            //  Like comment
+            // ----------------------------------------------------------------
+            likeComment: async (userId, commentId) => {
                 if (!ensureAuthUser(userId, 'like comment')) {
                     set({ error: 'Authentication required to like comments' })
                     return
                 }
 
                 try {
-                    await likeCommentInFirestore(userId, commentId)
+                    const res = await authenticatedFetch(
+                        `/api/rankings/comments/${commentId}/like`,
+                        { method: 'POST' }
+                    )
+                    await expectOk(res)
 
-                    // Update local state
                     set((state) => ({
                         comments: state.comments.map((c) =>
                             c.id === commentId ? { ...c, likes: c.likes + 1 } : c
@@ -550,17 +586,22 @@ export const useRankingStore = create<RankingState>()(
                 }
             },
 
-            // Unlike comment
-            unlikeComment: async (userId: string | null, commentId: string) => {
+            // ----------------------------------------------------------------
+            //  Unlike comment
+            // ----------------------------------------------------------------
+            unlikeComment: async (userId, commentId) => {
                 if (!ensureAuthUser(userId, 'unlike comment')) {
                     set({ error: 'Authentication required' })
                     return
                 }
 
                 try {
-                    await unlikeCommentInFirestore(userId, commentId)
+                    const res = await authenticatedFetch(
+                        `/api/rankings/comments/${commentId}/like`,
+                        { method: 'DELETE' }
+                    )
+                    await expectOk(res)
 
-                    // Update local state
                     set((state) => ({
                         comments: state.comments.map((c) =>
                             c.id === commentId ? { ...c, likes: Math.max(0, c.likes - 1) } : c
@@ -571,29 +612,26 @@ export const useRankingStore = create<RankingState>()(
                 }
             },
 
-            // Set sort order
+            // ----------------------------------------------------------------
+            //  Utility
+            // ----------------------------------------------------------------
             setSortBy: (sortBy) => {
                 set({ sortBy })
-                // Reload community rankings with new sort
                 get().loadCommunityRankings()
             },
 
-            // Set media type filter
             setFilterByMediaType: (filter) => {
                 set({ filterByMediaType: filter })
             },
 
-            // Clear current ranking
             clearCurrentRanking: () => {
                 set({ currentRanking: null, comments: [] })
             },
 
-            // Clear error
             clearError: () => {
                 set({ error: null })
             },
 
-            // Set error
             setError: (error) => {
                 set({ error })
             },

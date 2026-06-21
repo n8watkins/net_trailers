@@ -1,9 +1,8 @@
 /**
  * POST /api/shares/create
  *
- * Create a shareable link for a collection
- *
- * SECURITY: Requires valid Firebase ID token in Authorization header
+ * Create a shareable link for a collection. Auth.js session is used for
+ * identity — no Firebase token is required.
  *
  * Request body:
  * {
@@ -24,64 +23,56 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createShareLink } from '../../../../utils/firestore/shares'
-import { CreateShareRequest, CreateShareResponse } from '../../../../types/sharing'
-import { withAuth } from '../../../../lib/auth-middleware'
-import { getAdminDb } from '../../../../lib/firebase-admin'
-import { apiError } from '@/utils/debugLogger'
+
+import { withAuth } from '@/lib/auth-middleware'
 import { applyRateLimit, strictLimiter } from '@/lib/apiRateLimiting'
+import { createShare } from '@/db/queries/shares'
+import { loadUserPreferences } from '@/db/queries/userPreferences'
+import { apiError } from '@/utils/debugLogger'
+import type { CreateShareRequest } from '@/types/sharing'
+import type { UserList } from '@/types/collections'
 
 async function handleCreateShare(request: NextRequest, userId: string): Promise<NextResponse> {
-    // Apply strict rate limiting for share creation
+    // Apply strict rate limiting for share creation.
     const rateLimitResponse = applyRateLimit(request, strictLimiter, 'share-create')
     if (rateLimitResponse) {
         return rateLimitResponse
     }
 
     try {
-        // Parse request body
         const body = (await request.json()) as CreateShareRequest
 
-        // Validate request
         if (!body.collectionId) {
             return NextResponse.json(
-                {
-                    success: false,
-                    error: 'Collection ID is required',
-                },
+                { success: false, error: 'Collection ID is required' },
                 { status: 400 }
             )
         }
 
-        // Get admin Firestore instance
-        const db = getAdminDb()
+        // Load the user's preferences so we can find the collection and build
+        // the snapshot. This is the only cross-domain read — the collection
+        // lives inside userPreferences.userCreatedWatchlists.
+        const preferences = await loadUserPreferences(userId)
+        const collections: UserList[] = preferences.userCreatedWatchlists ?? []
+        const collection = collections.find((c) => c.id === body.collectionId)
 
-        // Create share link
-        const response: CreateShareResponse = await createShareLink(
-            db,
-            userId,
-            body.collectionId,
-            body
-        )
+        if (!collection) {
+            return NextResponse.json(
+                { success: false, error: 'Collection not found' },
+                { status: 404 }
+            )
+        }
 
-        return NextResponse.json({
-            success: true,
-            ...response,
-        })
+        const response = await createShare(userId, body.collectionId, collection, body)
+
+        return NextResponse.json({ success: true, ...response })
     } catch (error) {
         apiError('Error creating share link:', error)
 
         const errorMessage = error instanceof Error ? error.message : 'Failed to create share link'
 
-        return NextResponse.json(
-            {
-                success: false,
-                error: errorMessage,
-            },
-            { status: 500 }
-        )
+        return NextResponse.json({ success: false, error: errorMessage }, { status: 500 })
     }
 }
 
-// Export authenticated handler
 export const POST = withAuth(handleCreateShare)

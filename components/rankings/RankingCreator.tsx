@@ -24,7 +24,7 @@ import { useSessionStore } from '@/stores/sessionStore'
 import { useProfileStore } from '@/stores/profileStore'
 import { useSearch } from '@/hooks/useSearch'
 import { useToast } from '@/hooks/useToast'
-import { auth } from '@/firebase'
+import useAuth from '@/hooks/useAuth'
 import {
     TrophyIcon,
     MagnifyingGlassIcon,
@@ -55,6 +55,7 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
     const [mouseDownOnBackdrop, setMouseDownOnBackdrop] = useState(false)
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
+    const { user } = useAuth()
     const { createRanking, updateRanking } = useRankingStore()
     const profile = useProfileStore((state) => state.profile)
     const { query, updateQuery, results, isLoading: isSearchLoading } = useSearch()
@@ -191,17 +192,15 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
             return
         }
 
-        // Get current user info from Firebase Auth
-        const currentUser = auth.currentUser
-        if (!currentUser) {
+        if (!user) {
             showError('You must be logged in to create a ranking')
             return
         }
 
         // Get display name and optional username from profile
-        const displayName = profile?.displayName || currentUser.displayName || 'Unknown User'
+        const displayName = profile?.displayName || user.displayName || user.name || 'Unknown User'
         const username = profile?.username // Optional username for profile URL
-        const avatarUrl = profile?.avatarUrl || currentUser.photoURL || undefined
+        const avatarUrl = profile?.avatarUrl || user.photoURL || user.image || undefined
 
         // Validate note lengths before submission
         const invalidNotes = rankedItems.filter(

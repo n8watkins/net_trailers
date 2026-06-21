@@ -13,7 +13,7 @@ import { FORUM_CATEGORIES } from '@/utils/forumCategories'
 import { PollCard } from '@/components/forum/PollCard'
 import { CreatePollModal } from '@/components/forum/CreatePollModal'
 import { ForumCategory } from '@/types/forum'
-import { auth } from '@/firebase'
+import { useProfileStore } from '@/stores/profileStore'
 import {
     ChartBarIcon,
     MagnifyingGlassIcon,
@@ -27,6 +27,7 @@ export default function PollsContent() {
     const { polls, isLoadingPolls, loadPolls, createPoll, voteOnPoll, getUserVote } =
         useForumStore()
     const getUserId = useSessionStore((state) => state.getUserId)
+    const profile = useProfileStore((state) => state.profile)
     const { isGuest } = useAuthStatus()
     const { showError } = useToast()
     const [selectedCategory, setSelectedCategory] = useState<ForumCategory | 'all'>('all')
@@ -115,12 +116,9 @@ export default function PollsContent() {
         const currentUserId = getUserId()
         if (!currentUserId) return
 
-        // Get user info from Firebase Auth
-        const currentUser = auth.currentUser
-        if (!currentUser) return
-
-        const userName = currentUser.displayName || 'Anonymous'
-        const userAvatar = currentUser.photoURL || undefined
+        // Derive display info from the profile store (Auth.js session-backed)
+        const userName = profile?.displayName || 'Anonymous'
+        const userAvatar = profile?.avatarUrl || undefined
 
         await createPoll(currentUserId, userName, userAvatar, question, options, category)
         await loadPolls() // Reload polls

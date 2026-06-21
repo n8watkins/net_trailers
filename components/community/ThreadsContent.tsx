@@ -7,12 +7,12 @@ import { useSessionStore } from '@/stores/sessionStore'
 import { useAuthStatus } from '@/hooks/useAuthStatus'
 import { useVoiceInput } from '@/hooks/useVoiceInput'
 import { useToast } from '@/hooks/useToast'
+import useAuth from '@/hooks/useAuth'
 import NetflixLoader from '@/components/common/NetflixLoader'
 import { FORUM_CATEGORIES } from '@/utils/forumCategories'
 import { ThreadCard } from '@/components/forum/ThreadCard'
 import { CreateThreadModal } from '@/components/forum/CreateThreadModal'
 import { ForumCategory } from '@/types/forum'
-import { auth } from '@/firebase'
 import {
     ChatBubbleLeftRightIcon,
     MagnifyingGlassIcon,
@@ -26,6 +26,7 @@ export default function ThreadsContent() {
     const { threads, isLoadingThreads, loadThreads, createThread } = useForumStore()
     const getUserId = useSessionStore((state) => state.getUserId)
     const { isGuest } = useAuthStatus()
+    const { user: authUser } = useAuth()
     const { showError } = useToast()
     const [selectedCategory, setSelectedCategory] = useState<ForumCategory | 'all'>('all')
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
@@ -69,12 +70,11 @@ export default function ThreadsContent() {
         const userId = getUserId()
         if (!userId) return
 
-        // Get user info from Firebase Auth
-        const currentUser = auth.currentUser
-        if (!currentUser) return
+        // Get user info from Auth.js session (via useAuth hook)
+        if (!authUser) return
 
-        const userName = currentUser.displayName || 'Anonymous'
-        const userAvatar = currentUser.photoURL || undefined
+        const userName = authUser.displayName || 'Anonymous'
+        const userAvatar = authUser.photoURL || undefined
 
         await createThread(userId, userName, userAvatar, title, content, category, tags, images)
         await loadThreads() // Reload threads
@@ -102,8 +102,16 @@ export default function ThreadsContent() {
                 : true
         )
         .sort((a, b) => {
-            const toDate = (ts: any) => (ts?.toDate ? ts.toDate() : new Date(ts))
-            return toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime()
+            // Handles both epoch-ms numbers (Turso) and Firestore Timestamp objects
+            const toMs = (ts: unknown): number => {
+                if (!ts) return 0
+                if (typeof ts === 'number') return ts
+                if (ts && typeof (ts as { toDate?: () => Date }).toDate === 'function') {
+                    return (ts as { toDate: () => Date }).toDate().getTime()
+                }
+                return new Date(ts as string).getTime()
+            }
+            return toMs(b.createdAt) - toMs(a.createdAt)
         })
 
     return (

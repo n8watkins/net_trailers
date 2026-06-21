@@ -1,35 +1,32 @@
 /**
  * Profile Store (Zustand)
  *
- * Manages user profile state with Firestore sync
- * Handles username, avatar, and profile settings
+ * Manages user profile state and syncs with the Drizzle-backed API routes.
+ * All writes go through /api/profiles/[userId] (PATCH) or
+ * /api/profiles/username-availability (GET) so the server always derives the
+ * acting user from the Auth.js session — the userId parameter in URLs is used
+ * for routing only; the server re-validates ownership.
+ *
+ * Avatar upload: Firebase Storage has been removed. The `uploadAvatar` action
+ * now accepts a data URL or any externally hosted URL and writes it directly
+ * to the `avatarUrl` column via the profile PATCH endpoint. Large file upload
+ * support (e.g., S3, Cloudinary) can be layered in later without changing the
+ * store's public API.
  */
 
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
+
+import { authenticatedFetch } from '@/lib/authenticatedFetch'
 import {
-    UserProfile,
-    UpdateProfileRequest,
-    UsernameAvailability,
-    ProfileVisibility,
     DEFAULT_PROFILE_VISIBILITY,
     createDefaultProfile,
-} from '../types/profile'
-import { validateUsername } from '../utils/usernameValidation'
-import { validateDisplayName, createDisplayNameFromEmail } from '../utils/displayNameValidation'
-import {
-    getProfile,
-    getProfileByUsername,
-    createProfile as createProfileInFirestore,
-    updateProfile as updateProfileInFirestore,
-    checkUsernameAvailability as checkUsernameAvailabilityInFirestore,
-    uploadAvatar as uploadAvatarToStorage,
-    deleteAvatar as deleteAvatarFromStorage,
-    updateProfileVisibility as updateProfileVisibilityInFirestore,
-    getProfileVisibility as getProfileVisibilityFromFirestore,
-} from '../utils/firestore/profiles'
-import { updateRankingsUsername } from '../utils/firestore/rankings'
-import { updateRankingCommentsUsername } from '../utils/firestore/rankingComments'
+    type ProfileVisibility,
+    type UpdateProfileRequest,
+    type UserProfile,
+    type UsernameAvailability,
+} from '@/types/profile'
+import { validateDisplayName, createDisplayNameFromEmail } from '@/utils/displayNameValidation'
 
 const GUEST_ID_PREFIX = 'guest_'
 
@@ -39,11 +36,11 @@ const isGuestUserId = (userId?: string | null): boolean =>
 interface ProfileState {
     // State
     profile: UserProfile | null
-    viewedProfile: UserProfile | null // For viewing other users' profiles
+    viewedProfile: UserProfile | null
     isLoading: boolean
     error: string | null
 
-    // Actions - Profile CRUD
+    // Actions — Profile CRUD
     loadProfile: (userId: string | null) => Promise<void>
     loadUserProfileByUsername: (username: string) => Promise<void>
     createProfile: (
@@ -53,14 +50,14 @@ interface ProfileState {
         displayName?: string
     ) => Promise<UserProfile>
     updateProfile: (userId: string | null, request: UpdateProfileRequest) => Promise<void>
-    uploadAvatar: (userId: string | null, file: File) => Promise<string | null>
+    uploadAvatar: (userId: string | null, dataUrlOrUrl: string) => Promise<string | null>
     deleteAvatar: (userId: string | null) => Promise<void>
 
-    // Actions - Username
+    // Actions — Username
     checkUsernameAvailability: (username: string) => Promise<UsernameAvailability>
     updateUsername: (userId: string | null, newUsername: string) => Promise<void>
 
-    // Actions - Visibility
+    // Actions — Visibility
     getVisibility: (userId: string | null) => Promise<ProfileVisibility>
     updateVisibility: (
         userId: string | null,
@@ -77,21 +74,15 @@ interface ProfileState {
 export const useProfileStore = create<ProfileState>()(
     devtools(
         (set, get) => ({
-            // Initial state
+            // ── Initial state ────────────────────────────────────────────────
             profile: null,
             viewedProfile: null,
             isLoading: false,
             error: null,
 
-            // Load current user's profile
+            // ── Load current user's profile ──────────────────────────────────
             loadProfile: async (userId: string | null) => {
-                if (!userId) {
-                    set({ profile: null, isLoading: false })
-                    return
-                }
-
-                // Guests don't have profiles
-                if (isGuestUserId(userId)) {
+                if (!userId || isGuestUserId(userId)) {
                     set({ profile: null, isLoading: false })
                     return
                 }
@@ -99,14 +90,16 @@ export const useProfileStore = create<ProfileState>()(
                 set({ isLoading: true, error: null })
 
                 try {
-                    const profile = await getProfile(userId)
-
-                    if (!profile) {
+                    const res = await fetch(`/api/profiles/${userId}`)
+                    if (res.status === 404) {
                         set({ error: 'Profile not found', isLoading: false })
                         return
                     }
-
-                    set({ profile, isLoading: false })
+                    if (!res.ok) {
+                        throw new Error(`Failed to load profile (${res.status})`)
+                    }
+                    const data = await res.json()
+                    set({ profile: data.profile as UserProfile, isLoading: false })
                 } catch (error) {
                     console.error('Error loading profile:', error)
                     set({
@@ -116,25 +109,33 @@ export const useProfileStore = create<ProfileState>()(
                 }
             },
 
-            // Load another user's profile by username
+            // ── Load another user's profile by username ──────────────────────
             loadUserProfileByUsername: async (username: string) => {
                 set({ isLoading: true, error: null })
 
                 try {
-                    const profile = await getProfileByUsername(username)
-
-                    if (!profile) {
+                    // The /api/public-profile/username/[username] route already
+                    // handles username → userId resolution and visibility checks.
+                    const res = await fetch(
+                        `/api/public-profile/username/${encodeURIComponent(username)}`
+                    )
+                    if (res.status === 404) {
                         set({ error: 'User not found', isLoading: false })
                         return
                     }
-
-                    // Check if profile is public
-                    if (!profile.isPublic) {
-                        set({ error: 'This profile is private', isLoading: false })
-                        return
+                    if (!res.ok) {
+                        throw new Error(`Failed to load profile (${res.status})`)
                     }
-
-                    set({ viewedProfile: profile, isLoading: false })
+                    const payload = await res.json()
+                    // Map the lean public payload to the UserProfile shape the store expects.
+                    const synthetic: Partial<UserProfile> = {
+                        displayName: payload.profile?.displayName ?? 'User',
+                        avatarUrl: payload.profile?.avatarUrl ?? undefined,
+                        description: payload.profile?.bio ?? undefined,
+                        favoriteGenres: payload.profile?.favoriteGenres ?? [],
+                        visibility: payload.visibility,
+                    }
+                    set({ viewedProfile: synthetic as UserProfile, isLoading: false })
                 } catch (error) {
                     console.error('Error loading user profile:', error)
                     set({
@@ -144,7 +145,7 @@ export const useProfileStore = create<ProfileState>()(
                 }
             },
 
-            // Create profile for new user (or load existing one)
+            // ── Create profile for new user ──────────────────────────────────
             createProfile: async (
                 userId: string,
                 email: string,
@@ -154,34 +155,57 @@ export const useProfileStore = create<ProfileState>()(
                 set({ isLoading: true, error: null })
 
                 try {
-                    // First check if profile already exists
-                    const existingProfile = await getProfile(userId)
-                    if (existingProfile) {
-                        // Profile already exists, just load it into state
-                        set({ profile: existingProfile, isLoading: false })
-                        return existingProfile
+                    // Check if profile already exists.
+                    const checkRes = await fetch(`/api/profiles/${userId}`)
+                    if (checkRes.ok) {
+                        const existing = await checkRes.json()
+                        if (existing.profile) {
+                            set({ profile: existing.profile as UserProfile, isLoading: false })
+                            return existing.profile as UserProfile
+                        }
                     }
 
-                    // Create display name from email or use provided one
                     const finalDisplayName = displayName || createDisplayNameFromEmail(email)
 
-                    // Validate display name
-                    const displayNameValidation = validateDisplayName(finalDisplayName)
-                    if (!displayNameValidation.isValid) {
-                        throw new Error(displayNameValidation.error || 'Invalid display name')
+                    const nameValidation = validateDisplayName(finalDisplayName)
+                    if (!nameValidation.isValid) {
+                        throw new Error(nameValidation.error || 'Invalid display name')
                     }
 
-                    // Create default profile WITHOUT username (username is optional)
-                    const profile = createDefaultProfile(
+                    // Build the default profile locally so we can send it as the
+                    // initial PATCH payload.
+                    const defaultProfile = createDefaultProfile(
                         userId,
                         email,
                         finalDisplayName,
                         googlePhotoUrl
                     )
 
-                    // Save to Firestore
-                    await createProfileInFirestore(profile)
+                    // PATCH upserts — the server will insert if the row is absent.
+                    const patchPayload: UpdateProfileRequest = {
+                        displayName: defaultProfile.displayName,
+                        description: defaultProfile.description,
+                        favoriteGenres: defaultProfile.favoriteGenres,
+                        isPublic: defaultProfile.isPublic,
+                        visibility: defaultProfile.visibility,
+                        avatarSource: defaultProfile.avatarSource,
+                    }
 
+                    const patchRes = await authenticatedFetch(`/api/profiles/${userId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(patchPayload),
+                    })
+
+                    if (!patchRes.ok) {
+                        const body = await patchRes.json().catch(() => null)
+                        throw new Error(
+                            body?.error || `Failed to create profile (${patchRes.status})`
+                        )
+                    }
+
+                    const created = await patchRes.json()
+                    const profile = (created.profile as UserProfile) ?? defaultProfile
                     set({ profile, isLoading: false })
                     return profile
                 } catch (error) {
@@ -194,7 +218,7 @@ export const useProfileStore = create<ProfileState>()(
                 }
             },
 
-            // Update profile
+            // ── Update profile ───────────────────────────────────────────────
             updateProfile: async (userId: string | null, request: UpdateProfileRequest) => {
                 if (!userId || isGuestUserId(userId)) {
                     set({ error: 'Authentication required' })
@@ -204,84 +228,32 @@ export const useProfileStore = create<ProfileState>()(
                 set({ isLoading: true, error: null })
 
                 try {
-                    // If updating display name, validate it
-                    if (request.displayName) {
-                        const validation = validateDisplayName(request.displayName)
-                        if (!validation.isValid) {
-                            set({
-                                error: validation.error || 'Invalid display name',
-                                isLoading: false,
-                            })
-                            return
-                        }
+                    const res = await authenticatedFetch(`/api/profiles/${userId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(request),
+                    })
+
+                    if (!res.ok) {
+                        const body = await res.json().catch(() => null)
+                        throw new Error(body?.error || `Failed to update profile (${res.status})`)
                     }
 
-                    // If updating username, validate and check availability
-                    if (request.username !== undefined) {
-                        // Allow clearing username (set to undefined)
-                        if (request.username === null || request.username === '') {
-                            // Clear username - this is allowed
-                            request.username = undefined
-                        } else {
-                            // Validate username format
-                            const validation = validateUsername(request.username)
-                            if (!validation.isValid) {
-                                set({
-                                    error: validation.error || 'Invalid username',
-                                    isLoading: false,
-                                })
-                                return
-                            }
+                    const data = await res.json()
+                    const updated = data.profile as UserProfile | undefined
 
-                            // Check availability
-                            const availability = await get().checkUsernameAvailability(
-                                request.username
-                            )
-                            if (!availability.available) {
-                                set({
-                                    error: 'Username is already taken',
-                                    isLoading: false,
-                                })
-                                return
-                            }
-                        }
-                    }
-
-                    await updateProfileInFirestore(userId, request)
-
-                    // Update denormalized usernames in rankings and comments if display name changed
-                    if (request.displayName) {
-                        console.log(
-                            `[ProfileStore] Updating denormalized display names to: ${request.displayName}`
-                        )
-                        // Update rankings in parallel (fire and forget for performance)
-                        updateRankingsUsername(userId, request.displayName).catch((error) =>
-                            console.error(
-                                '[ProfileStore] Failed to update rankings username:',
-                                error
-                            )
-                        )
-                        // Update comments in parallel (fire and forget for performance)
-                        updateRankingCommentsUsername(userId, request.displayName).catch((error) =>
-                            console.error(
-                                '[ProfileStore] Failed to update comments username:',
-                                error
-                            )
-                        )
-                    }
-
-                    // Update local state (exclude visibility from spread to avoid type issues)
-                    const { visibility: _visibility, ...restRequest } = request
+                    // Update local state. Visibility is handled by the server;
+                    // merge whatever the server returns.
                     set((state) => {
-                        if (!state.profile) {
-                            return { isLoading: false }
-                        }
+                        if (!state.profile) return { isLoading: false }
                         return {
-                            profile: {
-                                ...state.profile,
-                                ...restRequest,
-                                updatedAt: Date.now(),
-                            },
+                            profile:
+                                updated ??
+                                ({
+                                    ...state.profile,
+                                    ...request,
+                                    updatedAt: Date.now(),
+                                } as UserProfile),
                             isLoading: false,
                         }
                     })
@@ -294,8 +266,13 @@ export const useProfileStore = create<ProfileState>()(
                 }
             },
 
-            // Upload custom avatar
-            uploadAvatar: async (userId: string | null, file: File) => {
+            // ── Avatar upload (data URL or external URL) ─────────────────────
+            //
+            // Firebase Storage is no longer used. Callers should convert the
+            // File to a data URL (or upload to their own CDN and pass the URL)
+            // before calling this method. The URL is written directly to the
+            // profiles.avatarUrl column via /api/profiles/[userId]/avatar.
+            uploadAvatar: async (userId: string | null, dataUrlOrUrl: string) => {
                 if (!userId || isGuestUserId(userId)) {
                     set({ error: 'Authentication required' })
                     return null
@@ -304,22 +281,29 @@ export const useProfileStore = create<ProfileState>()(
                 set({ isLoading: true, error: null })
 
                 try {
-                    // Upload to Firebase Storage (updates profile in Firestore too)
-                    const avatarUrl = await uploadAvatarToStorage(userId, file)
+                    const res = await authenticatedFetch(`/api/profiles/${userId}/avatar`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ avatarUrl: dataUrlOrUrl, avatarSource: 'custom' }),
+                    })
+
+                    if (!res.ok) {
+                        const body = await res.json().catch(() => null)
+                        throw new Error(body?.error || `Failed to update avatar (${res.status})`)
+                    }
 
                     set((state) => ({
                         profile: state.profile
                             ? {
                                   ...state.profile,
-                                  avatarUrl,
+                                  avatarUrl: dataUrlOrUrl,
                                   avatarSource: 'custom',
-                                  customAvatarUrl: avatarUrl,
                               }
                             : null,
                         isLoading: false,
                     }))
 
-                    return avatarUrl
+                    return dataUrlOrUrl
                 } catch (error) {
                     console.error('Error uploading avatar:', error)
                     set({
@@ -330,39 +314,30 @@ export const useProfileStore = create<ProfileState>()(
                 }
             },
 
-            // Delete custom avatar (revert to Google or generated)
+            // ── Delete custom avatar (revert to Google / generated) ──────────
             deleteAvatar: async (userId: string | null) => {
                 if (!userId || isGuestUserId(userId)) {
                     set({ error: 'Authentication required' })
                     return
                 }
 
+                const profile = get().profile
+                if (!profile) {
+                    set({ error: 'Profile not loaded' })
+                    return
+                }
+
                 set({ isLoading: true, error: null })
 
+                const fallbackAvatarUrl =
+                    profile.googlePhotoUrl ||
+                    `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.displayName}`
+                const fallbackSource: 'google' | 'generated' = profile.googlePhotoUrl
+                    ? 'google'
+                    : 'generated'
+
                 try {
-                    const profile = get().profile
-                    if (!profile) {
-                        set({ error: 'Profile not found', isLoading: false })
-                        return
-                    }
-
-                    // Determine fallback avatar
-                    const fallbackAvatarUrl =
-                        profile.googlePhotoUrl ||
-                        `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.displayName}`
-                    const fallbackSource: 'google' | 'generated' = profile.googlePhotoUrl
-                        ? 'google'
-                        : 'generated'
-
-                    // Delete from Firebase Storage if custom avatar exists
-                    if (profile.customAvatarUrl) {
-                        await deleteAvatarFromStorage(userId, profile.customAvatarUrl)
-                    }
-
-                    // Update profile
-                    await get().updateProfile(userId, {
-                        avatarSource: fallbackSource,
-                    })
+                    await get().updateProfile(userId, { avatarSource: fallbackSource })
 
                     set((state) => ({
                         profile: state.profile
@@ -384,15 +359,26 @@ export const useProfileStore = create<ProfileState>()(
                 }
             },
 
-            // Check if username is available
+            // ── Username availability ────────────────────────────────────────
             checkUsernameAvailability: async (username: string): Promise<UsernameAvailability> => {
-                // Check Firestore with current user ID to allow keeping current username
                 const currentUserId = get().profile?.userId
-                return await checkUsernameAvailabilityInFirestore(username, currentUserId)
+                const params = new URLSearchParams({ username })
+                if (currentUserId) params.set('currentUserId', currentUserId)
+
+                try {
+                    const res = await fetch(
+                        `/api/profiles/username-availability?${params.toString()}`
+                    )
+                    if (!res.ok) {
+                        return { available: false, error: 'Could not verify username' }
+                    }
+                    return (await res.json()) as UsernameAvailability
+                } catch {
+                    return { available: false, error: 'Could not verify username availability' }
+                }
             },
 
-            // Update username (with all necessary cascading updates)
-            // Note: This updates the optional username field (URL slug), not display name
+            // ── Update username ──────────────────────────────────────────────
             updateUsername: async (userId: string | null, newUsername: string) => {
                 if (!userId || isGuestUserId(userId)) {
                     set({ error: 'Authentication required' })
@@ -407,24 +393,11 @@ export const useProfileStore = create<ProfileState>()(
                     return
                 }
 
-                if (currentProfile.username === trimmedUsername) {
-                    // Nothing to do
-                    return
-                }
+                if (currentProfile.username === trimmedUsername) return
 
                 set({ isLoading: true, error: null })
 
                 try {
-                    // Validate and check availability
-                    const validation = validateUsername(trimmedUsername)
-                    if (!validation.isValid) {
-                        set({
-                            error: validation.error || 'Invalid username',
-                            isLoading: false,
-                        })
-                        return
-                    }
-
                     const availability = await get().checkUsernameAvailability(trimmedUsername)
                     if (!availability.available) {
                         set({
@@ -434,23 +407,11 @@ export const useProfileStore = create<ProfileState>()(
                         return
                     }
 
-                    // Update canonical profile (handles username mapping atomically)
-                    await updateProfileInFirestore(userId, { username: trimmedUsername })
+                    await get().updateProfile(userId, { username: trimmedUsername })
 
-                    // Update denormalized references with username
-                    await Promise.all([
-                        updateRankingsUsername(userId, trimmedUsername),
-                        updateRankingCommentsUsername(userId, trimmedUsername),
-                    ])
-
-                    // Update local state
                     set((state) => ({
                         profile: state.profile
-                            ? {
-                                  ...state.profile,
-                                  username: trimmedUsername,
-                                  updatedAt: Date.now(),
-                              }
+                            ? { ...state.profile, username: trimmedUsername, updatedAt: Date.now() }
                             : null,
                         isLoading: false,
                     }))
@@ -463,21 +424,25 @@ export const useProfileStore = create<ProfileState>()(
                 }
             },
 
-            // Get visibility settings
+            // ── Visibility ───────────────────────────────────────────────────
             getVisibility: async (userId: string | null): Promise<ProfileVisibility> => {
                 if (!userId || isGuestUserId(userId)) {
                     return { ...DEFAULT_PROFILE_VISIBILITY }
                 }
 
                 try {
-                    return await getProfileVisibilityFromFirestore(userId)
-                } catch (error) {
-                    console.error('Error getting visibility settings:', error)
+                    const res = await fetch(`/api/profiles/${userId}`)
+                    if (!res.ok) return { ...DEFAULT_PROFILE_VISIBILITY }
+                    const data = await res.json()
+                    const profile = data.profile as UserProfile | undefined
+                    return profile?.visibility
+                        ? { ...DEFAULT_PROFILE_VISIBILITY, ...profile.visibility }
+                        : { ...DEFAULT_PROFILE_VISIBILITY }
+                } catch {
                     return { ...DEFAULT_PROFILE_VISIBILITY }
                 }
             },
 
-            // Update visibility settings
             updateVisibility: async (
                 userId: string | null,
                 updates: Partial<ProfileVisibility>
@@ -490,13 +455,32 @@ export const useProfileStore = create<ProfileState>()(
                 set({ isLoading: true, error: null })
 
                 try {
-                    const newVisibility = await updateProfileVisibilityInFirestore(userId, updates)
+                    const res = await authenticatedFetch(`/api/profiles/${userId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            visibility: updates,
+                        } satisfies UpdateProfileRequest),
+                    })
 
-                    // Update local state with full ProfileVisibility object
+                    if (!res.ok) {
+                        const body = await res.json().catch(() => null)
+                        throw new Error(
+                            body?.error || `Failed to update visibility (${res.status})`
+                        )
+                    }
+
+                    const data = await res.json()
+                    const updated = data.profile as UserProfile | undefined
+
+                    const newVisibility: ProfileVisibility = {
+                        ...DEFAULT_PROFILE_VISIBILITY,
+                        ...(updated?.visibility ?? {}),
+                        ...updates,
+                    }
+
                     set((state) => {
-                        if (!state.profile) {
-                            return { isLoading: false }
-                        }
+                        if (!state.profile) return { isLoading: false }
                         return {
                             profile: {
                                 ...state.profile,
@@ -519,25 +503,11 @@ export const useProfileStore = create<ProfileState>()(
                 }
             },
 
-            // Clear current user's profile
-            clearProfile: () => {
-                set({ profile: null })
-            },
-
-            // Clear viewed profile
-            clearViewedProfile: () => {
-                set({ viewedProfile: null })
-            },
-
-            // Clear error
-            clearError: () => {
-                set({ error: null })
-            },
-
-            // Set error
-            setError: (error) => {
-                set({ error })
-            },
+            // ── Utilities ────────────────────────────────────────────────────
+            clearProfile: () => set({ profile: null }),
+            clearViewedProfile: () => set({ viewedProfile: null }),
+            clearError: () => set({ error: null }),
+            setError: (error) => set({ error }),
         }),
         { name: 'ProfileStore' }
     )

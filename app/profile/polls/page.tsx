@@ -22,14 +22,16 @@ import { CreatePollModal } from '@/components/forum/CreatePollModal'
 import type { PollSummary, ForumCategory } from '@/types/forum'
 import { ChartBarIcon, ArrowLeftIcon, PlusIcon } from '@heroicons/react/24/outline'
 import { ChartBarIcon as ChartBarSolidIcon } from '@heroicons/react/24/solid'
-import { Timestamp, collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore'
-import { db, auth } from '@/firebase'
+import { useProfileStore } from '@/stores/profileStore'
 
-// Helper to convert Firestore Timestamp to number
-const timestampToNumber = (ts: Timestamp | number | null | undefined): number | null => {
+// Helper to convert epoch-ms number or legacy Timestamp to number
+const timestampToNumber = (
+    ts: number | { toMillis?: () => number } | null | undefined
+): number | null => {
     if (!ts) return null
     if (typeof ts === 'number') return ts
-    return ts.toMillis()
+    if (typeof ts === 'object' && typeof ts.toMillis === 'function') return ts.toMillis()
+    return null
 }
 
 export default function UserPollsPage() {
@@ -39,6 +41,7 @@ export default function UserPollsPage() {
     const getUserId = useSessionStore((state) => state.getUserId)
     const { isGuest } = useAuthStatus()
     const isInitialized = useSessionStore((state) => state.isInitialized)
+    const profile = useProfileStore((state) => state.profile)
     const userId = getUserId()
 
     const [activePollTab, setActivePollTab] = useState<'created' | 'voted'>('created')
@@ -67,7 +70,7 @@ export default function UserPollsPage() {
         }
     }, [userId, isInitialized, loadPolls])
 
-    // Fetch voted polls
+    // Fetch voted polls via the new Turso-backed API
     useEffect(() => {
         if (!userId || isGuest) {
             setVotedPolls([])
@@ -79,60 +82,33 @@ export default function UserPollsPage() {
         const fetchVotedPolls = async () => {
             setIsLoadingVotedPolls(true)
             try {
-                const votesQuery = query(
-                    collection(db, 'poll_votes'),
-                    where('userId', '==', userId)
-                )
-                const votesSnap = await getDocs(votesQuery)
-
-                const pollsFromVotes = await Promise.all(
-                    votesSnap.docs.map(async (voteDoc) => {
-                        const voteData = voteDoc.data() || {}
-                        const pollId = voteData.pollId as string | undefined
-                        if (!pollId) return null
-
-                        const pollDoc = await getDoc(doc(db, 'polls', pollId))
-                        if (!pollDoc.exists()) return null
-                        const pollData = pollDoc.data() || {}
-
-                        return {
-                            id: pollDoc.id,
-                            question: pollData.question ?? 'Untitled poll',
-                            category: pollData.category ?? 'general',
-                            userId: pollData.userId ?? '',
-                            userName: pollData.userName ?? 'Unknown User',
-                            userAvatar: pollData.userAvatar,
-                            totalVotes: pollData.totalVotes ?? 0,
-                            isMultipleChoice: Boolean(pollData.isMultipleChoice),
-                            allowAddOptions: Boolean(pollData.allowAddOptions),
-                            options: Array.isArray(pollData.options)
-                                ? pollData.options.map((option: any) => ({
-                                      id: option.id ?? '',
-                                      text: option.text ?? '',
-                                      votes: option.votes ?? 0,
-                                      percentage: option.percentage ?? 0,
-                                  }))
-                                : [],
-                            createdAt: timestampToNumber(
-                                pollData.createdAt as Timestamp | number | null | undefined
-                            ),
-                            expiresAt: timestampToNumber(
-                                pollData.expiresAt as Timestamp | number | null | undefined
-                            ),
-                            votedAt: timestampToNumber(
-                                voteData.votedAt as Timestamp | number | null | undefined
-                            ),
-                        } as PollSummary
-                    })
-                )
+                const res = await fetch(`/api/polls/user/${userId}?voted=true`, {
+                    credentials: 'include',
+                })
+                if (!res.ok) throw new Error('Failed to load voted polls')
+                const json = await res.json()
 
                 if (!isMounted) return
 
-                const filtered = pollsFromVotes
-                    .filter((poll): poll is PollSummary => Boolean(poll))
-                    .sort((a, b) => (b.votedAt ?? 0) - (a.votedAt ?? 0))
+                const rawPolls = (json.polls as Record<string, unknown>[]) ?? []
+                const summaries: PollSummary[] = rawPolls.map((p) => ({
+                    id: p.id as string,
+                    question: p.question as string,
+                    category: p.category as PollSummary['category'],
+                    userId: p.userId as string,
+                    userName: p.userName as string,
+                    userAvatar: p.userAvatar as string | undefined,
+                    totalVotes: p.totalVotes as number,
+                    isMultipleChoice: Boolean(p.isMultipleChoice),
+                    allowAddOptions: Boolean(p.allowAddOptions),
+                    options: (p.options as PollSummary['options']) ?? [],
+                    createdAt: timestampToNumber(p.createdAt as number | null | undefined),
+                    expiresAt: timestampToNumber(p.expiresAt as number | null | undefined),
+                    // The voted-polls API sorts by votedAt; no separate field exposed yet
+                    votedAt: null,
+                }))
 
-                setVotedPolls(filtered)
+                setVotedPolls(summaries)
             } catch (error) {
                 console.error('Failed to load voted polls:', error)
                 if (isMounted) {
@@ -228,11 +204,10 @@ export default function UserPollsPage() {
         category: ForumCategory
     ) => {
         if (!userId) return
-        const currentUser = auth.currentUser
-        if (!currentUser) return
 
-        const userName = currentUser.displayName || 'Anonymous'
-        const userAvatar = currentUser.photoURL || undefined
+        // Derive display info from the profile store (Auth.js session-backed)
+        const userName = profile?.displayName || 'Anonymous'
+        const userAvatar = profile?.avatarUrl || undefined
 
         await createPoll(userId, userName, userAvatar, question, options, category)
         await loadPolls()

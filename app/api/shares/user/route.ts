@@ -1,46 +1,40 @@
 /**
  * GET /api/shares/user
  *
- * Get all shares for the authenticated user
- * Includes statistics and share list
+ * Return all shares for the authenticated user together with aggregate
+ * statistics. Auth.js session required (cookie-based; no bearer token).
  *
- * SECURITY: Requires valid Firebase ID token in Authorization header
+ * Response:
+ * {
+ *   success: boolean
+ *   shares?: ShareableLink[]
+ *   stats?: ShareStats
+ *   error?: string
+ * }
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserShares, getShareStats } from '../../../../utils/firestore/shares'
-import { withAuth } from '../../../../lib/auth-middleware'
-import { getAdminDb } from '../../../../lib/firebase-admin'
+
+import { withAuth } from '@/lib/auth-middleware'
+import { getUserShares, getShareStats } from '@/db/queries/shares'
 import { apiError } from '@/utils/debugLogger'
 
-async function handleGetUserShares(request: NextRequest, userId: string): Promise<NextResponse> {
+async function handleGetUserShares(_request: NextRequest, userId: string): Promise<NextResponse> {
     try {
-        // Get admin Firestore instance
-        const db = getAdminDb()
+        const [sharesList, stats] = await Promise.all([
+            getUserShares(userId),
+            getShareStats(userId),
+        ])
 
-        // Get user's shares
-        const shares = await getUserShares(db, userId)
-
-        // Get share statistics
-        const stats = await getShareStats(db, userId)
-
-        return NextResponse.json({
-            success: true,
-            shares,
-            stats,
-        })
+        return NextResponse.json({ success: true, shares: sharesList, stats })
     } catch (error) {
         apiError('Error fetching user shares:', error)
 
         return NextResponse.json(
-            {
-                success: false,
-                error: 'Failed to load user shares',
-            },
+            { success: false, error: 'Failed to load user shares' },
             { status: 500 }
         )
     }
 }
 
-// Export authenticated handler
 export const GET = withAuth(handleGetUserShares)

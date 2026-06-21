@@ -23,7 +23,7 @@ import { CommentSection } from './CommentSection'
 import { useRankingStore } from '@/stores/rankingStore'
 import { useSessionStore } from '@/stores/sessionStore'
 import useAuth from '@/hooks/useAuth'
-import { hasUserLikedRanking } from '@/utils/firestore/rankings'
+// hasUserLikedRanking is now fetched via /api/rankings/[id]/like GET
 import { formatDistanceToNow } from 'date-fns'
 import {
     HeartIcon,
@@ -79,9 +79,12 @@ export function RankingDetail({
         const checkLikeStatus = async () => {
             if (!userId) return
             try {
-                const liked = await hasUserLikedRanking(userId, rankingId)
-                if (isMounted) {
-                    setIsLiked(liked)
+                const res = await fetch(`/api/rankings/${rankingId}/like`, {
+                    credentials: 'same-origin',
+                })
+                if (res.ok) {
+                    const json = await res.json()
+                    if (isMounted) setIsLiked(Boolean(json.liked))
                 }
             } catch (error) {
                 console.error('Failed to check like status:', error)

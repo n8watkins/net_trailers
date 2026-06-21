@@ -6,7 +6,7 @@ import { ShareableLink, ShareStats } from '../../types/sharing'
 import { useToast } from '../../hooks/useToast'
 import { useSessionStore } from '../../stores/sessionStore'
 import ShareModal from './ShareModal'
-import { getAuthHeaders } from '../../utils/auth'
+import { authenticatedFetch } from '../../lib/authenticatedFetch'
 
 interface ManageSharesModalProps {
     /** Whether modal is open */
@@ -19,8 +19,11 @@ interface ManageSharesModalProps {
 /**
  * ManageSharesModal Component
  *
- * Lists all user's shares with statistics and management options.
- * Opens ShareModal for individual share management.
+ * Lists all of the current user's shares with statistics and management
+ * options. Opens ShareModal for per-share management.
+ *
+ * Auth is handled via the Auth.js session cookie (authenticatedFetch);
+ * no Firebase bearer token is required.
  */
 export default function ManageSharesModal({ isOpen, onClose }: ManageSharesModalProps) {
     const [shares, setShares] = useState<ShareableLink[]>([])
@@ -46,13 +49,7 @@ export default function ManageSharesModal({ isOpen, onClose }: ManageSharesModal
 
         setIsLoading(true)
         try {
-            // Get authenticated headers with Firebase token
-            const headers = await getAuthHeaders()
-
-            const response = await fetch('/api/shares/user', {
-                headers,
-            })
-
+            const response = await authenticatedFetch('/api/shares/user')
             const data = await response.json()
 
             if (data.success) {
@@ -88,7 +85,7 @@ export default function ManageSharesModal({ isOpen, onClose }: ManageSharesModal
 
     const handleCloseShareModal = () => {
         setSelectedShare(null)
-        // Reload shares to reflect changes
+        // Reload shares to reflect any changes made in the sub-modal.
         loadShares()
     }
 
@@ -230,8 +227,8 @@ export default function ManageSharesModal({ isOpen, onClose }: ManageSharesModal
                     {!isLoading && shares.length > 0 && (
                         <div className="mt-6 rounded-md bg-blue-600/10 px-4 py-3">
                             <p className="text-xs text-blue-400">
-                                <strong>💡 Tip:</strong> Click on any share to view details, copy
-                                the link, or manage settings. Most viewed:{' '}
+                                <strong>Tip:</strong> Click on any share to view details, copy the
+                                link, or manage settings. Most viewed:{' '}
                                 {stats?.mostViewedShare
                                     ? `"${stats.mostViewedShare.collectionName}" (${stats.mostViewedShare.viewCount} views)`
                                     : 'None yet'}

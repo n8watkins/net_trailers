@@ -3,17 +3,18 @@
  *
  * Manages PIN protection state for Child Safety Mode.
  * Handles PIN verification status (session-based) and PIN settings.
+ *
+ * All Firestore / Firebase imports have been replaced with calls to the
+ * /api/child-safety/pin REST endpoints, which perform bcrypt hashing and
+ * comparison server-side.
+ *
+ * Guest users cannot set PINs (no server session) — the store skips API calls
+ * when isGuest === true and returns appropriate errors.
  */
 
 import { create } from 'zustand'
 import { PINSettings, DEFAULT_PIN_SETTINGS } from '../types/childSafety'
-import {
-    getPINSettings,
-    verifyPIN as verifyPINUtil,
-    createPIN as createPINUtil,
-    updatePIN as updatePINUtil,
-    removePIN as removePINUtil,
-} from '../utils/firestore/childSafetyPIN'
+import { authenticatedFetch } from '../lib/authenticatedFetch'
 
 interface ChildSafetyPINState {
     /** Current PIN settings */
@@ -81,13 +82,78 @@ const initialState: ChildSafetyPINState = {
     error: null,
 }
 
+/* -------------------------------------------------------------------------- */
+/*  API helpers (server-side bcrypt, never exposed to client)                  */
+/* -------------------------------------------------------------------------- */
+
+async function apiGetStatus(): Promise<PINSettings> {
+    const res = await authenticatedFetch('/api/child-safety/pin', { method: 'GET' })
+    if (!res.ok) throw new Error(`Failed to load PIN status: ${res.status}`)
+    const json = await res.json()
+    return (json.status as PINSettings) ?? DEFAULT_PIN_SETTINGS
+}
+
+async function apiSetPIN(pin: string): Promise<PINSettings> {
+    const res = await authenticatedFetch('/api/child-safety/pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin }),
+    })
+    const json = await res.json()
+    if (!res.ok) throw new Error(json.error ?? 'Failed to set PIN')
+    return (json.status as PINSettings) ?? DEFAULT_PIN_SETTINGS
+}
+
+async function apiVerifyPIN(pin: string): Promise<{ success: boolean; error?: string }> {
+    const res = await authenticatedFetch('/api/child-safety/pin?action=verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin }),
+    })
+    const json = await res.json()
+    return { success: json.success === true, error: json.error }
+}
+
+async function apiChangePIN(
+    currentPin: string,
+    newPin: string
+): Promise<{ success: boolean; error?: string }> {
+    const res = await authenticatedFetch('/api/child-safety/pin?action=change', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPin, newPin }),
+    })
+    const json = await res.json()
+    return { success: json.success === true, error: json.error }
+}
+
+async function apiDeletePIN(pin: string): Promise<{ success: boolean; error?: string }> {
+    const res = await authenticatedFetch('/api/child-safety/pin', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin }),
+    })
+    const json = await res.json()
+    return { success: json.success === true, error: json.error }
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Store                                                                      */
+/* -------------------------------------------------------------------------- */
+
 export const useChildSafetyPINStore = create<ChildSafetyPINStore>((set, get) => ({
     ...initialState,
 
     loadPINSettings: async (userId: string, isGuest: boolean) => {
+        // Guest users cannot have server-side PINs.
+        if (isGuest) {
+            set({ settings: DEFAULT_PIN_SETTINGS, isLoading: false })
+            return
+        }
+
         set({ isLoading: true, error: null })
         try {
-            const settings = await getPINSettings(userId, isGuest)
+            const settings = await apiGetStatus()
             set({ settings, isLoading: false })
         } catch (error) {
             console.error('Error loading PIN settings:', error)
@@ -99,9 +165,14 @@ export const useChildSafetyPINStore = create<ChildSafetyPINStore>((set, get) => 
     },
 
     verifyPIN: async (userId: string, pin: string, isGuest: boolean) => {
+        if (isGuest) {
+            set({ error: 'Guest users cannot use PIN protection', isLoading: false })
+            return false
+        }
+
         set({ isLoading: true, error: null })
         try {
-            const result = await verifyPINUtil(userId, pin, isGuest)
+            const result = await apiVerifyPIN(pin)
 
             if (result.success) {
                 set({
@@ -115,7 +186,7 @@ export const useChildSafetyPINStore = create<ChildSafetyPINStore>((set, get) => 
                 set({
                     isPINVerified: false,
                     isLoading: false,
-                    error: result.error || 'Incorrect PIN',
+                    error: result.error ?? 'Incorrect PIN',
                 })
                 return false
             }
@@ -131,14 +202,17 @@ export const useChildSafetyPINStore = create<ChildSafetyPINStore>((set, get) => 
     },
 
     createPIN: async (userId: string, pin: string, isGuest: boolean) => {
+        if (isGuest) {
+            set({ error: 'Guest users cannot create a PIN', isLoading: false })
+            throw new Error('Guest users cannot create a PIN')
+        }
+
         set({ isLoading: true, error: null })
         try {
-            await createPINUtil(userId, pin, isGuest)
-
-            // Reload settings to reflect the new PIN
-            await get().loadPINSettings(userId, isGuest)
+            const settings = await apiSetPIN(pin)
 
             set({
+                settings,
                 isPINVerified: true, // Automatically verified after creation
                 isSetupModalOpen: false,
                 isLoading: false,
@@ -155,14 +229,24 @@ export const useChildSafetyPINStore = create<ChildSafetyPINStore>((set, get) => 
     },
 
     updatePIN: async (userId: string, oldPin: string, newPin: string, isGuest: boolean) => {
+        if (isGuest) {
+            set({ error: 'Guest users cannot change a PIN', isLoading: false })
+            throw new Error('Guest users cannot change a PIN')
+        }
+
         set({ isLoading: true, error: null })
         try {
-            await updatePINUtil(userId, oldPin, newPin, isGuest)
+            const result = await apiChangePIN(oldPin, newPin)
+
+            if (!result.success) {
+                throw new Error(result.error ?? 'Failed to change PIN')
+            }
 
             // Reload settings to reflect the updated PIN
-            await get().loadPINSettings(userId, isGuest)
+            const settings = await apiGetStatus()
 
             set({
+                settings,
                 isLoading: false,
                 error: null,
             })
@@ -177,14 +261,21 @@ export const useChildSafetyPINStore = create<ChildSafetyPINStore>((set, get) => 
     },
 
     removePIN: async (userId: string, pin: string, isGuest: boolean) => {
+        if (isGuest) {
+            set({ error: 'Guest users cannot remove a PIN', isLoading: false })
+            throw new Error('Guest users cannot remove a PIN')
+        }
+
         set({ isLoading: true, error: null })
         try {
-            await removePINUtil(userId, pin, isGuest)
+            const result = await apiDeletePIN(pin)
 
-            // Reload settings to reflect removal
-            await get().loadPINSettings(userId, isGuest)
+            if (!result.success) {
+                throw new Error(result.error ?? 'Failed to remove PIN')
+            }
 
             set({
+                settings: DEFAULT_PIN_SETTINGS,
                 isPINVerified: false,
                 isLoading: false,
                 error: null,

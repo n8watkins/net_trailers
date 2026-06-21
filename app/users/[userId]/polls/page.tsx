@@ -1,28 +1,32 @@
 /**
  * Public User Polls Page
  *
- * Shows all public polls for a specific user's profile
+ * Shows all public polls for a specific user's profile.
+ * Data is now fetched from the Turso-backed /api/polls/user/[userId] route.
  */
 
 'use client'
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { collection, getDocs, query, where, orderBy } from 'firebase/firestore'
-import { db } from '../../../../firebase'
 import SubPageLayout from '../../../../components/layout/SubPageLayout'
 import NetflixLoader from '../../../../components/common/NetflixLoader'
 import { ChartBarIcon, UserIcon, CheckCircleIcon, ClockIcon } from '@heroicons/react/24/outline'
 import type { Poll } from '../../../../types/forum'
 import type { PublicProfilePayload } from '@/lib/publicProfile'
-import type { Timestamp } from 'firebase/firestore'
 import Link from 'next/link'
+
+// PollRow from the API uses epoch-ms numbers, not Firestore Timestamps
+type ApiBacked = Omit<Poll, 'createdAt' | 'expiresAt' | 'votedAt'> & {
+    createdAt: number
+    expiresAt: number | null
+}
 
 export default function UserPollsPage() {
     const params = useParams()
     const userId = params?.userId as string
 
-    const [polls, setPolls] = useState<Poll[]>([])
+    const [polls, setPolls] = useState<ApiBacked[]>([])
     const [displayName, setDisplayName] = useState<string>('User')
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -37,7 +41,7 @@ export default function UserPollsPage() {
             setError(null)
 
             try {
-                // Try to get profile data from API first (includes auth displayName fallback)
+                // Fetch profile display name
                 let profileDisplayName = 'User'
                 try {
                     const response = await fetch(`/api/public-profile/${userId}`)
@@ -45,29 +49,20 @@ export default function UserPollsPage() {
                         const payload = (await response.json()) as PublicProfilePayload
                         profileDisplayName = payload.profile.displayName
                     }
-                } catch (apiError) {
-                    console.warn('[UserPolls] API failed, will use client-side data')
+                } catch {
+                    console.warn('[UserPolls] Profile API failed, using default name')
                 }
 
                 if (!isMounted) return
-
                 setDisplayName(profileDisplayName)
 
-                // Load user's polls
-                const pollsSnap = await getDocs(
-                    query(
-                        collection(db, 'polls'),
-                        where('userId', '==', userId),
-                        orderBy('createdAt', 'desc')
-                    )
-                )
+                // Load user's polls from Turso-backed API
+                const res = await fetch(`/api/polls/user/${userId}`, { credentials: 'include' })
+                if (!res.ok) throw new Error('Failed to load polls')
+                const json = await res.json()
 
-                const userPolls = pollsSnap.docs.map((doc) => ({
-                    id: doc.id,
-                    ...doc.data(),
-                })) as Poll[]
-
-                setPolls(userPolls)
+                if (!isMounted) return
+                setPolls((json.polls as ApiBacked[]) ?? [])
             } catch (err) {
                 console.error('Error loading polls:', err)
                 if (isMounted) {
@@ -87,8 +82,9 @@ export default function UserPollsPage() {
         }
     }, [userId])
 
-    const formatDate = (timestamp: Timestamp | number) => {
-        const ms = typeof timestamp === 'number' ? timestamp : timestamp.toMillis()
+    const formatDate = (timestamp: number | null | undefined) => {
+        if (!timestamp) return '—'
+        const ms = typeof timestamp === 'number' ? timestamp : Number(timestamp)
         const date = new Date(ms)
         return date.toLocaleDateString('en-US', {
             month: 'short',
@@ -109,14 +105,12 @@ export default function UserPollsPage() {
         return colors[category] || 'bg-gray-600'
     }
 
-    const isPollExpired = (poll: Poll) => {
+    const isPollExpired = (poll: ApiBacked) => {
         if (!poll.expiresAt) return false
-        const expiresAtMs =
-            typeof poll.expiresAt === 'number' ? poll.expiresAt : poll.expiresAt.toMillis()
-        return Date.now() > expiresAtMs
+        return Date.now() > poll.expiresAt
     }
 
-    const getTotalVotes = (poll: Poll) => {
+    const getTotalVotes = (poll: ApiBacked) => {
         return poll.options.reduce((sum, opt) => sum + (opt.votes || 0), 0)
     }
 

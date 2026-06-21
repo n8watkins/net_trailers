@@ -8,8 +8,6 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { doc, getDoc } from 'firebase/firestore'
-import { db } from '../../../../firebase'
 import SubPageLayout from '../../../../components/layout/SubPageLayout'
 import ContentCard from '../../../../components/common/ContentCard'
 import ContentGridSpacer from '../../../../components/common/ContentGridSpacer'
@@ -17,6 +15,7 @@ import NetflixLoader from '../../../../components/common/NetflixLoader'
 import { ClockIcon, UserIcon } from '@heroicons/react/24/outline'
 import type { Movie, TVShow } from '../../../../typings'
 import type { PublicProfilePayload } from '@/lib/publicProfile'
+import type { WatchHistoryEntry as ApiWatchHistoryEntry } from '../../../../types/watchHistory'
 import Link from 'next/link'
 
 interface WatchHistoryEntry {
@@ -43,7 +42,7 @@ export default function UserWatchHistoryPage() {
             setError(null)
 
             try {
-                // Try to get profile data from API first
+                // Load display name from the public profile API.
                 let profileDisplayName = 'User'
                 try {
                     const response = await fetch(`/api/public-profile/${userId}`)
@@ -52,42 +51,28 @@ export default function UserWatchHistoryPage() {
                         profileDisplayName = payload.profile.displayName
                     }
                 } catch (_apiError) {
-                    console.warn('[WatchHistory] API failed, will use client-side data')
-                }
-
-                // Fallback: try to get display name from public profile document
-                if (profileDisplayName === 'User') {
-                    try {
-                        const profileDoc = await getDoc(doc(db, 'profiles', userId))
-                        if (profileDoc.exists()) {
-                            const profileData = profileDoc.data()
-                            profileDisplayName = profileData?.displayName || 'User'
-                        }
-                    } catch (_profileError) {
-                        console.warn('[WatchHistory] Could not load profile, using default name')
-                    }
+                    console.warn('[WatchHistory] Profile API failed, using default name')
                 }
 
                 if (!isMounted) return
-
                 setDisplayName(profileDisplayName)
 
-                // Fetch watch history from Firestore document
+                // Fetch watch history from the new REST API (Turso).
+                // The API returns an empty array when the owner has disabled public history.
                 try {
-                    const watchHistoryDoc = await getDoc(
-                        doc(db, 'users', userId, 'data', 'watchHistory')
+                    const historyResponse = await fetch(
+                        `/api/watch-history?userId=${encodeURIComponent(userId)}&limit=200`
                     )
 
-                    if (watchHistoryDoc.exists()) {
-                        const data = watchHistoryDoc.data()
-                        const history = Array.isArray(data.history) ? data.history : []
-                        const entries: WatchHistoryEntry[] = history
-                            .map((entry: any) => ({
-                                content: entry.content as Movie | TVShow,
-                                watchedAt: entry.watchedAt || Date.now(),
+                    if (historyResponse.ok) {
+                        const historyData = await historyResponse.json()
+                        const apiEntries: ApiWatchHistoryEntry[] = historyData.history ?? []
+                        const entries: WatchHistoryEntry[] = apiEntries
+                            .filter((e) => Boolean(e.content))
+                            .map((e) => ({
+                                content: e.content as Movie | TVShow,
+                                watchedAt: e.watchedAt,
                             }))
-                            .filter((entry): entry is WatchHistoryEntry => Boolean(entry.content))
-
                         setWatchHistory(entries)
                     } else {
                         setWatchHistory([])
