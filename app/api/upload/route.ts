@@ -51,7 +51,15 @@ export const DELETE = withAuth(async (request: NextRequest, userId: string) => {
         return NextResponse.json({ error: 'Missing url' }, { status: 400 })
     }
     // Only allow deleting blobs the user owns (path is scoped to their userId).
-    if (!url.includes(`/uploads/${userId}/`)) {
+    // Match on the parsed pathname prefix — a substring check would pass for a
+    // crafted query string like `?x=/uploads/<myId>/` appended to a victim URL.
+    let pathname: string
+    try {
+        pathname = new URL(url).pathname
+    } catch {
+        return NextResponse.json({ error: 'Invalid url' }, { status: 400 })
+    }
+    if (!pathname.startsWith(`/uploads/${userId}/`)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     try {

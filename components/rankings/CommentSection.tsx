@@ -105,7 +105,7 @@ export function CommentSection({
         if (!userId) return
 
         if (confirm('Are you sure you want to delete this comment?')) {
-            await deleteComment(userId, commentId, rankingOwnerId)
+            await deleteComment(userId, commentId)
         }
     }
 

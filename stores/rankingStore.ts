@@ -102,11 +102,7 @@ interface RankingState {
         userAvatar: string | undefined,
         request: CreateCommentRequest
     ) => Promise<void>
-    deleteComment: (
-        userId: string | null,
-        commentId: string,
-        rankingOwnerId: string
-    ) => Promise<void>
+    deleteComment: (userId: string | null, commentId: string) => Promise<void>
     likeComment: (userId: string | null, commentId: string) => Promise<void>
     unlikeComment: (userId: string | null, commentId: string) => Promise<void>
 
@@ -529,17 +525,17 @@ export const useRankingStore = create<RankingState>()(
             // ----------------------------------------------------------------
             //  Delete comment
             // ----------------------------------------------------------------
-            deleteComment: async (userId, commentId, rankingOwnerId) => {
+            deleteComment: async (userId, commentId) => {
                 if (!ensureAuthUser(userId, 'delete comment')) {
                     set({ error: 'Authentication required' })
                     return
                 }
 
                 try {
+                    // Authorization (comment author OR ranking owner) is verified
+                    // server-side; no client-supplied owner id is sent.
                     const res = await authenticatedFetch(`/api/rankings/comments/${commentId}`, {
                         method: 'DELETE',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ rankingOwnerId }),
                     })
                     await expectOk(res)
 

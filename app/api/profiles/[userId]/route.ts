@@ -13,7 +13,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 import { withAuth } from '@/lib/auth-middleware'
-import { isCurrentUserAdmin } from '@/db/queries/_helpers'
+import { currentUserId, isCurrentUserAdmin } from '@/db/queries/_helpers'
 import { checkUsernameAvailability, getProfile, updateProfile } from '@/db/queries/profiles'
 import type { UpdateProfileRequest } from '@/types/profile'
 import { PROFILE_CONSTRAINTS } from '@/types/profile'
@@ -40,6 +40,25 @@ export async function GET(_request: NextRequest, { params }: RouteContext): Prom
                 { success: false, error: 'Profile not found' },
                 { status: 404 }
             )
+        }
+
+        // Owner (or admin) sees their own full profile regardless of visibility.
+        const requesterId = await currentUserId()
+        const isOwner = requesterId === userId
+
+        if (!isOwner) {
+            // Respect the public-profile master toggle. When a user has disabled
+            // their public profile we treat it as non-existent to anyone else —
+            // avoids leaking name/avatar/bio/stats of a profile meant to be private.
+            const isPubliclyVisible =
+                profile.isPublic !== false && profile.visibility?.enablePublicProfile !== false
+
+            if (!isPubliclyVisible && !(await isCurrentUserAdmin())) {
+                return NextResponse.json(
+                    { success: false, error: 'Profile not found' },
+                    { status: 404 }
+                )
+            }
         }
 
         // Strip private fields before returning publicly.
