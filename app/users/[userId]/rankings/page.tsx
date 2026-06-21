@@ -1,15 +1,14 @@
 /**
  * Public User Rankings Page
  *
- * Shows all public rankings for a specific user's profile
+ * Shows all public rankings for a specific user's profile.
+ * Data is fetched from /api/public-profile/[userId] (Turso-backed).
  */
 
 'use client'
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore'
-import { db } from '../../../../firebase'
 import SubPageLayout from '../../../../components/layout/SubPageLayout'
 import { RankingGrid } from '../../../../components/rankings/RankingGrid'
 import NetflixLoader from '../../../../components/common/NetflixLoader'
@@ -37,57 +36,20 @@ export default function UserRankingsPage() {
             setError(null)
 
             try {
-                // Try to get profile data from API first (includes auth displayName fallback)
-                let profileDisplayName = 'User'
-                try {
-                    const response = await fetch(`/api/public-profile/${userId}`)
-                    if (response.ok) {
-                        const payload = (await response.json()) as PublicProfilePayload
-                        profileDisplayName = payload.profile.displayName
-                    }
-                } catch (apiError) {
-                    console.warn('[UserRankings] API failed, will use client-side data')
+                // Fetch aggregated public profile from the Turso-backed API.
+                // The payload already includes filtered public rankings sorted by recency.
+                const response = await fetch(`/api/public-profile/${userId}`)
+                if (!response.ok) {
+                    const body = await response.json().catch(() => null)
+                    throw new Error(body?.error || 'Failed to load rankings')
                 }
 
-                // Fallback to client-side lookup if API failed
-                if (profileDisplayName === 'User') {
-                    try {
-                        const profileDoc = await getDoc(doc(db, 'profiles', userId))
-
-                        if (profileDoc.exists()) {
-                            const profileData = profileDoc.data()
-                            profileDisplayName = profileData?.displayName || 'User'
-                        }
-                    } catch (profileError) {
-                        console.warn('[UserRankings] Could not load profile, using default name')
-                    }
-                }
+                const payload = (await response.json()) as PublicProfilePayload
 
                 if (!isMounted) return
 
-                setDisplayName(profileDisplayName)
-
-                // Load rankings
-                const rankingsSnap = await getDocs(
-                    query(collection(db, 'rankings'), where('userId', '==', userId))
-                )
-
-                const allRankings = rankingsSnap.docs.map((doc) => ({
-                    id: doc.id,
-                    ...doc.data(),
-                })) as Ranking[]
-
-                // Filter only public rankings
-                const publicRankings = allRankings.filter((ranking) => ranking.isPublic)
-
-                // Sort by most recent
-                publicRankings.sort((a, b) => {
-                    const aTime = a.updatedAt ?? a.createdAt ?? 0
-                    const bTime = b.updatedAt ?? b.createdAt ?? 0
-                    return bTime - aTime
-                })
-
-                setRankings(publicRankings)
+                setDisplayName(payload.profile.displayName)
+                setRankings(payload.rankings ?? [])
             } catch (err) {
                 console.error('Error loading rankings:', err)
                 if (isMounted) {

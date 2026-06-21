@@ -6,78 +6,40 @@ import type { Metadata } from 'next'
 // Define all debug options with comprehensive information
 const debugOptions = {
     tracker: {
-        title: 'Firebase Call Tracker',
+        title: 'Firebase Call Tracker (Removed)',
         category: 'Firebase & Data',
         color: 'orange',
         icon: '🔥',
         description:
-            'Real-time monitoring of all Firebase Firestore operations with detailed analytics.',
-        whatItDoes: [
-            'Tracks every Firebase read, write, update, and delete operation',
-            'Shows total calls and calls per minute with warning when >10 calls/min',
-            'Displays top operations by frequency',
-            'Monitors pending debounced saves from debouncedFirebaseService',
-            'Shows call stack traces in console logs for debugging',
-            'Provides "Log Summary" and "Reset Stats" actions',
-        ],
-        when: [
-            'Debugging excessive Firebase reads/writes',
-            'Identifying performance bottlenecks',
-            'Monitoring Firebase quota usage',
-            'Tracking down race conditions in Firestore operations',
-            'Verifying debounced saves are working correctly',
-        ],
-        output: 'Floating button (bottom right) shows call count. Click to open modal with detailed stats. Console logs show operation details with stack traces when Firebase calls occur.',
-        relatedOptions: ['auth', 'session', 'guest', 'cache', 'watch-history'],
-        file: 'components/debug/FirebaseCallTracker.tsx',
-        usedIn: ['utils/firebaseCallTracker.ts', 'services/debouncedFirebaseService.ts'],
+            'Removed. The Firebase Call Tracker was deleted as part of the Firebase→Turso migration. Data is now stored in Turso/SQLite via Drizzle ORM and served through Next.js API routes.',
+        whatItDoes: ['This debug option has been removed.'],
+        when: ['N/A — option removed.'],
+        output: 'N/A',
+        relatedOptions: ['auth', 'session'],
+        file: 'N/A (deleted)',
+        usedIn: ['N/A'],
         keyboardShortcut: null,
-        note: undefined,
-        isCurrentlyActive: true,
-        example: `📊 Firebase Call Tracker Stats:
-Total calls: 47
-Calls in window: 3
-Top operations:
-  - Read: /users/abc123 (12)
-  - Write: /users/abc123/customRows (8)
-  - Read: /rankings (5)
-
-🔥 Pending Saves (2):
-  - authStore (3.2s ago)
-  - customRowsStore (1.8s ago)`,
+        note: 'FirebaseCallTracker.tsx and utils/firebaseCallTracker.ts were deleted as part of the Firebase→Turso migration.',
+        isCurrentlyActive: false,
+        example: '',
     },
     auth: {
         title: 'Auth Flow Logs',
         category: 'Firebase & Data',
         color: 'blue',
         icon: '🔐',
-        description: 'Detailed logging of Firebase authentication flow and user state changes.',
-        whatItDoes: [
-            'Logs sign-in and sign-out events',
-            'Tracks authentication state changes',
-            'Shows token refresh operations',
-            'Logs user profile data loading',
-            'Displays auth errors with full context',
-            'Monitors session initialization',
-        ],
-        when: [
-            'Debugging login/logout issues',
-            'Tracking authentication state changes',
-            'Investigating token refresh problems',
-            'Verifying auth flow on page load',
-            'Troubleshooting Firebase Auth configuration',
-        ],
-        output: 'Console logs prefixed with auth-specific labels. Errors logged in red, warnings in yellow.',
-        relatedOptions: ['session', 'tracker', 'guest'],
-        file: 'components/auth/AuthFlowDebugger.tsx',
+        description:
+            'Removed. The Firebase-based AuthFlowDebugger was removed when auth migrated to Auth.js (GitHub OAuth). Auth flow logging is now handled via utils/debugLogger.ts (authLog, authError, authWarn).',
+        whatItDoes: ['This debug option has been removed.'],
+        when: ['N/A — option removed.'],
+        output: 'N/A',
+        relatedOptions: ['session'],
+        file: 'utils/debugLogger.ts',
         usedIn: ['utils/debugLogger.ts (authLog, authError, authWarn)'],
         keyboardShortcut: null,
-        note: undefined,
-        isCurrentlyActive: true,
-        example: `[Auth] User signed in: uid=abc123, email=user@example.com
-[Auth] Loading user profile from Firestore...
-[Auth] Profile loaded successfully
-[Auth] Token refresh scheduled for 55 minutes`,
+        note: 'AuthFlowDebugger.tsx was deleted as part of the Firebase→Turso migration (Auth.js replaces Firebase Auth).',
+        isCurrentlyActive: false,
+        example: '',
     },
     session: {
         title: 'Session Management Logs',

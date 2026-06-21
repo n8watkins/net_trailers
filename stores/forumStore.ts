@@ -1,8 +1,12 @@
 /**
  * Forum Store
  *
- * Manages forum state including threads, polls, and user interactions
- * Following the same pattern as other Zustand stores in the app
+ * Manages forum state including threads, polls, and user interactions.
+ * Following the same pattern as other Zustand stores in the app.
+ *
+ * THREADS & REPLIES — migrated to Turso/Drizzle via /api/threads/* routes.
+ * POLLS             — migrated to Turso/Drizzle via /api/polls/* routes.
+ * CONTENT REPORTS   — migrated to Turso/Drizzle via /api/reports (POST, withAuth).
  */
 
 import { create } from 'zustand'
@@ -16,43 +20,80 @@ import {
     ReportReason,
     ReportContentType,
 } from '@/types/forum'
-import {
-    collection,
-    doc,
-    getDoc,
-    getDocs,
-    addDoc,
-    updateDoc,
-    deleteDoc,
-    query,
-    where,
-    orderBy,
-    limit as limitQuery,
-    startAfter,
-    Timestamp,
-    increment,
-    setDoc,
-    QueryDocumentSnapshot,
-} from 'firebase/firestore'
-import { db } from '@/firebase'
+import { authenticatedFetch } from '@/lib/authenticatedFetch'
+
+/* -------------------------------------------------------------------------- */
+/*  Shared fetch helpers for the poll domain                                   */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Thin wrapper around fetch for poll API calls that mutate data.
+ * Auth is handled by the Auth.js session cookie — no explicit token needed.
+ */
+async function pollMutate(
+    url: string,
+    method: 'POST' | 'PATCH' | 'DELETE',
+    body?: unknown
+): Promise<unknown> {
+    const res = await fetch(url, {
+        method,
+        credentials: 'include', // send Auth.js session cookie
+        headers: body !== undefined ? { 'Content-Type': 'application/json' } : {},
+        body: body !== undefined ? JSON.stringify(body) : undefined,
+    })
+
+    if (!res.ok) {
+        const json = await res.json().catch(() => ({}))
+        throw new Error((json as { error?: string }).error ?? `Request failed (${res.status})`)
+    }
+
+    return res.json()
+}
+
+/**
+ * Convert a PollRow returned by the API (epoch-ms timestamps) into the Poll
+ * shape expected by existing components.  We keep the `createdAt` field as a
+ * plain number so components that previously handled both Timestamp and number
+ * continue to work via the existing `canEditPoll` guards.
+ */
+function apiPollToStorePoll(apiPoll: Record<string, unknown>): Poll {
+    return {
+        id: apiPoll.id as string,
+        question: apiPoll.question as string,
+        description: apiPoll.description as string | undefined,
+        category: apiPoll.category as ForumCategory,
+        userId: apiPoll.userId as string,
+        userName: apiPoll.userName as string,
+        userAvatar: apiPoll.userAvatar as string | undefined,
+        createdAt: apiPoll.createdAt as number,
+        expiresAt: apiPoll.expiresAt as number | undefined,
+        options: apiPoll.options as Poll['options'],
+        totalVotes: apiPoll.totalVotes as number,
+        isMultipleChoice: Boolean(apiPoll.isMultipleChoice),
+        allowAddOptions: Boolean(apiPoll.allowAddOptions),
+        isHidden: Boolean(apiPoll.isHidden),
+        tags: apiPoll.tags as string[] | undefined,
+    }
+}
 
 interface ForumState {
-    // Threads
+    // Threads (migrated to Turso/Drizzle)
     threads: Thread[]
     currentThread: Thread | null
     threadReplies: ThreadReply[]
     isLoadingThreads: boolean
     threadsError: string | null
-    lastThreadDoc: QueryDocumentSnapshot | null
+    /** Offset cursor for loadMoreThreads (replaces lastThreadDoc). */
+    threadOffset: number
     hasMoreThreads: boolean
 
-    // Polls
+    // Polls (migrated to Turso/Drizzle — Firestore cursors removed)
     polls: Poll[]
     currentPoll: Poll | null
     isLoadingPolls: boolean
     pollsError: string | null
-    lastPollDoc: QueryDocumentSnapshot | null
-    hasMorePolls: boolean
+    /** Viewer's known votes: pollId → optionIds[] (populated from API responses). */
+    knownVotes: Record<string, string[]>
 
     // Filters
     filters: ForumFilters
@@ -146,47 +187,44 @@ export const useForumStore = create<ForumState>((set, get) => ({
     threadReplies: [],
     isLoadingThreads: false,
     threadsError: null,
-    lastThreadDoc: null,
+    threadOffset: 0,
     hasMoreThreads: true,
 
     polls: [],
     currentPoll: null,
     isLoadingPolls: false,
     pollsError: null,
-    lastPollDoc: null,
-    hasMorePolls: true,
+    knownVotes: {},
 
     filters: initialFilters,
 
-    // Thread actions
+    // -------------------------------------------------------------------------
+    // Thread actions — Turso/Drizzle via /api/threads/*
+    // -------------------------------------------------------------------------
+
     loadThreads: async (category, limit = 20) => {
-        set({ isLoadingThreads: true, threadsError: null, lastThreadDoc: null })
+        set({ isLoadingThreads: true, threadsError: null, threadOffset: 0 })
         try {
-            const threadsRef = collection(db, 'threads')
-            let q = query(threadsRef, orderBy('createdAt', 'desc'), limitQuery(limit))
+            const { filters } = get()
+            const params = new URLSearchParams({
+                limit: String(limit),
+                sortBy: filters.sortBy,
+                offset: '0',
+            })
+            if (category) params.set('category', category)
 
-            if (category) {
-                q = query(
-                    threadsRef,
-                    where('category', '==', category),
-                    orderBy('createdAt', 'desc'),
-                    limitQuery(limit)
-                )
-            }
+            const res = await fetch(`/api/threads?${params}`, { credentials: 'same-origin' })
+            if (!res.ok) throw new Error(`Failed to load threads (${res.status})`)
 
-            const snapshot = await getDocs(q)
-            const threads = snapshot.docs.map((doc) => ({
-                ...doc.data(),
-                id: doc.id,
-            })) as Thread[]
-
-            const lastDoc = snapshot.docs[snapshot.docs.length - 1] || null
-            const hasMore = snapshot.docs.length === limit
+            const json = await res.json()
+            const threadList = (json.threads as Record<string, unknown>[]).map(
+                (r) => r as unknown as Thread
+            )
 
             set({
-                threads,
-                lastThreadDoc: lastDoc,
-                hasMoreThreads: hasMore,
+                threads: threadList,
+                hasMoreThreads: Boolean(json.hasMore),
+                threadOffset: threadList.length,
                 isLoadingThreads: false,
             })
         } catch (error) {
@@ -199,46 +237,32 @@ export const useForumStore = create<ForumState>((set, get) => ({
     },
 
     loadMoreThreads: async () => {
-        const { lastThreadDoc, hasMoreThreads, isLoadingThreads, filters } = get()
+        const { hasMoreThreads, isLoadingThreads, filters, threadOffset } = get()
+        if (!hasMoreThreads || isLoadingThreads) return
 
-        if (!hasMoreThreads || isLoadingThreads || !lastThreadDoc) return
-
+        const LIMIT = 20
         set({ isLoadingThreads: true })
         try {
-            const threadsRef = collection(db, 'threads')
             const category = filters.category !== 'all' ? filters.category : undefined
-            const limit = 20
+            const params = new URLSearchParams({
+                limit: String(LIMIT),
+                sortBy: filters.sortBy,
+                offset: String(threadOffset),
+            })
+            if (category) params.set('category', category)
 
-            let q = query(
-                threadsRef,
-                orderBy('createdAt', 'desc'),
-                startAfter(lastThreadDoc),
-                limitQuery(limit)
+            const res = await fetch(`/api/threads?${params}`, { credentials: 'same-origin' })
+            if (!res.ok) throw new Error(`Failed to load threads (${res.status})`)
+
+            const json = await res.json()
+            const newThreads = (json.threads as Record<string, unknown>[]).map(
+                (r) => r as unknown as Thread
             )
-
-            if (category) {
-                q = query(
-                    threadsRef,
-                    where('category', '==', category),
-                    orderBy('createdAt', 'desc'),
-                    startAfter(lastThreadDoc),
-                    limitQuery(limit)
-                )
-            }
-
-            const snapshot = await getDocs(q)
-            const newThreads = snapshot.docs.map((doc) => ({
-                ...doc.data(),
-                id: doc.id,
-            })) as Thread[]
-
-            const lastDoc = snapshot.docs[snapshot.docs.length - 1] || lastThreadDoc
-            const hasMore = snapshot.docs.length === limit
 
             set((state) => ({
                 threads: [...state.threads, ...newThreads],
-                lastThreadDoc: lastDoc,
-                hasMoreThreads: hasMore,
+                hasMoreThreads: Boolean(json.hasMore),
+                threadOffset: state.threadOffset + newThreads.length,
                 isLoadingThreads: false,
             }))
         } catch (error) {
@@ -250,22 +274,20 @@ export const useForumStore = create<ForumState>((set, get) => ({
     loadThreadById: async (threadId) => {
         set({ isLoadingThreads: true, threadsError: null })
         try {
-            const threadRef = doc(db, 'threads', threadId)
-            const threadSnap = await getDoc(threadRef)
-
-            if (threadSnap.exists()) {
-                const thread = { ...threadSnap.data(), id: threadSnap.id } as Thread
-                set({ currentThread: thread, isLoadingThreads: false })
-
-                // Increment view count
-                await updateDoc(threadRef, { views: increment(1) })
-            } else {
+            const res = await fetch(`/api/threads/${threadId}`, { credentials: 'same-origin' })
+            if (res.status === 404) {
                 set({
                     currentThread: null,
                     isLoadingThreads: false,
                     threadsError: 'Thread not found',
                 })
+                return
             }
+            if (!res.ok) throw new Error(`Failed to load thread (${res.status})`)
+
+            const json = await res.json()
+            const thread = json.thread as unknown as Thread
+            set({ currentThread: thread, isLoadingThreads: false })
         } catch (error) {
             set({
                 threadsError: error instanceof Error ? error.message : 'Failed to load thread',
@@ -276,19 +298,15 @@ export const useForumStore = create<ForumState>((set, get) => ({
 
     loadThreadReplies: async (threadId) => {
         try {
-            const repliesRef = collection(db, 'thread_replies')
-            const q = query(
-                repliesRef,
-                where('threadId', '==', threadId),
-                orderBy('createdAt', 'asc')
+            const res = await fetch(`/api/threads/${threadId}/replies`, {
+                credentials: 'same-origin',
+            })
+            if (!res.ok) throw new Error(`Failed to load replies (${res.status})`)
+
+            const json = await res.json()
+            const replies = (json.replies as Record<string, unknown>[]).map(
+                (r) => r as unknown as ThreadReply
             )
-            const snapshot = await getDocs(q)
-
-            const replies = snapshot.docs.map((doc) => ({
-                ...doc.data(),
-                id: doc.id,
-            })) as ThreadReply[]
-
             set({ threadReplies: replies })
         } catch (error) {
             console.error('Failed to load thread replies:', error)
@@ -296,36 +314,30 @@ export const useForumStore = create<ForumState>((set, get) => ({
     },
 
     createThread: async (userId, userName, userAvatar, title, content, category, tags, images) => {
-        try {
-            const threadsRef = collection(db, 'threads')
-            const now = Timestamp.now()
-
-            const threadData = {
-                id: '', // Will be set by Firestore
+        const res = await authenticatedFetch('/api/threads', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
                 title,
                 content,
                 category,
-                userId,
                 userName,
-                createdAt: now,
-                updatedAt: now,
-                isPinned: false,
-                isLocked: false,
-                views: 0,
-                replyCount: 0,
-                likes: 0,
+                userAvatar,
                 tags: tags ?? [],
                 images: images ?? [],
-                ...(userAvatar ? { userAvatar } : {}),
-            }
+            }),
+        })
 
-            const docRef = await addDoc(threadsRef, threadData)
-            await updateDoc(docRef, { id: docRef.id })
-
-            return docRef.id
-        } catch (error) {
-            throw new Error(error instanceof Error ? error.message : 'Failed to create thread')
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}))
+            throw new Error(
+                (err as { error?: string }).error ?? `Failed to create thread (${res.status})`
+            )
         }
+
+        const json = await res.json()
+        void userId // userId is resolved server-side from Auth.js session
+        return (json.thread as { id: string }).id
     },
 
     replyToThread: async (
@@ -337,281 +349,191 @@ export const useForumStore = create<ForumState>((set, get) => ({
         parentReplyId,
         images
     ) => {
-        try {
-            const repliesRef = collection(db, 'thread_replies')
-            const now = Timestamp.now()
-
-            const replyData: Record<string, unknown> = {
-                id: '', // Will be set by Firestore
-                threadId,
+        const res = await authenticatedFetch(`/api/threads/${threadId}/replies`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
                 content,
-                userId,
                 userName,
-                createdAt: now,
-                isEdited: false,
-                likes: 0,
-                mentions: [],
-                images: images || [],
-            }
+                userAvatar,
+                parentReplyId,
+                images: images ?? [],
+            }),
+        })
 
-            // Only add optional fields if they have values
-            if (userAvatar) {
-                replyData.userAvatar = userAvatar
-            }
-            if (parentReplyId) {
-                replyData.parentReplyId = parentReplyId
-            }
-
-            const docRef = await addDoc(repliesRef, replyData)
-            await updateDoc(docRef, { id: docRef.id })
-
-            // Increment reply count on thread
-            const threadRef = doc(db, 'threads', threadId)
-            const threadSnap = await getDoc(threadRef)
-
-            if (!threadSnap.exists()) {
-                throw new Error('Thread not found')
-            }
-
-            const threadData = threadSnap.data() as Thread
-
-            await updateDoc(threadRef, {
-                replyCount: increment(1),
-                lastReplyAt: now,
-                lastReplyBy: { userId, userName },
-            })
-
-            // Update local state optimistically
-            set((state) => ({
-                currentThread:
-                    state.currentThread?.id === threadId
-                        ? { ...state.currentThread, replyCount: state.currentThread.replyCount + 1 }
-                        : state.currentThread,
-                threads: state.threads.map((t) =>
-                    t.id === threadId ? { ...t, replyCount: t.replyCount + 1 } : t
-                ),
-            }))
-
-            // Send email notification
-            // Determine recipient based on whether this is a reply to a reply or the thread
-            let recipientUserId: string
-            let isReplyToReply = false
-
-            if (parentReplyId) {
-                // Replying to a reply - notify the reply author
-                const parentReplyRef = doc(db, 'thread_replies', parentReplyId)
-                const parentReplySnap = await getDoc(parentReplyRef)
-
-                if (parentReplySnap.exists()) {
-                    recipientUserId = parentReplySnap.data().userId
-                    isReplyToReply = true
-                } else {
-                    // Fallback to thread author if parent reply not found
-                    recipientUserId = threadData.userId
-                }
-            } else {
-                // Replying to thread - notify thread author
-                recipientUserId = threadData.userId
-            }
-
-            // Send email notification (don't await - fire and forget)
-            fetch('/api/forum/send-reply-notification', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    recipientUserId,
-                    replierUserId: userId,
-                    replierName: userName,
-                    threadTitle: threadData.title,
-                    threadId,
-                    replyContent: content,
-                    isReplyToReply,
-                }),
-            }).catch((error) => {
-                // Log error but don't fail the reply operation
-                console.error('Failed to send email notification:', error)
-            })
-        } catch (error) {
-            throw new Error(error instanceof Error ? error.message : 'Failed to reply')
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}))
+            throw new Error((err as { error?: string }).error ?? `Failed to reply (${res.status})`)
         }
+
+        const json = await res.json()
+        const reply = json.reply as unknown as ThreadReply
+
+        // Optimistic update
+        set((state) => ({
+            threadReplies: [...state.threadReplies, reply],
+            currentThread:
+                state.currentThread?.id === threadId
+                    ? { ...state.currentThread, replyCount: state.currentThread.replyCount + 1 }
+                    : state.currentThread,
+            threads: state.threads.map((t) =>
+                t.id === threadId ? { ...t, replyCount: t.replyCount + 1 } : t
+            ),
+        }))
+
+        void userId
     },
 
     likeThread: async (userId, threadId) => {
-        try {
-            const likeRef = doc(db, 'thread_likes', `${userId}_${threadId}`)
-            await setDoc(likeRef, {
-                userId,
-                threadId,
-                createdAt: Timestamp.now(),
-            })
+        const res = await authenticatedFetch(`/api/threads/${threadId}/like`, { method: 'POST' })
+        if (!res.ok) throw new Error(`Failed to like thread (${res.status})`)
 
-            // Increment like count on thread
-            const threadRef = doc(db, 'threads', threadId)
-            await updateDoc(threadRef, { likes: increment(1) })
+        set((state) => ({
+            currentThread:
+                state.currentThread?.id === threadId
+                    ? { ...state.currentThread, likes: state.currentThread.likes + 1 }
+                    : state.currentThread,
+            threads: state.threads.map((t) =>
+                t.id === threadId ? { ...t, likes: t.likes + 1 } : t
+            ),
+        }))
 
-            // Update local state optimistically
-            set((state) => ({
-                currentThread:
-                    state.currentThread?.id === threadId
-                        ? { ...state.currentThread, likes: state.currentThread.likes + 1 }
-                        : state.currentThread,
-                threads: state.threads.map((t) =>
-                    t.id === threadId ? { ...t, likes: t.likes + 1 } : t
-                ),
-            }))
-        } catch (error) {
-            throw new Error(error instanceof Error ? error.message : 'Failed to like thread')
-        }
+        void userId
     },
 
     unlikeThread: async (userId, threadId) => {
-        try {
-            const likeRef = doc(db, 'thread_likes', `${userId}_${threadId}`)
-            await deleteDoc(likeRef)
+        const res = await authenticatedFetch(`/api/threads/${threadId}/like`, { method: 'DELETE' })
+        if (!res.ok) throw new Error(`Failed to unlike thread (${res.status})`)
 
-            // Decrement like count on thread
-            const threadRef = doc(db, 'threads', threadId)
-            await updateDoc(threadRef, { likes: increment(-1) })
+        set((state) => ({
+            currentThread:
+                state.currentThread?.id === threadId
+                    ? {
+                          ...state.currentThread,
+                          likes: Math.max(0, state.currentThread.likes - 1),
+                      }
+                    : state.currentThread,
+            threads: state.threads.map((t) =>
+                t.id === threadId ? { ...t, likes: Math.max(0, t.likes - 1) } : t
+            ),
+        }))
 
-            // Update local state optimistically
-            set((state) => ({
-                currentThread:
-                    state.currentThread?.id === threadId
-                        ? {
-                              ...state.currentThread,
-                              likes: Math.max(0, state.currentThread.likes - 1),
-                          }
-                        : state.currentThread,
-                threads: state.threads.map((t) =>
-                    t.id === threadId ? { ...t, likes: Math.max(0, t.likes - 1) } : t
-                ),
-            }))
-        } catch (error) {
-            throw new Error(error instanceof Error ? error.message : 'Failed to unlike thread')
-        }
+        void userId
     },
 
     likeReply: async (userId, replyId) => {
-        try {
-            const likeRef = doc(db, 'reply_likes', `${userId}_${replyId}`)
-            await setDoc(likeRef, {
-                userId,
-                replyId,
-                createdAt: Timestamp.now(),
-            })
+        const res = await authenticatedFetch(`/api/threads/replies/${replyId}/like`, {
+            method: 'POST',
+        })
+        if (!res.ok) throw new Error(`Failed to like reply (${res.status})`)
 
-            // Increment like count on reply
-            const replyRef = doc(db, 'thread_replies', replyId)
-            await updateDoc(replyRef, { likes: increment(1) })
-        } catch (error) {
-            throw new Error(error instanceof Error ? error.message : 'Failed to like reply')
-        }
+        set((state) => ({
+            threadReplies: state.threadReplies.map((r) =>
+                r.id === replyId ? { ...r, likes: r.likes + 1 } : r
+            ),
+        }))
+
+        void userId
     },
 
     unlikeReply: async (userId, replyId) => {
-        try {
-            const likeRef = doc(db, 'reply_likes', `${userId}_${replyId}`)
-            await deleteDoc(likeRef)
+        const res = await authenticatedFetch(`/api/threads/replies/${replyId}/like`, {
+            method: 'DELETE',
+        })
+        if (!res.ok) throw new Error(`Failed to unlike reply (${res.status})`)
 
-            // Decrement like count on reply
-            const replyRef = doc(db, 'thread_replies', replyId)
-            await updateDoc(replyRef, { likes: increment(-1) })
-        } catch (error) {
-            throw new Error(error instanceof Error ? error.message : 'Failed to unlike reply')
-        }
+        set((state) => ({
+            threadReplies: state.threadReplies.map((r) =>
+                r.id === replyId ? { ...r, likes: Math.max(0, r.likes - 1) } : r
+            ),
+        }))
+
+        void userId
     },
 
     deleteThread: async (userId, threadId) => {
-        try {
-            const threadRef = doc(db, 'threads', threadId)
-            const threadSnap = await getDoc(threadRef)
-
-            if (!threadSnap.exists() || threadSnap.data().userId !== userId) {
-                throw new Error('Unauthorized or thread not found')
-            }
-
-            await deleteDoc(threadRef)
-
-            // Also delete all replies to this thread
-            const repliesRef = collection(db, 'thread_replies')
-            const q = query(repliesRef, where('threadId', '==', threadId))
-            const snapshot = await getDocs(q)
-            const deletePromises = snapshot.docs.map((doc) => deleteDoc(doc.ref))
-            await Promise.all(deletePromises)
-        } catch (error) {
-            throw new Error(error instanceof Error ? error.message : 'Failed to delete thread')
+        const res = await authenticatedFetch(`/api/threads/${threadId}`, { method: 'DELETE' })
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}))
+            throw new Error(
+                (err as { error?: string }).error ?? `Failed to delete thread (${res.status})`
+            )
         }
+
+        set((state) => ({
+            threads: state.threads.filter((t) => t.id !== threadId),
+            currentThread: state.currentThread?.id === threadId ? null : state.currentThread,
+        }))
+
+        void userId
     },
 
     deleteReply: async (userId, replyId) => {
-        try {
-            const replyRef = doc(db, 'thread_replies', replyId)
-            const replySnap = await getDoc(replyRef)
+        // Capture threadId before calling the API for optimistic state update
+        const replyToDelete = get().threadReplies.find((r) => r.id === replyId)
+        const threadId = replyToDelete
+            ? (replyToDelete as unknown as { threadId: string }).threadId
+            : undefined
 
-            if (!replySnap.exists() || replySnap.data().userId !== userId) {
-                throw new Error('Unauthorized or reply not found')
-            }
-
-            const threadId = replySnap.data().threadId
-            await deleteDoc(replyRef)
-
-            // Decrement reply count on thread
-            const threadRef = doc(db, 'threads', threadId)
-            await updateDoc(threadRef, { replyCount: increment(-1) })
-
-            // Update local state optimistically
-            const { currentThread, threads, threadReplies } = get()
-
-            set({
-                threads: threads.map((t) =>
-                    t.id === threadId ? { ...t, replyCount: Math.max(0, t.replyCount - 1) } : t
-                ),
-                threadReplies: threadReplies.filter((r) => r.id !== replyId),
-                ...(currentThread && currentThread.id === threadId
-                    ? {
-                          currentThread: {
-                              ...currentThread,
-                              replyCount: Math.max(0, currentThread.replyCount - 1),
-                          },
-                      }
-                    : {}),
-            })
-        } catch (error) {
-            throw new Error(error instanceof Error ? error.message : 'Failed to delete reply')
+        const res = await authenticatedFetch(`/api/threads/replies/${replyId}`, {
+            method: 'DELETE',
+        })
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}))
+            throw new Error(
+                (err as { error?: string }).error ?? `Failed to delete reply (${res.status})`
+            )
         }
+
+        set((state) => ({
+            threadReplies: state.threadReplies.filter((r) => r.id !== replyId),
+            ...(threadId
+                ? {
+                      threads: state.threads.map((t) =>
+                          t.id === threadId
+                              ? { ...t, replyCount: Math.max(0, t.replyCount - 1) }
+                              : t
+                      ),
+                      currentThread:
+                          state.currentThread?.id === threadId
+                              ? {
+                                    ...state.currentThread,
+                                    replyCount: Math.max(0, state.currentThread.replyCount - 1),
+                                }
+                              : state.currentThread,
+                  }
+                : {}),
+        }))
+
+        void userId
     },
 
-    // Poll actions
-    loadPolls: async (category, limit = 20) => {
-        set({ isLoadingPolls: true, pollsError: null, lastPollDoc: null })
-        try {
-            const pollsRef = collection(db, 'polls')
-            let q = query(pollsRef, orderBy('createdAt', 'desc'), limitQuery(limit))
+    // -------------------------------------------------------------------------
+    // Poll actions — migrated to Turso/Drizzle via /api/polls/*
+    // -------------------------------------------------------------------------
 
-            if (category) {
-                q = query(
-                    pollsRef,
-                    where('category', '==', category),
-                    orderBy('createdAt', 'desc'),
-                    limitQuery(limit)
-                )
+    loadPolls: async (category, limit = 20) => {
+        set({ isLoadingPolls: true, pollsError: null })
+        try {
+            const params = new URLSearchParams({ limit: String(limit) })
+            if (category) params.set('category', category)
+
+            const res = await fetch(`/api/polls?${params}`, { credentials: 'include' })
+            const json = await res.json()
+
+            if (!res.ok) throw new Error(json.error ?? 'Failed to load polls')
+
+            const polls: Poll[] = (json.polls as Record<string, unknown>[]).map(apiPollToStorePoll)
+
+            // Extract viewer votes from the response
+            const knownVotes: Record<string, string[]> = {}
+            for (const p of json.polls as Record<string, unknown>[]) {
+                if (Array.isArray(p.viewerVote) && p.viewerVote.length > 0) {
+                    knownVotes[p.id as string] = p.viewerVote as string[]
+                }
             }
 
-            const snapshot = await getDocs(q)
-            const polls = snapshot.docs.map((doc) => ({
-                ...doc.data(),
-                id: doc.id,
-            })) as Poll[]
-
-            const lastDoc = snapshot.docs[snapshot.docs.length - 1] || null
-            const hasMore = snapshot.docs.length === limit
-
-            set({
-                polls,
-                lastPollDoc: lastDoc,
-                hasMorePolls: hasMore,
-                isLoadingPolls: false,
-            })
+            set({ polls, isLoadingPolls: false, knownVotes })
         } catch (error) {
             console.error('Failed to load polls:', error)
             set({
@@ -621,47 +543,41 @@ export const useForumStore = create<ForumState>((set, get) => ({
         }
     },
 
+    // loadMorePolls: offset-based pagination replaces Firestore cursors.
     loadMorePolls: async () => {
-        const { lastPollDoc, hasMorePolls, isLoadingPolls, filters } = get()
-
-        if (!hasMorePolls || isLoadingPolls || !lastPollDoc) return
+        const { polls, isLoadingPolls, filters } = get()
+        if (isLoadingPolls) return
 
         set({ isLoadingPolls: true })
         try {
-            const pollsRef = collection(db, 'polls')
             const category = filters.category !== 'all' ? filters.category : undefined
             const limit = 20
+            const params = new URLSearchParams({
+                limit: String(limit),
+                offset: String(polls.length),
+            })
+            if (category) params.set('category', category)
 
-            let q = query(
-                pollsRef,
-                orderBy('createdAt', 'desc'),
-                startAfter(lastPollDoc),
-                limitQuery(limit)
+            const res = await fetch(`/api/polls?${params}`, { credentials: 'include' })
+            const json = await res.json()
+
+            if (!res.ok) throw new Error(json.error ?? 'Failed to load polls')
+
+            const newPolls: Poll[] = (json.polls as Record<string, unknown>[]).map(
+                apiPollToStorePoll
             )
 
-            if (category) {
-                q = query(
-                    pollsRef,
-                    where('category', '==', category),
-                    orderBy('createdAt', 'desc'),
-                    startAfter(lastPollDoc),
-                    limitQuery(limit)
-                )
+            // Merge new viewer votes
+            const newVotes: Record<string, string[]> = {}
+            for (const p of json.polls as Record<string, unknown>[]) {
+                if (Array.isArray(p.viewerVote) && p.viewerVote.length > 0) {
+                    newVotes[p.id as string] = p.viewerVote as string[]
+                }
             }
-
-            const snapshot = await getDocs(q)
-            const newPolls = snapshot.docs.map((doc) => ({
-                ...doc.data(),
-                id: doc.id,
-            })) as Poll[]
-
-            const lastDoc = snapshot.docs[snapshot.docs.length - 1] || lastPollDoc
-            const hasMore = snapshot.docs.length === limit
 
             set((state) => ({
                 polls: [...state.polls, ...newPolls],
-                lastPollDoc: lastDoc,
-                hasMorePolls: hasMore,
+                knownVotes: { ...state.knownVotes, ...newVotes },
                 isLoadingPolls: false,
             }))
         } catch (error) {
@@ -673,15 +589,28 @@ export const useForumStore = create<ForumState>((set, get) => ({
     loadPollById: async (pollId) => {
         set({ isLoadingPolls: true, pollsError: null })
         try {
-            const pollRef = doc(db, 'polls', pollId)
-            const pollSnap = await getDoc(pollRef)
+            const res = await fetch(`/api/polls/${pollId}`, { credentials: 'include' })
+            const json = await res.json()
 
-            if (pollSnap.exists()) {
-                const poll = { ...pollSnap.data(), id: pollSnap.id } as Poll
-                set({ currentPoll: poll, isLoadingPolls: false })
-            } else {
-                set({ currentPoll: null, isLoadingPolls: false, pollsError: 'Poll not found' })
+            if (!res.ok) {
+                if (res.status === 404) {
+                    set({ currentPoll: null, isLoadingPolls: false, pollsError: 'Poll not found' })
+                    return
+                }
+                throw new Error(json.error ?? 'Failed to load poll')
             }
+
+            const poll = apiPollToStorePoll(json.poll as Record<string, unknown>)
+
+            // Cache the viewer's vote if present
+            const viewerVote = (json.poll as Record<string, unknown>).viewerVote
+            if (Array.isArray(viewerVote) && viewerVote.length > 0) {
+                set((state) => ({
+                    knownVotes: { ...state.knownVotes, [poll.id]: viewerVote as string[] },
+                }))
+            }
+
+            set({ currentPoll: poll, isLoadingPolls: false })
         } catch (error) {
             set({
                 pollsError: error instanceof Error ? error.message : 'Failed to load poll',
@@ -690,241 +619,98 @@ export const useForumStore = create<ForumState>((set, get) => ({
         }
     },
 
-    createPoll: async (userId, userName, userAvatar, question, options, category) => {
+    createPoll: async (_userId, userName, userAvatar, question, options, category) => {
+        // Note: _userId is ignored — the server derives the real user id from
+        // the Auth.js session so the client cannot spoof it.
         try {
-            const pollsRef = collection(db, 'polls')
-            const now = Timestamp.now()
-
-            // Create poll options with initial vote counts
-            const pollOptions = options.map((optionText, index) => ({
-                id: `option-${index}`,
-                text: optionText,
-                votes: 0,
-                percentage: 0,
-            }))
-
-            const pollData: Record<string, unknown> = {
-                id: '', // Will be set by Firestore
+            const json = await pollMutate('/api/polls', 'POST', {
                 question,
+                options,
                 category,
-                userId,
                 userName,
-                createdAt: now,
-                options: pollOptions,
-                totalVotes: 0,
-                isMultipleChoice: false,
-                allowAddOptions: false,
-                isHidden: false,
-                tags: [],
-                ...(userAvatar ? { userAvatar } : {}),
-            }
-
-            const docRef = await addDoc(pollsRef, pollData)
-            await updateDoc(docRef, { id: docRef.id })
-
-            return docRef.id
+                userAvatar: userAvatar ?? null,
+            })
+            return (json as { pollId: string }).pollId
         } catch (error) {
             throw new Error(error instanceof Error ? error.message : 'Failed to create poll')
         }
     },
 
-    voteOnPoll: async (userId, pollId, optionIds) => {
+    voteOnPoll: async (_userId, pollId, optionIds) => {
         try {
-            // Check if user already voted
-            const voteRef = doc(db, 'poll_votes', `${userId}_${pollId}`)
-            const existingVoteSnap = await getDoc(voteRef)
-            const previousOptionIds: string[] = existingVoteSnap.exists()
-                ? existingVoteSnap.data().optionIds
-                : []
+            const json = await pollMutate(`/api/polls/${pollId}/vote`, 'POST', { optionIds })
+            const updatedPoll = apiPollToStorePoll((json as { poll: Record<string, unknown> }).poll)
 
-            // Record the new vote
-            await setDoc(voteRef, {
-                pollId,
-                userId,
-                optionIds,
-                votedAt: Timestamp.now(),
-            })
-
-            // Update poll vote counts
-            const pollRef = doc(db, 'polls', pollId)
-            const pollSnap = await getDoc(pollRef)
-
-            if (!pollSnap.exists()) {
-                throw new Error('Poll not found')
-            }
-
-            const pollData = pollSnap.data()
-            const isNewVoter = previousOptionIds.length === 0
-
-            // Update option votes: decrement previous selections, increment new selections
-            const updatedOptions = pollData.options.map((option: any) => {
-                let votes = option.votes
-                // Decrement if previously selected but not now
-                if (previousOptionIds.includes(option.id) && !optionIds.includes(option.id)) {
-                    votes = Math.max(0, votes - 1)
-                }
-                // Increment if newly selected but wasn't before
-                if (optionIds.includes(option.id) && !previousOptionIds.includes(option.id)) {
-                    votes = votes + 1
-                }
-                return { ...option, votes }
-            })
-
-            // Only increment totalVotes if this is a new voter
-            const totalVotes = isNewVoter ? pollData.totalVotes + 1 : pollData.totalVotes
-
-            // Recalculate percentages
-            const optionsWithPercentages = updatedOptions.map((option: any) => ({
-                ...option,
-                percentage: totalVotes > 0 ? Math.round((option.votes / totalVotes) * 100) : 0,
+            set((state) => ({
+                currentPoll: state.currentPoll?.id === pollId ? updatedPoll : state.currentPoll,
+                polls: state.polls.map((p) => (p.id === pollId ? updatedPoll : p)),
+                knownVotes: { ...state.knownVotes, [pollId]: optionIds },
             }))
-
-            await updateDoc(pollRef, {
-                options: optionsWithPercentages,
-                totalVotes,
-            })
-
-            // Update local state optimistically
-            const { currentPoll, polls } = get()
-
-            if (currentPoll && currentPoll.id === pollId) {
-                set({
-                    currentPoll: {
-                        ...currentPoll,
-                        options: optionsWithPercentages,
-                        totalVotes,
-                    },
-                })
-            }
-
-            set({
-                polls: polls.map((p) =>
-                    p.id === pollId ? { ...p, options: optionsWithPercentages, totalVotes } : p
-                ),
-            })
         } catch (error) {
             throw new Error(error instanceof Error ? error.message : 'Failed to vote on poll')
         }
     },
 
-    deletePoll: async (userId, pollId) => {
+    deletePoll: async (_userId, pollId) => {
         try {
-            const pollRef = doc(db, 'polls', pollId)
-            const pollSnap = await getDoc(pollRef)
-
-            if (!pollSnap.exists() || pollSnap.data().userId !== userId) {
-                throw new Error('Unauthorized or poll not found')
-            }
-
-            await deleteDoc(pollRef)
-
-            // Also delete all votes for this poll
-            const votesRef = collection(db, 'poll_votes')
-            const q = query(votesRef, where('pollId', '==', pollId))
-            const snapshot = await getDocs(q)
-            const deletePromises = snapshot.docs.map((doc) => deleteDoc(doc.ref))
-            await Promise.all(deletePromises)
+            await pollMutate(`/api/polls/${pollId}`, 'DELETE')
+            set((state) => ({
+                polls: state.polls.filter((p) => p.id !== pollId),
+                currentPoll: state.currentPoll?.id === pollId ? null : state.currentPoll,
+            }))
         } catch (error) {
             throw new Error(error instanceof Error ? error.message : 'Failed to delete poll')
         }
     },
 
-    getUserVote: async (userId, pollId) => {
-        try {
-            const voteRef = doc(db, 'poll_votes', `${userId}_${pollId}`)
-            const voteSnap = await getDoc(voteRef)
+    getUserVote: async (_userId, pollId) => {
+        // Return from local cache first if we already have the vote
+        const { knownVotes } = get()
+        if (knownVotes[pollId]) return knownVotes[pollId]
 
-            if (voteSnap.exists()) {
-                return voteSnap.data().optionIds as string[]
+        // Fall back to API — the session cookie identifies the user
+        try {
+            const res = await fetch(`/api/polls/${pollId}`, { credentials: 'include' })
+            if (!res.ok) return null
+            const json = await res.json()
+            const viewerVote = (json.poll as Record<string, unknown>)?.viewerVote
+            if (Array.isArray(viewerVote) && viewerVote.length > 0) {
+                const vote = viewerVote as string[]
+                set((state) => ({ knownVotes: { ...state.knownVotes, [pollId]: vote } }))
+                return vote
             }
             return null
-        } catch (error) {
-            console.error('Failed to get user vote:', error)
+        } catch {
             return null
         }
     },
 
     // Check if poll can be edited (within 5 minutes of creation)
     canEditPoll: (poll: Poll) => {
-        const now = Date.now()
-        const createdAt =
-            poll.createdAt instanceof Timestamp
-                ? poll.createdAt.toMillis()
-                : typeof poll.createdAt === 'number'
-                  ? poll.createdAt
-                  : new Date(poll.createdAt).getTime()
-        const fiveMinutes = 5 * 60 * 1000 // 5 minutes in milliseconds
-        return now - createdAt < fiveMinutes
+        const fiveMinutes = 5 * 60 * 1000
+        return Date.now() - poll.createdAt < fiveMinutes
     },
 
     // Update poll (only within 5 minutes of creation, resets all votes)
-    updatePoll: async (userId, pollId, updates) => {
+    updatePoll: async (_userId, pollId, updates) => {
         try {
-            const pollRef = doc(db, 'polls', pollId)
-            const pollSnap = await getDoc(pollRef)
+            const body: Record<string, unknown> = {}
+            if (updates.question) body.question = updates.question
+            if (updates.category) body.category = updates.category
+            if (updates.options) body.options = updates.options
 
-            if (!pollSnap.exists()) {
-                throw new Error('Poll not found')
-            }
+            const json = await pollMutate(`/api/polls/${pollId}`, 'PATCH', body)
+            const updatedPoll = apiPollToStorePoll((json as { poll: Record<string, unknown> }).poll)
 
-            const pollData = pollSnap.data() as Poll
-            if (pollData.userId !== userId) {
-                throw new Error('Unauthorized')
-            }
-
-            // Check if within 5-minute edit window
-            const now = Date.now()
-            const createdAt =
-                pollData.createdAt instanceof Timestamp
-                    ? pollData.createdAt.toMillis()
-                    : typeof pollData.createdAt === 'number'
-                      ? pollData.createdAt
-                      : new Date(pollData.createdAt).getTime()
-            const fiveMinutes = 5 * 60 * 1000
-            if (now - createdAt >= fiveMinutes) {
-                throw new Error('Edit window has expired (5 minutes)')
-            }
-
-            // Prepare update data
-            const updateData: Record<string, unknown> = {}
-
-            if (updates.question) {
-                updateData.question = updates.question
-            }
-
-            if (updates.category) {
-                updateData.category = updates.category
-            }
-
-            if (updates.options) {
-                // Reset options with zero votes
-                updateData.options = updates.options.map((optionText, index) => ({
-                    id: `option-${index}`,
-                    text: optionText,
-                    votes: 0,
-                    percentage: 0,
-                }))
-                updateData.totalVotes = 0
-            }
-
-            await updateDoc(pollRef, updateData)
-
-            // Delete all existing votes for this poll (reset votes)
-            const votesRef = collection(db, 'poll_votes')
-            const q = query(votesRef, where('pollId', '==', pollId))
-            const snapshot = await getDocs(q)
-            const deletePromises = snapshot.docs.map((voteDoc) => deleteDoc(voteDoc.ref))
-            await Promise.all(deletePromises)
-
-            // Update local state
             set((state) => ({
-                currentPoll:
-                    state.currentPoll?.id === pollId
-                        ? ({ ...state.currentPoll, ...updateData } as Poll)
-                        : state.currentPoll,
-                polls: state.polls.map((p) =>
-                    p.id === pollId ? ({ ...p, ...updateData } as Poll) : p
-                ),
+                currentPoll: state.currentPoll?.id === pollId ? updatedPoll : state.currentPoll,
+                polls: state.polls.map((p) => (p.id === pollId ? updatedPoll : p)),
+                // Clear cached vote since options were reset
+                knownVotes: updates.options
+                    ? Object.fromEntries(
+                          Object.entries(state.knownVotes).filter(([k]) => k !== pollId)
+                      )
+                    : state.knownVotes,
             }))
         } catch (error) {
             throw new Error(error instanceof Error ? error.message : 'Failed to update poll')
@@ -932,24 +718,14 @@ export const useForumStore = create<ForumState>((set, get) => ({
     },
 
     // Hide poll (owner only)
-    hidePoll: async (userId, pollId) => {
+    hidePoll: async (_userId, pollId) => {
         try {
-            const pollRef = doc(db, 'polls', pollId)
-            const pollSnap = await getDoc(pollRef)
+            const json = await pollMutate(`/api/polls/${pollId}`, 'PATCH', { hidden: true })
+            const updatedPoll = apiPollToStorePoll((json as { poll: Record<string, unknown> }).poll)
 
-            if (!pollSnap.exists() || pollSnap.data().userId !== userId) {
-                throw new Error('Unauthorized or poll not found')
-            }
-
-            await updateDoc(pollRef, { isHidden: true })
-
-            // Update local state
             set((state) => ({
-                currentPoll:
-                    state.currentPoll?.id === pollId
-                        ? { ...state.currentPoll, isHidden: true }
-                        : state.currentPoll,
-                polls: state.polls.map((p) => (p.id === pollId ? { ...p, isHidden: true } : p)),
+                currentPoll: state.currentPoll?.id === pollId ? updatedPoll : state.currentPoll,
+                polls: state.polls.map((p) => (p.id === pollId ? updatedPoll : p)),
             }))
         } catch (error) {
             throw new Error(error instanceof Error ? error.message : 'Failed to hide poll')
@@ -957,52 +733,34 @@ export const useForumStore = create<ForumState>((set, get) => ({
     },
 
     // Unhide poll (owner only)
-    unhidePoll: async (userId, pollId) => {
+    unhidePoll: async (_userId, pollId) => {
         try {
-            const pollRef = doc(db, 'polls', pollId)
-            const pollSnap = await getDoc(pollRef)
+            const json = await pollMutate(`/api/polls/${pollId}`, 'PATCH', { hidden: false })
+            const updatedPoll = apiPollToStorePoll((json as { poll: Record<string, unknown> }).poll)
 
-            if (!pollSnap.exists() || pollSnap.data().userId !== userId) {
-                throw new Error('Unauthorized or poll not found')
-            }
-
-            await updateDoc(pollRef, { isHidden: false })
-
-            // Update local state
             set((state) => ({
-                currentPoll:
-                    state.currentPoll?.id === pollId
-                        ? { ...state.currentPoll, isHidden: false }
-                        : state.currentPoll,
-                polls: state.polls.map((p) => (p.id === pollId ? { ...p, isHidden: false } : p)),
+                currentPoll: state.currentPoll?.id === pollId ? updatedPoll : state.currentPoll,
+                polls: state.polls.map((p) => (p.id === pollId ? updatedPoll : p)),
             }))
         } catch (error) {
             throw new Error(error instanceof Error ? error.message : 'Failed to unhide poll')
         }
     },
 
-    // Report content
+    // Report content — writes to Turso via /api/reports (withAuth)
     reportContent: async (userId, userName, contentId, contentType, reason, details) => {
-        try {
-            const reportsRef = collection(db, 'content_reports')
-            const now = Timestamp.now()
+        void userId // userId is derived server-side from the Auth.js session
+        const res = await authenticatedFetch('/api/reports', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contentId, contentType, reason, details, userName }),
+        })
 
-            const reportData = {
-                id: '',
-                contentId,
-                contentType,
-                reportedBy: userId,
-                reporterName: userName,
-                reason,
-                details: details || '',
-                createdAt: now,
-                status: 'pending' as const,
-            }
-
-            const docRef = await addDoc(reportsRef, reportData)
-            await updateDoc(docRef, { id: docRef.id })
-        } catch (error) {
-            throw new Error(error instanceof Error ? error.message : 'Failed to report content')
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}))
+            throw new Error(
+                (err as { error?: string }).error ?? `Failed to report content (${res.status})`
+            )
         }
     },
 
@@ -1039,10 +797,13 @@ export const useForumStore = create<ForumState>((set, get) => ({
             threadReplies: [],
             isLoadingThreads: false,
             threadsError: null,
+            threadOffset: 0,
+            hasMoreThreads: true,
             polls: [],
             currentPoll: null,
             isLoadingPolls: false,
             pollsError: null,
+            knownVotes: {},
             filters: initialFilters,
         })
     },

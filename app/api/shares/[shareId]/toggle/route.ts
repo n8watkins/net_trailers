@@ -1,26 +1,30 @@
 /**
  * PATCH /api/shares/[shareId]/toggle
  *
- * Toggle share active status (activate/deactivate)
- *
- * SECURITY: Requires valid Firebase ID token in Authorization header
+ * Activate or deactivate a share link. Auth.js session required.
+ * Only the owner may toggle (enforced in the query layer).
  *
  * Request body:
  * {
  *   isActive: boolean
  * }
+ *
+ * Response:
+ * {
+ *   success: boolean
+ *   message?: string
+ *   error?: string
+ * }
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { deactivateShare, reactivateShare } from '../../../../../utils/firestore/shares'
-import { withAuth } from '../../../../../lib/auth-middleware'
-import { getAdminDb } from '../../../../../lib/firebase-admin'
+
+import { withAuth } from '@/lib/auth-middleware'
+import { toggleShare } from '@/db/queries/shares'
 import { apiError } from '@/utils/debugLogger'
 
 interface RouteContext {
-    params: Promise<{
-        shareId: string
-    }>
+    params: Promise<{ shareId: string }>
 }
 
 async function handleToggleShare(
@@ -31,10 +35,7 @@ async function handleToggleShare(
     try {
         if (!context) {
             return NextResponse.json(
-                {
-                    success: false,
-                    error: 'Invalid request context',
-                },
+                { success: false, error: 'Invalid request context' },
                 { status: 400 }
             )
         }
@@ -43,37 +44,23 @@ async function handleToggleShare(
 
         if (!shareId) {
             return NextResponse.json(
-                {
-                    success: false,
-                    error: 'Share ID is required',
-                },
+                { success: false, error: 'Share ID is required' },
                 { status: 400 }
             )
         }
 
-        // Parse request body
         const body = await request.json()
         const { isActive } = body
 
         if (typeof isActive !== 'boolean') {
             return NextResponse.json(
-                {
-                    success: false,
-                    error: 'isActive must be a boolean',
-                },
+                { success: false, error: 'isActive must be a boolean' },
                 { status: 400 }
             )
         }
 
-        // Get admin Firestore instance
-        const db = getAdminDb()
-
-        // Toggle active status
-        if (isActive) {
-            await reactivateShare(db, shareId, userId)
-        } else {
-            await deactivateShare(db, shareId, userId)
-        }
+        // Ownership is enforced inside toggleShare (throws on mismatch).
+        await toggleShare(shareId, userId, isActive)
 
         return NextResponse.json({
             success: true,
@@ -85,18 +72,10 @@ async function handleToggleShare(
         const errorMessage =
             error instanceof Error ? error.message : 'Failed to toggle share status'
 
-        // Check for permission error
         const status = errorMessage.includes('Only the owner') ? 403 : 500
 
-        return NextResponse.json(
-            {
-                success: false,
-                error: errorMessage,
-            },
-            { status }
-        )
+        return NextResponse.json({ success: false, error: errorMessage }, { status })
     }
 }
 
-// Export authenticated handler
 export const PATCH = withAuth(handleToggleShare)

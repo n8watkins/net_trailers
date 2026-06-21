@@ -1,17 +1,21 @@
 /**
  * Activity Tracking Hook
  *
- * Tracks page views and user activity for analytics
+ * Tracks page views and user activity for analytics.
+ *
+ * Auth note: previously read `auth.currentUser.email` from the Firebase SDK to
+ * include in the activity payload. Auth.js (NextAuth) now manages identity
+ * server-side, so the email is resolved by the API route from the session
+ * cookie rather than being supplied by the client.
  */
 
 import { useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { useSessionStore } from '@/stores/sessionStore'
-import { auth } from '@/firebase'
 
 /**
- * Track page views automatically
- * Call this hook in the root layout to track all page views
+ * Track page views automatically.
+ * Call this hook in the root layout to track all page views.
  */
 export function usePageViewTracking() {
     const pathname = usePathname()
@@ -39,18 +43,16 @@ export function usePageViewTracking() {
                 return
             }
 
-            // Get user email if authenticated
-            const userEmail = isAuth && auth.currentUser ? auth.currentUser.email : null
-
             try {
                 await fetch('/api/admin/activity', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    // userEmail is intentionally omitted: the server resolves it
+                    // from the Auth.js session cookie when needed.
                     body: JSON.stringify({
                         type: 'view',
                         userId: isAuth ? userId : null,
                         guestId: !isAuth ? userId : null,
-                        userEmail: userEmail,
                         page: pathname,
                         userAgent: navigator.userAgent,
                     }),

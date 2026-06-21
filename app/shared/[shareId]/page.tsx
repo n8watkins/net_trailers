@@ -16,13 +16,18 @@ import ContentCard from '../../../components/common/ContentCard'
 import ContentGridSpacer from '../../../components/common/ContentGridSpacer'
 import { useToast } from '../../../hooks/useToast'
 import { useSessionStore } from '../../../stores/sessionStore'
-import { getAuthHeaders } from '../../../utils/auth'
+import { authenticatedFetch } from '../../../lib/authenticatedFetch'
 
 /**
- * SharedCollectionView Page
+ * SharedCollectionViewPage
  *
- * Public page for viewing shared collections via share link.
- * No authentication required for viewing.
+ * Public page for viewing shared collections via a share link.
+ * No authentication required for viewing. The share is validated
+ * server-side (isActive + expiry).
+ *
+ * Duplication ("Save to My Collections") requires an Auth.js session and
+ * calls the authenticated /api/collections/duplicate endpoint via
+ * authenticatedFetch (cookie-based — no Firebase token).
  */
 export default function SharedCollectionViewPage() {
     const params = useParams()
@@ -51,7 +56,7 @@ export default function SharedCollectionViewPage() {
             setIsLoading(true)
             setError(null)
 
-            // Fetch shared collection data (GET - read-only)
+            // Public GET — no auth required.
             const response = await fetch(`/api/shares/${shareId}`)
             const data = await response.json()
 
@@ -62,12 +67,12 @@ export default function SharedCollectionViewPage() {
 
             setShareData(data.data)
 
-            // Track view via POST (CSRF-protected, fire-and-forget)
+            // Track view via POST (CSRF-protected by proxy.ts, fire-and-forget).
             fetch(`/api/shares/${shareId}`, { method: 'POST' }).catch(() => {
-                // Silently ignore view tracking errors
+                // Silently ignore view tracking errors.
             })
 
-            // Fetch content details for each item
+            // Load full content details from TMDB for each item in the snapshot.
             await loadCollectionItems(data.data.contentIds)
         } catch (err) {
             console.error('Error loading shared collection:', err)
@@ -79,17 +84,16 @@ export default function SharedCollectionViewPage() {
 
     const loadCollectionItems = async (contentIds: number[]) => {
         try {
-            // Fetch content details from TMDB
+            // Fetch content details from TMDB (movie first, then TV fallback).
             const itemPromises = contentIds.slice(0, 50).map(async (id) => {
-                // Try movie first, then TV if it fails
                 try {
                     const movieRes = await fetch(`/api/movies/${id}`)
                     if (movieRes.ok) {
                         const movie = await movieRes.json()
                         return { ...movie, media_type: 'movie' } as Content
                     }
-                } catch (e) {
-                    // Try TV
+                } catch {
+                    // Fall through to TV attempt.
                 }
 
                 try {
@@ -98,8 +102,8 @@ export default function SharedCollectionViewPage() {
                         const show = await tvRes.json()
                         return { ...show, media_type: 'tv' } as Content
                     }
-                } catch (e) {
-                    // Item not found
+                } catch {
+                    // Item not found.
                 }
 
                 return null
@@ -127,15 +131,10 @@ export default function SharedCollectionViewPage() {
         setIsDuplicating(true)
 
         try {
-            // Get authenticated headers with Firebase token
-            const headers = await getAuthHeaders({
-                'Content-Type': 'application/json',
-            })
-
-            // Create new collection from shared data
-            const response = await fetch('/api/collections/duplicate', {
+            // Auth.js session cookie is sent automatically by authenticatedFetch.
+            const response = await authenticatedFetch('/api/collections/duplicate', {
                 method: 'POST',
-                headers,
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     name: `${shareData.share.collectionName} (Copy)`,
                     items: collectionItems,
@@ -149,7 +148,6 @@ export default function SharedCollectionViewPage() {
                     'Collection saved!',
                     `"${shareData.share.collectionName}" has been added to your collections`
                 )
-                // Optionally redirect to collections page
                 setTimeout(() => {
                     router.push('/collections')
                 }, 2000)

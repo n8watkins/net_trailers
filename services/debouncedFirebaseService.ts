@@ -4,7 +4,6 @@
  */
 
 import { AuthStorageService, AuthPreferences } from './authStorageService'
-import { firebaseTracker } from '../utils/firebaseCallTracker'
 import { firebaseLog, firebaseWarn, authError } from '../utils/debugLogger'
 
 interface PendingSave {
@@ -25,13 +24,6 @@ class DebouncedFirebaseService {
      * Queue a save operation with debouncing
      */
     queueSave(userId: string, preferences: AuthPreferences, source: string = 'unknown') {
-        // Track the request
-        firebaseTracker.track('queueSave', `DebouncedFirebase-${source}`, userId, {
-            watchlistCount: preferences.defaultWatchlist?.length || 0,
-            likedCount: preferences.likedMovies?.length || 0,
-            hiddenCount: preferences.hiddenMovies?.length || 0,
-        })
-
         // Cancel any pending save for this user
         const existingTimeout = this.saveTimeouts.get(userId)
         if (existingTimeout) {
@@ -78,7 +70,6 @@ class DebouncedFirebaseService {
             firebaseLog(
                 `💾 [DebouncedFirebase] Executing save for ${userId} from ${pendingSave.source}`
             )
-            firebaseTracker.track('executeSave', `DebouncedFirebase-${pendingSave.source}`, userId)
 
             await AuthStorageService.saveUserData(userId, pendingSave.preferences)
 
@@ -114,7 +105,6 @@ class DebouncedFirebaseService {
         }
 
         firebaseLog(`⚡ [DebouncedFirebase] Force save for ${userId} from ${source}`)
-        firebaseTracker.track('forceSave', `DebouncedFirebase-${source}`, userId)
 
         await AuthStorageService.saveUserData(userId, preferences)
         this.lastSaveTime.set(userId, Date.now())

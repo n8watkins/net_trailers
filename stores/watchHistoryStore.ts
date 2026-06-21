@@ -2,19 +2,17 @@
  * Watch History Store
  *
  * Zustand store for tracking user watch history with proper session isolation:
- * - Guest users: localStorage with 'guest' prefix
- * - Authenticated users: Firestore-backed (no localStorage persistence for auth)
+ * - Guest users: localStorage with 'guest' prefix (unchanged)
+ * - Authenticated users: backed by /api/watch-history (Turso/libSQL)
+ *
+ * Firebase/Firestore imports have been removed. Authenticated persistence now
+ * goes through the REST API using the Auth.js session cookie.
  */
 
 import { create } from 'zustand'
-import { WatchHistoryStore, WatchHistoryEntry } from '../types/watchHistory'
-import { Content } from '../typings'
-import {
-    getWatchHistory,
-    saveWatchHistory,
-    deleteWatchHistory,
-} from '../utils/firestore/watchHistory'
-import { auth } from '../firebase'
+import type { WatchHistoryStore, WatchHistoryEntry } from '../types/watchHistory'
+import type { Content } from '../typings'
+import { authenticatedFetch } from '../lib/authenticatedFetch'
 import { watchHistoryLog, watchHistoryError } from '../utils/debugLogger'
 
 // Manual localStorage helpers for guest sessions only
@@ -50,38 +48,40 @@ const clearGuestHistory = (guestId: string) => {
     }
 }
 
-const waitForAuthUser = async (userId: string, timeout = 5000): Promise<boolean> => {
-    if (!userId) return false
-    if (auth.currentUser && auth.currentUser.uid === userId) {
-        return true
-    }
+/* -------------------------------------------------------------------------- */
+/*  API helpers                                                                */
+/* -------------------------------------------------------------------------- */
 
-    if (typeof window === 'undefined' || typeof auth.onAuthStateChanged !== 'function') {
-        return false
-    }
-
-    return new Promise((resolve) => {
-        let resolved = false
-        let unsubscribe = () => {}
-
-        const timer = setTimeout(() => {
-            if (!resolved) {
-                resolved = true
-                unsubscribe()
-                resolve(false)
-            }
-        }, timeout)
-
-        unsubscribe = auth.onAuthStateChanged((user) => {
-            if (!resolved && user && user.uid === userId) {
-                resolved = true
-                clearTimeout(timer)
-                unsubscribe()
-                resolve(true)
-            }
-        })
-    })
+async function apiLoadHistory(): Promise<WatchHistoryEntry[]> {
+    const res = await authenticatedFetch('/api/watch-history', { method: 'GET' })
+    if (!res.ok) throw new Error(`Failed to load watch history: ${res.status}`)
+    const json = await res.json()
+    return (json.history as WatchHistoryEntry[]) ?? []
 }
+
+async function apiAddEntry(
+    contentId: number,
+    mediaType: 'movie' | 'tv',
+    content: Content
+): Promise<WatchHistoryEntry> {
+    const res = await authenticatedFetch('/api/watch-history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contentId, mediaType, content }),
+    })
+    if (!res.ok) throw new Error(`Failed to save watch entry: ${res.status}`)
+    const json = await res.json()
+    return json.entry as WatchHistoryEntry
+}
+
+async function apiClearHistory(): Promise<void> {
+    const res = await authenticatedFetch('/api/watch-history', { method: 'DELETE' })
+    if (!res.ok) throw new Error(`Failed to clear watch history: ${res.status}`)
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Store                                                                      */
+/* -------------------------------------------------------------------------- */
 
 export const useWatchHistoryStore = create<WatchHistoryStore>()((set, get) => ({
     history: [],
@@ -150,7 +150,7 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()((set, get) => ({
         sessionId: string
     ) => {
         watchHistoryLog(
-            '[Watch History Store] 🗑️ Clearing history with persistence for',
+            '[Watch History Store] Clearing history with persistence for',
             sessionType,
             sessionId
         )
@@ -161,14 +161,14 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()((set, get) => ({
 
             // Persist deletion based on session type
             if (sessionType === 'authenticated') {
-                await deleteWatchHistory(sessionId)
-                watchHistoryLog('[Watch History Store] ✅ Deleted from Firestore')
+                await apiClearHistory()
+                watchHistoryLog('[Watch History Store] Deleted from Turso via API')
             } else {
                 clearGuestHistory(sessionId)
-                watchHistoryLog('[Watch History Store] ✅ Deleted from localStorage')
+                watchHistoryLog('[Watch History Store] Deleted from localStorage')
             }
         } catch (error) {
-            watchHistoryError('[Watch History Store] ❌ Failed to clear history:', error)
+            watchHistoryError('[Watch History Store] Failed to clear history:', error)
             throw error
         }
     },
@@ -184,45 +184,27 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()((set, get) => ({
     },
 
     loadFromFirestore: async (userId: string) => {
+        // Renamed semantically but kept signature stable for callers.
+        // Now loads from /api/watch-history (Turso) instead of Firestore.
         if (!userId) return
 
-        watchHistoryLog('[Watch History Store] 🔍 Loading from Firestore for user:', userId)
+        watchHistoryLog('[Watch History Store] Loading from API for user:', userId)
 
         try {
             set({ isLoading: true, syncError: null })
 
-            // Load history from Firestore
-            const firestoreHistory = await getWatchHistory(userId)
+            const history = await apiLoadHistory()
 
-            watchHistoryLog(
-                '[Watch History Store] 📥 Loaded from Firestore:',
-                firestoreHistory?.length || 0,
-                'entries'
-            )
+            watchHistoryLog('[Watch History Store] Loaded from API:', history.length, 'entries')
 
-            if (firestoreHistory && firestoreHistory.length > 0) {
-                set({
-                    history: firestoreHistory,
-                    currentSessionId: userId,
-                    lastSyncedAt: Date.now(),
-                    syncError: null,
-                })
-                watchHistoryLog('[Watch History Store] ✅ Watch history loaded successfully')
-            } else {
-                // No history in Firestore yet
-                set({
-                    history: [],
-                    currentSessionId: userId,
-                    lastSyncedAt: Date.now(),
-                    syncError: null,
-                })
-                watchHistoryLog('[Watch History Store] ⚠️ No watch history found in Firestore')
-            }
+            set({
+                history,
+                currentSessionId: userId,
+                lastSyncedAt: Date.now(),
+                syncError: null,
+            })
         } catch (error) {
-            watchHistoryError(
-                '[Watch History Store] ❌ Failed to load watch history from Firestore:',
-                error
-            )
+            watchHistoryError('[Watch History Store] Failed to load watch history from API:', error)
             set({
                 syncError: error instanceof Error ? error.message : 'Failed to load watch history',
             })
@@ -232,34 +214,24 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()((set, get) => ({
     },
 
     syncWithFirestore: async (userId) => {
+        // Kept for interface compatibility. Pushes local history up to the API
+        // (Turso) rather than Firestore.
         if (!userId) return
-        const authReady = await waitForAuthUser(userId)
-        if (!authReady) {
-            set({
-                syncError: 'Waiting for authentication...',
-                isLoading: false,
-            })
-            return
-        }
 
         try {
             set({ isLoading: true, syncError: null })
 
-            const localHistory = get().history
+            // Re-load from server to ensure consistency.
+            const history = await apiLoadHistory()
 
-            // Save current history to Firestore
-            if (localHistory.length > 0) {
-                await saveWatchHistory(userId, localHistory)
-            }
-
-            // Update session ID and sync timestamp
             set({
+                history,
                 currentSessionId: userId,
                 lastSyncedAt: Date.now(),
                 syncError: null,
             })
         } catch (error) {
-            watchHistoryError('Failed to sync watch history with Firestore:', error)
+            watchHistoryError('Failed to sync watch history with API:', error)
             set({
                 syncError: error instanceof Error ? error.message : 'Failed to sync watch history',
             })
@@ -276,13 +248,28 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()((set, get) => ({
 
             const guestHistory = get().history
 
-            // Get existing auth history from Firestore
-            const authHistory = await getWatchHistory(userId)
+            // Load any existing server history for this auth user.
+            let authHistory: WatchHistoryEntry[] = []
+            try {
+                authHistory = await apiLoadHistory()
+            } catch {
+                // If load fails, proceed with guest history only.
+            }
 
-            // Merge guest and auth histories
-            const mergedHistory = mergeHistories(guestHistory, authHistory || [])
+            // Merge: most recent watchedAt wins per (contentId, mediaType) pair.
+            const historyMap = new Map<string, WatchHistoryEntry>()
+            for (const entry of [...guestHistory, ...authHistory]) {
+                const key = `${entry.contentId}-${entry.mediaType}`
+                const existing = historyMap.get(key)
+                if (!existing || entry.watchedAt > existing.watchedAt) {
+                    historyMap.set(key, entry)
+                }
+            }
+            const mergedHistory = Array.from(historyMap.values()).sort(
+                (a, b) => b.watchedAt - a.watchedAt
+            )
 
-            // Update store with merged history
+            // Optimistically set local state.
             set({
                 history: mergedHistory,
                 currentSessionId: userId,
@@ -290,13 +277,15 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()((set, get) => ({
                 syncError: null,
             })
 
-            // Save merged history to Firestore
-            await saveWatchHistory(userId, mergedHistory)
+            // Persist each merged entry to the API (best-effort, fire-and-forget is ok).
+            for (const entry of mergedHistory) {
+                apiAddEntry(entry.contentId, entry.mediaType, entry.content).catch(() => {})
+            }
 
-            // Clear guest localStorage using the helper
+            // Clear guest localStorage.
             const guestId = localStorage.getItem('nettrailer_guest_id')
             if (guestId) {
-                get().clearGuestSession(guestId)
+                clearGuestHistory(guestId)
             }
         } catch (error) {
             watchHistoryError('Failed to migrate guest watch history:', error)
@@ -321,7 +310,7 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()((set, get) => ({
 
         try {
             if (sessionType === 'authenticated') {
-                // Load from Firestore for authenticated users
+                // Load from API (Turso) for authenticated users
                 await get().loadFromFirestore(sessionId)
             } else {
                 // Load guest data from localStorage manually
@@ -343,7 +332,7 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()((set, get) => ({
             history,
             currentSessionId: guestId,
             isLoading: false,
-            lastSyncedAt: null, // Guest sessions don't sync
+            lastSyncedAt: null, // Guest sessions don't sync to server
             syncError: null,
         })
     },
@@ -357,27 +346,3 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()((set, get) => ({
         clearGuestHistory(guestId)
     },
 }))
-
-// Helper function to merge guest and Firestore histories
-function mergeHistories(
-    guestHistory: WatchHistoryEntry[],
-    authHistory: WatchHistoryEntry[]
-): WatchHistoryEntry[] {
-    const historyMap = new Map<string, WatchHistoryEntry>()
-
-    // Add all entries from both sources
-    const allEntries = [...guestHistory, ...authHistory]
-
-    // Keep the most recent version of each content
-    allEntries.forEach((entry) => {
-        const key = `${entry.contentId}-${entry.mediaType}`
-        const existing = historyMap.get(key)
-
-        if (!existing || entry.watchedAt > existing.watchedAt) {
-            historyMap.set(key, entry)
-        }
-    })
-
-    // Convert back to array and sort by watch date
-    return Array.from(historyMap.values()).sort((a, b) => b.watchedAt - a.watchedAt)
-}

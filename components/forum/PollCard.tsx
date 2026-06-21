@@ -15,17 +15,11 @@ import { Poll, PollSummary } from '@/types/forum'
 import { getCategoryInfo } from '@/utils/forumCategories'
 import { ChartBarIcon, ClockIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
 import { formatDistanceToNow } from 'date-fns'
-import { Timestamp } from 'firebase/firestore'
 
-// Helper to convert Firebase Timestamp to Date
-const toDate = (timestamp: Timestamp | Date | number | null): Date => {
+// Timestamps are epoch-ms numbers from the Turso/Drizzle backend.
+const toDate = (timestamp: Date | number | null): Date => {
     if (!timestamp) return new Date()
-    if (timestamp instanceof Timestamp) {
-        return timestamp.toDate()
-    }
-    if (timestamp instanceof Date) {
-        return timestamp
-    }
+    if (timestamp instanceof Date) return timestamp
     return new Date(timestamp)
 }
 

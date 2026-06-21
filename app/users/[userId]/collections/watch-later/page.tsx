@@ -1,15 +1,16 @@
 /**
  * Public User Watch Later Page
  *
- * Shows all watch later items for a specific user's public profile
+ * Shows watch later items for a specific user's public profile.
+ * Watch later is a private list — it is not exposed via the public profile API.
+ * This page only resolves the display name and always shows an empty list for
+ * visitors. The display name is fetched from /api/public-profile/[userId].
  */
 
 'use client'
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { doc, getDoc } from 'firebase/firestore'
-import { db } from '../../../../../firebase'
 import SubPageLayout from '../../../../../components/layout/SubPageLayout'
 import ContentCard from '../../../../../components/common/ContentCard'
 import ContentGridSpacer from '../../../../../components/common/ContentGridSpacer'
@@ -23,7 +24,8 @@ export default function UserWatchLaterPage() {
     const params = useParams()
     const userId = params?.userId as string
 
-    const [watchLaterContent, setWatchLaterContent] = useState<(Movie | TVShow)[]>([])
+    // Watch later is private — no content is shown for public viewers.
+    const watchLaterContent: (Movie | TVShow)[] = []
     const [displayName, setDisplayName] = useState<string>('User')
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -38,66 +40,23 @@ export default function UserWatchLaterPage() {
             setError(null)
 
             try {
-                // Try to get profile data from API first
-                let profileDisplayName = 'User'
-                try {
-                    const response = await fetch(`/api/public-profile/${userId}`)
-                    if (response.ok) {
-                        const payload = (await response.json()) as PublicProfilePayload
-                        profileDisplayName = payload.profile.displayName
-                    }
-                } catch (_apiError) {
-                    console.warn('[WatchLater] API failed, will use client-side data')
+                // Fetch display name from the Turso-backed public profile API.
+                // Watch later content is private and not included in the public profile.
+                const response = await fetch(`/api/public-profile/${userId}`)
+                if (!response.ok) {
+                    const body = await response.json().catch(() => null)
+                    throw new Error(body?.error || 'Failed to load profile')
                 }
 
-                // Fallback to client-side lookup for display name if API failed
-                if (profileDisplayName === 'User') {
-                    try {
-                        const profileDoc = await getDoc(doc(db, 'profiles', userId))
-                        if (profileDoc.exists()) {
-                            const profileData = profileDoc.data()
-                            profileDisplayName = profileData?.displayName || 'User'
-                        }
-                    } catch (profileError) {
-                        console.warn('[WatchLater] Could not load profile, using default name')
-                    }
-                }
+                const payload = (await response.json()) as PublicProfilePayload
 
-                setDisplayName(profileDisplayName)
-
-                // Try to fetch watch later content
-                // Note: This will only work if viewing your own profile due to Firestore security rules
-                try {
-                    const userDoc = await getDoc(doc(db, 'users', userId))
-
-                    if (userDoc.exists()) {
-                        const userData = userDoc.data()
-                        const watchLater = Array.isArray(userData.defaultWatchlist)
-                            ? (userData.defaultWatchlist as (Movie | TVShow)[])
-                            : []
-
-                        if (isMounted) {
-                            setWatchLaterContent(watchLater)
-                        }
-                    }
-                } catch (permissionError: any) {
-                    // Permission denied - this is expected when viewing other users' profiles
-                    // Watch later is private and not included in public profiles
-                    if (
-                        permissionError?.code === 'permission-denied' ||
-                        permissionError?.message?.includes('permission')
-                    ) {
-                        console.warn('[WatchLater] Watch later is private for this user')
-                        // Leave watchLaterContent as empty array
-                    } else {
-                        // Re-throw unexpected errors
-                        throw permissionError
-                    }
+                if (isMounted) {
+                    setDisplayName(payload.profile.displayName)
                 }
             } catch (err) {
-                console.error('Error loading watch later content:', err)
+                console.error('Error loading watch later page:', err)
                 if (isMounted) {
-                    setError((err as Error).message || 'Failed to load watch later content')
+                    setError((err as Error).message || 'Failed to load profile')
                 }
             } finally {
                 if (isMounted) {

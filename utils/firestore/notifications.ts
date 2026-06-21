@@ -1,33 +1,21 @@
 /**
- * Notification Firestore Utilities
+ * Notification client utilities — Turso/Drizzle edition.
  *
- * Handles all Firestore operations for in-app notifications:
- * - Create/read/update/delete notifications
- * - Mark as read/unread
- * - Real-time subscription support
- * - Automatic cleanup of old notifications
+ * Previously this module wrapped Firestore client SDK calls. It now calls the
+ * REST API routes under /api/notifications/*, which in turn hit the Turso DB
+ * via db/queries/notifications.ts.
+ *
+ * PUBLIC SURFACE: every function that was exported before is still exported
+ * with the same signature so that stores/notificationStore.ts and any other
+ * callers continue to compile without changes.
+ *
+ * NOTE: `subscribeToNotifications` previously used a Firestore onSnapshot
+ * listener for real-time updates. It now polls GET /api/notifications on a
+ * 30-second interval and invokes the same `onUpdate` callback. The returned
+ * unsubscribe function cancels the interval (identical contract to before).
  */
 
-import { nanoid } from 'nanoid'
-import {
-    collection,
-    doc,
-    getDoc,
-    getDocs,
-    setDoc,
-    updateDoc,
-    deleteDoc,
-    query,
-    where,
-    orderBy,
-    limit,
-    onSnapshot,
-    Timestamp,
-    writeBatch,
-    DocumentSnapshot,
-    startAfter,
-} from 'firebase/firestore'
-import { db } from '../../firebase'
+import { authenticatedFetch } from '@/lib/authenticatedFetch'
 import {
     Notification,
     CreateNotificationRequest,
@@ -36,334 +24,177 @@ import {
 } from '../../types/notifications'
 import { PaginatedResult, createPaginatedResult } from '../../types/pagination'
 
-/**
- * Get Firestore collection reference for user's notifications
- */
-function getNotificationsCollection(userId: string) {
-    return collection(db, `users/${userId}/notifications`)
+/* -------------------------------------------------------------------------- */
+/*  Internal fetch helpers                                                     */
+/* -------------------------------------------------------------------------- */
+
+/** Polling interval for subscribeToNotifications (ms). */
+const POLL_INTERVAL_MS = 30_000
+
+async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
+    return authenticatedFetch(path, init)
 }
 
-/**
- * Get Firestore document reference for a notification
- */
-function getNotificationDocRef(userId: string, notificationId: string) {
-    return doc(db, `users/${userId}/notifications/${notificationId}`)
+/** POST helper with JSON body. */
+async function apiPost(path: string, body: unknown): Promise<Response> {
+    return apiFetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    })
 }
 
+/* -------------------------------------------------------------------------- */
+/*  Public API — mirroring the old Firestore module exactly                   */
+/* -------------------------------------------------------------------------- */
+
 /**
- * Create a new notification for a user
+ * Create a notification (client-side path, used by the store's
+ * createNotification action). The actual DB write is done server-side via the
+ * API — this function posts to a dedicated route.
  *
- * @param userId - User ID to create notification for
- * @param request - Notification data
- * @returns Created notification
+ * NOTE: In the Turso architecture, notifications are typically created by
+ * server-side code (cron jobs, ranking comment handlers, etc.) via
+ * db/queries/notifications.ts createNotification(). The client-side creation
+ * path is kept for backward-compat with the store but routes through the
+ * server endpoint.
  */
 export async function createNotification(
     userId: string,
     request: CreateNotificationRequest
 ): Promise<Notification> {
-    try {
-        const notificationId = nanoid(12)
-        const now = Date.now()
+    const res = await apiPost('/api/notifications/create', { userId, ...request })
 
-        // Calculate expiration
-        const expirationDays = request.expiresIn || NOTIFICATION_CONSTRAINTS.DEFAULT_EXPIRATION_DAYS
-        const expiresAt = now + expirationDays * 24 * 60 * 60 * 1000
-
-        // Build notification object, only including defined optional fields
-        const notification: Notification = {
-            id: notificationId,
-            userId,
-            type: request.type,
-            title: request.title,
-            message: request.message,
-            isRead: false,
-            createdAt: now,
-            expiresAt,
-        }
-
-        // Only add optional fields if they're defined (Firestore doesn't allow undefined)
-        if (request.contentId !== undefined) {
-            notification.contentId = request.contentId
-        }
-        if (request.mediaType !== undefined) {
-            notification.mediaType = request.mediaType
-        }
-        if (request.collectionId !== undefined) {
-            notification.collectionId = request.collectionId
-        }
-        if (request.shareId !== undefined) {
-            notification.shareId = request.shareId
-        }
-        if (request.actionUrl !== undefined) {
-            notification.actionUrl = request.actionUrl
-        }
-        if (request.imageUrl !== undefined) {
-            notification.imageUrl = request.imageUrl
-        }
-
-        const notificationRef = getNotificationDocRef(userId, notificationId)
-        await setDoc(notificationRef, notification)
-
-        // Cleanup old notifications (async, don't await)
-        cleanupOldNotifications(userId).catch((err) =>
-            console.error('Failed to cleanup old notifications:', err)
-        )
-
-        return notification
-    } catch (error) {
-        console.error('Error creating notification:', error)
-        throw error instanceof Error ? error : new Error('Failed to create notification')
+    if (!res.ok) {
+        const text = await res.text().catch(() => '')
+        throw new Error(`Failed to create notification (${res.status}): ${text}`)
     }
+
+    const json = (await res.json()) as { success: boolean; notification: Notification }
+    return json.notification
 }
 
 /**
- * Get all notifications for a user (with pagination support)
+ * Fetch all notifications for the authenticated user (paginated).
  *
- * @param userId - User ID
- * @param fetchLimit - Maximum notifications to fetch
- * @param startAfterDoc - Cursor for pagination
- * @returns Paginated notifications (sorted by createdAt desc)
+ * The `startAfterDoc` parameter was a Firestore cursor — it is no longer used;
+ * callers that passed it will simply get the first page. For true pagination use
+ * the offset-based parameters of listNotifications in the query layer.
  */
 export async function getAllNotifications(
-    userId: string,
+    _userId: string,
     fetchLimit: number = NOTIFICATION_CONSTRAINTS.FETCH_LIMIT,
-    startAfterDoc?: DocumentSnapshot | null
+    _startAfterDoc?: unknown
 ): Promise<PaginatedResult<Notification>> {
     try {
-        const notificationsRef = getNotificationsCollection(userId)
-        const constraints: any[] = [orderBy('createdAt', 'desc'), limit(fetchLimit)]
+        const res = await apiFetch(`/api/notifications?limit=${fetchLimit}&offset=0`)
 
-        // Add cursor if provided
-        if (startAfterDoc) {
-            constraints.push(startAfter(startAfterDoc))
+        if (!res.ok) {
+            console.error('[Notifications] getAllNotifications failed:', res.status)
+            return createPaginatedResult([], null, fetchLimit)
         }
 
-        const q = query(notificationsRef, ...constraints)
-        const querySnapshot = await getDocs(q)
-        const notifications: Notification[] = []
+        const json = (await res.json()) as {
+            success: boolean
+            notifications: Notification[]
+            unreadCount: number
+        }
 
-        querySnapshot.forEach((doc) => {
-            notifications.push(doc.data() as Notification)
-        })
-
-        // Return with cursor
-        const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1] || null
-        return createPaginatedResult(notifications, lastDoc, fetchLimit)
+        return createPaginatedResult(json.notifications, null, fetchLimit)
     } catch (error) {
-        console.error('Error fetching notifications:', error)
-        // Return empty paginated result on error
+        console.error('[Notifications] getAllNotifications error:', error)
         return createPaginatedResult([], null, fetchLimit)
     }
 }
 
 /**
- * Get unread notifications for a user (with pagination support)
- *
- * @param userId - User ID
- * @param fetchLimit - Maximum notifications to fetch
- * @param startAfterDoc - Cursor for pagination
- * @returns Paginated unread notifications (sorted by createdAt desc)
+ * Fetch unread notifications for the authenticated user.
+ * Filters the list response client-side (avoids a separate API endpoint).
  */
 export async function getUnreadNotifications(
     userId: string,
     fetchLimit: number = NOTIFICATION_CONSTRAINTS.FETCH_LIMIT,
-    startAfterDoc?: DocumentSnapshot | null
+    startAfterDoc?: unknown
 ): Promise<PaginatedResult<Notification>> {
-    try {
-        const notificationsRef = getNotificationsCollection(userId)
-        const constraints: any[] = [where('isRead', '==', false), limit(fetchLimit)]
-
-        // Add cursor if provided
-        if (startAfterDoc) {
-            constraints.push(startAfter(startAfterDoc))
-        }
-
-        const q = query(notificationsRef, ...constraints)
-        const querySnapshot = await getDocs(q)
-        const notifications: Notification[] = []
-
-        querySnapshot.forEach((doc) => {
-            notifications.push(doc.data() as Notification)
-        })
-
-        // Sort locally to keep newest first without needing a composite index
-        const sortedNotifications = notifications.sort((a, b) => b.createdAt - a.createdAt)
-
-        // Return with cursor
-        const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1] || null
-        return createPaginatedResult(sortedNotifications, lastDoc, fetchLimit)
-    } catch (error) {
-        console.error('Error fetching unread notifications:', error)
-        // Return empty paginated result on error
-        return createPaginatedResult([], null, fetchLimit)
-    }
+    const result = await getAllNotifications(userId, fetchLimit, startAfterDoc)
+    const unread = result.data.filter((n) => !n.isRead)
+    return createPaginatedResult(unread, null, fetchLimit)
 }
 
 /**
- * Mark a notification as read
- *
- * @param userId - User ID
- * @param notificationId - Notification ID to mark as read
+ * Mark a single notification as read.
  */
 export async function markAsRead(userId: string, notificationId: string): Promise<void> {
-    try {
-        const notificationRef = getNotificationDocRef(userId, notificationId)
-        await updateDoc(notificationRef, {
-            isRead: true,
-        })
-    } catch (error) {
-        console.error('Error marking notification as read:', error)
-        throw error instanceof Error ? error : new Error('Failed to mark notification as read')
+    const res = await apiPost('/api/notifications/mark-read', { notificationId })
+
+    if (!res.ok) {
+        const text = await res.text().catch(() => '')
+        throw new Error(`Failed to mark notification as read (${res.status}): ${text}`)
     }
 }
 
 /**
- * Mark all notifications as read
- *
- * @param userId - User ID
+ * Mark all notifications as read.
  */
-export async function markAllAsRead(userId: string): Promise<void> {
-    try {
-        const result = await getUnreadNotifications(userId)
-        const unreadNotifications = result.data
+export async function markAllAsRead(_userId: string): Promise<void> {
+    const res = await apiPost('/api/notifications/mark-all-read', {})
 
-        // Update all unread notifications in parallel
-        const updatePromises = unreadNotifications.map((notification) =>
-            markAsRead(userId, notification.id)
-        )
-
-        await Promise.all(updatePromises)
-    } catch (error) {
-        console.error('Error marking all notifications as read:', error)
-        throw error instanceof Error ? error : new Error('Failed to mark all notifications as read')
+    if (!res.ok) {
+        const text = await res.text().catch(() => '')
+        throw new Error(`Failed to mark all notifications as read (${res.status}): ${text}`)
     }
 }
 
 /**
- * Delete a notification
- *
- * @param userId - User ID
- * @param notificationId - Notification ID to delete
+ * Delete a single notification.
  */
-export async function deleteNotification(userId: string, notificationId: string): Promise<void> {
-    try {
-        const notificationRef = getNotificationDocRef(userId, notificationId)
-        await deleteDoc(notificationRef)
-    } catch (error) {
-        console.error('Error deleting notification:', error)
-        throw error instanceof Error ? error : new Error('Failed to delete notification')
+export async function deleteNotification(_userId: string, notificationId: string): Promise<void> {
+    const res = await apiFetch(`/api/notifications/${encodeURIComponent(notificationId)}`, {
+        method: 'DELETE',
+    })
+
+    if (!res.ok) {
+        const text = await res.text().catch(() => '')
+        throw new Error(`Failed to delete notification (${res.status}): ${text}`)
     }
 }
 
 /**
- * Delete all notifications for a user
- *
- * @param userId - User ID
+ * Delete all notifications for the authenticated user.
  */
-export async function deleteAllNotifications(userId: string): Promise<void> {
-    try {
-        const result = await getAllNotifications(userId, 1000) // Get all
-        const notifications = result.data
+export async function deleteAllNotifications(_userId: string): Promise<void> {
+    const res = await apiFetch('/api/notifications', { method: 'DELETE' })
 
-        // Use writeBatch for atomic delete operations (max 500 per batch)
-        const batches: any[] = []
-        const batchSize = 500
-
-        for (let i = 0; i < notifications.length; i += batchSize) {
-            const batch = writeBatch(db)
-            const batchNotifications = notifications.slice(i, i + batchSize)
-
-            batchNotifications.forEach((notification) => {
-                const notificationRef = getNotificationDocRef(userId, notification.id)
-                batch.delete(notificationRef)
-            })
-
-            batches.push(batch.commit())
-        }
-
-        await Promise.all(batches)
-    } catch (error) {
-        console.error('Error deleting all notifications:', error)
-        throw error instanceof Error ? error : new Error('Failed to delete all notifications')
+    if (!res.ok) {
+        const text = await res.text().catch(() => '')
+        throw new Error(`Failed to delete all notifications (${res.status}): ${text}`)
     }
 }
 
 /**
- * Delete old notifications (expired or beyond threshold)
- *
- * @param userId - User ID
- * @param olderThanDays - Delete notifications older than this many days
- */
-export async function cleanupOldNotifications(
-    userId: string,
-    olderThanDays: number = NOTIFICATION_CONSTRAINTS.CLEANUP_THRESHOLD_DAYS
-): Promise<void> {
-    try {
-        const result = await getAllNotifications(userId, 1000) // Get all
-        const notifications = result.data
-        const now = Date.now()
-        const threshold = now - olderThanDays * 24 * 60 * 60 * 1000
-
-        // Find notifications to delete
-        const toDelete = notifications.filter((notification) => {
-            // Delete if expired
-            if (notification.expiresAt && notification.expiresAt < now) {
-                return true
-            }
-
-            // Delete if older than threshold
-            if (notification.createdAt < threshold) {
-                return true
-            }
-
-            return false
-        })
-
-        // Delete in parallel
-        const deletePromises = toDelete.map((notification) =>
-            deleteNotification(userId, notification.id)
-        )
-
-        await Promise.all(deletePromises)
-
-        if (toDelete.length > 0) {
-            console.log(`Cleaned up ${toDelete.length} old notifications`)
-        }
-    } catch (error) {
-        console.error('Error cleaning up old notifications:', error)
-        // Don't throw - cleanup is not critical
-    }
-}
-
-/**
- * Get notification statistics for a user
- *
- * @param userId - User ID
- * @returns Notification statistics
+ * Compute notification statistics from a local list of notifications.
+ * (Previously this made a separate Firestore query; now derived client-side.)
  */
 export async function getNotificationStats(userId: string): Promise<NotificationStats> {
     try {
-        const result = await getAllNotifications(userId, 1000) // Get all for stats
-        const notifications = result.data
+        const result = await getAllNotifications(userId, 1000)
+        const list = result.data
 
-        const stats: NotificationStats = {
-            total: notifications.length,
-            unread: notifications.filter((n) => !n.isRead).length,
+        return {
+            total: list.length,
+            unread: list.filter((n) => !n.isRead).length,
             byType: {
-                collection_update: notifications.filter((n) => n.type === 'collection_update')
-                    .length,
-                new_release: notifications.filter((n) => n.type === 'new_release').length,
-                trending_update: notifications.filter((n) => n.type === 'trending_update').length,
-                system: notifications.filter((n) => n.type === 'system').length,
-                ranking_comment: notifications.filter((n) => n.type === 'ranking_comment').length,
-                ranking_like: notifications.filter((n) => n.type === 'ranking_like').length,
+                collection_update: list.filter((n) => n.type === 'collection_update').length,
+                new_release: list.filter((n) => n.type === 'new_release').length,
+                trending_update: list.filter((n) => n.type === 'trending_update').length,
+                system: list.filter((n) => n.type === 'system').length,
+                ranking_comment: list.filter((n) => n.type === 'ranking_comment').length,
+                ranking_like: list.filter((n) => n.type === 'ranking_like').length,
             },
-            mostRecent: notifications.length > 0 ? notifications[0] : undefined,
+            mostRecent: list.length > 0 ? list[0] : undefined,
         }
-
-        return stats
     } catch (error) {
-        console.error('Error calculating notification stats:', error)
+        console.error('[Notifications] getNotificationStats error:', error)
         return {
             total: 0,
             unread: 0,
@@ -380,42 +211,88 @@ export async function getNotificationStats(userId: string): Promise<Notification
 }
 
 /**
- * Subscribe to real-time notification updates
+ * Subscribe to notification updates via polling.
  *
- * @param userId - User ID to subscribe to
- * @param onUpdate - Callback when notifications change
- * @returns Unsubscribe function
+ * Replaces the Firestore onSnapshot listener with a setInterval that calls
+ * GET /api/notifications every POLL_INTERVAL_MS (30 s). The callback signature
+ * and the returned unsubscribe function are identical to the old implementation
+ * so stores/notificationStore.ts requires no changes.
+ *
+ * @param userId   - Authenticated user id (used only for the guard check; the
+ *                   actual session cookie is what the API trusts).
+ * @param onUpdate - Called immediately with the first poll result, then on
+ *                   every subsequent interval tick.
+ * @returns Unsubscribe function — call it to stop polling.
  */
 export function subscribeToNotifications(
     userId: string,
     onUpdate: (notifications: Notification[]) => void
 ): () => void {
-    try {
-        const notificationsRef = getNotificationsCollection(userId)
-        const q = query(
-            notificationsRef,
-            orderBy('createdAt', 'desc'),
-            limit(NOTIFICATION_CONSTRAINTS.FETCH_LIMIT)
-        )
-
-        const unsubscribe = onSnapshot(
-            q,
-            (querySnapshot) => {
-                const notifications: Notification[] = []
-                querySnapshot.forEach((doc) => {
-                    notifications.push(doc.data() as Notification)
-                })
-                onUpdate(notifications)
-            },
-            (error) => {
-                console.error('Error in notification subscription:', error)
-                onUpdate([]) // Return empty array on error
-            }
-        )
-
-        return unsubscribe
-    } catch (error) {
-        console.error('Error subscribing to notifications:', error)
-        return () => {} // Return no-op function
+    if (!userId) {
+        // No user — return a no-op immediately, same as old Firestore path
+        return () => {}
     }
+
+    let cancelled = false
+
+    async function poll() {
+        if (cancelled) return
+
+        try {
+            const res = await apiFetch(
+                `/api/notifications?limit=${NOTIFICATION_CONSTRAINTS.FETCH_LIMIT}&offset=0`
+            )
+
+            if (cancelled) return // Guard against late response after unsubscribe
+
+            if (!res.ok) {
+                // Non-fatal — keep polling; the store will retain stale data
+                console.error('[Notifications] Poll failed:', res.status)
+                return
+            }
+
+            const json = (await res.json()) as {
+                success: boolean
+                notifications: Notification[]
+            }
+
+            if (!cancelled) {
+                onUpdate(json.notifications)
+            }
+        } catch (error) {
+            if (!cancelled) {
+                console.error('[Notifications] Poll error:', error)
+                // Do not invoke onUpdate([]) — keep showing stale data rather
+                // than wiping the notification list on a transient network error.
+            }
+        }
+    }
+
+    // Fire the first poll immediately so the UI gets data without waiting 30 s
+    poll()
+
+    const intervalId = setInterval(poll, POLL_INTERVAL_MS)
+
+    return () => {
+        cancelled = true
+        clearInterval(intervalId)
+    }
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Cleanup utility (kept for cron lane parity)                               */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Clean up old notifications client-side. In the Turso architecture the real
+ * cleanup is handled server-side by pruneOldNotifications in
+ * db/queries/notifications.ts (called automatically after createNotification
+ * and available for cron jobs). This client-side stub is kept so any callers
+ * that imported it continue to compile.
+ */
+export async function cleanupOldNotifications(
+    _userId: string,
+    _olderThanDays?: number
+): Promise<void> {
+    // No-op on the client — pruning is handled by the server query layer.
 }

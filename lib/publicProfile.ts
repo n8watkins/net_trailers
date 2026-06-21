@@ -1,12 +1,49 @@
-import { getAdminDb, getAdminAuth } from '@/lib/firebase-admin'
-import type { UserRecord } from 'firebase-admin/auth'
+/**
+ * Public profile payload builder — Drizzle / Turso edition.
+ *
+ * Replaces the former firebase-admin implementation. All data is fetched from
+ * the Turso database via Drizzle. The `PublicProfilePayload` shape and the two
+ * exported helper functions (`fetchUserIdForUsername`,
+ * `buildPublicProfilePayload`) are intentionally unchanged so that the
+ * existing route handlers at
+ *   app/api/public-profile/[userId]/route.ts
+ *   app/api/public-profile/username/[username]/route.ts
+ * continue to work without modification.
+ *
+ * NOTES ON DATA MIGRATION
+ * -----------------------
+ * `likedMovies` (liked content) and `userCreatedWatchlists` (collections) are
+ * stored inside the `user_preferences.data` JSON blob — they are not separate
+ * Drizzle tables. We extract them from the preferences row here. If those
+ * fields have not yet been migrated for a given user the sections are returned
+ * empty (same graceful-degradation behaviour as before).
+ *
+ * `watchHistory` IS a separate Drizzle table (`watch_history`). We query it
+ * directly here.
+ *
+ * Rankings, threads, polls, threadLikes, pollVotes are already in Drizzle
+ * tables (`rankings`, `threads`, `polls`, `thread_likes`, `poll_votes`,
+ * `thread_replies`).
+ */
+
+import { and, desc, eq } from 'drizzle-orm'
+
+import { db } from '@/db'
+import {
+    polls,
+    pollVotes,
+    profiles,
+    rankings,
+    threadLikes,
+    threads,
+    userPreferences,
+    watchHistory,
+} from '@/db/schema'
+import { DEFAULT_PROFILE_VISIBILITY, type ProfileVisibility } from '@/types/profile'
 import type { Ranking } from '@/types/rankings'
 import type { Movie, TVShow } from '@/typings'
 import type { UserList } from '@/types/collections'
 import type { ThreadSummary, PollSummary, PollOptionSummary } from '@/types/forum'
-import type { ProfileVisibility } from '@/types/profile'
-import { DEFAULT_PROFILE_VISIBILITY } from '@/types/profile'
-import type { Timestamp, Firestore } from 'firebase-admin/firestore'
 
 export interface PublicProfilePayload {
     profile: {
@@ -42,286 +79,260 @@ const DEFAULT_HEADERS = {
     'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
 } as const
 
-const toMillis = (value?: Timestamp | number | null): number | null => {
-    if (value === null || value === undefined) {
-        return null
-    }
-    if (typeof value === 'number') {
-        return value
-    }
-    return value.toMillis()
-}
-
 export function getPublicProfileCacheHeaders() {
     return DEFAULT_HEADERS
 }
 
+/**
+ * Resolve a username slug to its owner's user id.
+ * Returns null when no profile has that username.
+ */
 export async function fetchUserIdForUsername(username: string): Promise<string | null> {
     if (!username) return null
-    const db = getAdminDb()
-    const usernameRef = db.collection('usernames').doc(username)
 
-    const usernameDoc = await usernameRef.get()
-    if (!usernameDoc.exists) {
-        return null
-    }
-    const data = usernameDoc.data()
-    return data?.userId ?? null
+    const rows = await db
+        .select({ userId: profiles.userId })
+        .from(profiles)
+        .where(eq(profiles.username, username.trim()))
+        .limit(1)
+
+    return rows[0]?.userId ?? null
 }
 
+/**
+ * Build the full public-profile payload for a given user id.
+ * Returns null when neither a profile row nor any rankings exist for the user.
+ */
 export async function buildPublicProfilePayload(
-    userId: string,
-    existingDb?: Firestore
+    userId: string
 ): Promise<PublicProfilePayload | null> {
-    if (!userId) {
-        return null
-    }
+    if (!userId) return null
 
-    const db = existingDb ?? getAdminDb()
+    // ── Fetch profile and preferences in parallel ─────────────────────────────
+    const [profileRows, prefRows] = await Promise.all([
+        db.select().from(profiles).where(eq(profiles.userId, userId)).limit(1),
+        db.select().from(userPreferences).where(eq(userPreferences.userId, userId)).limit(1),
+    ])
 
-    const profileRef = db.collection('profiles').doc(userId)
-    const profileSnap = await profileRef.get()
+    const profileRow = profileRows[0] ?? null
+    const prefsData = prefRows[0]?.data ?? null
 
-    const userRef = db.collection('users').doc(userId)
-    const userSnap = await userRef.get()
+    // If there is no profile AND no preferences row, check for any ranking so
+    // we can construct a bare fallback (mirrors the old firebase-admin logic).
+    if (!profileRow && !prefsData) {
+        const fallbackRankings = await db
+            .select()
+            .from(rankings)
+            .where(eq(rankings.userId, userId))
+            .limit(1)
 
-    if (!profileSnap.exists && !userSnap.exists) {
-        return null
-    }
-
-    // Get visibility settings (default to all visible for backward compatibility)
-    const profileDataRaw = profileSnap.exists ? profileSnap.data() || {} : {}
-    const visibility: ProfileVisibility = profileDataRaw.visibility ?? {
-        ...DEFAULT_PROFILE_VISIBILITY,
-    }
-
-    let authRecord: UserRecord | null = null
-    try {
-        authRecord = await getAdminAuth().getUser(userId)
-    } catch (error) {
-        console.warn('[PublicProfile] Failed to load auth record for user:', userId, error)
-    }
-
-    const legacyData = userSnap.exists ? userSnap.data() || {} : {}
-    const legacyProfile = legacyData.profile || {}
-    const profileData = profileSnap.exists ? profileDataRaw : null
-
-    // Get display name
-    const derivedDisplayName =
-        profileData?.displayName ||
-        legacyProfile.displayName ||
-        legacyData.displayName ||
-        authRecord?.displayName ||
-        'User'
-    const derivedAvatar =
-        profileData?.avatarUrl ??
-        legacyProfile.avatarUrl ??
-        legacyData.avatarUrl ??
-        legacyData.photoURL ??
-        authRecord?.photoURL ??
-        null
-
-    const profilePayload: PublicProfilePayload['profile'] = {
-        displayName: derivedDisplayName,
-        avatarUrl: derivedAvatar,
-        bio: profileData?.description ?? legacyProfile.bio ?? legacyData.bio ?? null,
-        favoriteGenres: Array.isArray(profileData?.favoriteGenres)
-            ? profileData.favoriteGenres
-            : Array.isArray(legacyProfile.favoriteGenres)
-              ? legacyProfile.favoriteGenres
-              : undefined,
-    }
-
-    // Check if public profile is enabled (master toggle)
-    // If enablePublicProfile is false (or undefined for backward compat), all sections are hidden
-    const isPublicEnabled = visibility.enablePublicProfile !== false
-
-    // Apply visibility settings to content sections
-    // Each section requires both the master toggle AND its individual toggle to be on
-    const likedContent =
-        isPublicEnabled && visibility.showLikedContent && Array.isArray(legacyData.likedMovies)
-            ? (legacyData.likedMovies as (Movie | TVShow)[])
-            : []
-
-    // Fetch collections from userCreatedWatchlists if visibility allows
-    let collections: UserList[] = []
-    if (isPublicEnabled && visibility.showCollections) {
-        // Collections are stored in userCreatedWatchlists array (not customRows)
-        const allCollections = (legacyData.userCreatedWatchlists as UserList[]) || []
-        // Filter to only show non-system collections
-        // For manual/ai-generated: require items array to have content
-        // For tmdb-genre: show even without items (content is fetched dynamically)
-        collections = allCollections
-            .filter((c) => {
-                if (c.isSystemCollection) return false
-                // TMDB genre-based collections don't store items, they fetch dynamically
-                if (c.collectionType === 'tmdb-genre') return true
-                // Manual and AI-generated collections must have items
-                return c.items && c.items.length > 0
-            })
-            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-            .slice(0, 10) // Limit to 10 collections for the profile
-    }
-
-    // Fetch watch history from Firestore document if visibility allows
-    let watchHistoryPreview: (Movie | TVShow)[] = []
-    if (isPublicEnabled && visibility.showWatchHistory) {
-        try {
-            const watchHistoryDoc = await db
-                .collection('users')
-                .doc(userId)
-                .collection('data')
-                .doc('watchHistory')
-                .get()
-
-            if (watchHistoryDoc.exists) {
-                const data = watchHistoryDoc.data()
-                const history = Array.isArray(data?.history) ? data.history : []
-                watchHistoryPreview = history
-                    .slice(0, 12)
-                    .map((entry: any) => entry.content as Movie | TVShow)
-                    .filter((content): content is Movie | TVShow => Boolean(content))
-            }
-        } catch (error) {
-            console.warn('[PublicProfile] Failed to load watch history:', error)
-            watchHistoryPreview = []
+        if (fallbackRankings.length === 0) {
+            return null
         }
     }
 
-    // Only fetch rankings if visibility allows
-    let publicRankings: Ranking[] = []
-    if (isPublicEnabled && visibility.showRankings) {
-        const rankingsSnap = await db
-            .collection('rankings')
-            .where('userId', '==', userId)
-            .limit(50)
-            .get()
-        const allRankings = rankingsSnap.docs.map((doc) => doc.data() as Ranking)
-        publicRankings = allRankings
-            .filter((ranking) => ranking.isPublic)
-            .sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0))
-            .slice(0, 20)
+    // ── Resolve visibility ─────────────────────────────────────────────────────
+    const rawVisibility = profileRow?.visibility ?? null
+    const visibility: ProfileVisibility = {
+        ...DEFAULT_PROFILE_VISIBILITY,
+        ...(rawVisibility ?? {}),
+    }
+    const isPublicEnabled = visibility.enablePublicProfile !== false
+
+    // ── Build profile identity ─────────────────────────────────────────────────
+    const displayName = profileRow?.displayName ?? 'User'
+    const avatarUrl = profileRow?.avatarUrl ?? null
+    const bio = profileRow?.description ?? null
+    const favoriteGenres = Array.isArray(profileRow?.favoriteGenres)
+        ? (profileRow!.favoriteGenres as string[])
+        : undefined
+
+    // ── Liked content ──────────────────────────────────────────────────────────
+    // Stored in the `user_preferences.data.likedMovies` array.
+    const likedContent: (Movie | TVShow)[] =
+        isPublicEnabled && visibility.showLikedContent && Array.isArray(prefsData?.likedMovies)
+            ? (prefsData!.likedMovies as (Movie | TVShow)[])
+            : []
+
+    // ── Collections ────────────────────────────────────────────────────────────
+    // Stored in `user_preferences.data.userCreatedWatchlists`.
+    let collections: UserList[] = []
+    if (isPublicEnabled && visibility.showCollections) {
+        const allCollections = Array.isArray(prefsData?.userCreatedWatchlists)
+            ? (prefsData!.userCreatedWatchlists as UserList[])
+            : []
+
+        collections = allCollections
+            .filter((c) => {
+                if (c.isSystemCollection) return false
+                if (c.showOnPublicProfile === false) return false
+                if (c.collectionType === 'tmdb-genre') return true
+                return Array.isArray(c.items) && c.items.length > 0
+            })
+            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+            .slice(0, 10)
     }
 
-    // Only fetch forum data if respective visibility toggles allow
-    const shouldFetchThreads = isPublicEnabled && visibility.showThreads
-    const shouldFetchVotedThreads = isPublicEnabled && visibility.showThreadsVoted
-    const shouldFetchPolls =
-        isPublicEnabled && (visibility.showPollsCreated || visibility.showPollsVoted)
+    // ── Watch history preview ──────────────────────────────────────────────────
+    // Stored in the `watch_history` Drizzle table.
+    let watchHistoryPreview: (Movie | TVShow)[] = []
+    if (isPublicEnabled && visibility.showWatchHistory) {
+        try {
+            const historyRows = await db
+                .select({ content: watchHistory.content })
+                .from(watchHistory)
+                .where(eq(watchHistory.userId, userId))
+                .orderBy(desc(watchHistory.watchedAt))
+                .limit(12)
 
-    const [threadsSnap, pollsSnap] = await Promise.all([
-        shouldFetchThreads
-            ? db.collection('threads').where('userId', '==', userId).limit(25).get()
-            : Promise.resolve({ docs: [] }),
-        shouldFetchPolls
-            ? db.collection('polls').where('userId', '==', userId).limit(25).get()
-            : Promise.resolve({ docs: [] }),
-    ])
+            watchHistoryPreview = historyRows
+                .map((r) => r.content as Movie | TVShow | null)
+                .filter((c): c is Movie | TVShow => c !== null && c !== undefined)
+        } catch (error) {
+            console.warn('[PublicProfile] Failed to load watch history:', error)
+        }
+    }
 
-    const threadSummaries: ThreadSummary[] =
-        isPublicEnabled && visibility.showThreads
-            ? threadsSnap.docs
-                  .map((doc) => {
-                      const data = doc.data() || {}
-                      return {
-                          id: doc.id,
-                          title: data.title ?? 'Untitled thread',
-                          content: data.content ?? '',
-                          category: data.category ?? 'general',
-                          userId: data.userId ?? '',
-                          userName: data.userName ?? 'Anonymous',
-                          userAvatar: data.userAvatar,
-                          likes: data.likes ?? 0,
-                          views: data.views ?? 0,
-                          replyCount: data.replyCount ?? 0,
-                          createdAt: toMillis(data.createdAt as Timestamp | number | undefined),
-                          updatedAt: toMillis(data.updatedAt as Timestamp | number | undefined),
-                          lastReplyAt: toMillis(data.lastReplyAt as Timestamp | number | undefined),
-                          lastReplyBy: data.lastReplyBy,
-                          tags: data.tags,
-                          isPinned: data.isPinned ?? false,
-                      }
-                  })
-                  .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
-                  .slice(0, 10)
-            : []
+    // ── Rankings ───────────────────────────────────────────────────────────────
+    let publicRankings: Ranking[] = []
+    if (isPublicEnabled && visibility.showRankings) {
+        const rankingRows = await db
+            .select()
+            .from(rankings)
+            .where(and(eq(rankings.userId, userId), eq(rankings.isPublic, true)))
+            .orderBy(desc(rankings.updatedAt))
+            .limit(20)
 
-    const pollSummaries: PollSummary[] =
-        isPublicEnabled && visibility.showPollsCreated
-            ? pollsSnap.docs
-                  .map((doc): PollSummary => {
-                      const data = doc.data() || {}
-                      return {
-                          id: doc.id,
-                          question: data.question ?? 'Untitled poll',
-                          category: data.category ?? 'general',
-                          userId: data.userId ?? '',
-                          userName: data.userName ?? 'Anonymous',
-                          userAvatar: data.userAvatar,
-                          totalVotes: data.totalVotes ?? 0,
-                          isMultipleChoice: Boolean(data.isMultipleChoice),
-                          allowAddOptions: Boolean(data.allowAddOptions),
-                          options: Array.isArray(data.options)
-                              ? data.options.map((option: unknown): PollOptionSummary => {
-                                    const opt = option as Record<string, unknown>
-                                    return {
-                                        id: (opt.id as string) ?? '',
-                                        text: (opt.text as string) ?? '',
-                                        votes: (opt.votes as number) ?? 0,
-                                        percentage: (opt.percentage as number) ?? 0,
-                                    }
-                                })
-                              : [],
-                          createdAt: toMillis(data.createdAt as Timestamp | number | undefined),
-                          expiresAt: toMillis(data.expiresAt as Timestamp | number | undefined),
-                          votedAt: null,
-                      }
-                  })
-                  .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
-                  .slice(0, 10)
-            : []
+        publicRankings = rankingRows.map((r) => ({
+            id: r.id,
+            userId: r.userId,
+            userName: r.userName ?? 'Anonymous',
+            userAvatar: r.userAvatar ?? null,
+            userUsername: r.userUsername ?? undefined,
+            title: r.title,
+            description: r.description ?? undefined,
+            rankedItems: r.rankedItems ?? [],
+            isPublic: r.isPublic,
+            itemCount: r.itemCount,
+            createdAt: r.createdAt,
+            updatedAt: r.updatedAt,
+            likes: r.likes,
+            comments: r.comments,
+            views: r.views,
+            contentIds: r.contentIds ?? [],
+            contentTitles: r.contentTitles ?? [],
+            shareSettings: r.shareSettings ?? undefined,
+            sharedLinkId: r.sharedLinkId ?? undefined,
+        })) as Ranking[]
+    }
 
-    // Fetch voted polls only if visibility allows
-    let votedPollSummaries: PollSummary[] = []
+    // ── Threads ────────────────────────────────────────────────────────────────
+    let threadSummaries: ThreadSummary[] = []
+    if (isPublicEnabled && visibility.showThreads) {
+        const threadRows = await db
+            .select()
+            .from(threads)
+            .where(eq(threads.userId, userId))
+            .orderBy(desc(threads.createdAt))
+            .limit(10)
+
+        threadSummaries = threadRows.map(
+            (t): ThreadSummary => ({
+                id: t.id,
+                title: t.title,
+                content: t.content,
+                category: t.category as ThreadSummary['category'],
+                userId: t.userId,
+                userName: t.userName ?? 'Anonymous',
+                userAvatar: t.userAvatar ?? undefined,
+                likes: t.likes,
+                views: t.views,
+                replyCount: t.replyCount,
+                createdAt: t.createdAt,
+                updatedAt: t.updatedAt,
+                lastReplyAt: t.lastReplyAt ?? undefined,
+                lastReplyBy: (t.lastReplyBy as ThreadSummary['lastReplyBy']) ?? undefined,
+                tags: (t.tags as string[] | undefined) ?? undefined,
+                isPinned: t.isPinned,
+                isLocked: t.isLocked,
+            })
+        )
+    }
+
+    // ── Polls created by user ──────────────────────────────────────────────────
+    let pollSummaries: PollSummary[] = []
+    if (isPublicEnabled && visibility.showPollsCreated) {
+        const pollRows = await db
+            .select()
+            .from(polls)
+            .where(eq(polls.userId, userId))
+            .orderBy(desc(polls.createdAt))
+            .limit(10)
+
+        pollSummaries = pollRows.map(
+            (p): PollSummary => ({
+                id: p.id,
+                question: p.question,
+                category: p.category as PollSummary['category'],
+                userId: p.userId,
+                userName: p.userName ?? 'Anonymous',
+                userAvatar: p.userAvatar ?? undefined,
+                totalVotes: p.totalVotes,
+                isMultipleChoice: p.isMultipleChoice,
+                allowAddOptions: p.allowAddOptions,
+                options: Array.isArray(p.options)
+                    ? p.options.map((o: unknown): PollOptionSummary => {
+                          const opt = o as Record<string, unknown>
+                          return {
+                              id: (opt.id as string) ?? '',
+                              text: (opt.text as string) ?? '',
+                              votes: (opt.votes as number) ?? 0,
+                              percentage: (opt.percentage as number) ?? 0,
+                          }
+                      })
+                    : [],
+                createdAt: p.createdAt,
+                expiresAt: p.expiresAt ?? null,
+                votedAt: null,
+            })
+        )
+    }
+
+    // ── Polls voted on ─────────────────────────────────────────────────────────
+    let orderedVotedPolls: PollSummary[] = []
     if (isPublicEnabled && visibility.showPollsVoted) {
-        const votesSnap = await db
-            .collection('poll_votes')
-            .where('userId', '==', userId)
+        const voteRows = await db
+            .select()
+            .from(pollVotes)
+            .where(eq(pollVotes.userId, userId))
+            .orderBy(desc(pollVotes.votedAt))
             .limit(25)
-            .get()
 
-        votedPollSummaries = (
+        const votedSummaries = (
             await Promise.all(
-                votesSnap.docs.map(async (voteDoc) => {
-                    const voteData = voteDoc.data() || {}
-                    const pollId = voteData.pollId as string | undefined
-                    if (!pollId) {
-                        return null
-                    }
+                voteRows.map(async (vote) => {
+                    const pollRows2 = await db
+                        .select()
+                        .from(polls)
+                        .where(eq(polls.id, vote.pollId))
+                        .limit(1)
 
-                    const pollDoc = await db.collection('polls').doc(pollId).get()
-                    if (!pollDoc.exists) {
-                        return null
-                    }
-
-                    const pollData = pollDoc.data() || {}
-                    if (pollData.userId === userId) {
-                        return null
-                    }
+                    const p = pollRows2[0]
+                    if (!p || p.userId === userId) return null
 
                     const summary: PollSummary = {
-                        id: pollDoc.id,
-                        question: pollData.question ?? 'Untitled poll',
-                        category: pollData.category ?? 'general',
-                        userId: pollData.userId ?? '',
-                        userName: pollData.userName ?? 'Anonymous',
-                        userAvatar: pollData.userAvatar,
-                        totalVotes: pollData.totalVotes ?? 0,
-                        isMultipleChoice: Boolean(pollData.isMultipleChoice),
-                        allowAddOptions: Boolean(pollData.allowAddOptions),
-                        options: Array.isArray(pollData.options)
-                            ? pollData.options.map((option: unknown): PollOptionSummary => {
-                                  const opt = option as Record<string, unknown>
+                        id: p.id,
+                        question: p.question,
+                        category: p.category as PollSummary['category'],
+                        userId: p.userId,
+                        userName: p.userName ?? 'Anonymous',
+                        userAvatar: p.userAvatar ?? undefined,
+                        totalVotes: p.totalVotes,
+                        isMultipleChoice: p.isMultipleChoice,
+                        allowAddOptions: p.allowAddOptions,
+                        options: Array.isArray(p.options)
+                            ? p.options.map((o: unknown): PollOptionSummary => {
+                                  const opt = o as Record<string, unknown>
                                   return {
                                       id: (opt.id as string) ?? '',
                                       text: (opt.text as string) ?? '',
@@ -330,95 +341,85 @@ export async function buildPublicProfilePayload(
                                   }
                               })
                             : [],
-                        createdAt: toMillis(pollData.createdAt as Timestamp | number | undefined),
-                        expiresAt: toMillis(pollData.expiresAt as Timestamp | number | undefined),
-                        votedAt: toMillis(voteData.votedAt as Timestamp | number | undefined),
+                        createdAt: p.createdAt,
+                        expiresAt: p.expiresAt ?? null,
+                        votedAt: vote.votedAt,
                     }
                     return summary
                 })
             )
-        ).filter((poll): poll is PollSummary => poll !== null)
+        ).filter((s): s is PollSummary => s !== null)
+
+        // Deduplicate by poll id (keep most-recently-voted entry per poll).
+        const uniqueVoted = votedSummaries.reduce<Record<string, PollSummary>>((acc, poll) => {
+            const existing = acc[poll.id]
+            if (!existing || (poll.votedAt ?? 0) > (existing.votedAt ?? 0)) {
+                acc[poll.id] = poll
+            }
+            return acc
+        }, {})
+
+        orderedVotedPolls = Object.values(uniqueVoted)
+            .sort((a, b) => (b.votedAt ?? 0) - (a.votedAt ?? 0))
+            .slice(0, 10)
     }
 
-    const uniqueVoted = votedPollSummaries.reduce<Record<string, PollSummary>>((acc, poll) => {
-        const existing = acc[poll.id]
-        if (!existing || (poll.votedAt ?? 0) > (existing.votedAt ?? 0)) {
-            acc[poll.id] = poll
-        }
-        return acc
-    }, {})
-
-    const orderedVotedPolls = Object.values(uniqueVoted)
-        .sort((a, b) => (b.votedAt ?? 0) - (a.votedAt ?? 0))
-        .slice(0, 10)
-
-    // Fetch voted (liked) threads only if visibility allows
+    // ── Threads voted on (liked) ───────────────────────────────────────────────
     let votedThreadSummaries: ThreadSummary[] = []
-    if (shouldFetchVotedThreads) {
-        const threadLikesSnap = await db
-            .collection('thread_likes')
-            .where('userId', '==', userId)
+    if (isPublicEnabled && visibility.showThreadsVoted) {
+        const likeRows = await db
+            .select({ threadId: threadLikes.threadId })
+            .from(threadLikes)
+            .where(eq(threadLikes.userId, userId))
             .limit(25)
-            .get()
 
         votedThreadSummaries = (
             await Promise.all(
-                threadLikesSnap.docs.map(async (likeDoc) => {
-                    const likeData = likeDoc.data() || {}
-                    const threadId = likeData.threadId as string | undefined
-                    if (!threadId) {
-                        return null
-                    }
+                likeRows.map(async (like) => {
+                    const threadRows2 = await db
+                        .select()
+                        .from(threads)
+                        .where(eq(threads.id, like.threadId))
+                        .limit(1)
 
-                    const threadDoc = await db.collection('threads').doc(threadId).get()
-                    if (!threadDoc.exists) {
-                        return null
-                    }
-
-                    const threadData = threadDoc.data() || {}
-                    // Don't include user's own threads in voted tab
-                    if (threadData.userId === userId) {
-                        return null
-                    }
+                    const t = threadRows2[0]
+                    if (!t || t.userId === userId) return null
 
                     const summary: ThreadSummary = {
-                        id: threadDoc.id,
-                        title: threadData.title ?? 'Untitled thread',
-                        content: threadData.content ?? '',
-                        category: threadData.category ?? 'general',
-                        userId: threadData.userId ?? '',
-                        userName: threadData.userName ?? 'Anonymous',
-                        userAvatar: threadData.userAvatar,
-                        likes: threadData.likes ?? 0,
-                        views: threadData.views ?? 0,
-                        replyCount: threadData.replyCount ?? 0,
-                        createdAt: toMillis(threadData.createdAt as Timestamp | number | undefined),
-                        updatedAt: toMillis(threadData.updatedAt as Timestamp | number | undefined),
-                        lastReplyAt: toMillis(
-                            threadData.lastReplyAt as Timestamp | number | undefined
-                        ),
-                        lastReplyBy: threadData.lastReplyBy,
-                        tags: threadData.tags,
-                        isPinned: threadData.isPinned ?? false,
-                        isLocked: threadData.isLocked ?? false,
+                        id: t.id,
+                        title: t.title,
+                        content: t.content,
+                        category: t.category as ThreadSummary['category'],
+                        userId: t.userId,
+                        userName: t.userName ?? 'Anonymous',
+                        userAvatar: t.userAvatar ?? undefined,
+                        likes: t.likes,
+                        views: t.views,
+                        replyCount: t.replyCount,
+                        createdAt: t.createdAt,
+                        updatedAt: t.updatedAt,
+                        lastReplyAt: t.lastReplyAt ?? undefined,
+                        lastReplyBy: (t.lastReplyBy as ThreadSummary['lastReplyBy']) ?? undefined,
+                        tags: (t.tags as string[] | undefined) ?? undefined,
+                        isPinned: t.isPinned,
+                        isLocked: t.isLocked,
                     }
                     return summary
                 })
             )
         )
-            .filter((thread): thread is ThreadSummary => thread !== null)
+            .filter((s): s is ThreadSummary => s !== null)
             .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
             .slice(0, 10)
     }
 
+    // ── Stats ──────────────────────────────────────────────────────────────────
     const stats: PublicProfilePayload['stats'] = {
-        totalRankings: profileData?.rankingsCount ?? publicRankings.length,
+        totalRankings: profileRow?.rankingsCount ?? publicRankings.length,
         totalLikes:
-            profileData?.totalLikes ??
-            publicRankings.reduce((sum, ranking) => sum + (ranking.likes || 0), 0),
+            profileRow?.totalLikes ?? publicRankings.reduce((sum, r) => sum + (r.likes ?? 0), 0),
         totalViews:
-            profileData?.totalViews ??
-            publicRankings.reduce((sum, ranking) => sum + (ranking.views || 0), 0),
+            profileRow?.totalViews ?? publicRankings.reduce((sum, r) => sum + (r.views ?? 0), 0),
         totalLiked: likedContent.length,
         totalCollections: collections.length,
         totalThreads: threadSummaries.length,
@@ -427,10 +428,10 @@ export async function buildPublicProfilePayload(
     }
 
     return {
-        profile: profilePayload,
+        profile: { displayName, avatarUrl, bio, favoriteGenres },
         stats,
         rankings: publicRankings,
-        likedContent,
+        likedContent: isPublicEnabled && visibility.showLikedContent ? likedContent : [],
         collections,
         forum: {
             threads: threadSummaries,

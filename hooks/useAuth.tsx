@@ -1,451 +1,121 @@
-import React, {
-    useState,
-    useContext,
-    createContext,
-    useEffect,
-    useLayoutEffect,
-    useMemo,
-    useRef,
-} from 'react'
+'use client'
 
-import {
-    createUserWithEmailAndPassword,
-    onAuthStateChanged,
-    signOut,
-    User,
-    signInWithEmailAndPassword,
-    GoogleAuthProvider,
-    signInWithPopup,
-} from 'firebase/auth'
+import React, { createContext, useContext, useMemo } from 'react'
+import { SessionProvider, signIn, signOut, useSession } from 'next-auth/react'
 
-import { auth } from '../firebase'
-import { useAppStore } from '../stores/appStore'
-import { createErrorHandler } from '../utils/errorHandler'
 import { useToast } from './useToast'
-import { cacheAuthState, clearAuthCache, wasRecentlyAuthenticated } from '../utils/authCache'
-import { authLog, authError } from '../utils/debugLogger'
-import { authenticatedFetch } from '../lib/authenticatedFetch'
 
 interface AuthProviderProps {
     children: React.ReactNode
 }
 
-interface iAuth {
-    user: User | null
-    loading: boolean
-    wasRecentlyAuthenticated: boolean // Optimistic auth check (synchronous)
-    signUp: (email: string, password: string) => Promise<void>
-    signIn: (email: string, password: string) => Promise<void>
-    signInWithGoogle: () => Promise<void>
-    logOut: () => Promise<void>
-    error: string | null
-    resetPass: (email: string) => Promise<void>
-    passResetSuccess: boolean
-    attemptPassReset: boolean
-    setAttemptPassReset: (value: boolean) => void
-    sendVerificationEmail: () => Promise<void>
+/**
+ * Compatibility user shape. Mirrors the fields the app previously read off the
+ * Firebase `User` object (notably `uid`) so consuming components keep working.
+ */
+export interface AuthUser {
+    uid: string
+    email: string | null
+    displayName: string | null
+    photoURL: string | null
+    image: string | null
+    name: string | null
+    emailVerified: boolean
+    isAdmin: boolean
+    githubLogin: string | null
 }
 
-export const AuthContext = createContext<iAuth>({
+interface iAuth {
+    user: AuthUser | null
+    loading: boolean
+    /** Kept for API compatibility with useAuthStatus' optimistic-auth check. */
+    wasRecentlyAuthenticated: boolean
+    isAdmin: boolean
+    error: string | null
+    signInWithGitHub: () => Promise<void>
+    /** Send a passwordless magic-link sign-in email. Resolves once the email is sent. */
+    signInWithEmail: (email: string) => Promise<void>
+    logOut: () => Promise<void>
+}
+
+const defaultValue: iAuth = {
     user: null,
     loading: false,
     wasRecentlyAuthenticated: false,
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    signUp: async () => {},
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    signIn: async () => {},
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    signInWithGoogle: async () => {},
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    logOut: async () => {},
+    isAdmin: false,
     error: null,
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    resetPass: async () => {},
-    passResetSuccess: false,
-    attemptPassReset: false,
+    signInWithGitHub: async () => {},
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    setAttemptPassReset: () => {},
+    signInWithEmail: async () => {},
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    sendVerificationEmail: async () => {},
-})
+    logOut: async () => {},
+}
 
-export const AuthProvider = ({ children }: AuthProviderProps) => {
-    const [user, setUser] = useState<User | null>(null)
-    const [loading, setLoading] = useState(true) // Start with loading true until auth state is known
-    const [authInitialized, setAuthInitialized] = useState(false)
-    const [passResetSuccess, setPassResetSuccess] = useState(false)
-    const [error, setError] = useState<string | null>(null)
-    const [attemptPassReset, setAttemptPassReset] = useState(false)
-    const setGlobalLoading = useAppStore((state) => state.setLoading)
-    const { showSuccess, showError } = useToast()
-    const errorHandler = createErrorHandler(showError)
+export const AuthContext = createContext<iAuth>(defaultValue)
 
-    // Check if user was recently authenticated (optimistic check)
-    // Must use state to avoid hydration mismatch (localStorage only on client)
-    const [wasRecentlyAuth, setWasRecentlyAuth] = useState(false)
+/** Reads the Auth.js session and exposes the legacy auth context shape. */
+function AuthStateProvider({ children }: AuthProviderProps) {
+    const { data: session, status } = useSession()
+    const { showSuccess } = useToast()
 
-    // Track component mount state to prevent memory leaks from state updates after unmount
-    const isMountedRef = useRef(true)
+    const loading = status === 'loading'
+    const sUser = session?.user
 
-    // Check cache BEFORE first paint using useLayoutEffect (synchronous, no flash)
-    // This runs after DOM update but before browser paint, so user never sees the flash
-    useLayoutEffect(() => {
-        setWasRecentlyAuth(wasRecentlyAuthenticated())
-    }, [])
+    const user: AuthUser | null = sUser
+        ? {
+              uid: sUser.id,
+              email: sUser.email ?? null,
+              displayName: sUser.name ?? null,
+              photoURL: sUser.image ?? null,
+              image: sUser.image ?? null,
+              name: sUser.name ?? null,
+              emailVerified: true, // GitHub accounts are pre-verified.
+              isAdmin: Boolean(sUser.isAdmin),
+              githubLogin: sUser.githubLogin ?? null,
+          }
+        : null
 
-    useEffect(() => {
-        const startTime = Date.now()
-        authLog('🔥 [AUTH-TIMING] Firebase Auth Hook Initializing at:', new Date().toISOString())
-        authLog('🔥 Firebase Auth Instance:', auth)
-        authLog('🔥 Firebase Config:', {
-            apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? 'Set' : 'Missing',
-            authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ? 'Set' : 'Missing',
-            projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ? 'Set' : 'Missing',
-        })
-
-        const unsubscribe = onAuthStateChanged(
-            auth,
-            (user) => {
-                // Prevent state updates after component unmount (memory leak prevention)
-                if (!isMountedRef.current) return
-
-                const callbackTime = Date.now() - startTime
-                authLog(
-                    '🔥🔥🔥 [AUTH-TIMING] Firebase onAuthStateChanged fired after',
-                    callbackTime,
-                    'ms'
-                )
-                authLog('🔥 User:', user)
-                authLog('🔥 User ID:', user?.uid)
-                authLog('🔥 User Email:', user?.email)
-                authLog('🔥 Auth Initialized Before:', authInitialized)
-                authLog('🔥 Loading State Before:', loading)
-
-                setUser(user)
-                setLoading(false)
-                setAuthInitialized(true)
-
-                authLog(
-                    '🔥 [AUTH-TIMING] Auth state set, user is:',
-                    user ? 'AUTHENTICATED' : 'NOT AUTHENTICATED'
-                )
-
-                // Cache auth state for optimistic loading on next visit
-                if (user) {
-                    cacheAuthState(user.uid, {
-                        email: user.email || undefined,
-                        displayName: user.displayName || undefined,
-                        photoURL: user.photoURL || undefined,
-                    })
-                    authLog('✅ User is authenticated:', user.email)
-                } else {
-                    // Clear cache when user signs out
-                    clearAuthCache()
-                    authLog('🎭 User signed out or not authenticated')
-                }
-            },
-            (error) => {
-                // Prevent state updates after component unmount (memory leak prevention)
-                if (!isMountedRef.current) return
-
-                authError('🚨 Firebase Auth Error:', error)
-                setLoading(false)
-                setAuthInitialized(true)
-            }
-        )
-
-        return () => {
-            // Mark component as unmounted to prevent state updates after cleanup
-            isMountedRef.current = false
-            unsubscribe()
-        }
-    }, [])
-
-    const sendVerificationEmail = async () => {
-        const currentUser = auth.currentUser
-
-        if (!currentUser?.email) {
-            showError('No authenticated user found.')
-            return
-        }
-
-        try {
-            const response = await authenticatedFetch('/api/auth/send-email-verification', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: currentUser.email }),
-            })
-
-            const data = await response.json()
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Failed to send verification email')
-            }
-
-            showSuccess('Verification email sent! Check your inbox to confirm your address.')
-        } catch (error) {
-            console.error('Failed to send verification email:', error)
-            const message =
-                error instanceof Error
-                    ? error.message
-                    : 'Failed to send verification email. Please try again.'
-            showError(message)
-            setError(message)
-        }
-    }
-
-    const signUp = async (email: string, password: string) => {
-        setLoading(true)
-        setGlobalLoading(true)
-        await createUserWithEmailAndPassword(auth, email, password)
-            .then(async (userCredential) => {
-                const user = userCredential.user
-                const displayName = user.displayName || user.email?.split('@')[0] || 'there'
-                showSuccess(`Welcome ${displayName}! Account created successfully.`)
-
-                // Trigger verification email for new accounts
-                await sendVerificationEmail()
-
-                // Record account creation in system stats
-                try {
-                    await fetch('/api/auth/record-signup', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            userId: user.uid,
-                            email: user.email,
-                        }),
-                    })
-                } catch (error) {
-                    console.error('Failed to record account creation:', error)
-                    // Don't fail the signup if stats recording fails
-                }
-
-                // Don't redirect - stay on current page
-                setLoading(false)
-            })
-            .catch((error) => {
-                errorHandler.handleAuthError(error)
-                setError(error.message)
-            })
-            .finally(() => {
-                setLoading(false)
-                setGlobalLoading(false)
-            })
-    }
-
-    const signIn = async (email: string, password: string) => {
-        setLoading(true)
-        setGlobalLoading(true)
-        await signInWithEmailAndPassword(auth, email, password)
-            .then(async (userCredential) => {
-                const user = userCredential.user
-                const displayName = user.displayName || user.email?.split('@')[0] || 'Nathan'
-                showSuccess(`Welcome back, ${displayName}!`)
-
-                // Record login activity
-                try {
-                    await fetch('/api/admin/activity', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            type: 'login',
-                            userId: user.uid,
-                            userEmail: user.email,
-                            userAgent: navigator.userAgent,
-                        }),
-                    })
-                } catch (error) {
-                    console.error('Failed to record login activity:', error)
-                    // Don't fail the login if activity recording fails
-                }
-
-                // Don't redirect - stay on current page
-                setLoading(false)
-            })
-            .catch((error) => {
-                errorHandler.handleAuthError(error)
-                setError(error.message)
-                setLoading(false)
-            })
-            .finally(() => {
-                setLoading(false)
-                setGlobalLoading(false)
-            })
-    }
-
-    const signInWithGoogle = async () => {
-        setLoading(true)
-        setGlobalLoading(true)
-        const provider = new GoogleAuthProvider()
-        await signInWithPopup(auth, provider)
-            .then(async (result) => {
-                const user = result.user
-                const displayName = user.displayName || user.email?.split('@')[0] || 'there'
-
-                // Check if this is a new user (getAdditionalUserInfo would be better but requires import)
-                // For Google sign-in, we'll check the creation time
-                const isNewUser =
-                    result.user.metadata.creationTime === result.user.metadata.lastSignInTime
-
-                if (isNewUser) {
-                    showSuccess(`Welcome ${displayName}! Account created successfully.`)
-
-                    // Record account creation in system stats
-                    try {
-                        await fetch('/api/auth/record-signup', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                userId: user.uid,
-                                email: user.email,
-                            }),
-                        })
-                    } catch (error) {
-                        console.error('Failed to record account creation:', error)
-                        // Don't fail the signup if stats recording fails
-                    }
-                } else {
-                    showSuccess(`Welcome back, ${displayName}!`)
-                }
-
-                // Record login activity (for both new and returning users)
-                try {
-                    await fetch('/api/admin/activity', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            type: 'login',
-                            userId: user.uid,
-                            userEmail: user.email,
-                            userAgent: navigator.userAgent,
-                        }),
-                    })
-                } catch (error) {
-                    console.error('Failed to record login activity:', error)
-                    // Don't fail the login if activity recording fails
-                }
-
-                // Don't redirect - stay on current page
-            })
-            .catch((error) => {
-                errorHandler.handleAuthError(error)
-                setError(error.message)
-            })
-            .finally(() => {
-                setLoading(false)
-                setGlobalLoading(false)
-            })
-    }
-
-    const logOut = async () => {
-        setLoading(true)
-        setGlobalLoading(true)
-        signOut(auth)
-            .then(() => {
-                clearAuthCache() // Clear optimistic auth cache
-                showSuccess('Successfully signed out. See you next time!')
-            })
-            .catch((error) => {
-                errorHandler.handleAuthError(error)
-                setError(error.message)
-                setLoading(false)
-            })
-            .finally(() => {
-                setLoading(false)
-                setGlobalLoading(false)
-            })
-    }
-
-    const resetPass = async (email: string) => {
-        setPassResetSuccess(false)
-        try {
-            const response = await fetch('/api/auth/send-password-reset', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email }),
-            })
-
-            const data = await response.json()
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Failed to send password reset email')
-            }
-
-            const emailSent = Boolean(data.emailSent)
-            setPassResetSuccess(emailSent)
-            showSuccess(
-                data.message ||
-                    (emailSent
-                        ? 'Password reset email sent! Check your inbox for further steps.'
-                        : 'If an account exists with this email, you will receive a password reset link.')
-            )
-        } catch (error) {
-            const message =
-                error instanceof Error
-                    ? error.message
-                    : 'Failed to send password reset email. Please try again.'
-            showError(message)
-            setError(message)
-            setPassResetSuccess(false)
-        }
-    }
-
-    const memoedValue = useMemo(
+    const value = useMemo<iAuth>(
         () => ({
             user,
             loading,
-            wasRecentlyAuthenticated: wasRecentlyAuth,
-            signUp,
-            signIn,
-            signInWithGoogle,
-            logOut,
-            error,
-            resetPass,
-            passResetSuccess,
-            attemptPassReset,
-            setAttemptPassReset,
-            sendVerificationEmail,
+            wasRecentlyAuthenticated: Boolean(user),
+            isAdmin: Boolean(user?.isAdmin),
+            error: null,
+            signInWithGitHub: async () => {
+                await signIn('github')
+            },
+            signInWithEmail: async (email: string) => {
+                // Sends the magic-link email via the active provider (stable id
+                // "email"); does not redirect so the modal can show a
+                // "check your inbox" message.
+                await signIn('email', { email, redirect: false })
+            },
+            logOut: async () => {
+                await signOut({ redirect: false })
+                showSuccess('Successfully signed out. See you next time!')
+            },
         }),
-        [
-            user,
-            loading,
-            wasRecentlyAuth,
-            error,
-            passResetSuccess,
-            attemptPassReset,
-            signUp,
-            signIn,
-            signInWithGoogle,
-            logOut,
-            resetPass,
-            sendVerificationEmail,
-        ]
+        [user?.uid, user?.isAdmin, loading]
     )
 
-    return <AuthContext.Provider value={memoedValue}>{children}</AuthContext.Provider>
+    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+}
+
+export const AuthProvider = ({ children }: AuthProviderProps) => {
+    return (
+        <SessionProvider>
+            <AuthStateProvider>{children}</AuthStateProvider>
+        </SessionProvider>
+    )
 }
 
 /**
- * Hook for accessing Firebase authentication context
- *
- * Provides access to the current user, authentication methods, and auth state.
- * Must be used within an AuthProvider component tree.
- *
- * @returns Authentication context with user, loading state, and auth methods
+ * Hook for accessing authentication context (Auth.js / GitHub).
  *
  * @example
- * ```tsx
- * const { user, loading, signIn, logOut } = useAuth()
- *
- * if (loading) return <div>Loading...</div>
- *
- * if (user) {
- *   return <button onClick={logOut}>Sign Out</button>
- * }
- *
- * return <button onClick={() => signIn(email, password)}>Sign In</button>
- * ```
+ * const { user, loading, signInWithGitHub, logOut } = useAuth()
  */
 export default function useAuth() {
     return useContext(AuthContext)

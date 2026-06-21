@@ -1,13 +1,14 @@
 /**
  * Admin Middleware Utilities
  *
- * Server-side middleware for validating admin access via Firebase Auth
- * This eliminates the need to expose ADMIN_TOKEN to the client
+ * Server-side validation of admin access via the Auth.js session. The session
+ * carries `isAdmin` (derived from ADMIN_GITHUB_LOGIN), so no token handling or
+ * UID list is needed here.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getAdminAuth } from '@/lib/firebase-admin'
-import { isAdmin } from './adminAuth'
+
+import { verifyAuthentication } from '@/lib/auth-middleware'
 
 export interface AdminAuthResult {
     authorized: boolean
@@ -16,59 +17,22 @@ export interface AdminAuthResult {
 }
 
 /**
- * Validate that the request comes from an authenticated admin user
- * Uses Firebase ID token validation instead of exposed ADMIN_TOKEN
+ * Validate that the request comes from an authenticated admin user.
  *
- * @param request - Next.js request object
  * @returns Admin auth result with userId if authorized
  */
-export async function validateAdminRequest(request: NextRequest): Promise<AdminAuthResult> {
-    try {
-        // Get Firebase ID token from Authorization header
-        const authHeader = request.headers.get('authorization')
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return {
-                authorized: false,
-                error: 'No authorization token provided',
-            }
-        }
+export async function validateAdminRequest(_request?: NextRequest): Promise<AdminAuthResult> {
+    const result = await verifyAuthentication()
 
-        const idToken = authHeader.substring(7)
-
-        // Verify Firebase ID token
-        const auth = getAdminAuth()
-        let decodedToken
-        try {
-            decodedToken = await auth.verifyIdToken(idToken)
-        } catch (error) {
-            return {
-                authorized: false,
-                error: 'Invalid or expired token',
-            }
-        }
-
-        const userId = decodedToken.uid
-
-        // Check if user is admin
-        if (!isAdmin(userId)) {
-            return {
-                authorized: false,
-                error: 'User is not an administrator',
-            }
-        }
-
-        // User is authenticated and is admin
-        return {
-            authorized: true,
-            userId,
-        }
-    } catch (error) {
-        console.error('Error validating admin request:', error)
-        return {
-            authorized: false,
-            error: 'Internal server error during validation',
-        }
+    if (!result.authenticated || !result.userId) {
+        return { authorized: false, error: 'Authentication required' }
     }
+
+    if (!result.isAdmin) {
+        return { authorized: false, error: 'User is not an administrator' }
+    }
+
+    return { authorized: true, userId: result.userId }
 }
 
 /**

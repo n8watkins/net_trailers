@@ -1,7 +1,8 @@
 /**
  * Public User Profile Page
  *
- * Displays a user's public profile with comprehensive activity view
+ * Displays a user's public profile with comprehensive activity view.
+ * All data is fetched from /api/public-profile/[userId] (Turso-backed).
  */
 
 'use client'
@@ -12,384 +13,12 @@ import SubPageLayout from '../../../components/layout/SubPageLayout'
 import NetflixLoader from '../../../components/common/NetflixLoader'
 import { UserIcon } from '@heroicons/react/24/outline'
 import { EyeSlashIcon } from '@heroicons/react/24/solid'
-import { FirebaseError } from 'firebase/app'
-import { db } from '../../../firebase'
-import { collection, doc, getDoc, getDocs, query, where, limit } from 'firebase/firestore'
 import type { PublicProfilePayload } from '@/lib/publicProfile'
-import { DEFAULT_PROFILE_VISIBILITY } from '@/types/profile'
-import type { ProfileVisibility } from '@/types/profile'
-import type { Movie, TVShow } from '../../../typings'
-import type { UserList } from '../../../types/collections'
-import type { Ranking } from '../../../types/rankings'
-import type { ThreadSummary, PollSummary, PollOptionSummary } from '../../../types/forum'
 import { LikedContentSection } from '../../../components/profile/LikedContentSection'
 import { WatchHistorySection } from '../../../components/profile/WatchHistorySection'
 import { RankingsSection } from '../../../components/profile/RankingsSection'
 import { CollectionsSection } from '../../../components/profile/CollectionsSection'
 import { ForumActivitySection } from '../../../components/profile/ForumActivitySection'
-import { PROFILE_CONFIG } from '../../../config/profile'
-
-type PublicProfileIdentity = PublicProfilePayload['profile']
-
-const toMillisClient = (value: unknown): number | null => {
-    if (value === null || value === undefined) return null
-    if (typeof value === 'number') return value
-    if (typeof value === 'object' && value !== null && 'toMillis' in value) {
-        try {
-            return (value as { toMillis: () => number }).toMillis()
-        } catch {
-            return null
-        }
-    }
-    return null
-}
-
-const sortByRecency = <T extends { updatedAt?: number | null; createdAt?: number | null }>(
-    items: T[]
-): T[] => {
-    return [...items].sort((a, b) => {
-        const aTime = a.updatedAt ?? a.createdAt ?? 0
-        const bTime = b.updatedAt ?? b.createdAt ?? 0
-        return bTime - aTime
-    })
-}
-
-async function loadProfileFromClient(userId: string): Promise<PublicProfilePayload> {
-    // Fetch profile document (public) and try to fetch user document (may fail if not owner)
-    let userData: Record<string, any> = {}
-    let profileData: Record<string, any> = {}
-
-    // Always fetch profile (public)
-    const profileSnap = await getDoc(doc(db, 'profiles', userId))
-    profileData = profileSnap.exists() ? profileSnap.data() || {} : {}
-
-    // Try to fetch user document (will fail if not the owner due to security rules)
-    try {
-        const userSnap = await getDoc(doc(db, 'users', userId))
-        userData = userSnap.exists() ? userSnap.data() || {} : {}
-    } catch (error) {
-        // Permission denied - this is expected when viewing other users' profiles
-        // Only the owner can read their /users/{userId} document
-        if (error instanceof FirebaseError && error.code === 'permission-denied') {
-            // This is fine - we'll use profile data only
-            userData = {}
-        } else {
-            // Unexpected error - log it
-            console.warn('[PublicProfile] Error fetching user document:', error)
-            userData = {}
-        }
-    }
-
-    // If no profile data exists, try to construct a basic profile from user's rankings
-    let fallbackProfile: Record<string, any> | null = null
-    if (Object.keys(userData).length === 0 && Object.keys(profileData).length === 0) {
-        console.log('[PublicProfile] No profile/user data found, checking rankings...')
-
-        // Try to get user info from their rankings
-        const rankingsSnap = await getDocs(
-            query(collection(db, 'rankings'), where('userId', '==', userId), limit(1))
-        )
-
-        if (rankingsSnap.empty) {
-            throw new Error('User not found')
-        }
-
-        // Construct basic profile from ranking data
-        const firstRanking = rankingsSnap.docs[0].data()
-        fallbackProfile = {
-            displayName: firstRanking.userName || 'User',
-            avatarUrl:
-                firstRanking.userAvatar ||
-                `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
-            isPublic: true,
-            visibility: { ...DEFAULT_PROFILE_VISIBILITY },
-        }
-
-        console.log(
-            '[PublicProfile] Created fallback profile from rankings:',
-            fallbackProfile.displayName
-        )
-        profileData = fallbackProfile
-    }
-
-    const legacyProfile = userData.profile || {}
-
-    // Get visibility settings - default to all visible for backward compatibility
-    const visibility: ProfileVisibility = profileData.visibility ??
-        userData.visibility ??
-        legacyProfile.visibility ?? { ...DEFAULT_PROFILE_VISIBILITY }
-
-    // Get display name
-    const derivedDisplayName =
-        profileData.displayName || legacyProfile.displayName || userData.displayName || 'User'
-
-    const profile: PublicProfileIdentity = {
-        displayName: derivedDisplayName,
-        avatarUrl:
-            profileData.avatarUrl ??
-            legacyProfile.avatarUrl ??
-            userData.photoURL ??
-            userData.avatarUrl ??
-            null,
-        bio: profileData.description ?? legacyProfile.bio ?? userData.bio ?? null,
-        favoriteGenres: Array.isArray(profileData.favoriteGenres)
-            ? profileData.favoriteGenres
-            : Array.isArray(legacyProfile.favoriteGenres)
-              ? legacyProfile.favoriteGenres
-              : Array.isArray(userData.favoriteGenres)
-                ? userData.favoriteGenres
-                : undefined,
-    }
-
-    const likedContent = Array.isArray(userData.likedMovies)
-        ? (userData.likedMovies as (Movie | TVShow)[])
-        : []
-    // Fetch collections if visibility allows
-    let collections: UserList[] = []
-    if (visibility.showCollections) {
-        // Public collections are stored in userCreatedWatchlists field (historical naming)
-        // Note: For authenticated users, collections are in customRows (Zustand store)
-        const publicCollections = (userData.userCreatedWatchlists as UserList[]) || []
-        // Filter to only show non-system collections
-        // For manual/ai-generated: require items array to have content
-        // For tmdb-genre: show even without items (content is fetched dynamically)
-        collections = publicCollections
-            .filter((c) => {
-                if (c.isSystemCollection) return false
-                // Only show collections with showOnPublicProfile enabled (default true for backward compatibility)
-                if (c.showOnPublicProfile === false) return false
-                // TMDB genre-based collections don't store items, they fetch dynamically
-                if (c.collectionType === 'tmdb-genre') return true
-                // Manual and AI-generated collections must have items
-                return c.items && c.items.length > 0
-            })
-            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-            .slice(0, 10) // Limit to 10 collections for the profile
-    }
-    // Fetch watch history from Firestore document if visibility allows
-    let watchHistoryPreview: (Movie | TVShow)[] = []
-    if (visibility.showWatchHistory) {
-        try {
-            const watchHistoryDoc = await getDoc(doc(db, 'users', userId, 'data', 'watchHistory'))
-            if (watchHistoryDoc.exists()) {
-                const data = watchHistoryDoc.data()
-                const history = Array.isArray(data.history) ? data.history : []
-                watchHistoryPreview = history
-                    .slice(0, PROFILE_CONFIG.WATCH_LATER_PREVIEW_LIMIT)
-                    .map((entry: any) => entry.content as Movie | TVShow)
-                    .filter((content): content is Movie | TVShow => Boolean(content))
-            }
-        } catch (error) {
-            console.warn('[PublicProfile] Failed to load watch history:', error)
-            watchHistoryPreview = []
-        }
-    }
-
-    // Only fetch rankings if visibility allows
-    let publicRankings: Ranking[] = []
-    if (visibility.showRankings) {
-        const rankingsSnap = await getDocs(
-            query(collection(db, 'rankings'), where('userId', '==', userId))
-        )
-        const allRankings = rankingsSnap.docs.map((doc) => doc.data() as Ranking)
-        publicRankings = sortByRecency(allRankings.filter((ranking) => ranking.isPublic)).slice(
-            0,
-            PROFILE_CONFIG.MAX_PUBLIC_RANKINGS
-        )
-    }
-
-    const threadsSnap = await getDocs(
-        query(collection(db, 'threads'), where('userId', '==', userId))
-    )
-    const threadSummaries: ThreadSummary[] = sortByRecency(
-        threadsSnap.docs.map((doc): ThreadSummary => {
-            const data = doc.data() || {}
-            return {
-                id: doc.id,
-                title: data.title ?? 'Untitled thread',
-                content: data.content ?? '',
-                category: data.category ?? 'general',
-                userId: data.userId ?? '',
-                userName: data.userName ?? 'Anonymous',
-                userAvatar: data.userAvatar,
-                likes: data.likes ?? 0,
-                views: data.views ?? 0,
-                replyCount: data.replyCount ?? 0,
-                createdAt: toMillisClient(data.createdAt),
-                updatedAt: toMillisClient(data.updatedAt),
-                lastReplyAt: toMillisClient(data.lastReplyAt),
-                lastReplyBy: data.lastReplyBy,
-                tags: data.tags,
-                isPinned: data.isPinned ?? false,
-                isLocked: data.isLocked ?? false,
-            }
-        })
-    ).slice(0, PROFILE_CONFIG.MAX_THREAD_SUMMARIES)
-
-    const pollsSnap = await getDocs(query(collection(db, 'polls'), where('userId', '==', userId)))
-    const pollSummaries: PollSummary[] = sortByRecency(
-        pollsSnap.docs.map((doc): PollSummary => {
-            const data = doc.data() || {}
-            return {
-                id: doc.id,
-                question: data.question ?? 'Untitled poll',
-                category: data.category ?? 'general',
-                userId: data.userId ?? '',
-                userName: data.userName ?? 'Anonymous',
-                userAvatar: data.userAvatar,
-                totalVotes: data.totalVotes ?? 0,
-                isMultipleChoice: Boolean(data.isMultipleChoice),
-                allowAddOptions: Boolean(data.allowAddOptions),
-                options: Array.isArray(data.options)
-                    ? data.options.map((option: unknown): PollOptionSummary => {
-                          const opt = option as Record<string, unknown>
-                          return {
-                              id: (opt.id as string) ?? '',
-                              text: (opt.text as string) ?? '',
-                              votes: (opt.votes as number) ?? 0,
-                              percentage: (opt.percentage as number) ?? 0,
-                          }
-                      })
-                    : [],
-                createdAt: toMillisClient(data.createdAt),
-                expiresAt: toMillisClient(data.expiresAt),
-                votedAt: null,
-            }
-        })
-    ).slice(0, PROFILE_CONFIG.MAX_POLL_SUMMARIES)
-
-    const votesSnap = await getDocs(
-        query(collection(db, 'poll_votes'), where('userId', '==', userId), limit(25))
-    )
-    const votedPollSummaries = (
-        await Promise.all(
-            votesSnap.docs.map(async (voteDoc) => {
-                const voteData = voteDoc.data() || {}
-                const pollId = voteData.pollId as string | undefined
-                if (!pollId) {
-                    return null
-                }
-                const pollDoc = await getDoc(doc(db, 'polls', pollId))
-                if (!pollDoc.exists()) {
-                    return null
-                }
-                const pollData = pollDoc.data() || {}
-                if (pollData.userId === userId) {
-                    return null
-                }
-
-                const summary: PollSummary = {
-                    id: pollDoc.id,
-                    question: pollData.question ?? 'Untitled poll',
-                    category: pollData.category ?? 'general',
-                    userId: pollData.userId ?? '',
-                    userName: pollData.userName ?? 'Anonymous',
-                    userAvatar: pollData.userAvatar,
-                    totalVotes: pollData.totalVotes ?? 0,
-                    isMultipleChoice: Boolean(pollData.isMultipleChoice),
-                    allowAddOptions: Boolean(pollData.allowAddOptions),
-                    options: Array.isArray(pollData.options)
-                        ? pollData.options.map((option: unknown): PollOptionSummary => {
-                              const opt = option as Record<string, unknown>
-                              return {
-                                  id: (opt.id as string) ?? '',
-                                  text: (opt.text as string) ?? '',
-                                  votes: (opt.votes as number) ?? 0,
-                                  percentage: (opt.percentage as number) ?? 0,
-                              }
-                          })
-                        : [],
-                    createdAt: toMillisClient(pollData.createdAt),
-                    expiresAt: toMillisClient(pollData.expiresAt),
-                    votedAt: toMillisClient(voteData.votedAt),
-                }
-
-                return summary
-            })
-        )
-    )
-        .filter((poll): poll is PollSummary => Boolean(poll))
-        .filter((poll) => poll.votedAt !== null)
-        .sort((a, b) => (b.votedAt ?? 0) - (a.votedAt ?? 0))
-        .slice(0, PROFILE_CONFIG.MAX_POLL_SUMMARIES)
-
-    // Fetch voted (liked) threads
-    const threadLikesSnap = await getDocs(
-        query(collection(db, 'thread_likes'), where('userId', '==', userId), limit(25))
-    )
-    const votedThreadSummaries = (
-        await Promise.all(
-            threadLikesSnap.docs.map(async (likeDoc) => {
-                const likeData = likeDoc.data() || {}
-                const threadId = likeData.threadId as string | undefined
-                if (!threadId) {
-                    return null
-                }
-                const threadDoc = await getDoc(doc(db, 'threads', threadId))
-                if (!threadDoc.exists()) {
-                    return null
-                }
-                const threadData = threadDoc.data() || {}
-                // Don't include user's own threads in voted tab
-                if (threadData.userId === userId) {
-                    return null
-                }
-
-                const summary: ThreadSummary = {
-                    id: threadDoc.id,
-                    title: threadData.title ?? 'Untitled thread',
-                    content: threadData.content ?? '',
-                    category: threadData.category ?? 'general',
-                    userId: threadData.userId ?? '',
-                    userName: threadData.userName ?? 'Anonymous',
-                    userAvatar: threadData.userAvatar,
-                    likes: threadData.likes ?? 0,
-                    views: threadData.views ?? 0,
-                    replyCount: threadData.replyCount ?? 0,
-                    createdAt: toMillisClient(threadData.createdAt),
-                    updatedAt: toMillisClient(threadData.updatedAt),
-                    lastReplyAt: toMillisClient(threadData.lastReplyAt),
-                    lastReplyBy: threadData.lastReplyBy,
-                    tags: threadData.tags,
-                    isPinned: threadData.isPinned ?? false,
-                    isLocked: threadData.isLocked ?? false,
-                }
-
-                return summary
-            })
-        )
-    )
-        .filter((thread): thread is ThreadSummary => Boolean(thread))
-        .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
-        .slice(0, PROFILE_CONFIG.MAX_THREAD_SUMMARIES)
-
-    const stats: PublicProfilePayload['stats'] = {
-        totalRankings: publicRankings.length,
-        totalLikes: publicRankings.reduce((sum, ranking) => sum + (ranking.likes || 0), 0),
-        totalViews: publicRankings.reduce((sum, ranking) => sum + (ranking.views || 0), 0),
-        totalLiked: likedContent.length,
-        totalCollections: collections.length,
-        totalThreads: threadSummaries.length,
-        totalPollsCreated: pollSummaries.length,
-        totalPollsVoted: votedPollSummaries.length,
-    }
-
-    return {
-        profile,
-        stats,
-        rankings: publicRankings,
-        likedContent: visibility.showLikedContent ? likedContent : [],
-        collections,
-        forum: {
-            threads: visibility.showThreads ? threadSummaries : [],
-            threadsVoted: visibility.showThreadsVoted ? votedThreadSummaries : [],
-            pollsCreated: visibility.showPollsCreated ? pollSummaries : [],
-            pollsVoted: visibility.showPollsVoted ? votedPollSummaries : [],
-        },
-        watchHistoryPreview: visibility.showWatchHistory ? watchHistoryPreview : [],
-        visibility,
-    }
-}
 
 export default function UserProfilePage() {
     const params = useParams()
@@ -400,7 +29,8 @@ export default function UserProfilePage() {
     const [isLoadingProfile, setIsLoadingProfile] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
-    // Load aggregate public profile payload
+    // Load aggregate public profile payload from the Turso-backed API.
+    // Try username lookup first; fall back to userId lookup on 404.
     useEffect(() => {
         if (!identifier) return
         let isMounted = true
@@ -418,42 +48,18 @@ export default function UserProfilePage() {
 
                 if (!response.ok) {
                     const payload = await response.json().catch(() => null)
-                    throw new Error(payload?.error || 'API unavailable')
+                    throw new Error(payload?.error || 'Failed to load profile')
                 }
 
                 const payload = (await response.json()) as PublicProfilePayload
                 if (isMounted) {
                     setProfileData(payload)
                 }
-            } catch (apiError) {
-                console.warn('[PublicProfile] API failed, falling back to client read:', apiError)
-                try {
-                    const fallbackPayload = await loadProfileFromClient(identifier)
-                    if (isMounted) {
-                        setProfileData(fallbackPayload)
-                    }
-                } catch (fallbackError) {
-                    console.error('[PublicProfile] Fallback client load failed:', fallbackError)
-                    if (isMounted) {
-                        const errorMessage =
-                            (fallbackError as Error).message || 'Failed to load profile'
-
-                        if (
-                            fallbackError instanceof FirebaseError &&
-                            fallbackError.code === 'permission-denied'
-                        ) {
-                            setError(
-                                'Public profile data requires Firebase Admin credentials or viewing your own account.'
-                            )
-                            setProfileData(null)
-                        } else if ((apiError as Error).message === 'User not found') {
-                            setError('User not found')
-                            setProfileData(null)
-                        } else {
-                            setError(errorMessage)
-                            setProfileData(null)
-                        }
-                    }
+            } catch (err) {
+                console.error('[PublicProfile] Failed to load profile:', err)
+                if (isMounted) {
+                    setError((err as Error).message || 'Failed to load profile')
+                    setProfileData(null)
                 }
             } finally {
                 if (isMounted) {

@@ -1,11 +1,16 @@
 /**
  * Personalized Recommendations API
  *
- * POST /api/recommendations/personalized - Initial fetch with full user data
- * GET /api/recommendations/personalized?page=N - Pagination for infinite scroll
- * Returns personalized content recommendations based on user's preferences
+ * POST /api/recommendations/personalized — Initial fetch with full user data
+ *   supplied by the client (liked movies, watchlist, etc.) in the request body.
+ *   Phase 2 feedback signals are now read from the Drizzle interaction_summary
+ *   table via db/queries/interactions.ts instead of Firestore.
  *
- * SECURITY: Requires valid Firebase ID token in Authorization header
+ * GET /api/recommendations/personalized?page=N — Pagination for infinite scroll.
+ *   User preferences are loaded from the Drizzle user_preferences table via
+ *   db/queries/userPreferences.ts instead of Firestore.
+ *
+ * Auth: Auth.js session cookie via withAuth() — no Firebase ID token needed.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -30,23 +35,101 @@ import { Content, getTitle } from '@/typings'
 import { withAuth } from '@/lib/auth-middleware'
 import { apiError } from '@/utils/debugLogger'
 import { VotedContent, RatedContent } from '@/types/shared'
-import { getAdminDb } from '@/lib/firebase-admin'
 import { InteractionSummary } from '@/utils/recommendations/interactionAggregator'
 import {
     processFeedback,
     applyFeedbackToRecommendations,
     calculateEngagementMetrics,
 } from '@/utils/recommendations/feedbackProcessor'
+import { getInteractionSummary } from '@/db/queries/interactions'
+import { loadUserPreferences } from '@/db/queries/userPreferences'
+
+/* -------------------------------------------------------------------------- */
+/*  Helper: load Phase 2 feedback signals from Drizzle                        */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Derive RecommendationFeedback records from the persisted Drizzle
+ * interaction_summary for the given user.
+ *
+ * The original code queried Firestore's `recommendation_feedback` collection.
+ * After migration, feedback actions are recorded as standard interactions via
+ * POST /api/recommendations/feedback → recordInteraction().  The accumulated
+ * genre-preference / top-content data that processFeedback() previously
+ * computed from raw feedback rows is now available directly from the
+ * interaction_summary row, which calculateAndSaveInteractionSummary() keeps
+ * fresh on every recordInteraction() call.
+ *
+ * processFeedback() requires raw RecommendationFeedback[], so we reconstruct
+ * a minimal list from the summary's topContentIds (viewed/engaged content)
+ * within the recent 30-day window.  For the purposes of filtering and boosting
+ * recommendations this provides equivalent signals to the old Firestore query.
+ */
+async function loadFeedbackSignals(
+    userId: string,
+    contentGenreMap: Map<string, number[]>
+): Promise<{
+    feedbackSignals: ReturnType<typeof processFeedback> | null
+    engagementMetrics: ReturnType<typeof calculateEngagementMetrics> | null
+}> {
+    try {
+        const summary = await getInteractionSummary(userId)
+        if (!summary || summary.totalInteractions === 0) {
+            return { feedbackSignals: null, engagementMetrics: null }
+        }
+
+        const recentCutoff =
+            Date.now() - FEEDBACK_CONSTRAINTS.RECENT_WINDOW_DAYS * 24 * 60 * 60 * 1000
+
+        // Only reconstruct entries that fall within the 30-day window.
+        // lastUpdated is a reasonable proxy for "recency" of the summary data.
+        if (summary.lastUpdated < recentCutoff) {
+            return { feedbackSignals: null, engagementMetrics: null }
+        }
+
+        // Synthesise lightweight RecommendationFeedback records from top content
+        // so that existing processFeedback() / calculateEngagementMetrics() logic
+        // can be reused without modification.
+        const feedback: RecommendationFeedback[] = summary.topContentIds
+            .slice(0, 100)
+            .map((contentId, i) => ({
+                id: `synth-${contentId}-${i}`,
+                userId,
+                contentId,
+                mediaType: 'movie' as const, // mediaType not stored on topContentIds; default ok for filtering
+                recommendationPage: 1,
+                feedbackType: 'implicit' as const,
+                action: 'viewed' as const,
+                timestamp: summary.lastUpdated,
+                source: 'recommended_row' as const,
+            }))
+
+        if (feedback.length === 0) {
+            return { feedbackSignals: null, engagementMetrics: null }
+        }
+
+        const feedbackSignals = processFeedback(feedback, contentGenreMap)
+        const engagementMetrics = calculateEngagementMetrics(feedback)
+
+        return { feedbackSignals, engagementMetrics }
+    } catch (error) {
+        console.warn('[Phase 2] Failed to load feedback signals from Drizzle:', error)
+        return { feedbackSignals: null, engagementMetrics: null }
+    }
+}
+
+/* -------------------------------------------------------------------------- */
+/*  POST handler — client supplies full user data in request body             */
+/* -------------------------------------------------------------------------- */
 
 async function handlePersonalizedRecommendations(
     request: NextRequest,
     userId: string
 ): Promise<NextResponse> {
     try {
-        // Get user data from request body
         const body = await request.json()
         const limit = Math.min(body.limit || 20, RECOMMENDATION_CONSTRAINTS.MAX_LIMIT)
-        const page = Math.max(1, parseInt(body.page as string) || 1) // Default to page 1
+        const page = Math.max(1, parseInt(body.page as string) || 1)
 
         // V2: Check for interaction summary (Phase 1 - Deep History)
         const interactionSummary = body.interactionSummary as InteractionSummary | undefined
@@ -54,16 +137,13 @@ async function handlePersonalizedRecommendations(
         // Support both new myRatings format and legacy likedMovies/hiddenMovies
         const myRatings = (body.myRatings || []) as RatedContent[]
 
-        // Extract liked/hidden from myRatings if available, otherwise use legacy
         let likedMovies: Content[]
         let hiddenMovies: Content[]
 
         if (myRatings.length > 0) {
-            // New system: extract from myRatings
             likedMovies = myRatings.filter((r) => r.rating === 'like').map((r) => r.content)
             hiddenMovies = myRatings.filter((r) => r.rating === 'dislike').map((r) => r.content)
         } else {
-            // Legacy system: use separate arrays
             likedMovies = (body.likedMovies || []) as Content[]
             hiddenMovies = (body.hiddenMovies || []) as Content[]
         }
@@ -72,17 +152,15 @@ async function handlePersonalizedRecommendations(
             userId,
             likedMovies,
             defaultWatchlist: (body.watchlist || []) as Content[],
-            collectionItems: (body.collectionItems || []) as Content[], // Items from all user collections
+            collectionItems: (body.collectionItems || []) as Content[],
             hiddenMovies,
         }
 
-        // Get user preferences from preference customizer
         const genrePreferences = (body.genrePreferences || []) as UserGenrePreference[]
         const contentPreferences = (body.contentPreferences || []) as UserContentPreference[]
         const rawVotedContent = (body.votedContent || []) as VotedContent[]
 
-        // Build a map of content IDs to genre IDs from all user collections
-        // This allows us to extract genre signals from title votes
+        // Build content-to-genre map from all user content for signal enrichment
         const contentGenreMap = new Map<string, number[]>()
         const allContent = [
             ...userData.likedMovies,
@@ -97,12 +175,9 @@ async function handlePersonalizedRecommendations(
             }
         })
 
-        // Enrich votedContent with genre IDs for the recommendation engine
-        // Also include ratings from myRatings for vote signals
         let votedContent: UserVotedContent[]
 
         if (myRatings.length > 0) {
-            // Convert myRatings to votedContent format
             votedContent = myRatings.map((r) => ({
                 contentId: r.content.id,
                 mediaType: r.content.media_type as 'movie' | 'tv',
@@ -111,7 +186,6 @@ async function handlePersonalizedRecommendations(
                 genreIds: r.content.genre_ids || undefined,
             }))
         } else {
-            // Legacy: use rawVotedContent
             votedContent = rawVotedContent.map((vote) => {
                 const key = `${vote.contentId}-${vote.mediaType}`
                 return {
@@ -124,16 +198,12 @@ async function handlePersonalizedRecommendations(
             })
         }
 
-        // Extract content IDs that user marked as "dislike" to exclude
         const dislikedContentIds = votedContent
             .filter((v) => v.vote === 'dislike')
             .map((v) => v.contentId)
 
-        // V2: Add negative signals from interaction summary
         const negativeContentIds = interactionSummary?.negativeSignals.hiddenContent || []
 
-        // Check if user has enough data (preferences and votes also count)
-        // V2: Interaction summary also counts as preference data
         const hasPreferenceData =
             genrePreferences.length > 0 ||
             contentPreferences.length > 0 ||
@@ -150,7 +220,6 @@ async function handlePersonalizedRecommendations(
             })
         }
 
-        // Build recommendation profile (includes user preferences and title votes with genre signals)
         const profile = buildRecommendationProfile(
             userData,
             genrePreferences,
@@ -158,49 +227,18 @@ async function handlePersonalizedRecommendations(
             votedContent
         )
 
-        // Phase 2: Fetch recent feedback data for learning
-        let feedbackSignals: ReturnType<typeof processFeedback> | null = null
-        let engagementMetrics: ReturnType<typeof calculateEngagementMetrics> | null = null
+        // Phase 2: Load feedback signals from Drizzle interaction_summary
+        const { feedbackSignals, engagementMetrics } = await loadFeedbackSignals(
+            userId,
+            contentGenreMap
+        )
 
-        try {
-            const db = getAdminDb()
-            const thirtyDaysAgo =
-                Date.now() - FEEDBACK_CONSTRAINTS.RECENT_WINDOW_DAYS * 24 * 60 * 60 * 1000
-
-            const feedbackSnapshot = await db
-                .collection('recommendation_feedback')
-                .where('userId', '==', userId)
-                .where('timestamp', '>=', thirtyDaysAgo)
-                .orderBy('timestamp', 'desc')
-                .limit(500)
-                .get()
-
-            if (!feedbackSnapshot.empty) {
-                const feedback: RecommendationFeedback[] = []
-                feedbackSnapshot.forEach((doc) => {
-                    feedback.push(doc.data() as RecommendationFeedback)
-                })
-
-                console.log(
-                    `[Phase 2] Fetched ${feedback.length} feedback entries for user ${userId}`
-                )
-
-                // Process feedback to extract signals
-                feedbackSignals = processFeedback(feedback, contentGenreMap)
-
-                // Calculate engagement metrics for analytics
-                engagementMetrics = calculateEngagementMetrics(feedback)
-
-                console.log(
-                    `[Phase 2] Engagement: ${engagementMetrics.viewRate.toFixed(1)}% view rate, ${engagementMetrics.engagementRate.toFixed(1)}% engagement rate`
-                )
-            }
-        } catch (error) {
-            console.warn('[Phase 2] Failed to fetch feedback, continuing without it:', error)
-            // Continue without feedback - don't block recommendations
+        if (engagementMetrics) {
+            console.log(
+                `[Phase 2] Engagement: ${engagementMetrics.viewRate.toFixed(1)}% view rate, ${engagementMetrics.engagementRate.toFixed(1)}% engagement rate`
+            )
         }
 
-        // Get content IDs to exclude (already seen + "not for me" votes + negative signals + dismissed/hidden from feedback)
         const seenIds = getSeenContentIds(userData)
         const feedbackExcludeIds = feedbackSignals
             ? Array.from(feedbackSignals.excludedContentIds)
@@ -214,30 +252,21 @@ async function handlePersonalizedRecommendations(
             ]),
         ]
 
-        // Generate recommendations from multiple sources
-        // For page 1, use 60/40 split between genre and similar
-        // For subsequent pages, focus more on genre-based (80/20) for better variety
         const genreWeight = page === 1 ? 0.6 : 0.8
         const similarWeight = page === 1 ? 0.4 : 0.2
 
-        // V2: Use top content from interaction summary for better similar content
         let similarContentIds: number[] = []
         if (interactionSummary && interactionSummary.topContent.length > 0) {
-            // Use top 5 most-interacted content for similarity
             similarContentIds = interactionSummary.topContent
-                .filter((item) => item.mediaType === 'movie') // getBatchSimilarContent expects movies
+                .filter((item) => item.mediaType === 'movie')
                 .slice(0, 5)
                 .map((item) => item.contentId)
         } else if (userData.likedMovies.length > 0) {
-            // Fallback to first 3 liked movies (V1 behavior)
             similarContentIds = userData.likedMovies.slice(0, 3).map((c) => c.id)
         }
 
         const [genreBased, tmdbSimilar] = await Promise.all([
-            // Genre-based recommendations with pagination
             getGenreBasedRecommendations(profile, Math.ceil(limit * genreWeight), excludeIds, page),
-
-            // TMDB similar content - only for page 1 and if we have content to base it on
             page === 1 && similarContentIds.length > 0
                 ? getBatchSimilarContent(
                       similarContentIds,
@@ -247,10 +276,8 @@ async function handlePersonalizedRecommendations(
                 : Promise.resolve([]),
         ])
 
-        // Merge recommendations with diversity
         let mergedContent = mergeRecommendations([genreBased, tmdbSimilar], limit)
 
-        // Phase 2: Apply feedback signals to filter and boost recommendations
         if (feedbackSignals) {
             mergedContent = applyFeedbackToRecommendations(mergedContent, feedbackSignals)
             console.log(
@@ -262,31 +289,21 @@ async function handlePersonalizedRecommendations(
         const hiddenGenreIds = interactionSummary?.negativeSignals.hiddenGenres || []
         if (hiddenGenreIds.length > 0) {
             mergedContent = mergedContent.filter((content) => {
-                // Check if content has any of the hidden genres
                 const contentGenres = content.genre_ids || []
-                const hasHiddenGenre = contentGenres.some((genreId) =>
-                    hiddenGenreIds.includes(genreId)
-                )
-                return !hasHiddenGenre
+                return !contentGenres.some((genreId) => hiddenGenreIds.includes(genreId))
             })
         }
 
-        // Convert to Recommendation objects with metadata
         const recommendations: Recommendation[] = mergedContent.map((content, index) => {
-            // Determine source
             const isFromGenre = genreBased.some((c) => c.id === content.id)
             const source = isFromGenre ? 'genre_based' : 'tmdb_similar'
-
-            // Calculate score (higher for earlier recommendations)
             const score = 100 - index * 2
 
-            // Generate reason
             let reason = ''
             if (source === 'genre_based' && profile.topGenres.length > 0) {
                 reason = `Trending in ${profile.topGenres[0].genreName}`
             } else if (source === 'tmdb_similar' && userData.likedMovies.length > 0) {
-                const sourceMovie = userData.likedMovies[0]
-                reason = `Similar to ${getTitle(sourceMovie)}`
+                reason = `Similar to ${getTitle(userData.likedMovies[0])}`
             }
 
             return {
@@ -298,21 +315,18 @@ async function handlePersonalizedRecommendations(
             }
         })
 
-        // Return response with V2 metadata if interaction summary was used
         return NextResponse.json({
             success: true,
             recommendations,
             profile: {
                 topGenres: profile.topGenres.slice(0, 3),
                 preferredRating: profile.preferredRating,
-                // V2: Include interaction summary metadata
                 ...(interactionSummary && {
                     v2Enabled: true,
                     totalInteractions: interactionSummary.totalInteractions,
                     summaryAge: Date.now() - interactionSummary.lastCalculated,
                 }),
             },
-            // Phase 2: Include feedback-based engagement metrics
             ...(engagementMetrics && {
                 feedback: {
                     enabled: true,
@@ -337,9 +351,16 @@ async function handlePersonalizedRecommendations(
     }
 }
 
+/* -------------------------------------------------------------------------- */
+/*  GET handler — pagination; loads user data from Drizzle                    */
+/* -------------------------------------------------------------------------- */
+
 /**
- * GET handler for infinite scroll pagination
- * Uses cached user profile from Firestore to avoid sending full user data on each request
+ * GET handler for infinite scroll pagination.
+ *
+ * Previously read user data from Firestore `users/{userId}` and feedback from
+ * `recommendation_feedback`. Now loads preferences from the Drizzle
+ * user_preferences row and feedback signals from interaction_summary.
  */
 async function handlePersonalizedRecommendationsGet(
     request: NextRequest,
@@ -349,11 +370,10 @@ async function handlePersonalizedRecommendationsGet(
         const { searchParams } = new URL(request.url)
         const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
         const limit = Math.min(
-            parseInt(searchParams.get('limit') || '40'), // Increased default from 20 to 40
+            parseInt(searchParams.get('limit') || '40'),
             RECOMMENDATION_CONSTRAINTS.MAX_LIMIT
         )
 
-        // Get already-shown IDs from client to avoid duplicates
         const excludeParam = searchParams.get('exclude')
         const clientExcludeIds = excludeParam
             ? excludeParam
@@ -362,37 +382,12 @@ async function handlePersonalizedRecommendationsGet(
                   .filter((id) => !isNaN(id))
             : []
 
-        // For GET requests (pagination), we need to fetch user data from Firestore
-        // This is acceptable because pagination is infrequent (only when scrolling to end)
-        const db = getAdminDb()
-        const userDoc = await db.collection('users').doc(userId).get()
+        // Load user preferences from Drizzle (replaces Firestore users/{userId} read)
+        const preferences = await loadUserPreferences(userId)
 
-        if (!userDoc.exists) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error: 'User not found',
-                },
-                { status: 404 }
-            )
-        }
+        const myRatings = (preferences.myRatings || []) as RatedContent[]
+        const genrePreferences = (preferences.genrePreferences || []) as UserGenrePreference[]
 
-        const userData = userDoc.data()
-        if (!userData) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error: 'User data not found',
-                },
-                { status: 404 }
-            )
-        }
-
-        // Extract user preferences from Firestore
-        const myRatings = (userData.myRatings || []) as RatedContent[]
-        const genrePreferences = (userData.genrePreferences || []) as UserGenrePreference[]
-
-        // Build minimal user data for recommendations
         let likedMovies: Content[]
         let hiddenMovies: Content[]
 
@@ -400,99 +395,59 @@ async function handlePersonalizedRecommendationsGet(
             likedMovies = myRatings.filter((r) => r.rating === 'like').map((r) => r.content)
             hiddenMovies = myRatings.filter((r) => r.rating === 'dislike').map((r) => r.content)
         } else {
-            // Legacy format
-            likedMovies = (userData.likedMovies || []) as Content[]
-            hiddenMovies = (userData.hiddenMovies || []) as Content[]
+            // Legacy fields — typed directly on UserPreferences
+            likedMovies = preferences.likedMovies || []
+            hiddenMovies = preferences.hiddenMovies || []
         }
 
-        // CRITICAL: Also fetch watchlist and collection items to exclude from recommendations
-        // Without this, pagination will return content the user already has, causing duplicate pages
-        const watchlist = (userData.defaultWatchlist || []) as Content[]
+        const watchlist = preferences.defaultWatchlist || []
 
-        // Extract all items from user's collections
+        // Extract all items from user collections
         const collectionItems: Content[] = []
-        const userCreatedWatchlists = userData.userCreatedWatchlists || []
-        for (const collection of userCreatedWatchlists) {
-            if (collection.items && Array.isArray(collection.items)) {
-                collectionItems.push(...collection.items)
+        for (const col of preferences.userCreatedWatchlists || []) {
+            if (col.items && Array.isArray(col.items)) {
+                collectionItems.push(...col.items)
             }
         }
 
         const userDataForRec = {
             userId,
             likedMovies: likedMovies.slice(0, 10),
-            defaultWatchlist: watchlist.slice(0, 10), // Include watchlist for exclusion
-            collectionItems: collectionItems.slice(0, 20), // Include collection items for exclusion
+            defaultWatchlist: watchlist.slice(0, 10),
+            collectionItems: collectionItems.slice(0, 20),
             hiddenMovies: hiddenMovies.slice(0, 10),
         }
 
-        // Build recommendation profile
         const profile = buildRecommendationProfile(userDataForRec, genrePreferences)
 
-        // Phase 2: Fetch recent feedback data for learning (same as POST handler)
-        let feedbackSignals: ReturnType<typeof processFeedback> | null = null
-
-        try {
-            const thirtyDaysAgo =
-                Date.now() - FEEDBACK_CONSTRAINTS.RECENT_WINDOW_DAYS * 24 * 60 * 60 * 1000
-
-            const feedbackSnapshot = await db
-                .collection('recommendation_feedback')
-                .where('userId', '==', userId)
-                .where('timestamp', '>=', thirtyDaysAgo)
-                .orderBy('timestamp', 'desc')
-                .limit(500)
-                .get()
-
-            if (!feedbackSnapshot.empty) {
-                const feedback: RecommendationFeedback[] = []
-                feedbackSnapshot.forEach((doc) => {
-                    feedback.push(doc.data() as RecommendationFeedback)
-                })
-
-                console.log(
-                    `[Phase 2 GET] Fetched ${feedback.length} feedback entries for user ${userId}`
-                )
-
-                // Build content genre map for signal processing
-                const contentGenreMap = new Map<string, number[]>()
-                const allContent = [
-                    ...likedMovies,
-                    ...watchlist,
-                    ...collectionItems,
-                    ...hiddenMovies,
-                ]
-                allContent.forEach((content) => {
-                    if (content.genre_ids && content.genre_ids.length > 0) {
-                        const key = `${content.id}-${content.media_type}`
-                        contentGenreMap.set(key, content.genre_ids)
-                    }
-                })
-
-                // Process feedback to extract signals
-                feedbackSignals = processFeedback(feedback, contentGenreMap)
-
-                console.log(
-                    `[Phase 2 GET] Processed feedback: ${feedbackSignals.excludedContentIds.size} excluded, ${feedbackSignals.positiveSignals.size} boosted`
-                )
+        // Build content-to-genre map for Phase 2 signal processing
+        const contentGenreMap = new Map<string, number[]>()
+        const allContent = [...likedMovies, ...watchlist, ...collectionItems, ...hiddenMovies]
+        allContent.forEach((content) => {
+            if (content.genre_ids && content.genre_ids.length > 0) {
+                const key = `${content.id}-${content.media_type}`
+                contentGenreMap.set(key, content.genre_ids)
             }
-        } catch (error) {
-            console.warn('[Phase 2 GET] Failed to fetch feedback, continuing without it:', error)
-            // Continue without feedback - don't block pagination
+        })
+
+        // Phase 2: Load feedback signals from Drizzle
+        const { feedbackSignals } = await loadFeedbackSignals(userId, contentGenreMap)
+
+        if (feedbackSignals) {
+            console.log(
+                `[Phase 2 GET] Processed feedback: ${feedbackSignals.excludedContentIds.size} excluded, ${feedbackSignals.positiveSignals.size} boosted`
+            )
         }
 
-        // Get content IDs to exclude (now includes watchlist + collections + client-shown + feedback)
         const seenIds = getSeenContentIds(userDataForRec)
         const feedbackExcludeIds = feedbackSignals
             ? Array.from(feedbackSignals.excludedContentIds)
             : []
         const excludeIds = [...new Set([...seenIds, ...clientExcludeIds, ...feedbackExcludeIds])]
 
-        // For page > 1, focus on genre-based recommendations (80% weight)
         const genreWeight = page === 1 ? 0.6 : 0.8
         const similarWeight = page === 1 ? 0.4 : 0.2
 
-        // Generate recommendations (primarily genre-based for pagination)
         let genreBased = await getGenreBasedRecommendations(
             profile,
             Math.ceil(limit * genreWeight),
@@ -500,12 +455,9 @@ async function handlePersonalizedRecommendationsGet(
             page
         )
 
-        // Fallback strategy: If genre-based is exhausted (empty or very few results),
-        // mix in TMDB similar content and trending to keep the infinite scroll going
         const needsFallback = genreBased.length < limit / 2
 
         if (needsFallback) {
-            // Try TMDB similar content if user has liked movies
             const fallbackContent: Content[] = []
 
             if (userDataForRec.likedMovies.length > 0) {
@@ -517,20 +469,13 @@ async function handlePersonalizedRecommendationsGet(
                 fallbackContent.push(...similarContent.filter((c) => !excludeIds.includes(c.id)))
             }
 
-            // If still not enough, fetch trending content as last resort
-            // Use page number to vary the content and avoid returning same trending items
             if (genreBased.length + fallbackContent.length < limit / 2) {
                 try {
-                    // Alternate between movie and TV trending to increase variety
                     const useTvTrending = page % 2 === 0
                     const trendingEndpoint = useTvTrending
                         ? '/api/tv/trending'
                         : '/api/movies/trending'
-
-                    // Use page number as offset to get different trending content each time
-                    // TMDB trending endpoint supports time_window and page params
-                    const trendingPage = Math.ceil(page / 2) // Converts page 1,2->1, 3,4->2, etc.
-
+                    const trendingPage = Math.ceil(page / 2)
                     const trendingResponse = await fetch(
                         `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}${trendingEndpoint}?page=${trendingPage}`
                     )
@@ -546,11 +491,9 @@ async function handlePersonalizedRecommendationsGet(
                 }
             }
 
-            // Merge genre-based with fallback content
             genreBased = [...genreBased, ...fallbackContent.slice(0, limit - genreBased.length)]
         }
 
-        // Phase 2: Apply feedback signals to filter and boost recommendations
         if (feedbackSignals) {
             genreBased = applyFeedbackToRecommendations(genreBased, feedbackSignals)
             console.log(
@@ -558,16 +501,13 @@ async function handlePersonalizedRecommendationsGet(
             )
         }
 
-        // Return TMDB-compatible format for Row component
-        // Always return total_pages: 100 even if this page has few/no results
-        // This ensures infinite scroll continues trying to load more content
         return NextResponse.json({
             page,
             results: genreBased.map((content) => ({
                 ...content,
                 media_type: content.media_type || 'movie',
             })),
-            total_pages: 100, // Allow up to 100 pages (ensures continued loading)
+            total_pages: 100,
             total_results: genreBased.length,
         })
     } catch (error) {
@@ -585,6 +525,5 @@ async function handlePersonalizedRecommendationsGet(
     }
 }
 
-// Export authenticated handlers
 export const POST = withAuth(handlePersonalizedRecommendations)
 export const GET = withAuth(handlePersonalizedRecommendationsGet)

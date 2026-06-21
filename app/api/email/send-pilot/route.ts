@@ -3,7 +3,7 @@ import { EmailService } from '../../../../lib/email/email-service'
 import { Content } from '../../../../typings'
 import { withAuth } from '../../../../lib/auth-middleware'
 import { apiError, apiWarn } from '@/utils/debugLogger'
-import { generateUnsubscribeToken } from '../unsubscribe/route'
+import { generateUnsubscribeToken } from '@/lib/email/unsubscribe-token'
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3'

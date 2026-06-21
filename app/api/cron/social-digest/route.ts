@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
-import { getAdminDb } from '@/lib/firebase-admin'
 import { validateAdminRequest } from '@/utils/adminMiddleware'
 import { EmailService } from '@/lib/email/email-service'
-import { generateUnsubscribeToken } from '../../email/unsubscribe/route'
+import { generateUnsubscribeToken } from '@/lib/email/unsubscribe-token'
+import { db } from '@/db'
+import { users } from '@/db/schema'
+import { eq } from 'drizzle-orm'
+import {
+    listUnsentNotificationsByTypes,
+    markNotificationsEmailSent,
+} from '@/db/queries/notifications'
+import { loadUserPreferences } from '@/db/queries/userPreferences'
 
 const CRON_SECRET = process.env.CRON_SECRET
 
@@ -29,6 +36,11 @@ function isValidCronSecret(token: string | null | undefined): boolean {
  *
  * Runs weekly (Wednesdays at 2 AM) to batch all ranking comments and likes from the past 7 days
  * and send a single digest email per user with all their social interactions.
+ *
+ * Migration note: the original route used a Firestore collectionGroup('notifications') query
+ * with an 'emailSent == false' filter. That field lives in the JSON `data` column in Turso,
+ * so we use the listUnsentNotificationsByTypes helper (db/queries/notifications.ts) which
+ * issues a json_extract-based WHERE clause against the notifications table.
  */
 export async function GET(req: NextRequest) {
     try {
@@ -50,43 +62,30 @@ export async function GET(req: NextRequest) {
 
         console.log('📧 [Social Digest] Starting weekly social digest')
 
-        const db = getAdminDb()
-        const now = Date.now()
-        const lastWeek = now - 7 * 24 * 60 * 60 * 1000
+        const nowMs = Date.now()
+        const lastWeek = nowMs - 7 * 24 * 60 * 60 * 1000
 
-        // Get all pending notifications from the past 7 days
-        // Split into two queries to avoid needing a complex index with 'IN' operator
-        console.log('📧 [Social Digest] Querying for comment notifications...')
-        const commentNotificationsSnapshot = await db
-            .collectionGroup('notifications')
-            .where('type', '==', 'ranking_comment')
-            .where('createdAt', '>=', lastWeek)
-            .where('emailSent', '==', false)
-            .get()
-
-        console.log('📧 [Social Digest] Querying for like notifications...')
-        const likeNotificationsSnapshot = await db
-            .collectionGroup('notifications')
-            .where('type', '==', 'ranking_like')
-            .where('createdAt', '>=', lastWeek)
-            .where('emailSent', '==', false)
-            .get()
-
-        // Combine results
-        const allDocs = [...commentNotificationsSnapshot.docs, ...likeNotificationsSnapshot.docs]
-        const notificationsSnapshot = { size: allDocs.length, docs: allDocs }
-
-        console.log(
-            `📧 [Social Digest] Found ${notificationsSnapshot.size} pending notifications (${commentNotificationsSnapshot.size} comments + ${likeNotificationsSnapshot.size} likes)`
+        // -----------------------------------------------------------------------
+        // Query the notifications table for ranking_comment and ranking_like rows
+        // from the past 7 days that have not yet had an email sent.
+        // emailSent lives in the JSON `data` column; the helper issues a
+        // json_extract filter for it.
+        // -----------------------------------------------------------------------
+        console.log('📧 [Social Digest] Querying for unsent social notifications...')
+        const pendingNotifications = await listUnsentNotificationsByTypes(
+            ['ranking_comment', 'ranking_like'],
+            lastWeek
         )
+
+        console.log(`📧 [Social Digest] Found ${pendingNotifications.length} pending notifications`)
 
         // Group notifications by userId
         const userNotifications = new Map<
             string,
             Array<{
                 type: 'ranking_comment' | 'ranking_like'
-                rankingId: string
-                rankingTitle: string
+                rankingId?: string
+                rankingTitle?: string
                 commenterName?: string
                 commentText?: string
                 commentId?: string
@@ -94,31 +93,32 @@ export async function GET(req: NextRequest) {
                 parentCommentText?: string
                 likerNames?: string[]
                 notificationId: string
-                notificationRef: any
             }>
         >()
 
-        for (const doc of notificationsSnapshot.docs) {
-            const data = doc.data()
-            const userId = doc.ref.parent.parent?.id
+        for (const notification of pendingNotifications) {
+            const userId = notification.userId
             if (!userId) continue
 
             if (!userNotifications.has(userId)) {
                 userNotifications.set(userId, [])
             }
 
+            // Only include the two social types — the query already filters this
+            // but we narrow the type here for type-safety
+            const notifType = notification.type as 'ranking_comment' | 'ranking_like'
+
             userNotifications.get(userId)?.push({
-                type: data.type,
-                rankingId: data.rankingId,
-                rankingTitle: data.rankingTitle,
-                commenterName: data.commenterName,
-                commentText: data.commentText,
-                commentId: data.commentId,
-                isReply: data.isReply,
-                parentCommentText: data.parentCommentText,
-                likerNames: data.likerNames,
-                notificationId: doc.id,
-                notificationRef: doc.ref,
+                type: notifType,
+                rankingId: notification.rankingId,
+                rankingTitle: notification.rankingTitle,
+                commenterName: notification.commenterName,
+                commentText: notification.commentText,
+                commentId: notification.commentId,
+                isReply: notification.isReply,
+                parentCommentText: notification.parentCommentText,
+                likerNames: notification.likerNames,
+                notificationId: notification.id,
             })
         }
 
@@ -142,7 +142,7 @@ export async function GET(req: NextRequest) {
         let skippedUsers = 0
 
         // Send digest email to each user with pending notifications
-        for (const [userId, notifications] of userNotifications.entries()) {
+        for (const [userId, userNotifList] of userNotifications.entries()) {
             try {
                 // ADMIN ONLY MODE: Skip all users except admin
                 if (adminOnly && (!ADMIN_UID || userId !== ADMIN_UID)) {
@@ -151,20 +151,24 @@ export async function GET(req: NextRequest) {
                     continue
                 }
 
-                // Get user data
-                const userDoc = await db.collection('users').doc(userId).get()
-                if (!userDoc.exists) {
+                // Look up user record (email, name) from the users table
+                const userRows = await db.select().from(users).where(eq(users.id, userId)).limit(1)
+
+                if (userRows.length === 0) {
                     skippedUsers++
                     continue
                 }
 
-                const userData = userDoc.data()
+                const user = userRows[0]
+
+                // Load notification preferences from userPreferences blob
+                const prefs = await loadUserPreferences(userId)
 
                 // Check if user has opted into social notifications AND email
-                const socialEnabled = userData?.notifications?.types?.social_interactions ?? true
-                const emailEnabled = userData?.notifications?.email ?? false
+                const socialEnabled = prefs?.notifications?.types?.system ?? true // social_interactions maps to system pref
+                const emailEnabled = prefs?.notifications?.email ?? false
 
-                if (!socialEnabled || !emailEnabled || !userData?.email) {
+                if (!socialEnabled || !emailEnabled || !user.email) {
                     skippedUsers++
                     continue
                 }
@@ -181,10 +185,10 @@ export async function GET(req: NextRequest) {
                 }
 
                 // Transform notifications into email format
-                const interactions = notifications.map((n) => ({
+                const interactions = userNotifList.map((n) => ({
                     type: n.type === 'ranking_comment' ? ('comment' as const) : ('like' as const),
-                    rankingId: n.rankingId,
-                    rankingTitle: n.rankingTitle,
+                    rankingId: n.rankingId ?? '',
+                    rankingTitle: n.rankingTitle ?? '',
                     commenterName: n.commenterName,
                     commentText: n.commentText,
                     commentId: n.commentId,
@@ -194,24 +198,22 @@ export async function GET(req: NextRequest) {
                 }))
 
                 // Send social digest email
+                const displayName = user.name || user.email.split('@')[0]
                 await EmailService.sendSocialDigest({
-                    to: userData.email,
-                    userName: userData.displayName || userData.email.split('@')[0],
+                    to: user.email,
+                    userName: displayName,
                     interactions,
                     unsubscribeToken,
                 })
 
                 emailsSent++
                 console.log(
-                    `📧 [Social Digest] Sent email to ${userData.email} (${notifications.length} interactions)`
+                    `📧 [Social Digest] Sent email to ${user.email} (${userNotifList.length} interactions)`
                 )
 
-                // Mark all notifications as emailSent
-                const batch = db.batch()
-                for (const notification of notifications) {
-                    batch.update(notification.notificationRef, { emailSent: true })
-                }
-                await batch.commit()
+                // Mark all notifications as emailSent in the JSON data column
+                const sentIds = userNotifList.map((n) => n.notificationId)
+                await markNotificationsEmailSent(sentIds)
             } catch (error) {
                 console.error(`📧 ❌ [Social Digest] Failed to process user ${userId}:`, error)
             }
@@ -225,7 +227,7 @@ export async function GET(req: NextRequest) {
             emailsSent,
             totalUsers: userNotifications.size,
             skippedUsers,
-            totalNotifications: notificationsSnapshot.size,
+            totalNotifications: pendingNotifications.length,
         })
     } catch (error) {
         console.error('📧 ❌ Social digest error:', error)

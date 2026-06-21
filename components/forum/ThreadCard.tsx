@@ -15,20 +15,13 @@ import { getCategoryInfo } from '@/utils/forumCategories'
 import { ChatBubbleLeftIcon, EyeIcon, HeartIcon, ClockIcon } from '@heroicons/react/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid'
 import { formatDistanceToNow } from 'date-fns'
-import { Timestamp, doc, getDoc } from 'firebase/firestore'
 import { useSessionStore } from '@/stores/sessionStore'
 import { useForumStore } from '@/stores/forumStore'
-import { db } from '@/firebase'
 
-// Helper to convert Firebase Timestamp to Date
-const toDate = (timestamp: Timestamp | Date | number | null | undefined): Date => {
+// Timestamps are epoch-ms numbers from the Turso/Drizzle backend.
+const toDate = (timestamp: Date | number | null | undefined): Date => {
     if (!timestamp) return new Date()
-    if (timestamp instanceof Timestamp) {
-        return timestamp.toDate()
-    }
-    if (timestamp instanceof Date) {
-        return timestamp
-    }
+    if (timestamp instanceof Date) return timestamp
     return new Date(timestamp)
 }
 
@@ -45,7 +38,9 @@ function ThreadCardComponent({ thread, onClick }: ThreadCardProps) {
     const category = getCategoryInfo(thread.category)
     const [isLiked, setIsLiked] = useState(false)
 
-    // Check if user has liked this thread
+    // Check if user has liked this thread via the /api/threads/[id] route.
+    // The API returns `isLikedByViewer` on the thread object when a session is
+    // present; if not available we fall back to a dedicated like-status fetch.
     useEffect(() => {
         const checkLikeStatus = async () => {
             if (!userId) {
@@ -53,10 +48,27 @@ function ThreadCardComponent({ thread, onClick }: ThreadCardProps) {
                 return
             }
 
+            // If the thread object already carries `isLikedByViewer` (set by the
+            // list API when the viewer is authenticated) use it directly.
+            const withLike = thread as typeof thread & { isLikedByViewer?: boolean }
+            if (withLike.isLikedByViewer !== undefined) {
+                setIsLiked(Boolean(withLike.isLikedByViewer))
+                return
+            }
+
+            // Fallback: fetch the thread detail to get the like status.
             try {
-                const likeRef = doc(db, 'thread_likes', `${userId}_${thread.id}`)
-                const likeDoc = await getDoc(likeRef)
-                setIsLiked(likeDoc.exists())
+                const res = await fetch(`/api/threads/${thread.id}`, {
+                    credentials: 'same-origin',
+                })
+                if (res.ok) {
+                    const json = await res.json()
+                    setIsLiked(
+                        Boolean((json.thread as { isLikedByViewer?: boolean }).isLikedByViewer)
+                    )
+                } else {
+                    setIsLiked(false)
+                }
             } catch (error) {
                 console.error('Error checking thread like status:', error)
                 setIsLiked(false)

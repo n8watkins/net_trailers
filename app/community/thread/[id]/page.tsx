@@ -13,12 +13,11 @@ import SubPageLayout from '@/components/layout/SubPageLayout'
 import { useForumStore } from '@/stores/forumStore'
 import { useSessionStore } from '@/stores/sessionStore'
 import { useAuthStatus } from '@/hooks/useAuthStatus'
+import useAuth from '@/hooks/useAuth'
 import { getCategoryInfo } from '@/utils/forumCategories'
 import NetflixLoader from '@/components/common/NetflixLoader'
 import ImageUpload, { ImageUploadHandle } from '@/components/forum/ImageUpload'
 import { formatDistanceToNow } from 'date-fns'
-import { Timestamp } from 'firebase/firestore'
-import { auth } from '@/firebase'
 import {
     ChatBubbleLeftIcon,
     HeartIcon,
@@ -29,14 +28,9 @@ import {
 } from '@heroicons/react/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid'
 
-// Helper to convert Firebase Timestamp to Date
-const toDate = (timestamp: Timestamp | Date | number): Date => {
-    if (timestamp instanceof Timestamp) {
-        return timestamp.toDate()
-    }
-    if (timestamp instanceof Date) {
-        return timestamp
-    }
+// Timestamps are epoch-ms numbers from the Turso/Drizzle backend.
+const toDate = (timestamp: Date | number): Date => {
+    if (timestamp instanceof Date) return timestamp
     return new Date(timestamp)
 }
 
@@ -50,6 +44,7 @@ export default function ThreadDetailPage({ params }: ThreadDetailPageProps) {
     const resolvedParams = use(params)
     const router = useRouter()
     const { isGuest, isInitialized } = useAuthStatus()
+    const { user: authUser } = useAuth()
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
 
@@ -84,12 +79,11 @@ export default function ThreadDetailPage({ params }: ThreadDetailPageProps) {
     const handleReply = async () => {
         if (!replyContent.trim() || isGuest || !currentThread || !userId) return
 
-        // Get user info from Firebase Auth
-        const currentUser = auth.currentUser
-        if (!currentUser) return
+        // Get user info from Auth.js session (via useAuth hook)
+        if (!authUser) return
 
-        const userName = currentUser.displayName || 'Anonymous'
-        const userAvatar = currentUser.photoURL || undefined
+        const userName = authUser.displayName || 'Anonymous'
+        const userAvatar = authUser.photoURL || undefined
 
         setIsSubmitting(true)
         try {

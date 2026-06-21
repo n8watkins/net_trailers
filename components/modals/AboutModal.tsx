@@ -302,13 +302,13 @@ const AboutModal: React.FC<AboutModalProps> = ({
         },
         {
             icon: BoltIcon,
-            title: 'Real-Time Sync System',
-            text: 'Dual storage with Firestore listeners',
+            title: 'Cloud Sync System',
+            text: 'Dual storage backed by Turso (libSQL)',
             details: [
-                'FirebaseStorageAdapter for authenticated users with real-time sync',
+                'ApiStorageAdapter for authenticated users (Turso via API routes)',
                 'LocalStorageAdapter for guest users (no cloud persistence)',
                 'User ID validation prevents data mixing between users',
-                'Firestore listeners deliver instant updates across devices',
+                'Server-side ownership checks on every write',
             ],
         },
         {

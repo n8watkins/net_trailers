@@ -1,14 +1,27 @@
+/**
+ * Reset Demo Accounts
+ *
+ * Keeps the 5 oldest registered users and deletes the rest (plus their
+ * cascade-deleted data via FK ON DELETE CASCADE in the schema).
+ *
+ * NOTE: In the Auth.js/Turso model there is no Firebase Admin Auth to call;
+ * deleting from the `user` table cascades to all child rows via the FK
+ * constraints defined in db/schema.ts.
+ */
+
+import { asc } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
-import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin'
+
+import { db } from '@/db'
+import { profiles, signupLog, users } from '@/db/schema'
 import {
-    validateAdminRequest,
-    createUnauthorizedResponse,
     createForbiddenResponse,
+    createUnauthorizedResponse,
+    validateAdminRequest,
 } from '@/utils/adminMiddleware'
 
 export async function POST(req: NextRequest) {
     try {
-        // Validate admin access via Firebase Auth
         const authResult = await validateAdminRequest(req)
         if (!authResult.authorized) {
             return authResult.error?.includes('not an administrator')
@@ -16,52 +29,34 @@ export async function POST(req: NextRequest) {
                 : createUnauthorizedResponse(authResult.error)
         }
 
-        const adminAuth = getAdminAuth()
-        const adminDb = getAdminDb()
+        // Fetch all users sorted by profile.createdAt asc (oldest first).
+        const profileRows = await db
+            .select({ userId: profiles.userId })
+            .from(profiles)
+            .orderBy(asc(profiles.createdAt))
 
-        // Get all users
-        const userList = await adminAuth.listUsers(1000)
+        const usersToKeepIds = new Set(profileRows.slice(0, 5).map((p) => p.userId))
+        const usersToDeleteIds = profileRows.slice(5).map((p) => p.userId)
 
-        // Sort by creation time and keep first 5
-        const sortedUsers = userList.users.sort(
-            (a, b) =>
-                new Date(a.metadata.creationTime).getTime() -
-                new Date(b.metadata.creationTime).getTime()
-        )
-
-        const usersToDelete = sortedUsers.slice(5)
-        const usersToKeep = sortedUsers.slice(0, 5)
-
-        // Delete extra users
         let deleteCount = 0
-        for (const user of usersToDelete) {
+        for (const userId of usersToDeleteIds) {
             try {
-                await adminAuth.deleteUser(user.uid)
-                // Also delete from signupLog
-                await adminDb.collection('signupLog').doc(user.uid).delete()
+                // Cascade deletion: deleting from `user` removes all FK-linked rows.
+                const { eq } = await import('drizzle-orm')
+                await db.delete(users).where(eq(users.id, userId))
                 deleteCount++
             } catch (error) {
-                console.error(`👑 ❌ Failed to delete user ${user.uid}:`, error)
+                console.error(`Failed to delete user ${userId}:`, error)
             }
         }
-
-        // Update account count
-        await adminDb.doc('system/stats').set(
-            {
-                totalAccounts: usersToKeep.length,
-                signupsToday: 0,
-                lastReset: Date.now(),
-            },
-            { merge: true }
-        )
 
         return NextResponse.json({
             success: true,
             deleted: deleteCount,
-            remaining: usersToKeep.length,
+            remaining: usersToKeepIds.size,
         })
     } catch (error) {
-        console.error('👑 ❌ Error resetting demo accounts:', error)
+        console.error('Admin reset-demo error:', error)
         return NextResponse.json({ error: 'Failed to reset' }, { status: 500 })
     }
 }

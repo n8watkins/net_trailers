@@ -1,13 +1,11 @@
 import { Content } from '../typings'
 import { UserPreferences } from '../types/shared'
-import { doc, setDoc, getDoc } from 'firebase/firestore'
-import { db } from '../firebase'
-import { guestError, authError, firebaseWarn } from '../utils/debugLogger'
+import { guestError, authError } from '../utils/debugLogger'
 
-// DEPRECATED - This service is being phased out in favor of:
-// - AuthStorageService for authenticated users
-// - GuestStorageService for guest users
-// Keeping minimal compatibility during migration
+// DEPRECATED - This service has been phased out in favour of:
+// - AuthStorageService (for authenticated users, API-backed via /api/user/preferences)
+// - GuestStorageService (for guest users, localStorage-backed)
+// All Firebase references have been removed.
 
 const GUEST_STORAGE_KEY = 'nettrailer_guest_data'
 const GUEST_ID_KEY = 'nettrailer_guest_id'
@@ -187,53 +185,22 @@ export class UserDataService {
         return preferences.defaultWatchlist.some((item) => item.id === contentId)
     }
 
-    // Load user data for authenticated users
+    // Load user data for authenticated users — delegates to AuthStorageService (API-backed)
     static async loadUserData(userId: string): Promise<UserPreferences> {
         try {
-            const userDoc = await getDoc(doc(db, 'users', userId))
-
-            if (userDoc.exists()) {
-                const data = userDoc.data()
-                return {
-                    likedMovies: data.likedMovies || [],
-                    hiddenMovies: data.hiddenMovies || [],
-                    defaultWatchlist: data.defaultWatchlist || [],
-                    userCreatedWatchlists: data.userCreatedWatchlists || [],
-                    lastActive: data.lastActive || Date.now(),
-                    autoMute: data.autoMute ?? this.DEFAULT_PREFERENCES.autoMute,
-                    defaultVolume: data.defaultVolume ?? this.DEFAULT_PREFERENCES.defaultVolume,
-                    childSafetyMode:
-                        data.childSafetyMode ?? this.DEFAULT_PREFERENCES.childSafetyMode,
-                }
-            } else {
-                // Create default user document
-                const defaultPreferences: UserPreferences = {
-                    likedMovies: [],
-                    hiddenMovies: [],
-                    defaultWatchlist: [],
-                    userCreatedWatchlists: [],
-                    lastActive: Date.now(),
-                    ...this.DEFAULT_PREFERENCES,
-                }
-                // Try to save, but don't fail if offline
-                try {
-                    await this.saveUserData(userId, defaultPreferences)
-                } catch (saveError) {
-                    firebaseWarn('Failed to create user document (offline?):', saveError)
-                }
-                return defaultPreferences
+            const { AuthStorageService } = await import('./authStorageService')
+            const data = await AuthStorageService.loadUserData(userId)
+            if (data) return data as unknown as UserPreferences
+            return {
+                likedMovies: [],
+                hiddenMovies: [],
+                defaultWatchlist: [],
+                userCreatedWatchlists: [],
+                lastActive: Date.now(),
+                ...this.DEFAULT_PREFERENCES,
             }
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error)
-
-            // Check if error is due to offline status
-            if (errorMessage.includes('offline') || errorMessage.includes('network')) {
-                firebaseWarn('Firebase is offline, using default preferences:', errorMessage)
-            } else {
-                authError('Failed to load user data:', error)
-            }
-
-            // Return default preferences if Firebase fails
+            authError('Failed to load user data:', error)
             return {
                 likedMovies: [],
                 hiddenMovies: [],
@@ -245,26 +212,17 @@ export class UserDataService {
         }
     }
 
-    // Save user data for authenticated users
+    // Save user data for authenticated users — delegates to AuthStorageService (API-backed)
     static async saveUserData(userId: string, preferences: UserPreferences): Promise<void> {
         try {
-            const dataToSave = {
-                ...preferences,
-                lastActive: Date.now(),
-            }
-            await setDoc(doc(db, 'users', userId), dataToSave, { merge: true })
+            const { AuthStorageService } = await import('./authStorageService')
+            await AuthStorageService.saveUserData(
+                userId,
+                preferences as Parameters<typeof AuthStorageService.saveUserData>[1]
+            )
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error)
-
-            // Check if error is due to offline status
-            if (errorMessage.includes('offline') || errorMessage.includes('network')) {
-                firebaseWarn('Firebase is offline, data will sync when online:', errorMessage)
-                // Don't throw error for offline issues to prevent app crashes
-                return
-            } else {
-                authError('Failed to save user data to Firebase:', error)
-                throw error
-            }
+            authError('Failed to save user data:', error)
+            throw error
         }
     }
 
@@ -299,7 +257,7 @@ export class UserDataService {
                 childSafetyMode: guestPreferences.childSafetyMode ?? existingData.childSafetyMode,
             }
 
-            // Save merged data to Firebase
+            // Save merged data via API
             await this.saveUserData(userId, mergedPreferences)
 
             // Clear guest data since it's been migrated

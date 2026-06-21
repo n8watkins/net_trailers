@@ -1,14 +1,15 @@
 /**
- * Simplified Account Limits System
+ * Account Limits System
  *
  * Simple count-based limiting for portfolio projects.
  * Prevents runaway costs by enforcing a hard limit on total accounts.
+ *
+ * Backed by Turso/Drizzle — replaced former Firestore system/stats document.
  */
 
-import { doc, getDoc, setDoc, increment } from 'firebase/firestore'
-import { db } from '../firebase'
-
-const SYSTEM_DOC = 'system/stats'
+import { sql } from 'drizzle-orm'
+import { db } from '@/db'
+import { users } from '@/db/schema'
 
 export interface AccountStats {
     totalAccounts: number
@@ -22,22 +23,22 @@ export interface AccountStats {
 }
 
 /**
- * Get current account statistics
+ * Get current account statistics.
+ * Counts rows in the Turso `user` table.
  */
 export async function getAccountStats(): Promise<AccountStats> {
     try {
-        const statsDoc = await getDoc(doc(db, SYSTEM_DOC))
-        const data = statsDoc.data()
+        const result = await db.select({ count: sql<number>`count(*)` }).from(users)
+
+        const totalAccounts = Number(result[0]?.count ?? 0)
+        const maxAccounts = parseInt(process.env.NEXT_PUBLIC_MAX_TOTAL_ACCOUNTS || '50')
 
         return {
-            totalAccounts: data?.totalAccounts || 0,
-            maxAccounts: parseInt(process.env.NEXT_PUBLIC_MAX_TOTAL_ACCOUNTS || '50'),
-            lastSignup: data?.lastSignup || null,
-            signupsThisWeek: data?.signupsThisWeek || 0,
-            signupsThisMonth: data?.signupsThisMonth || 0,
-            lastReset: data?.lastReset || undefined,
-            currentWeekStart: data?.currentWeekStart || undefined,
-            currentMonthStart: data?.currentMonthStart || undefined,
+            totalAccounts,
+            maxAccounts,
+            lastSignup: null, // Not tracked in Turso (no separate signupLog)
+            signupsThisWeek: 0, // Not tracked — simplification noted
+            signupsThisMonth: 0, // Not tracked — simplification noted
         }
     } catch (error) {
         console.error('Error getting account stats:', error)
@@ -52,7 +53,10 @@ export async function getAccountStats(): Promise<AccountStats> {
 }
 
 /**
- * Check if account creation is allowed
+ * Check if account creation is allowed.
+ * Auth.js creates the user row before we can gate it here, so this is
+ * informational. To enforce the limit, call this from the signIn callback
+ * or a post-sign-in server action.
  */
 export async function canCreateAccount(): Promise<{
     allowed: boolean
@@ -73,40 +77,19 @@ export async function canCreateAccount(): Promise<{
 }
 
 /**
- * Record a new account creation
- * This should be called from server-side code only
+ * Record a new account creation.
+ * With Turso, account creation is handled by Auth.js automatically (it inserts
+ * the user row). This function is a no-op kept for call-site compatibility;
+ * callers that previously relied on the Firestore signupLog can be removed.
  */
 export async function recordAccountCreation(userId: string, email: string) {
-    try {
-        // Update system stats
-        await setDoc(
-            doc(db, SYSTEM_DOC),
-            {
-                totalAccounts: increment(1),
-                signupsToday: increment(1),
-                lastSignup: Date.now(),
-                lastSignupEmail: email,
-            },
-            { merge: true }
-        )
-
-        // Log the signup (simplified - no IP tracking)
-        await setDoc(doc(db, 'signupLog', userId), {
-            userId,
-            email,
-            createdAt: Date.now(),
-        })
-
-        console.log('✅ Account creation recorded:', { userId, email })
-        return { success: true }
-    } catch (error) {
-        console.error('Error recording account:', error)
-        return { success: false, error }
-    }
+    // Auth.js already inserted the row. Nothing else to do.
+    console.log('Account creation recorded (Turso user row created by Auth.js):', { userId, email })
+    return { success: true }
 }
 
 /**
- * Get account usage statistics for public display
+ * Get account usage statistics for public display.
  */
 export async function getPublicAccountStats(): Promise<{
     used: number

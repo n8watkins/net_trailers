@@ -1,24 +1,34 @@
 /**
  * API Route: Send Reply Notification Email
  *
- * Sends email notifications when someone replies to a thread or comment
+ * Sends email notifications when someone replies to a thread or comment.
+ * Auth.js/Turso replacement: recipient lookup uses db/queries/profiles (Drizzle)
+ * instead of Firebase Admin Auth.
+ *
+ * This route is called fire-and-forget from /api/threads/[id]/replies — the
+ * reply itself succeeds even if this notification fails.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getAdminAuth } from '@/lib/firebase-admin'
 import { Resend } from 'resend'
 
+import { getProfile } from '@/db/queries/profiles'
+import { withAuth } from '@/lib/auth-middleware'
+
 interface NotificationRequest {
-    recipientUserId: string // Firebase UID to get email from
-    replierUserId: string // To prevent self-notification
+    recipientUserId: string
+    replierUserId: string // Passed in body for self-notification check; real auth is session
     replierName: string
     threadTitle: string
     threadId: string
     replyContent: string
-    isReplyToReply: boolean // true if replying to a comment, false if replying to thread
+    isReplyToReply: boolean
 }
 
-export async function POST(request: NextRequest) {
+async function handleSendReplyNotification(
+    request: NextRequest,
+    _sessionUserId: string
+): Promise<NextResponse> {
     try {
         const body: NotificationRequest = await request.json()
         const {
@@ -51,28 +61,20 @@ export async function POST(request: NextRequest) {
         // Skip if Resend API key is not configured
         const resendApiKey = process.env.RESEND_API_KEY
         if (!resendApiKey || resendApiKey === 'your_resend_api_key_here') {
-            console.log('📧 Resend API key not configured, skipping email notification')
+            console.log('[ReplyNotification] Resend API key not configured, skipping email')
             return NextResponse.json({ success: true, skipped: true, reason: 'no-api-key' })
         }
+
         const resend = new Resend(resendApiKey)
 
-        // Get recipient's email and name from Firebase Auth
-        const auth = getAdminAuth()
-        let recipientEmail: string
-        let recipientName: string
+        // Look up recipient via Drizzle (replaces Firebase Admin getUser)
+        const recipientProfile = await getProfile(recipientUserId)
+        const recipientEmail = recipientProfile?.email ?? ''
+        const recipientName = recipientProfile?.displayName || 'User'
 
-        try {
-            const userRecord = await auth.getUser(recipientUserId)
-            recipientEmail = userRecord.email || ''
-            recipientName = userRecord.displayName || 'User'
-
-            if (!recipientEmail) {
-                console.log('📧 Recipient has no email, skipping notification')
-                return NextResponse.json({ success: true, skipped: true, reason: 'no-email' })
-            }
-        } catch (error) {
-            console.error('📧 ❌ Failed to get user email:', error)
-            return NextResponse.json({ error: 'Failed to get recipient email' }, { status: 500 })
+        if (!recipientEmail) {
+            console.log('[ReplyNotification] Recipient has no email, skipping')
+            return NextResponse.json({ success: true, skipped: true, reason: 'no-email' })
         }
 
         // Truncate reply content for email preview
@@ -93,7 +95,7 @@ export async function POST(request: NextRequest) {
 
         // Send email
         const { data, error } = await resend.emails.send({
-            from: 'NetTrailers Community <noreply@resend.dev>', // Use your verified domain
+            from: 'NetTrailers Community <noreply@resend.dev>',
             to: [recipientEmail],
             subject,
             html: generateEmailHTML({
@@ -107,19 +109,21 @@ export async function POST(request: NextRequest) {
         })
 
         if (error) {
-            console.error('📧 ❌ Failed to send email:', error)
+            console.error('[ReplyNotification] Failed to send email:', error)
             return NextResponse.json({ error: error.message }, { status: 500 })
         }
 
         return NextResponse.json({ success: true, data })
     } catch (error) {
-        console.error('📧 ❌ Error sending reply notification:', error)
+        console.error('[ReplyNotification] Error:', error)
         return NextResponse.json(
             { error: error instanceof Error ? error.message : 'Internal server error' },
             { status: 500 }
         )
     }
 }
+
+export const POST = withAuth(handleSendReplyNotification)
 
 interface EmailData {
     recipientName: string
@@ -155,7 +159,7 @@ function generateEmailHTML({
                     <tr>
                         <td style="padding: 32px 40px; background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%);">
                             <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #ffffff;">
-                                💬 New Reply on NetTrailers
+                                New Reply on NetTrailers
                             </h1>
                         </td>
                     </tr>
@@ -193,7 +197,7 @@ ${replyContent}
                                 <tr>
                                     <td align="center">
                                         <a href="${threadUrl}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 8px; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);">
-                                            View Reply →
+                                            View Reply
                                         </a>
                                     </td>
                                 </tr>
@@ -208,7 +212,7 @@ ${replyContent}
                                 You're receiving this email because you have notifications enabled for NetTrailers community discussions.
                             </p>
                             <p style="margin: 0; font-size: 12px; line-height: 18px; color: #4b5563;">
-                                © ${new Date().getFullYear()} NetTrailers. All rights reserved.
+                                &copy; ${new Date().getFullYear()} NetTrailers. All rights reserved.
                             </p>
                         </td>
                     </tr>

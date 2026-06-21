@@ -15,17 +15,12 @@ import { useSessionData } from '../../hooks/useSessionData'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
-import { auth } from '../../firebase'
+import { authenticatedFetch } from '../../lib/authenticatedFetch'
 import { useToast } from '../../hooks/useToast'
 import RecommendationInsightsModal from './RecommendationInsightsModal'
 import GenrePreferenceModal, { PreviewContent } from './GenrePreferenceModal'
 import TitlePreferenceModal, { ContentWithCredits } from './TitlePreferenceModal'
 import { GenrePreference, VotedContent, SkippedContent } from '../../types/shared'
-import {
-    getRecentInteractions,
-    getV2InteractionSummary,
-    saveV2InteractionSummary,
-} from '../../utils/firestore/interactions'
 import {
     aggregateUserInteractions,
     shouldRefreshSummary,
@@ -438,7 +433,7 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
                 return
             }
 
-            // Only show recommendations for authenticated users (requires Firestore)
+            // Only show recommendations for authenticated users
             if (!userId || sessionType !== 'authenticated') {
                 setIsLoading(false)
                 return
@@ -456,60 +451,63 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
             setError(null)
 
             try {
-                // Get Firebase ID token for authentication
-                const currentUser = auth.currentUser
-                if (!currentUser) {
-                    setIsLoading(false)
-                    return
-                }
-
-                const idToken = await currentUser.getIdToken()
-
                 // V2: Generate or fetch cached interaction summary (Phase 1b - Caching)
+                // Interactions are now fetched from the Drizzle-backed /api/interactions
+                // endpoint instead of Firestore, using the session cookie for auth.
                 let interactionSummary: InteractionSummary | undefined
                 try {
-                    // Try to load cached summary first
-                    const cachedSummary = await getV2InteractionSummary(userId)
+                    // Load the server-side interaction summary (24h refresh cadence)
+                    const summaryRes = await authenticatedFetch(
+                        '/api/interactions?summary=true&limit=1'
+                    )
 
-                    // Check if cache is fresh (time-based only - 24h TTL)
-                    const now = Date.now()
-                    const isCacheFresh =
-                        cachedSummary && now - cachedSummary.lastCalculated < 24 * 60 * 60 * 1000
+                    if (summaryRes.ok) {
+                        const summaryData = await summaryRes.json()
+                        const serverSummary = summaryData.summary as
+                            | {
+                                  userId: string
+                                  totalInteractions: number
+                                  genrePreferences: unknown[]
+                                  topContentIds: number[]
+                                  lastUpdated: number
+                              }
+                            | null
+                            | undefined
 
-                    if (isCacheFresh) {
-                        // Use cached summary WITHOUT fetching interactions (true cache hit)
-                        interactionSummary = cachedSummary
-                        const age = now - cachedSummary!.lastCalculated
-                        const ageMinutes = Math.floor(age / 60000)
-                        console.log(
-                            `[V2] Cache HIT: Using cached summary (${ageMinutes}m old, ${cachedSummary!.totalInteractions} interactions)`
-                        )
-                    } else {
-                        // Cache miss or stale - fetch interactions and regenerate
-                        console.log(
-                            cachedSummary
-                                ? `[V2] Cache STALE: Regenerating summary (${Math.floor((now - cachedSummary.lastCalculated) / 60000)}m old)`
-                                : '[V2] Cache MISS: Generating first summary'
-                        )
+                        if (serverSummary && serverSummary.totalInteractions > 0) {
+                            const now = Date.now()
+                            const isCacheFresh =
+                                now - serverSummary.lastUpdated < 24 * 60 * 60 * 1000
 
-                        const interactions = await getRecentInteractions(userId, 1000)
+                            if (isCacheFresh) {
+                                // Summary is fresh — fetch raw interactions to build the
+                                // client-side InteractionSummary (aggregateUserInteractions).
+                                const ixRes = await authenticatedFetch(
+                                    '/api/interactions?limit=1000'
+                                )
+                                if (ixRes.ok) {
+                                    const ixData = await ixRes.json()
+                                    const interactions = ixData.interactions || []
 
-                        if (interactions.length > 0) {
-                            // Generate new summary and cache it
-                            interactionSummary = aggregateUserInteractions(
-                                userId,
-                                interactions,
-                                sessionData.myRatings || []
-                            )
-
-                            console.log(
-                                `[V2] Generated NEW summary: ${interactions.length} interactions → ${interactionSummary.topContent.length} top items`
-                            )
-
-                            // Save to cache (don't await - fire and forget)
-                            saveV2InteractionSummary(userId, interactionSummary).catch((err) =>
-                                console.warn('[V2] Failed to cache summary:', err)
-                            )
+                                    if (interactions.length > 0) {
+                                        interactionSummary = aggregateUserInteractions(
+                                            userId,
+                                            interactions,
+                                            sessionData.myRatings || []
+                                        )
+                                        const ageMinutes = Math.floor(
+                                            (now - serverSummary.lastUpdated) / 60000
+                                        )
+                                        console.log(
+                                            `[V2] Built summary from ${interactions.length} interactions (server summary ${ageMinutes}m old)`
+                                        )
+                                    }
+                                }
+                            } else {
+                                console.log(
+                                    '[V2] Server summary stale — skipping, will refresh server-side on next interaction'
+                                )
+                            }
                         }
                     }
                 } catch (error) {
@@ -517,15 +515,15 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
                         'Failed to generate interaction summary, falling back to V1:',
                         error
                     )
-                    // Continue without summary - API will use V1 logic
+                    // Continue without summary — API will use V1 logic
                 }
 
-                // Use POST with body instead of GET with URL params to avoid 431 header size error
-                const response = await fetch(`/api/recommendations/personalized`, {
+                // Use POST with body instead of GET with URL params to avoid 431 header size error.
+                // Auth rides on the session cookie; no bearer token needed.
+                const response = await authenticatedFetch(`/api/recommendations/personalized`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        Authorization: `Bearer ${idToken}`,
                     },
                     body: JSON.stringify({
                         // V2: Interaction summary (Phase 1 - Deep History)

@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { useToast } from '@/hooks/useToast'
 import { getTemplateEmoji, getTemplateName } from '@/lib/email/email-templates-config'
 import { ClockIcon, CheckCircleIcon, XCircleIcon, EnvelopeIcon } from '@heroicons/react/24/outline'
-import { auth } from '@/firebase'
 
 interface EmailHistoryRecord {
     id: string
@@ -31,19 +30,8 @@ export default function EmailHistory() {
     const loadHistory = async () => {
         setLoading(true)
         try {
-            const user = auth.currentUser
-            if (!user) {
-                showError('Authentication required')
-                return
-            }
-
-            const idToken = await user.getIdToken()
-
-            const response = await fetch('/api/admin/email/history', {
-                headers: {
-                    Authorization: `Bearer ${idToken}`,
-                },
-            })
+            // Session cookie sent automatically — no Authorization header needed
+            const response = await fetch('/api/admin/email/history')
 
             const result = await response.json()
 

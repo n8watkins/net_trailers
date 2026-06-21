@@ -12,7 +12,7 @@ import Image from 'next/image'
 import { RankingComment } from '@/types/rankings'
 import { useRankingStore } from '@/stores/rankingStore'
 import { useSessionStore } from '@/stores/sessionStore'
-import { auth } from '@/firebase'
+import useAuth from '@/hooks/useAuth'
 import { formatDistanceToNow } from 'date-fns'
 import {
     HeartIcon,
@@ -37,6 +37,7 @@ export function CommentSection({
 }: CommentSectionProps) {
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
+    const { user } = useAuth()
     const { createComment, deleteComment, likeComment, unlikeComment } = useRankingStore()
 
     const [newCommentText, setNewCommentText] = useState('')
@@ -49,15 +50,13 @@ export function CommentSection({
 
         if (!userId || !newCommentText.trim()) return
 
-        // Get current user info from Firebase Auth
-        const currentUser = auth.currentUser
-        if (!currentUser) {
+        if (!user) {
             console.error('User not authenticated')
             return
         }
 
-        const username = currentUser.displayName || 'Unknown User'
-        const avatarUrl = currentUser.photoURL || undefined
+        const username = user.displayName || user.name || 'Unknown User'
+        const avatarUrl = user.photoURL || user.image || undefined
 
         setIsSubmitting(true)
         try {
@@ -77,15 +76,13 @@ export function CommentSection({
     const handleSubmitReply = async (parentCommentId: string) => {
         if (!userId || !replyText.trim()) return
 
-        // Get current user info from Firebase Auth
-        const currentUser = auth.currentUser
-        if (!currentUser) {
+        if (!user) {
             console.error('User not authenticated')
             return
         }
 
-        const username = currentUser.displayName || 'Unknown User'
-        const avatarUrl = currentUser.photoURL || undefined
+        const username = user.displayName || user.name || 'Unknown User'
+        const avatarUrl = user.photoURL || user.image || undefined
 
         setIsSubmitting(true)
         try {
@@ -318,11 +315,11 @@ export function CommentSection({
             {/* Comment input */}
             {userId ? (
                 <form onSubmit={handleSubmitComment} className="flex gap-3">
-                    {auth.currentUser?.photoURL ? (
+                    {user?.photoURL || user?.image ? (
                         <div className="w-10 h-10 flex-shrink-0">
                             <Image
-                                src={auth.currentUser.photoURL}
-                                alt={auth.currentUser.displayName || 'User'}
+                                src={(user.photoURL || user.image)!}
+                                alt={user.displayName || user.name || 'User'}
                                 width={40}
                                 height={40}
                                 className="rounded-full object-cover w-full h-full"
@@ -330,7 +327,7 @@ export function CommentSection({
                         </div>
                     ) : (
                         <div className="w-10 h-10 flex-shrink-0 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold">
-                            {(auth.currentUser?.displayName?.[0] || 'U').toUpperCase()}
+                            {((user?.displayName || user?.name)?.[0] || 'U').toUpperCase()}
                         </div>
                     )}
                     <div className="flex-1">

@@ -3,8 +3,7 @@ import { withAuth } from '@/lib/auth-middleware'
 import { consumeGeminiRateLimit } from '@/lib/geminiRateLimiter'
 import { sanitizeInput } from '@/utils/inputSanitization'
 import { apiLog, apiError, apiWarn } from '@/utils/debugLogger'
-import { getAdminDb } from '@/lib/firebase-admin'
-import { Content } from '@/typings'
+import { loadUserPreferences } from '@/db/queries/userPreferences'
 import { routeGeminiRequest, extractGeminiText } from '@/lib/geminiRouter'
 
 /**
@@ -33,20 +32,14 @@ async function handleGenerateRow(request: NextRequest, userId: string): Promise<
         }
         const sanitizedQuery = queryResult.sanitized
 
-        // Fetch user's hidden movies from Firestore
+        // Fetch user's hidden movies from Drizzle (user_preferences JSON blob)
         let hiddenMovieIds: number[] = []
         try {
-            const db = getAdminDb()
-            const userDoc = await db.collection('users').doc(userId).get()
-
-            if (userDoc.exists) {
-                const userData = userDoc.data()
-                const hiddenMovies = (userData?.hiddenMovies || []) as Content[]
-                hiddenMovieIds = hiddenMovies.map((m) => m.id)
-            }
+            const prefs = await loadUserPreferences(userId)
+            hiddenMovieIds = (prefs.hiddenMovies ?? []).map((m) => m.id)
         } catch (error) {
             apiWarn('Error fetching hidden movies:', error)
-            // Continue without filtering - not critical for functionality
+            // Continue without filtering — not critical for functionality
         }
 
         const apiKey = process.env.GEMINI_API_KEY

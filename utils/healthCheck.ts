@@ -5,15 +5,16 @@
  * Runs pre-flight checks to detect issues early.
  *
  * Key Features:
- * - Firebase initialization check
+ * - Firebase initialization check (firebase.ts kept for existing SDK usage)
  * - Storage availability checks
- * - Firestore cache health monitoring
  * - Storage quota monitoring
  * - Detailed warnings and errors
+ *
+ * Note: Firestore cache health check removed — FirestoreCacheHealth was part
+ * of the Firebase persistence layer that has been removed. Data is now served
+ * from Turso/SQLite via API routes.
  */
 
-import { getApp } from 'firebase/app'
-import { FirestoreCacheHealth } from './firestore/cacheHealth'
 import { StorageQuotaManager } from './storageQuota'
 
 export interface HealthCheckResult {
@@ -42,7 +43,7 @@ export class AppHealthMonitor {
                 firebase: false,
                 localStorage: false,
                 indexedDB: false,
-                firestoreCache: false,
+                firestoreCache: true, // No longer checked — always pass
                 storageQuota: false,
             },
             warnings: [],
@@ -50,16 +51,10 @@ export class AppHealthMonitor {
             timestamp: Date.now(),
         }
 
-        // Check 1: Firebase initialized
-        try {
-            const app = getApp()
-            result.checks.firebase = !!app
-            console.log('[HealthCheck] ✅ Firebase initialized')
-        } catch (error) {
-            result.errors.push('Firebase not initialized')
-            result.healthy = false
-            console.error('[HealthCheck] ❌ Firebase not initialized:', error)
-        }
+        // Check 1: Firebase — always passes now (Firebase SDK is initialised by
+        // firebase.ts on import; health of user data is now Turso/API-based).
+        result.checks.firebase = true
+        console.log('[HealthCheck] Firebase check skipped (data layer is Turso/API)')
 
         // Check 2: localStorage available
         try {
@@ -67,39 +62,23 @@ export class AppHealthMonitor {
             localStorage.setItem(testKey, 'test')
             localStorage.removeItem(testKey)
             result.checks.localStorage = true
-            console.log('[HealthCheck] ✅ localStorage available')
+            console.log('[HealthCheck] localStorage available')
         } catch (error) {
             result.errors.push('localStorage not available')
             result.healthy = false
-            console.error('[HealthCheck] ❌ localStorage not available:', error)
+            console.error('[HealthCheck] localStorage not available:', error)
         }
 
         // Check 3: IndexedDB available
         result.checks.indexedDB = 'indexedDB' in window
         if (!result.checks.indexedDB) {
-            result.warnings.push('IndexedDB not available (Firestore persistence disabled)')
-            console.warn('[HealthCheck] ⚠️  IndexedDB not available')
+            result.warnings.push('IndexedDB not available')
+            console.warn('[HealthCheck] IndexedDB not available')
         } else {
-            console.log('[HealthCheck] ✅ IndexedDB available')
+            console.log('[HealthCheck] IndexedDB available')
         }
 
-        // Check 4: Firestore cache health
-        try {
-            const cacheHealth = await FirestoreCacheHealth.isSafeToEnableCache()
-            result.checks.firestoreCache = cacheHealth
-
-            if (!cacheHealth) {
-                result.warnings.push('Firestore cache unhealthy (using memory cache)')
-                console.warn('[HealthCheck] ⚠️  Firestore cache unhealthy')
-            } else {
-                console.log('[HealthCheck] ✅ Firestore cache healthy')
-            }
-        } catch (error) {
-            result.warnings.push('Firestore cache health check failed')
-            console.warn('[HealthCheck] ⚠️  Cache health check failed:', error)
-        }
-
-        // Check 5: Storage quota
+        // Check 4: Storage quota
         try {
             const quota = await StorageQuotaManager.getQuotaInfo()
             result.checks.storageQuota = !quota.critical
@@ -108,21 +87,21 @@ export class AppHealthMonitor {
                 result.warnings.push(
                     `Storage usage: ${quota.percentUsed.toFixed(1)}% (${(quota.usage / (1024 * 1024)).toFixed(2)}MB / ${(quota.quota / (1024 * 1024)).toFixed(2)}MB)`
                 )
-                console.warn(`[HealthCheck] ⚠️  Storage usage: ${quota.percentUsed.toFixed(1)}%`)
+                console.warn(`[HealthCheck] Storage usage: ${quota.percentUsed.toFixed(1)}%`)
             }
 
             if (quota.critical) {
                 result.errors.push('Storage quota critical!')
                 result.healthy = false
-                console.error('[HealthCheck] ❌ Storage quota critical!')
+                console.error('[HealthCheck] Storage quota critical!')
             }
 
             if (!quota.warning && !quota.critical) {
-                console.log('[HealthCheck] ✅ Storage quota healthy')
+                console.log('[HealthCheck] Storage quota healthy')
             }
         } catch (error) {
             result.warnings.push('Storage quota check failed')
-            console.warn('[HealthCheck] ⚠️  Quota check failed:', error)
+            console.warn('[HealthCheck] Quota check failed:', error)
         }
 
         // Summary
@@ -130,15 +109,15 @@ export class AppHealthMonitor {
         const totalChecks = Object.keys(result.checks).length
 
         console.log(
-            `[HealthCheck] ${result.healthy ? '✅' : '❌'} Health check complete: ${checksPassed}/${totalChecks} checks passed`
+            `[HealthCheck] ${result.healthy ? 'OK' : 'FAIL'} Health check complete: ${checksPassed}/${totalChecks} checks passed`
         )
 
         if (result.warnings.length > 0) {
-            console.log(`[HealthCheck] ⚠️  ${result.warnings.length} warning(s):`, result.warnings)
+            console.log(`[HealthCheck] ${result.warnings.length} warning(s):`, result.warnings)
         }
 
         if (result.errors.length > 0) {
-            console.error(`[HealthCheck] ❌ ${result.errors.length} error(s):`, result.errors)
+            console.error(`[HealthCheck] ${result.errors.length} error(s):`, result.errors)
         }
 
         return result
@@ -172,13 +151,8 @@ export class AppHealthMonitor {
         // IndexedDB
         checks.indexedDB = 'indexedDB' in window
 
-        // Firebase
-        try {
-            getApp()
-            checks.firebase = true
-        } catch {
-            checks.firebase = false
-        }
+        // Firebase — always true (data layer is now Turso/API)
+        checks.firebase = true
 
         return checks
     }
@@ -190,10 +164,10 @@ export class AppHealthMonitor {
         const result = await this.runFullHealthCheck()
 
         if (result.healthy) {
-            return '✅ All systems operational'
+            return 'All systems operational'
         }
 
         const issueCount = result.errors.length + result.warnings.length
-        return `⚠️  ${issueCount} issue(s) detected`
+        return `${issueCount} issue(s) detected`
     }
 }

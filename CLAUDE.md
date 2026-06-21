@@ -15,7 +15,10 @@ npm test             # Run Jest tests
 npm run test:watch   # Run tests in watch mode
 npm run test:coverage # Run tests with coverage report
 npm run test:ci      # Run tests in CI mode (no watch, with coverage)
-npm run migrate:genres # Migrate existing collections from TMDB genre IDs to unified genre IDs
+npm run db:generate  # Generate a Drizzle migration from db/schema.ts
+npm run db:migrate   # Apply migrations to Turso
+npm run db:push      # Push schema directly to Turso (dev)
+npm run db:studio    # Open Drizzle Studio to inspect the database
 ```
 
 ## Architecture Overview
@@ -27,7 +30,7 @@ The app uses **Zustand** with **18 focused stores** (migrated from monolithic "g
 - **Direct store usage**: Components use Zustand hooks directly (e.g., `useAppStore()`, `useSessionStore()`)
 - **No provider wrapper**: Zustand stores work without a root provider component
 - **Type-safe selectors**: Use store selectors for optimal performance and type safety
-- **Storage adapters**: FirebaseStorageAdapter (auth users) and LocalStorageAdapter (guests)
+- **Storage adapters**: ApiStorageAdapter (auth users → Turso via `/api/user/preferences`) and LocalStorageAdapter (guests)
 - **Store factory pattern**: createUserStore.ts for shared auth/guest store logic
 
 **Zustand Stores** (18 total):
@@ -40,7 +43,7 @@ The app uses **Zustand** with **18 focused stores** (migrated from monolithic "g
 
 **User Data Stores**:
 
-- `stores/authStore.ts` - Authenticated user data with Firebase sync
+- `stores/authStore.ts` - Authenticated user data synced to Turso (via API routes)
 - `stores/guestStore.ts` - Guest user data with localStorage persistence
 - `stores/profileStore.ts` - User profile data and public profiles
 - `stores/watchHistoryStore.ts` - Watch history tracking
@@ -139,69 +142,37 @@ The app handles both movies and TV shows through a unified type system:
 
 ### Authentication & User Data System
 
-- **Firebase Auth** with multiple providers (Google, Email/Password)
+- **Auth.js (NextAuth v5)** with the **GitHub** provider only (`auth.ts`,
+  `@auth/drizzle-adapter`, database sessions). Cookie-based sessions — no bearer tokens.
 - **Guest mode** for demo access without authentication
 - **Data Storage**:
-    - Authenticated users: Firebase Firestore at `/users/{userId}` document
+    - Authenticated users: **Turso (libSQL/SQLite) via Drizzle** — all access is
+      server-mediated through API routes (the client cannot talk to Turso directly)
     - Guest users: Browser localStorage at `nettrailer_guest_data_{guestId}`
-    - Session persistence: localStorage for auth state across refreshes
-- **User Isolation**: Each user has their own Firestore document, preventing data mixing
-- **Race Condition Prevention**: User ID validation before all state updates
+    - Session persistence: Auth.js session cookie (validated server-side)
+- **User Isolation**: API routes derive the user id from the session (`withAuth` /
+  `currentUserId()`), never from the request body — a user only ever reads/writes their own rows
+- **Admin**: identified by GitHub login via `ADMIN_GITHUB_LOGIN` (`session.user.isAdmin`)
 - **Public Profiles**: `/users/[userId]` routes show public profiles with rankings and collections
 
-**Firestore Collections**:
+**Turso tables** (Drizzle schema in `db/schema.ts`; queries in `db/queries/*.ts`):
 
 ```
-/users/{userId}
-  - Profile data, preferences, settings
-  - customRows (sub-collection)
-  - interactions (sub-collection, 90-day TTL)
-  - notifications (sub-collection, 30-day auto-dismiss)
-  - watchHistory (sub-collection)
-  - childSafetyPIN (sub-document)
-
-/rankings/{rankingId}
-  - Public and private rankings
-  - Indexed by userId, createdAt, likes, views
-
-/rankingComments/{commentId}
-  - Comments on rankings
-  - Indexed by rankingId, createdAt
-
-/rankingLikes/{likeId}
-  - User likes on rankings
-
-/threads/{threadId}
-  - Discussion threads with replies
-  - Indexed by category, createdAt, userId
-
-/thread_replies/{replyId}
-  - Replies to threads
-  - Indexed by threadId, createdAt
-
-/thread_likes/{likeId}
-  - User likes on threads
-
-/reply_likes/{likeId}
-  - User likes on replies
-
-/polls/{pollId}
-  - Polls with voting options
-  - Indexed by category, createdAt, userId
-
-/poll_votes/{voteId}
-  - User votes on polls
-  - One vote per user per poll
-
-/sharedCollections/{linkId}
-  - Shared collection snapshots
-  - Public read access
-
-/admin_emails/{emailId}
-  - Email sending history
-  - Server-side only access (blocked client reads)
-  - Stores counts, not recipient lists (PII minimization)
+Auth.js adapter: user, account, session, verificationToken
+User data:       user_preferences (the former users/{userId} blob as one JSON column),
+                 profiles, interactions, interaction_summary, notifications,
+                 watch_history, child_safety_pins
+Rankings:        rankings, ranking_comments, ranking_likes, comment_likes
+Forum:           threads, thread_replies, thread_likes, reply_likes, polls, poll_votes
+Social & misc:   shares (collection snapshots), user_activity, user_badges,
+                 user_follows, content_reports, admin_emails (counts only), signup_log
 ```
+
+- Nested arrays/objects (`Content[]`, `rankedItems`, poll `options`, `advancedFilters`)
+  are stored as JSON text columns; timestamps are epoch-ms integers.
+- Migrations: `npm run db:generate` then `npm run db:migrate` (or `db:push`); `db:studio` to inspect.
+- The single former Firestore `onSnapshot` listener (notifications) is now **polling**
+  (`subscribeToNotifications` polls `/api/notifications` every 30s).
 
 ### Unified Toast Notification System
 
@@ -319,11 +290,8 @@ The `/api/custom-rows/[id]/content` route handles translation:
 - `constants/unifiedGenres.ts` - `UnifiedGenre` interface with movie/TV ID mappings
 
 **Migration:**
-Existing collections can be migrated from TMDB IDs to unified IDs:
-
-```bash
-npm run migrate:genres
-```
+New collections are created with unified genre IDs directly. (The legacy
+`migrate:genres` Firestore script was removed in the Turso migration.)
 
 **Child Safety Integration:**
 Each unified genre has a `childSafe` flag. When child safety mode is enabled, only child-safe genres appear in selectors.
@@ -361,8 +329,8 @@ Each unified genre has a `childSafe` flag. When child safety mode is enabled, on
 - **Search & filtering**: Global search across threads and polls
 - **Sorting options**: Recent, Popular, Most Replied, Most Voted
 - **Authentication required**: All forum features require authentication (no guest access)
-- **Firestore backend**: Full CRUD operations for threads, replies, polls, and votes
-- **Security rules**: Comprehensive Firestore security rules for data protection
+- **Turso/Drizzle backend**: Full CRUD via `db/queries/*` + `/api/threads`, `/api/polls`
+- **Access control**: Server-side ownership checks in API routes (session-derived user id)
 
 ### Child Safety Mode
 
@@ -396,7 +364,7 @@ Each unified genre has a `childSafe` flag. When child safety mode is enabled, on
 ### Notification System
 
 - **In-app notifications** with bell icon in header
-- **Real-time Firestore listeners** for immediate updates
+- **Polling** (`subscribeToNotifications` polls `/api/notifications` every 30s) for updates
 - **Notification types**:
     - Trending updates (watchlist items trending)
     - System announcements
@@ -414,12 +382,12 @@ Each unified genre has a `childSafe` flag. When child safety mode is enabled, on
 
 Required environment variables are documented in the file with setup instructions for:
 
-- Firebase configuration (6 variables)
+- Turso: `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`
+- Auth.js: `AUTH_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET` (GitHub OAuth App), optional `AUTH_URL` (prod)
 - TMDB API key (query parameter auth for v3 API)
 - Google Gemini API key (for smart search)
 - CRON_SECRET (for auto-updating collections)
-- ADMIN*UID (server-side only, not NEXT_PUBLIC* - for admin portal access)
-- Firebase Admin SDK credentials (private key, client email)
+- ADMIN_GITHUB_LOGIN (server-side only, not NEXT_PUBLIC\* — the admin's GitHub username)
 - Sentry DSN (for error monitoring)
 - Google Analytics measurement ID
 - Resend API key (optional - for admin email system)
@@ -477,10 +445,9 @@ const showModal = useModalStore((state) => state.modal.isOpen)
 - The `authStore` tracks `userId` to prevent data mixing between users
 - When switching users, stores are cleared before loading new data
 - Auto-save in `useSessionData` validates user ID match before persisting
-- Firebase operations include 5-second timeout to prevent hanging
 - Auth data loads asynchronously in background while UI shows defaults
 - **Storage adapters**:
-    - FirebaseStorageAdapter for authenticated users (real-time sync)
+    - ApiStorageAdapter for authenticated users (Turso via `/api/user/preferences`)
     - LocalStorageAdapter for guest users (no cloud sync)
 
 ### Toast Notifications & Error Handling
@@ -520,7 +487,7 @@ const showModal = useModalStore((state) => state.modal.isOpen)
 - Tests should cover both movie and TV show content types
 - Mock TMDB API responses in tests using the established patterns
 - Mock Gemini AI responses for smart search tests
-- Test Firestore operations with mock adapters
+- Test DB operations with an in-memory libSQL (`file::memory:`) or mocked `db/queries/*`
 
 ## Important Notes
 
@@ -536,7 +503,6 @@ const showModal = useModalStore((state) => state.modal.isOpen)
 - **Unified Genre System**: Collections use `string[]` (unified IDs) not `number[]` (TMDB IDs)
     - Always translate to TMDB IDs before making API calls
     - Use utilities from `utils/genreMapping.ts` for translation
-    - Migration script available: `npm run migrate:genres`
 
 ## Development Server Management
 
@@ -584,7 +550,7 @@ const showModal = useModalStore((state) => state.modal.isOpen)
 - **Gemini API Key**: Public key (rate-limited by Google)
 - **CRON_SECRET**: Protects cron job endpoints from unauthorized access
 - **Input sanitization**: All Gemini API routes use isomorphic-dompurify
-- **Firestore security rules**: Deployed from `firestore.rules`
+- **Data access control**: Server-side ownership checks in API routes (session-derived user id) — replaces Firestore security rules
 - **Security headers**: CSP, HSTS, X-Frame-Options, etc.
 
 ### CSRF Protection
@@ -626,7 +592,7 @@ export async function myAction() {
 - `__tests__/security/serverActionCsrf.test.ts` - Scans for unprotected server actions
 - `__tests__/security/routeHandlerCsrf.test.ts` - Ensures mutations are under `/api/*`
 
-**IMPORTANT**: The CSRF bypass only trusts verified `CRON_SECRET`, not unverified JWT tokens. This prevents attackers from bypassing CSRF by sending fake Authorization headers.
+**IMPORTANT**: API auth is the Auth.js session cookie (validated server-side via `withAuth`/`auth()`), not a client-supplied token. The only CSRF bypass is a verified `CRON_SECRET` for `/api/cron/*`.
 
 ## User Assets
 
@@ -663,14 +629,14 @@ export async function myAction() {
     - HTML: max 50,000 characters
     - Recipient limit: max 100 per request
 - **CSRF Protection**: All endpoints use authenticatedFetch()
-- **Admin-Only Access**: ADMIN_UID verification (server-side only)
+- **Admin-Only Access**: `ADMIN_GITHUB_LOGIN` verification via session (server-side only)
 - **PII Minimization**: Email history stores counts, not recipient emails
 
 ### CAN-SPAM Compliance
 
 - **Unsubscribe Tokens**: Crypto-secure 64-character hex tokens
 - **Batch Token Generation**: batchEnsureUnsubscribeTokens() for performance
-- **Transaction Safety**: Firestore transactions prevent race conditions
+- **Transaction Safety**: Drizzle/libSQL transactions prevent race conditions
 - **Unsubscribe Links**: Automatically included in all emails
 
 ### Key Files
@@ -687,7 +653,7 @@ export async function myAction() {
 
 - **Trending/Social templates**: Not implemented (returns 501 Not Implemented)
 - **Announcement/Custom templates**: Fully functional and production-ready
-- **Batch optimization**: 100+ Firestore queries → 1 batched read
+- **Batch optimization**: 100+ per-user lookups → 1 batched DB read
 - **Graceful degradation**: Returns null when Resend unavailable
 - **Template system**: React Email components prevent injection
 

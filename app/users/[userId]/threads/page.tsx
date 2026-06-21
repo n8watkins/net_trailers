@@ -1,28 +1,28 @@
 /**
  * Public User Threads Page
  *
- * Shows all public threads for a specific user's profile
+ * Shows all public threads for a specific user's profile.
+ * Data is fetched from /api/public-profile/[userId] (Turso-backed).
+ * Note: /api/threads does not support ?userId= filtering, so the aggregated
+ * public-profile payload (which includes forum.threads) is used instead.
  */
 
 'use client'
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { collection, getDocs, query, where, orderBy } from 'firebase/firestore'
-import { db } from '../../../../firebase'
 import SubPageLayout from '../../../../components/layout/SubPageLayout'
 import NetflixLoader from '../../../../components/common/NetflixLoader'
 import { ChatBubbleLeftRightIcon, UserIcon, HeartIcon, EyeIcon } from '@heroicons/react/24/outline'
-import type { Thread } from '../../../../types/forum'
+import type { ThreadSummary } from '../../../../types/forum'
 import type { PublicProfilePayload } from '@/lib/publicProfile'
-import type { Timestamp } from 'firebase/firestore'
 import Link from 'next/link'
 
 export default function UserThreadsPage() {
     const params = useParams()
     const userId = params?.userId as string
 
-    const [threads, setThreads] = useState<Thread[]>([])
+    const [threads, setThreads] = useState<ThreadSummary[]>([])
     const [displayName, setDisplayName] = useState<string>('User')
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -37,37 +37,20 @@ export default function UserThreadsPage() {
             setError(null)
 
             try {
-                // Try to get profile data from API first (includes auth displayName fallback)
-                let profileDisplayName = 'User'
-                try {
-                    const response = await fetch(`/api/public-profile/${userId}`)
-                    if (response.ok) {
-                        const payload = (await response.json()) as PublicProfilePayload
-                        profileDisplayName = payload.profile.displayName
-                    }
-                } catch (apiError) {
-                    console.warn('[UserThreads] API failed, will use client-side data')
+                // Fetch aggregated public profile from the Turso-backed API.
+                // forum.threads already contains the user's threads filtered and sorted.
+                const response = await fetch(`/api/public-profile/${userId}`)
+                if (!response.ok) {
+                    const body = await response.json().catch(() => null)
+                    throw new Error(body?.error || 'Failed to load threads')
                 }
+
+                const payload = (await response.json()) as PublicProfilePayload
 
                 if (!isMounted) return
 
-                setDisplayName(profileDisplayName)
-
-                // Load user's threads
-                const threadsSnap = await getDocs(
-                    query(
-                        collection(db, 'threads'),
-                        where('userId', '==', userId),
-                        orderBy('createdAt', 'desc')
-                    )
-                )
-
-                const userThreads = threadsSnap.docs.map((doc) => ({
-                    id: doc.id,
-                    ...doc.data(),
-                })) as Thread[]
-
-                setThreads(userThreads)
+                setDisplayName(payload.profile.displayName)
+                setThreads(payload.forum?.threads ?? [])
             } catch (err) {
                 console.error('Error loading threads:', err)
                 if (isMounted) {
@@ -87,8 +70,9 @@ export default function UserThreadsPage() {
         }
     }, [userId])
 
-    const formatDate = (timestamp: Timestamp | number) => {
-        const ms = typeof timestamp === 'number' ? timestamp : timestamp.toMillis()
+    const formatDate = (timestamp: number | null | undefined) => {
+        if (!timestamp) return '—'
+        const ms = typeof timestamp === 'number' ? timestamp : Number(timestamp)
         const date = new Date(ms)
         return date.toLocaleDateString('en-US', {
             month: 'short',
@@ -174,7 +158,7 @@ export default function UserThreadsPage() {
                                             {thread.category}
                                         </span>
                                         <span className="text-gray-500 text-sm">
-                                            {formatDate(thread.createdAt)}
+                                            {formatDate(thread.createdAt ?? undefined)}
                                         </span>
                                     </div>
                                     <h3 className="text-lg font-semibold text-white mb-2 line-clamp-2">

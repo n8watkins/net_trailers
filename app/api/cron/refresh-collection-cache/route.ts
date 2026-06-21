@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAdminDb } from '../../../../lib/firebase-admin'
 import { UserList, CacheMetadata } from '../../../../types/collections'
 import { buildInitialCache, CascadingConfig } from '../../../../utils/unifiedCascadingFetch'
 import { apiError, apiWarn } from '../../../../utils/debugLogger'
+import { db } from '@/db'
+import { users, userPreferences } from '@/db/schema'
+import { loadUserPreferences, saveUserPreferences } from '@/db/queries/userPreferences'
+import { createNotification } from '@/db/queries/notifications'
 
 const CRON_SECRET = process.env.CRON_SECRET
 const API_KEY = process.env.TMDB_API_KEY
@@ -13,6 +16,11 @@ const API_KEY = process.env.TMDB_API_KEY
  * Runs every Sunday at 2 AM UTC to check for new content in collections with actor/director filters.
  * Only updates cache if the top 50 results have changed.
  * Creates notifications when new content is detected.
+ *
+ * Collections are stored in userPreferences.data.userCreatedWatchlists (JSON blob).
+ * When the cache changes we load the full preferences, patch the specific collection,
+ * and write the entire blob back via saveUserPreferences — matching the existing
+ * single-document storage model.
  */
 export async function GET(request: NextRequest) {
     try {
@@ -25,8 +33,6 @@ export async function GET(request: NextRequest) {
         if (!API_KEY) {
             return NextResponse.json({ error: 'TMDB API key not configured' }, { status: 500 })
         }
-
-        const db = getAdminDb()
 
         // Check if admin-only mode is enabled via query parameter
         const { searchParams } = new URL(request.url)
@@ -46,11 +52,15 @@ export async function GET(request: NextRequest) {
         let collectionsUpdated = 0
         let notificationsCreated = 0
 
-        // Get all users
-        const usersSnapshot = await db.collection('users').get()
+        // -----------------------------------------------------------------------
+        // Enumerate all users that have a preferences row.
+        // userPreferences rows map 1:1 with users and contain the full
+        // userCreatedWatchlists array inside the `data` JSON blob.
+        // -----------------------------------------------------------------------
+        const allPrefs = await db.select().from(userPreferences)
 
-        for (const userDoc of usersSnapshot.docs) {
-            const userId = userDoc.id
+        for (const prefRow of allPrefs) {
+            const userId = prefRow.userId
 
             // ADMIN ONLY MODE: Skip all users except admin
             if (adminOnly && (!ADMIN_UID || userId !== ADMIN_UID)) {
@@ -58,21 +68,24 @@ export async function GET(request: NextRequest) {
                 continue
             }
 
-            // Get user's custom collections
-            const collectionsSnapshot = await db
-                .collection('users')
-                .doc(userId)
-                .collection('customRows')
-                .get()
+            // Collections live inside the JSON blob as userCreatedWatchlists
+            const collections: UserList[] = prefRow.data?.userCreatedWatchlists ?? []
 
-            for (const collectionDoc of collectionsSnapshot.docs) {
-                const collection = { id: collectionDoc.id, ...collectionDoc.data() } as UserList
+            // We may need to patch the preferences blob if any cache changes.
+            // Load a mutable copy upfront; if changed, we'll save it once at the end.
+            let prefsChanged = false
+            const updatedCollections = [...collections]
+
+            for (let i = 0; i < updatedCollections.length; i++) {
+                const collection = updatedCollections[i]
 
                 // Skip if no actor/director filters
                 const hasActorFilters =
                     collection.advancedFilters?.withCastIds &&
                     collection.advancedFilters.withCastIds.length > 0
-                const hasDirectorFilter = !!collection.advancedFilters?.withDirectorId
+                const hasDirectorFilter =
+                    !!collection.advancedFilters?.withDirectorId ||
+                    !!collection.advancedFilters?.withDirectorIds?.length
 
                 if (!hasActorFilters && !hasDirectorFilter) {
                     continue
@@ -124,28 +137,51 @@ export async function GET(request: NextRequest) {
                             needsRefresh: false,
                         }
 
-                        // Update collection in Firestore
-                        await collectionDoc.ref.update({
+                        // Patch the collection in our local mutable copy
+                        updatedCollections[i] = {
+                            ...collection,
                             cachedContentIds: freshTop50,
                             cacheMetadata: updatedMetadata,
-                        })
-
+                        }
+                        prefsChanged = true
                         collectionsUpdated++
 
-                        // Create notification if there are new items
+                        // Create in-app notification if there are new items.
+                        // Uses the Drizzle-backed createNotification directly.
                         if (newItemCount > 0) {
-                            await createNotification(
-                                userId,
-                                collection.id,
-                                collection.name,
-                                newItemCount
-                            )
-                            notificationsCreated++
+                            try {
+                                await createNotification(userId, {
+                                    type: 'collection_update',
+                                    title: 'New content available',
+                                    message: `${newItemCount} new ${newItemCount === 1 ? 'item' : 'items'} added to "${collection.name}"`,
+                                    collectionId: collection.id,
+                                    actionUrl: `/collections/${collection.id}`,
+                                    expiresIn: 30,
+                                })
+                                notificationsCreated++
+                            } catch (notifError) {
+                                apiWarn('Failed to create notification:', notifError)
+                                // Don't throw — notification failure should not stop cache refresh
+                            }
                         }
                     }
                 } catch (error) {
                     apiError(`Failed to refresh cache for collection ${collection.id}:`, error)
                     // Continue to next collection
+                }
+            }
+
+            // Persist the entire preferences blob back if any collection changed.
+            // We do a single write per user to minimise round-trips.
+            if (prefsChanged) {
+                try {
+                    const latestPrefs = await loadUserPreferences(userId)
+                    await saveUserPreferences(userId, {
+                        ...latestPrefs,
+                        userCreatedWatchlists: updatedCollections,
+                    })
+                } catch (saveError) {
+                    apiError(`Failed to save updated preferences for user ${userId}:`, saveError)
                 }
             }
         }
@@ -181,35 +217,4 @@ function arraysEqual(a: number[], b: number[]): boolean {
         if (a[i] !== b[i]) return false
     }
     return true
-}
-
-/**
- * Create a notification for the user about new collection content
- */
-async function createNotification(
-    userId: string,
-    collectionId: string,
-    collectionName: string,
-    newItemCount: number
-): Promise<void> {
-    try {
-        const db = getAdminDb()
-
-        const notification = {
-            type: 'collection_updated',
-            title: 'New content available',
-            message: `${newItemCount} new ${newItemCount === 1 ? 'item' : 'items'} added to "${collectionName}"`,
-            collectionId,
-            collectionName,
-            newItemCount,
-            createdAt: Date.now(),
-            read: false,
-            dismissed: false,
-        }
-
-        await db.collection('users').doc(userId).collection('notifications').add(notification)
-    } catch (error) {
-        apiWarn('Failed to create notification:', error)
-        // Don't throw - notification failure shouldn't stop cache refresh
-    }
 }

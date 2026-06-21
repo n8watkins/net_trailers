@@ -1,156 +1,113 @@
 /**
  * GET /api/shares/[shareId]
  *
- * Get shared collection data (public endpoint, read-only)
- * Validates share and returns collection data
- * NOTE: View count is NOT incremented here - use POST to track views (CSRF-safe)
+ * Public read of shared collection data. Validates isActive + expiry
+ * server-side. Does NOT increment view count (use POST for that).
  *
  * POST /api/shares/[shareId]
  *
- * Track view for a shared collection (CSRF protected by proxy.ts)
- * Increments view count - separate from GET to prevent CSRF via img/prefetch
+ * Track a view for a shared collection. CSRF-protected by proxy.ts (only
+ * POST from the same origin is allowed). Separated from GET to prevent
+ * view inflation via img tags, prefetch, etc.
  *
  * DELETE /api/shares/[shareId]
  *
- * Delete a share link (requires ownership)
- * SECURITY: DELETE requires valid Firebase ID token in Authorization header
+ * Permanently delete a share link. Requires Auth.js session; only the
+ * owner may delete.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import {
-    getSharedCollectionData,
-    incrementViewCount,
-    deleteShare,
-} from '../../../../utils/firestore/shares'
-import { withAuth } from '../../../../lib/auth-middleware'
-import { getAdminDb } from '../../../../lib/firebase-admin'
+
+import { withAuth } from '@/lib/auth-middleware'
+import { deleteShare, getSharedCollectionData, incrementViewCount } from '@/db/queries/shares'
 import { apiError } from '@/utils/debugLogger'
 
 interface RouteContext {
-    params: Promise<{
-        shareId: string
-    }>
+    params: Promise<{ shareId: string }>
 }
 
 /**
- * GET: Read-only fetch of shared collection data
- * Does NOT increment view count (that requires POST to prevent CSRF)
+ * GET: Read-only fetch of shared collection data.
+ * No auth required. View count is NOT incremented here.
  */
-export async function GET(request: NextRequest, { params }: RouteContext) {
+export async function GET(_request: NextRequest, { params }: RouteContext) {
     try {
         const { shareId } = await params
 
         if (!shareId) {
             return NextResponse.json(
-                {
-                    success: false,
-                    error: 'Share ID is required',
-                },
+                { success: false, error: 'Share ID is required' },
                 { status: 400 }
             )
         }
 
-        // Get admin Firestore instance
-        const db = getAdminDb()
-
-        // Get shared collection data (includes validation)
-        const data = await getSharedCollectionData(db, shareId)
+        const data = await getSharedCollectionData(shareId)
 
         if (!data) {
             return NextResponse.json(
-                {
-                    success: false,
-                    error: 'Share link not found, expired, or inactive',
-                },
+                { success: false, error: 'Share link not found, expired, or inactive' },
                 { status: 404 }
             )
         }
 
-        // NOTE: View count is NOT incremented here
-        // Client must call POST to track views (CSRF-protected)
-
-        return NextResponse.json({
-            success: true,
-            data,
-        })
+        return NextResponse.json({ success: true, data })
     } catch (error) {
         apiError('Error fetching shared collection:', error)
 
         return NextResponse.json(
-            {
-                success: false,
-                error: 'Failed to load shared collection',
-            },
+            { success: false, error: 'Failed to load shared collection' },
             { status: 500 }
         )
     }
 }
 
 /**
- * POST: Track view for shared collection
- * CSRF protected by proxy.ts (requires valid Origin/Referer)
- * Separated from GET to prevent view inflation via img tags, prefetch, etc.
+ * POST: Track a view (CSRF-protected by proxy.ts).
+ * No auth required. Only increments if the share is still valid.
  */
-export async function POST(request: NextRequest, { params }: RouteContext) {
+export async function POST(_request: NextRequest, { params }: RouteContext) {
     try {
         const { shareId } = await params
 
         if (!shareId) {
             return NextResponse.json(
-                {
-                    success: false,
-                    error: 'Share ID is required',
-                },
+                { success: false, error: 'Share ID is required' },
                 { status: 400 }
             )
         }
 
-        const db = getAdminDb()
-
-        // Verify share exists before incrementing
-        const data = await getSharedCollectionData(db, shareId)
+        // Verify the share is still valid before incrementing.
+        const data = await getSharedCollectionData(shareId)
         if (!data) {
             return NextResponse.json(
-                {
-                    success: false,
-                    error: 'Share link not found, expired, or inactive',
-                },
+                { success: false, error: 'Share link not found, expired, or inactive' },
                 { status: 404 }
             )
         }
 
-        // Increment view count
-        await incrementViewCount(db, shareId)
+        await incrementViewCount(shareId)
 
-        return NextResponse.json({
-            success: true,
-            message: 'View tracked',
-        })
+        return NextResponse.json({ success: true, message: 'View tracked' })
     } catch (error) {
         apiError('Error tracking share view:', error)
 
-        return NextResponse.json(
-            {
-                success: false,
-                error: 'Failed to track view',
-            },
-            { status: 500 }
-        )
+        return NextResponse.json({ success: false, error: 'Failed to track view' }, { status: 500 })
     }
 }
 
+/**
+ * DELETE: Remove share permanently. Auth required; ownership enforced in
+ * the query layer (deleteShare throws if userId doesn't match).
+ */
 async function handleDeleteShare(
-    request: NextRequest,
+    _request: NextRequest,
     userId: string,
     context?: RouteContext
 ): Promise<NextResponse> {
     try {
         if (!context) {
             return NextResponse.json(
-                {
-                    success: false,
-                    error: 'Invalid request context',
-                },
+                { success: false, error: 'Invalid request context' },
                 { status: 400 }
             )
         }
@@ -159,41 +116,22 @@ async function handleDeleteShare(
 
         if (!shareId) {
             return NextResponse.json(
-                {
-                    success: false,
-                    error: 'Share ID is required',
-                },
+                { success: false, error: 'Share ID is required' },
                 { status: 400 }
             )
         }
 
-        // Get admin Firestore instance
-        const db = getAdminDb()
+        await deleteShare(shareId, userId)
 
-        // Delete share (validates ownership)
-        await deleteShare(db, shareId, userId)
-
-        return NextResponse.json({
-            success: true,
-            message: 'Share link deleted successfully',
-        })
+        return NextResponse.json({ success: true, message: 'Share link deleted successfully' })
     } catch (error) {
         apiError('Error deleting share:', error)
 
         const errorMessage = error instanceof Error ? error.message : 'Failed to delete share link'
-
-        // Check for permission error
         const status = errorMessage.includes('Only the owner') ? 403 : 500
 
-        return NextResponse.json(
-            {
-                success: false,
-                error: errorMessage,
-            },
-            { status }
-        )
+        return NextResponse.json({ success: false, error: errorMessage }, { status })
     }
 }
 
-// Export authenticated handler for DELETE
 export const DELETE = withAuth(handleDeleteShare)

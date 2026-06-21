@@ -1,18 +1,24 @@
 /**
  * Watch History Hook
  *
- * Hook that manages watch history for both authenticated and guest users with proper session isolation:
- * - Authenticated users: Firestore-backed with no localStorage persistence
+ * Manages watch history for both authenticated and guest users with proper
+ * session isolation:
+ * - Authenticated users: backed by /api/watch-history (Turso/libSQL)
  * - Guest users: localStorage with session-scoped keys
- * - Automatic session transitions with proper data migration
+ *
+ * The previous implementation used Firebase auth.onAuthStateChanged to wait
+ * for the Firebase Auth SDK to be ready before loading. That Firebase dependency
+ * has been replaced with the app's useAuth() hook (from hooks/useAuth.tsx)
+ * which exposes the Auth.js session state via `user` and `loading`.
  */
 
 import { useEffect, useRef } from 'react'
 import { useWatchHistoryStore } from '../stores/watchHistoryStore'
 import { useSessionStore } from '../stores/sessionStore'
-import { Content } from '../typings'
-import { addWatchEntryToFirestore, saveWatchHistory } from '../utils/firestore/watchHistory'
-import { auth } from '../firebase'
+import { authenticatedFetch } from '../lib/authenticatedFetch'
+import useAuth from './useAuth'
+import type { Content } from '../typings'
+import type { WatchHistoryEntry } from '../types/watchHistory'
 import { watchHistoryLog, watchHistoryError } from '../utils/debugLogger'
 
 export function useWatchHistory() {
@@ -22,6 +28,9 @@ export function useWatchHistory() {
     const activeSessionId = useSessionStore((state) => state.activeSessionId)
     // For guest sessions, activeSessionId is the guest ID
     const guestId = sessionType === 'guest' ? activeSessionId : null
+
+    // Auth.js session — replaces the old Firebase auth.onAuthStateChanged listener.
+    const { user: authUser, loading: authLoading } = useAuth()
 
     const {
         history,
@@ -35,7 +44,6 @@ export function useWatchHistory() {
         getWatchEntry,
         clearHistory: clearHistoryInStore,
         removeEntry: removeEntryFromStore,
-        syncWithFirestore,
         loadFromFirestore,
         switchSession,
         loadGuestSession,
@@ -51,15 +59,13 @@ export function useWatchHistory() {
 
     // Handle session transitions
     useEffect(() => {
-        let authStateCleanup: (() => void) | null = null
-
         const currentSessionTypeId = userId || guestId
-        const prevSession = prevSessionRef.current
 
-        // Skip if no session ID yet
-        if (!currentSessionTypeId) {
-            return
-        }
+        // Skip if no session ID yet, or if auth is still loading for an authenticated session.
+        if (!currentSessionTypeId) return
+        if (sessionType === 'authenticated' && authLoading) return
+
+        const prevSession = prevSessionRef.current
 
         // Detect session type change or session ID change
         const sessionChanged =
@@ -67,7 +73,7 @@ export function useWatchHistory() {
 
         if (sessionChanged) {
             watchHistoryLog(
-                `[Watch History] Session transition detected: ${prevSession.type}(${prevSession.id}) -> ${sessionType}(${currentSessionTypeId})`
+                `[Watch History] Session transition: ${prevSession.type}(${prevSession.id}) -> ${sessionType}(${currentSessionTypeId})`
             )
 
             if (sessionType === 'guest' || sessionType === 'authenticated') {
@@ -76,53 +82,35 @@ export function useWatchHistory() {
                 })
             }
 
-            // Update ref
             prevSessionRef.current = { type: sessionType, id: currentSessionTypeId }
-        } else if (sessionType === 'authenticated' && userId && currentSessionId !== userId) {
-            // Authenticated user, but store hasn't loaded their data yet
-            watchHistoryLog('[Watch History] Loading authenticated user data from Firestore')
-            // Wait for Firebase Auth to be ready
-            const unsubscribe = auth.onAuthStateChanged((user) => {
-                if (user && user.uid === userId) {
-                    loadFromFirestore(userId)
-                    if (authStateCleanup) {
-                        authStateCleanup()
-                        authStateCleanup = null
-                    } else {
-                        unsubscribe()
-                    }
-                }
-            })
-            authStateCleanup = () => {
-                unsubscribe()
-            }
-        }
-
-        return () => {
-            if (authStateCleanup) {
-                authStateCleanup()
-                authStateCleanup = null
-            }
-        }
-    }, [sessionType, userId, guestId, currentSessionId, switchSession, loadFromFirestore])
-
-    const persistAuthHistory = async (userIdToPersist: string) => {
-        try {
-            const updatedHistory = useWatchHistoryStore.getState().history
-            await saveWatchHistory(userIdToPersist, updatedHistory)
-
-            useWatchHistoryStore.setState({
-                currentSessionId: userIdToPersist,
-                lastSyncedAt: Date.now(),
-                syncError: null,
-            })
-        } catch (error) {
-            watchHistoryError('Failed to persist watch history to Firestore:', error)
-            useWatchHistoryStore.setState({
-                syncError: error instanceof Error ? error.message : 'Failed to sync watch history',
+        } else if (
+            sessionType === 'authenticated' &&
+            userId &&
+            currentSessionId !== userId &&
+            !authLoading &&
+            authUser?.uid === userId
+        ) {
+            // Authenticated user with a valid session but store hasn't loaded their data yet.
+            // The Auth.js session cookie is already present (no need to wait for Firebase SDK).
+            watchHistoryLog('[Watch History] Loading authenticated user data from API')
+            loadFromFirestore(userId).catch((error) => {
+                watchHistoryError('[Watch History] Failed to load from API:', error)
             })
         }
-    }
+    }, [
+        sessionType,
+        userId,
+        guestId,
+        currentSessionId,
+        authLoading,
+        authUser?.uid,
+        switchSession,
+        loadFromFirestore,
+    ])
+
+    /* ---------------------------------------------------------------------- */
+    /*  Persistence helpers                                                    */
+    /* ---------------------------------------------------------------------- */
 
     // Add watch entry with automatic persistence
     const addWatchEntry = async (
@@ -134,18 +122,22 @@ export function useWatchHistory() {
         addToStore(contentId, mediaType, content)
 
         // Persist based on session type
-        if (sessionType === 'authenticated' && userId) {
-            // Authenticated: save to Firestore
+        if (sessionType === 'authenticated') {
             try {
-                const entry = useWatchHistoryStore.getState().getWatchEntry(contentId, mediaType)
-                if (entry) {
-                    await addWatchEntryToFirestore(userId, entry)
-                }
-            } catch (_error) {
-                // Silently fail - local store already updated
+                await authenticatedFetch('/api/watch-history', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contentId, mediaType, content }),
+                })
+                useWatchHistoryStore.setState({ lastSyncedAt: Date.now(), syncError: null })
+            } catch (error) {
+                watchHistoryError('[Watch History] Failed to persist entry to API:', error)
+                useWatchHistoryStore.setState({
+                    syncError:
+                        error instanceof Error ? error.message : 'Failed to sync watch history',
+                })
             }
         } else if (sessionType === 'guest' && guestId) {
-            // Guest: save to localStorage
             saveGuestSession(guestId)
         }
     }
@@ -153,8 +145,15 @@ export function useWatchHistory() {
     const removeEntry = async (id: string) => {
         removeEntryFromStore(id)
 
-        if (sessionType === 'authenticated' && userId) {
-            await persistAuthHistory(userId)
+        if (sessionType === 'authenticated') {
+            // The server DELETE /api/watch-history clears ALL history; individual
+            // entry deletion is not exposed via the current API. Re-sync from server
+            // to keep state consistent after optimistic removal.
+            try {
+                await loadFromFirestore(userId!)
+            } catch (error) {
+                watchHistoryError('[Watch History] Failed to re-sync after remove:', error)
+            }
         } else if (sessionType === 'guest' && guestId) {
             saveGuestSession(guestId)
         }
@@ -164,7 +163,16 @@ export function useWatchHistory() {
         clearHistoryInStore()
 
         if (sessionType === 'authenticated' && userId) {
-            await persistAuthHistory(userId)
+            try {
+                await authenticatedFetch('/api/watch-history', { method: 'DELETE' })
+                useWatchHistoryStore.setState({ lastSyncedAt: null, syncError: null })
+            } catch (error) {
+                watchHistoryError('[Watch History] Failed to clear history on API:', error)
+                useWatchHistoryStore.setState({
+                    syncError:
+                        error instanceof Error ? error.message : 'Failed to clear watch history',
+                })
+            }
         } else if (sessionType === 'guest' && guestId) {
             clearGuestSession(guestId)
             useWatchHistoryStore.setState({
@@ -176,10 +184,8 @@ export function useWatchHistory() {
     }
 
     // Determine actual storage type based on sync status
-    // - For authenticated users, only report "firestore" if we've successfully synced
-    // - For guest users, always report "localStorage"
     const storageType =
-        sessionType === 'authenticated' && lastSyncedAt !== null ? 'firestore' : 'localStorage'
+        sessionType === 'authenticated' && lastSyncedAt !== null ? 'turso' : 'localStorage'
 
     return {
         // Data

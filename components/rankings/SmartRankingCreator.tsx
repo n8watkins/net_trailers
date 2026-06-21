@@ -18,8 +18,8 @@ import { useToast } from '@/hooks/useToast'
 import { useRankingStore } from '@/stores/rankingStore'
 import { useSessionData } from '@/hooks/useSessionData'
 import { filterDislikedContent } from '@/utils/contentFilter'
-import { auth, db } from '@/firebase'
-import { doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore'
+import useAuth from '@/hooks/useAuth'
+import { authenticatedFetch } from '@/lib/authenticatedFetch'
 import { SmartInput } from '@/components/common/SmartInput'
 import SubPageLayout from '@/components/layout/SubPageLayout'
 import {
@@ -204,6 +204,7 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
     const { sessionType, activeSessionId } = useSessionStore()
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
+    const { user } = useAuth()
     const authCollections = useAuthStore((state) => state.userCreatedWatchlists)
     const guestCollections = useGuestStore((state) => state.userCreatedWatchlists)
     const { createRanking, updateRanking } = useRankingStore()
@@ -259,20 +260,9 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
 
         setIsLoading(true)
         try {
-            // Get Firebase auth token
-            const currentUser = auth.currentUser
-            if (!currentUser) {
-                throw new Error('You must be logged in to use AI search')
-            }
-
-            const token = await currentUser.getIdToken()
-
-            const response = await fetch('/api/generate-ranking-content', {
+            const response = await authenticatedFetch('/api/generate-ranking-content', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ query: q }),
             })
 
@@ -414,26 +404,16 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
 
         setIsLoading(true)
         try {
-            const currentUser = auth.currentUser
-            if (!currentUser) {
-                throw new Error('You must be logged in to use AI search')
-            }
-
-            const token = await currentUser.getIdToken()
-
             // Get current content IDs
             const currentIds = new Set(selectedItems.map((item) => item.id))
             const excludeIds = new Set([...currentIds, ...removedContentIds])
 
-            const response = await fetch('/api/generate-ranking-content', {
+            const response = await authenticatedFetch('/api/generate-ranking-content', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     query: lastSearchQuery,
-                    excludeIds: Array.from(excludeIds), // Send IDs to exclude
+                    excludeIds: Array.from(excludeIds),
                 }),
             })
 
@@ -497,15 +477,19 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
         })
     }
 
-    // Save draft to Firebase (debounced)
+    // Draft key scoped to user so multiple users on the same browser don't
+    // share drafts. Falls back gracefully when localStorage is unavailable.
+    const draftKey = userId ? `ranking_draft_${userId}` : null
+
+    // Save draft to localStorage (debounced)
     const saveDraft = useCallback(() => {
-        if (!userId) return
+        if (!draftKey) return
 
         if (draftSaveTimeoutRef.current) {
             clearTimeout(draftSaveTimeoutRef.current)
         }
 
-        draftSaveTimeoutRef.current = setTimeout(async () => {
+        draftSaveTimeoutRef.current = setTimeout(() => {
             const draft = {
                 query: lastSearchQuery,
                 selectedItems,
@@ -517,13 +501,13 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                 savedAt: Date.now(),
             }
             try {
-                const draftRef = doc(db, 'users', userId, 'drafts', 'ranking_draft')
-                await setDoc(draftRef, draft)
+                localStorage.setItem(draftKey, JSON.stringify(draft))
             } catch (error) {
                 console.error('Failed to save draft:', error)
             }
-        }, 3000) // Save after 3 seconds of inactivity (longer to reduce Firebase writes)
+        }, 3000)
     }, [
+        draftKey,
         lastSearchQuery,
         selectedItems,
         itemNotes,
@@ -531,54 +515,48 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
         description,
         isPublic,
         currentStep,
-        userId,
     ])
 
-    // Load draft from Firebase
+    // Load draft from localStorage
     const loadDraft = useCallback(async () => {
-        if (!userId) return false
+        if (!draftKey) return false
 
         try {
-            const draftRef = doc(db, 'users', userId, 'drafts', 'ranking_draft')
-            const draftSnap = await getDoc(draftRef)
+            const raw = localStorage.getItem(draftKey)
+            if (!raw) return false
 
-            if (draftSnap.exists()) {
-                const draft = draftSnap.data()
-                // Only load if saved within last 7 days
-                const age = Date.now() - draft.savedAt
-                if (age < 7 * 24 * 60 * 60 * 1000) {
-                    setLastSearchQuery(draft.query || '')
-                    // Sanitize poster_path values in loaded draft data to fix any corrupted paths
-                    const sanitizedItems = (draft.selectedItems || []).map((item: Content) => ({
-                        ...item,
-                        poster_path: sanitizePosterPath(item.poster_path),
-                    }))
-                    setSelectedItems(sanitizedItems)
-                    setItemNotes(draft.itemNotes || {})
-                    setTitle(draft.title || '')
-                    setDescription(draft.description || '')
-                    setIsPublic(draft.isPublic ?? true)
-                    setCurrentStep(draft.currentStep || 1)
-                    return true
-                }
+            const draft = JSON.parse(raw)
+            // Only load if saved within last 7 days
+            const age = Date.now() - (draft.savedAt ?? 0)
+            if (age < 7 * 24 * 60 * 60 * 1000) {
+                setLastSearchQuery(draft.query || '')
+                const sanitizedItems = (draft.selectedItems || []).map((item: Content) => ({
+                    ...item,
+                    poster_path: sanitizePosterPath(item.poster_path),
+                }))
+                setSelectedItems(sanitizedItems)
+                setItemNotes(draft.itemNotes || {})
+                setTitle(draft.title || '')
+                setDescription(draft.description || '')
+                setIsPublic(draft.isPublic ?? true)
+                setCurrentStep(draft.currentStep || 1)
+                return true
             }
         } catch (error) {
             console.error('Failed to load draft:', error)
         }
         return false
-    }, [userId])
+    }, [draftKey])
 
-    // Clear draft from Firebase
+    // Clear draft from localStorage
     const clearDraft = useCallback(async () => {
-        if (!userId) return
-
+        if (!draftKey) return
         try {
-            const draftRef = doc(db, 'users', userId, 'drafts', 'ranking_draft')
-            await deleteDoc(draftRef)
+            localStorage.removeItem(draftKey)
         } catch (error) {
             console.error('Failed to clear draft:', error)
         }
-    }, [userId])
+    }, [draftKey])
 
     // Load draft on mount
     useEffect(() => {
@@ -622,17 +600,15 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
             return
         }
 
-        // Get current user info from Firebase Auth
-        const currentUser = auth.currentUser
-        if (!currentUser) {
+        if (!user) {
             showError('You must be logged in to create a ranking')
             return
         }
 
         // Get display name and optional username from profile
-        const displayName = profile?.displayName || currentUser.displayName || 'Unknown User'
+        const displayName = profile?.displayName || user.displayName || user.name || 'Unknown User'
         const username = profile?.username // Optional username for profile URL
-        const avatarUrl = profile?.avatarUrl || currentUser.photoURL || undefined
+        const avatarUrl = profile?.avatarUrl || user.photoURL || user.image || undefined
 
         setIsLoading(true)
         try {

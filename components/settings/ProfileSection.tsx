@@ -21,7 +21,7 @@ import {
     ExclamationCircleIcon,
     PencilIcon,
 } from '@heroicons/react/24/outline'
-import type { User } from 'firebase/auth'
+import type { AuthUser } from '../../hooks/useAuth'
 import type { ProfileVisibility } from '../../types/profile'
 
 interface VisibilityToggleProps {
@@ -67,7 +67,7 @@ const VisibilityToggle: React.FC<VisibilityToggleProps> = ({
 }
 
 interface ProfileSectionProps {
-    user: User | null
+    user: AuthUser | null
     isGoogleAuth: boolean
     isEmailAuth: boolean
     displayName: string
@@ -223,12 +223,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                                 <p className="text-sm text-[#b3b3b3] truncate">
                                     {user?.email || 'No email'}
                                 </p>
-                                <p className="text-xs text-[#666] mt-0.5">
-                                    Member since{' '}
-                                    {new Date(
-                                        user?.metadata?.creationTime || Date.now()
-                                    ).toLocaleDateString()}
-                                </p>
+                                <p className="text-xs text-[#666] mt-0.5">Connected with GitHub</p>
                             </div>
                         </div>
 

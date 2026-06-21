@@ -1,17 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { withAuth } from '../../../../lib/auth-middleware'
+import { NextResponse } from 'next/server'
+
+import { verifyAuthentication } from '@/lib/auth-middleware'
 
 /**
  * GET /api/admin/check
  *
- * Check if current user is admin
- * Returns { isAdmin: boolean }
+ * Returns { isAdmin: boolean } for the current session.
  */
-async function handleCheckAdmin(request: NextRequest, userId: string): Promise<NextResponse> {
-    const ADMIN_UID = process.env.ADMIN_UID
-    const isAdmin = ADMIN_UID && userId === ADMIN_UID
-
-    return NextResponse.json({ isAdmin })
+export async function GET(): Promise<NextResponse> {
+    const result = await verifyAuthentication()
+    return NextResponse.json({ isAdmin: Boolean(result.authenticated && result.isAdmin) })
 }
-
-export const GET = withAuth(handleCheckAdmin)

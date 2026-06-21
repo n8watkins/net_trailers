@@ -2,10 +2,46 @@ import { useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import { useSessionStore } from '@/stores/sessionStore'
 import { useSessionData } from './useSessionData'
-import { logInteraction, createInteractionFromContent } from '@/utils/firestore/interactions'
+import { authenticatedFetch } from '@/lib/authenticatedFetch'
 import type { Content } from '@/typings'
 import type { InteractionType, InteractionSource } from '@/types/interactions'
 import { trackingLog } from '@/utils/debugLogger'
+
+/**
+ * Helper that converts a Content object into the minimal fields the
+ * POST /api/interactions endpoint expects. Mirrors the old
+ * createInteractionFromContent() logic without the Firestore dependency.
+ */
+function buildInteractionPayload(
+    content: Content,
+    interactionType: InteractionType,
+    options?: {
+        trailerDuration?: number
+        searchQuery?: string
+        collectionId?: string
+        source?: InteractionSource
+    }
+): Record<string, unknown> {
+    // Determine media type: prefer explicit media_type, fall back to structure.
+    let mediaType: 'movie' | 'tv' = content.media_type as 'movie' | 'tv'
+    if (!mediaType) {
+        mediaType = 'title' in content && (content as { title?: string }).title ? 'movie' : 'tv'
+    }
+
+    const payload: Record<string, unknown> = {
+        contentId: content.id,
+        mediaType,
+        interactionType,
+        genreIds: content.genre_ids ?? [],
+    }
+
+    if (options?.trailerDuration !== undefined) payload.trailerDuration = options.trailerDuration
+    if (options?.searchQuery) payload.searchQuery = options.searchQuery
+    if (options?.collectionId) payload.collectionId = options.collectionId
+    if (options?.source) payload.source = options.source
+
+    return payload
+}
 
 /**
  * Hook for tracking user interactions
@@ -16,7 +52,6 @@ import { trackingLog } from '@/utils/debugLogger'
  * trackInteraction.playTrailer(content, 45)
  */
 export function useInteractionTracking() {
-    const getUserId = useSessionStore((state) => state.getUserId)
     const sessionType = useSessionStore((state) => state.sessionType)
     const { improveRecommendations } = useSessionData()
 
@@ -34,10 +69,8 @@ export function useInteractionTracking() {
                 source?: InteractionSource
             }
         ): Promise<void> => {
-            const userId = getUserId()
-
-            // Skip tracking for guest users (interactions require Firestore)
-            if (!userId || sessionType !== 'authenticated') {
+            // Skip tracking for guest users (no server session)
+            if (sessionType !== 'authenticated') {
                 trackingLog('[Tracking] Skipping interaction (guest mode or no user ID)')
                 return
             }
@@ -51,9 +84,13 @@ export function useInteractionTracking() {
             }
 
             try {
-                const interaction = createInteractionFromContent(content, interactionType, options)
+                const payload = buildInteractionPayload(content, interactionType, options)
 
-                await logInteraction(userId, interaction)
+                await authenticatedFetch('/api/interactions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                })
 
                 trackingLog(`[Tracking] Logged ${interactionType} for content ${content.id}`)
             } catch (error) {
@@ -61,7 +98,7 @@ export function useInteractionTracking() {
                 console.error('[Tracking] Failed to log interaction:', error)
             }
         },
-        [getUserId, sessionType, improveRecommendations]
+        [sessionType, improveRecommendations]
     )
 
     /**

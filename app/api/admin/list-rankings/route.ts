@@ -1,12 +1,15 @@
 /**
- * Admin API: List All Rankings
+ * Admin API: List All Rankings (dev-only debugging helper)
  *
- * Returns all rankings for debugging.
+ * Returns all rankings from the Drizzle `rankings` table.
  * GET /api/admin/list-rankings
  */
 
+import { desc } from 'drizzle-orm'
 import { NextResponse } from 'next/server'
-import { getAdminDb } from '../../../../lib/firebase-admin'
+
+import { db } from '@/db'
+import { rankings } from '@/db/schema'
 
 export async function GET() {
     // Only allow in development
@@ -15,33 +18,27 @@ export async function GET() {
     }
 
     try {
-        const adminDb = getAdminDb()
-
-        const rankingsSnapshot = await adminDb.collection('rankings').get()
-
-        const rankings = rankingsSnapshot.docs.map((doc) => {
-            const data = doc.data()
-            return {
-                id: doc.id,
-                title: data.title,
-                userId: data.userId,
-                userName: data.userName,
-                comments: data.comments || 0,
-                likes: data.likes || 0,
-                createdAt: data.createdAt,
-            }
-        })
+        const rows = await db
+            .select({
+                id: rankings.id,
+                title: rankings.title,
+                userId: rankings.userId,
+                userName: rankings.userName,
+                comments: rankings.comments,
+                likes: rankings.likes,
+                createdAt: rankings.createdAt,
+            })
+            .from(rankings)
+            .orderBy(desc(rankings.createdAt))
 
         return NextResponse.json({
             success: true,
-            count: rankings.length,
-            rankings,
+            count: rows.length,
+            rankings: rows,
         })
     } catch (error) {
         return NextResponse.json(
-            {
-                error: error instanceof Error ? error.message : 'Failed to list rankings',
-            },
+            { error: error instanceof Error ? error.message : 'Failed to list rankings' },
             { status: 500 }
         )
     }

@@ -16,8 +16,7 @@ import { useSessionStore } from '../../stores/sessionStore'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import NetflixLoader from '../../components/common/NetflixLoader'
 import { Ranking, RankingComment } from '../../types/rankings'
-import { getUserComments } from '../../utils/firestore/rankingComments'
-import { getUserLikedRankings } from '../../utils/firestore/rankings'
+import { authenticatedFetch } from '../../lib/authenticatedFetch'
 import { formatDistanceToNow } from 'date-fns'
 import Link from 'next/link'
 import {
@@ -76,7 +75,13 @@ export default function RankingsPage() {
               ? setCommentsSearch
               : setLikedSearch
 
-    const { isListening, isSupported, transcript, startListening, stopListening } = useVoiceInput({
+    const {
+        isListening,
+        isSupported,
+        transcript: _transcript,
+        startListening,
+        stopListening,
+    } = useVoiceInput({
         onResult: (transcript) => {
             setCurrentSearch(transcript)
         },
@@ -119,17 +124,23 @@ export default function RankingsPage() {
 
             // Load comments and liked rankings for authenticated users
             if (!isGuest) {
-                // Load comments
+                // Load comments via API
                 setIsLoadingComments(true)
-                getUserComments(userId)
-                    .then((result) => setUserComments(result.data))
+                authenticatedFetch('/api/rankings/comments')
+                    .then((res) => res.json())
+                    .then((result: { success: boolean; data: RankingComment[] }) => {
+                        if (result.success) setUserComments(result.data)
+                    })
                     .catch(console.error)
                     .finally(() => setIsLoadingComments(false))
 
-                // Load liked rankings
+                // Load liked rankings via API
                 setIsLoadingLiked(true)
-                getUserLikedRankings(userId)
-                    .then((result) => setLikedRankings(result.data))
+                authenticatedFetch('/api/rankings?scope=liked')
+                    .then((res) => res.json())
+                    .then((result: { success: boolean; data: Ranking[] }) => {
+                        if (result.success) setLikedRankings(result.data)
+                    })
                     .catch(console.error)
                     .finally(() => setIsLoadingLiked(false))
             }

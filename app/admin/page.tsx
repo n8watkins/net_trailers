@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { auth } from '@/firebase'
 import { useSessionStore } from '@/stores/sessionStore'
 import { getAccountStats } from '@/utils/accountLimits'
 import { Users, Settings, PlayCircle, RefreshCw, CalendarDays, Eye } from 'lucide-react'
@@ -32,7 +31,7 @@ export default function AdminDashboard() {
     const [isAdminUser, setIsAdminUser] = useState<boolean | null>(null)
     const hasCheckedRef = useRef(false)
 
-    // Check admin status via server-side API
+    // Check admin status via server-side API (session cookie is sent automatically)
     useEffect(() => {
         const checkAdminStatus = async () => {
             console.log('🔍 Admin page - Check status:', {
@@ -66,35 +65,9 @@ export default function AdminDashboard() {
             hasCheckedRef.current = true
 
             try {
-                console.log('🔍 Getting Firebase user...')
-
-                // Wait for Firebase Auth to be ready
-                let user = auth.currentUser
-                if (!user) {
-                    console.log('🔍 Firebase user not ready, waiting for auth state...')
-                    // Wait for auth state to settle
-                    user = await new Promise((resolve) => {
-                        const unsubscribe = auth.onAuthStateChanged((user) => {
-                            unsubscribe()
-                            resolve(user)
-                        })
-                    })
-                }
-
-                if (!user) {
-                    console.log('🔍 No Firebase user found')
-                    setIsAdminUser(false)
-                    return
-                }
-
-                console.log('🔍 Firebase user found:', user.uid)
-
-                console.log('🔍 Getting ID token...')
-                const idToken = await user.getIdToken()
                 console.log('🔍 Calling /api/admin/check...')
-                const response = await fetch('/api/admin/check', {
-                    headers: { Authorization: `Bearer ${idToken}` },
-                })
+                // Session cookie is sent automatically — no Bearer token needed
+                const response = await fetch('/api/admin/check')
 
                 console.log('🔍 Admin check response:', response.status)
                 const data = await response.json()
@@ -126,48 +99,20 @@ export default function AdminDashboard() {
     // Load stats - wait for admin check to complete
     useEffect(() => {
         if (!isAuth || !userId || isAdminUser !== true) return
-
-        // Wait for Firebase Auth to initialize
-        const unsubscribe = auth.onAuthStateChanged((user) => {
-            if (user) {
-                loadAllStats()
-            }
-        })
-
-        return () => unsubscribe()
+        loadAllStats()
     }, [isAuth, userId, isAdminUser])
 
     const loadAllStats = async () => {
         setStatsLoading(true)
         try {
-            // Wait for Firebase Auth to be ready
-            const user = auth.currentUser
-            if (!user) {
-                console.error('No Firebase user available')
-                showError('Authentication required - please refresh the page')
-                setStatsLoading(false)
-                return
-            }
-
-            // Get Firebase ID token for secure API calls
-            const idToken = await user.getIdToken()
-            if (!idToken) {
-                showError('Failed to get authentication token')
-                setStatsLoading(false)
-                return
-            }
-
             // Load account stats
             const accountData = await getAccountStats()
             setStats(accountData as AdminStats)
 
             // Load trending stats
             try {
-                const trendingResponse = await fetch('/api/admin/trending-stats', {
-                    headers: {
-                        Authorization: `Bearer ${idToken}`,
-                    },
-                })
+                // Session cookie sent automatically — no Authorization header needed
+                const trendingResponse = await fetch('/api/admin/trending-stats')
                 if (trendingResponse.ok) {
                     const trendingData = await trendingResponse.json()
                     setLastTrendingRun(trendingData.lastRun ? new Date(trendingData.lastRun) : null)
@@ -180,11 +125,7 @@ export default function AdminDashboard() {
 
             // Load activity stats
             try {
-                const activityResponse = await fetch('/api/admin/activity?period=month', {
-                    headers: {
-                        Authorization: `Bearer ${idToken}`,
-                    },
-                })
+                const activityResponse = await fetch('/api/admin/activity?period=month')
                 if (activityResponse.ok) {
                     const activityData = await activityResponse.json()
                     setActivityStats(activityData.stats)
@@ -235,29 +176,8 @@ export default function AdminDashboard() {
     const runTrendingCheck = async (demoMode = false) => {
         setLoading(true)
         try {
-            // Get Firebase user and ID token
-            const user = auth.currentUser
-            if (!user) {
-                showError('Authentication required - please refresh the page')
-                setLoading(false)
-                return
-            }
-
-            const idToken = await user.getIdToken()
-            if (!idToken) {
-                showError('Failed to get authentication token')
-                setLoading(false)
-                return
-            }
-
-            const response = await fetch(
-                `/api/cron/update-trending${demoMode ? '?demo=true' : ''}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${idToken}`,
-                    },
-                }
-            )
+            // Session cookie sent automatically — no Authorization header needed
+            const response = await fetch(`/api/cron/update-trending${demoMode ? '?demo=true' : ''}`)
             const result = await response.json()
 
             if (response.ok) {
@@ -278,26 +198,8 @@ export default function AdminDashboard() {
     const seedSocialNotifications = async () => {
         setLoading(true)
         try {
-            // Get Firebase user and ID token
-            const user = auth.currentUser
-            if (!user) {
-                showError('Authentication required - please refresh the page')
-                setLoading(false)
-                return
-            }
-
-            const idToken = await user.getIdToken()
-            if (!idToken) {
-                showError('Failed to get authentication token')
-                setLoading(false)
-                return
-            }
-
             const response = await fetch('/api/admin/seed-social', {
                 method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${idToken}`,
-                },
             })
             const result = await response.json()
 
@@ -320,26 +222,8 @@ export default function AdminDashboard() {
 
         setLoading(true)
         try {
-            // Get Firebase user and ID token
-            const user = auth.currentUser
-            if (!user) {
-                showError('Authentication required - please refresh the page')
-                setLoading(false)
-                return
-            }
-
-            const idToken = await user.getIdToken()
-            if (!idToken) {
-                showError('Failed to get authentication token')
-                setLoading(false)
-                return
-            }
-
             const response = await fetch('/api/admin/reset-demo', {
                 method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${idToken}`,
-                },
             })
 
             if (response.ok) {

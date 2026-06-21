@@ -24,6 +24,7 @@ const ProfilePage: React.FC = () => {
         getVisibility,
         updateVisibility,
         createProfile,
+        updateProfile,
         updateUsername: updateUsernameInStore,
         checkUsernameAvailability,
         isLoading: profileLoading,
@@ -296,22 +297,9 @@ const ProfilePage: React.FC = () => {
         ]
     )
 
-    // Detect authentication provider
-    const authProvider = React.useMemo(() => {
-        if (!user || !user.providerData || user.providerData.length === 0) {
-            return null
-        }
-        const provider = user.providerData[0]
-        if (provider.providerId === 'google.com') {
-            return 'google'
-        } else if (provider.providerId === 'password') {
-            return 'email'
-        }
-        return provider.providerId
-    }, [user])
-
-    const isGoogleAuth = authProvider === 'google'
-    const isEmailAuth = authProvider === 'email'
+    // Authentication is GitHub-only now.
+    const isGoogleAuth = false
+    const isEmailAuth = false
 
     // Sync displayName when user changes
     React.useEffect(() => {
@@ -342,17 +330,8 @@ const ProfilePage: React.FC = () => {
 
         setIsSavingProfile(true)
         try {
-            const { auth } = await import('../../../firebase')
-            const { updateProfile } = await import('firebase/auth')
-
-            if (!auth.currentUser) {
-                throw new Error('No authenticated user found')
-            }
-
-            await updateProfile(auth.currentUser, {
-                displayName: displayName.trim(),
-            })
-
+            // Display name is persisted to the profiles table via the profile store.
+            await updateProfile(user.uid, { displayName: displayName.trim() })
             showSuccess('Profile updated successfully!')
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {

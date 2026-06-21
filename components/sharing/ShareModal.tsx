@@ -10,7 +10,7 @@ import {
 } from '../../types/sharing'
 import { useToast } from '../../hooks/useToast'
 import { useSessionStore } from '../../stores/sessionStore'
-import { getAuthHeaders } from '../../utils/auth'
+import { authenticatedFetch } from '../../lib/authenticatedFetch'
 
 interface ShareModalProps {
     /** Whether modal is open */
@@ -35,6 +35,9 @@ interface ShareModalProps {
  * - Toggle active/inactive
  * - Delete share link
  * - View statistics
+ *
+ * Auth is handled via the Auth.js session cookie (authenticatedFetch);
+ * no Firebase bearer token is required.
  */
 export default function ShareModal({
     isOpen,
@@ -53,7 +56,7 @@ export default function ShareModal({
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
 
-    // Load existing share for this collection
+    // Load existing share for this collection when the modal opens.
     useEffect(() => {
         if (isOpen && collectionId && userId) {
             loadExistingShare()
@@ -62,19 +65,13 @@ export default function ShareModal({
 
     const loadExistingShare = async () => {
         try {
-            // Get authenticated headers with Firebase token
-            const headers = await getAuthHeaders()
-
-            // Get user's shares and find one for this collection
-            const response = await fetch('/api/shares/user', {
-                headers,
-            })
+            const response = await authenticatedFetch('/api/shares/user')
 
             if (!response.ok) return
 
             const data = await response.json()
             if (data.success && data.shares) {
-                // Find active share for this collection
+                // Find an active share for this specific collection.
                 const existingShare = data.shares.find(
                     (s: ShareableLink) => s.collectionId === collectionId && s.isActive
                 )
@@ -96,14 +93,9 @@ export default function ShareModal({
         setIsCreating(true)
 
         try {
-            // Get authenticated headers with Firebase token
-            const headers = await getAuthHeaders({
-                'Content-Type': 'application/json',
-            })
-
-            const response = await fetch('/api/shares/create', {
+            const response = await authenticatedFetch('/api/shares/create', {
                 method: 'POST',
-                headers,
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     collectionId,
                     expiresIn,
@@ -151,17 +143,10 @@ export default function ShareModal({
         if (!shareLink || !userId) return
 
         try {
-            // Get authenticated headers with Firebase token
-            const headers = await getAuthHeaders({
-                'Content-Type': 'application/json',
-            })
-
-            const response = await fetch(`/api/shares/${shareLink.id}/toggle`, {
+            const response = await authenticatedFetch(`/api/shares/${shareLink.id}/toggle`, {
                 method: 'PATCH',
-                headers,
-                body: JSON.stringify({
-                    isActive: !shareLink.isActive,
-                }),
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isActive: !shareLink.isActive }),
             })
 
             const data = await response.json()
@@ -189,12 +174,8 @@ export default function ShareModal({
         }
 
         try {
-            // Get authenticated headers with Firebase token
-            const headers = await getAuthHeaders()
-
-            const response = await fetch(`/api/shares/${shareLink.id}`, {
+            const response = await authenticatedFetch(`/api/shares/${shareLink.id}`, {
                 method: 'DELETE',
-                headers,
             })
 
             const data = await response.json()
@@ -451,7 +432,7 @@ export default function ShareModal({
                 {/* Info */}
                 <div className="mt-6 rounded-md bg-blue-600/10 px-4 py-3">
                     <p className="text-xs text-blue-400">
-                        <strong>💡 Tip:</strong> Share links can be toggled on/off without deleting
+                        <strong>Tip:</strong> Share links can be toggled on/off without deleting
                         them. Deactivate temporarily to prevent access, or delete permanently to
                         revoke the link.
                     </p>

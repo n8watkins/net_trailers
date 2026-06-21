@@ -18,26 +18,17 @@
         "test:ci": "jest --ci --coverage --watchAll=false",
         "test:cron": "node scripts/test-cron.js",
         "test:cron:v2": "node scripts/test-cron-v2.js",
-        "test:trending-notifications": "npx tsx scripts/test-trending-notifications.ts",
         "test:weekly-digest": "npx tsx scripts/test-weekly-digest.ts",
-        "test:notification": "npx tsx scripts/test-create-notification.ts",
-        "test:persistence": "npx tsx test-persistence-flow.ts",
-        "test:create-user": "npx tsx scripts/create-test-user.ts",
-        "test:verify-user": "npx tsx scripts/create-test-user.ts verify",
-        "test:user-watchlist": "npx tsx scripts/test-user-watchlist.ts",
-        "test:clear-user": "npx tsx scripts/clear-test-user.ts",
-        "delete-all-user-data": "npx tsx scripts/delete-all-user-data.ts",
-        "seed:rankings": "npx tsx scripts/seedRankings.ts",
-        "seed:demo-profiles": "npx tsx scripts/seedDemoProfiles.ts",
-        "delete:demo-profiles": "npx tsx scripts/deleteDemoProfiles.ts",
-        "ensure:profiles": "npx tsx scripts/ensureUserProfiles.ts",
-        "migrate:genres": "npx tsx scripts/migrate-genres-to-unified.ts",
-        "refresh:seed": "npx tsx scripts/refresh-seed-data.ts",
-        "migrate:genres:dry-run": "npx tsx scripts/migrate-genres-to-unified.ts --dry-run",
         "analyze": "ANALYZE=true npm run build",
+        "db:generate": "drizzle-kit generate",
+        "db:push": "drizzle-kit push",
+        "db:migrate": "drizzle-kit migrate",
+        "db:seed": "npx tsx scripts/seed.ts",
+        "db:studio": "drizzle-kit studio",
         "prepare": "husky"
     },
     "dependencies": {
+        "@auth/drizzle-adapter": "^1.11.2",
         "@babel/core": "7.28.4",
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
@@ -46,8 +37,9 @@
         "@emotion/styled": "^11.14.1",
         "@google/generative-ai": "^0.24.1",
         "@heroicons/react": "^2.0.13",
+        "@libsql/client": "^0.17.4",
         "@mui/material": "^5.11.7",
-        "@next/third-parties": "^16.0.0",
+        "@next/third-parties": "^16.2.9",
         "@react-email/components": "^1.0.1",
         "@sentry/nextjs": "^10.56.0",
         "@tiptap/extension-link": "^3.12.0",
@@ -57,22 +49,24 @@
         "@tiptap/starter-kit": "^3.12.0",
         "@types/bcryptjs": "^2.4.6",
         "@vercel/analytics": "^1.5.0",
+        "@vercel/blob": "^2.4.1",
         "bcryptjs": "^3.0.3",
         "browser-image-compression": "^2.0.2",
         "date-fns": "^4.1.0",
-        "firebase": "^12.2.1",
-        "firebase-admin": "^13.6.0",
+        "drizzle-orm": "^0.45.2",
         "isomorphic-dompurify": "^3.15.0",
         "lodash": "^4.17.21",
         "lucide-react": "^0.554.0",
         "nanoid": "^5.1.6",
         "next": "^16.0.1",
+        "next-auth": "^5.0.0-beta.31",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
         "react-hook-form": "^7.43.0",
         "react-player": "^2.11.2",
         "resend": "^6.12.4",
         "uuid": "^13.0.0",
+        "web-vitals": "^5.3.0",
         "zod": "^3.25.76",
         "zustand": "^5.0.8"
     },
@@ -91,6 +85,8 @@
         "@types/uuid": "^10.0.0",
         "autoprefixer": "^10.4.12",
         "baseline-browser-mapping": "^2.8.32",
+        "dotenv": "^17.4.2",
+        "drizzle-kit": "^0.31.10",
         "eslint": "^9.38.0",
         "eslint-config-next": "^16.0.0",
         "eslint-plugin-react": "^7.37.5",
@@ -117,18 +113,6 @@
         ]
     },
     "overrides": {
-        "postcss": "$postcss",
-        "@google-cloud/storage": {
-            "uuid": "^11.1.1"
-        },
-        "google-gax": {
-            "uuid": "^11.1.1"
-        },
-        "gaxios": {
-            "uuid": "^11.1.1"
-        },
-        "teeny-request": {
-            "uuid": "^11.1.1"
-        }
+        "postcss": "$postcss"
     }
 }

@@ -39,6 +39,11 @@ const customJestConfig = {
         '^@/hooks/(.*)$': '<rootDir>/hooks/$1',
         '^@/stores/(.*)$': '<rootDir>/stores/$1',
         '^@/lib/(.*)$': '<rootDir>/lib/$1',
+        '^@/db$': '<rootDir>/db',
+        '^@/db/(.*)$': '<rootDir>/db/$1',
+        '^@/types/(.*)$': '<rootDir>/types/$1',
+        '^@/auth$': '<rootDir>/auth',
+        '^@/typings$': '<rootDir>/typings',
     },
     coverageThreshold: {
         global: {

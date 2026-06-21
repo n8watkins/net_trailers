@@ -1,11 +1,16 @@
 import { sessionLog, sessionError } from '../utils/debugLogger'
-import { User } from 'firebase/auth'
 import { UserPreferences, SessionType, UserSession } from '../types/shared'
 import { SessionStorageService } from './sessionStorageService'
 import { GuestStorageService } from './guestStorageService'
 
 // Zustand-compatible setter type
 type SetterOrUpdater<T> = (value: T | ((prev: T) => T)) => void
+
+/** Minimal authenticated-user shape for session management (replaces Firebase User). */
+export interface SessionUser {
+    uid: string
+    email?: string | null
+}
 
 export interface SessionManagerState {
     setSessionType: SetterOrUpdater<SessionType>
@@ -23,7 +28,7 @@ export class SessionManagerService {
 
     // Initialize session based on auth state
     static async initializeSession(
-        user: User | null,
+        user: SessionUser | null,
         state: SessionManagerState
     ): Promise<SessionType> {
         const initStartTime = Date.now()
@@ -167,7 +172,7 @@ export class SessionManagerService {
 
     // Initialize authenticated session
     private static async initializeAuthSession(
-        user: User,
+        user: SessionUser,
         state: SessionManagerState
     ): Promise<SessionType> {
         const authInitStart = Date.now()
@@ -325,7 +330,7 @@ export class SessionManagerService {
     }
 
     // Switch to authenticated mode (when user logs in)
-    static async switchToAuthMode(user: User, state: SessionManagerState): Promise<void> {
+    static async switchToAuthMode(user: SessionUser, state: SessionManagerState): Promise<void> {
         state.setIsTransitioning(true)
 
         try {
