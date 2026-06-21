@@ -26,6 +26,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         verificationTokensTable: verificationTokens,
     }),
     session: { strategy: 'database' },
+    // Required when running behind a proxy (Vercel) so Auth.js trusts the
+    // X-Forwarded-Host header for callback URL construction.
+    trustHost: true,
     providers: [
         GitHub({
             // AUTH_GITHUB_ID / AUTH_GITHUB_SECRET are read from env automatically.
