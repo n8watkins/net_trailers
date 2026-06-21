@@ -2,7 +2,6 @@ import '../styles/globals.css'
 import type { Metadata, Viewport } from 'next'
 import { Providers } from './providers'
 import ClientLayout from '../components/layout/ClientLayout'
-import Analytics from '../components/utility/Analytics'
 
 export const viewport: Viewport = {
     themeColor: '#e50914',
@@ -44,7 +43,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <Providers>
                     <ClientLayout>{children}</ClientLayout>
                 </Providers>
-                <Analytics />
             </body>
         </html>
     )
