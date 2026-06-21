@@ -549,7 +549,7 @@ const showModal = useModalStore((state) => state.modal.isOpen)
 - **TMDB API Key**: Never exposed to client (server-side only)
 - **Gemini API Key**: Public key (rate-limited by Google)
 - **CRON_SECRET**: Protects cron job endpoints from unauthorized access
-- **Input sanitization**: All Gemini API routes use isomorphic-dompurify
+- **Input sanitization**: Gemini API routes sanitize input via `utils/inputSanitization.ts` (control-char removal, length limits, prompt-injection guards); admin custom-HTML emails use `sanitize-html` (serverless-safe; replaced isomorphic-dompurify)
 - **Data access control**: Server-side ownership checks in API routes (session-derived user id) — replaces Firestore security rules
 - **Security headers**: CSP, HSTS, X-Frame-Options, etc.
 
@@ -619,10 +619,10 @@ export async function myAction() {
     - Recipient limit: 3 emails per day per user
     - Returns 429 with Retry-After header on limit exceeded
 - **XSS Prevention**:
-    - DOMPurify sanitization on all custom HTML content
-    - Shared CUSTOM_HTML_SANITIZATION_CONFIG
+    - `sanitize-html` sanitization on all custom HTML content (serverless-safe; replaced isomorphic-dompurify)
+    - Shared `CUSTOM_HTML_SANITIZE_OPTIONS` in `lib/email/email-validation.ts`
     - Allowed tags: p, br, strong, em, u, h1-h3, ul, ol, li, a
-    - HTTPS-only links enforced via ALLOWED_URI_REGEXP
+    - HTTPS-only links enforced via sanitize-html `allowedSchemes: ['https']`
 - **Input Validation**:
     - Subject: max 200 characters
     - Message: max 10,000 characters

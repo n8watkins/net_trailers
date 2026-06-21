@@ -19,8 +19,7 @@ NetTrailers uses Google Gemini AI across 6 API endpoints to power intelligent co
 
 ### Security
 
-- **Input sanitization**: All user input sanitized via `utils/inputSanitization.ts`
-- **XSS protection**: Uses isomorphic-dompurify
+- **Input sanitization**: All user input sanitized via `utils/inputSanitization.ts` (control-character removal, whitespace normalization, length limits) — guards against prompt injection and DoS
 - **API key**: Server-side only (never exposed to client)
 
 ---
