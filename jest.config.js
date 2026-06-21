@@ -27,11 +27,6 @@ const customJestConfig = {
     ],
     testMatch: ['**/__tests__/**/*.(ts|tsx|js)', '**/*.(test|spec).(ts|tsx|js)'],
     moduleNameMapper: {
-        // isomorphic-dompurify v3 eagerly loads jsdom (and its ESM-only deps,
-        // e.g. @exodus/bytes) at import time, which Jest can't transform. In the
-        // jsdom test environment `window` already exists, so plain dompurify
-        // provides the same DOMPurify API without pulling in jsdom.
-        '^isomorphic-dompurify$': 'dompurify',
         // Handle module aliases (if you use them in your Next.js app)
         '^@/components/(.*)$': '<rootDir>/components/$1',
         '^@/app/(.*)$': '<rootDir>/app/$1',

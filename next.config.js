@@ -10,7 +10,7 @@ const nextConfig = {
         ignoreBuildErrors: false,
     },
     // Exclude packages from server bundling optimization
-    serverExternalPackages: ['isomorphic-dompurify', '@libsql/client'],
+    serverExternalPackages: ['@libsql/client'],
     compiler: {
         // Remove console.log in production builds (keep error and warn)
         removeConsole:

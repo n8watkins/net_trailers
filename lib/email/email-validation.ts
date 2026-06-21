@@ -1,5 +1,5 @@
 import { EmailTemplate } from '@/components/admin/EmailComposer'
-import type { Config } from 'dompurify'
+import sanitizeHtml from 'sanitize-html'
 
 interface EmailValidationParams {
     template: EmailTemplate
@@ -19,16 +19,22 @@ const MAX_MESSAGE_LENGTH = 10000
 const MAX_HTML_LENGTH = 50000
 
 /**
- * DOMPurify sanitization configuration for custom HTML emails
- * Used by both send and preview endpoints to prevent XSS attacks
+ * Custom-HTML email sanitizer (serverless-safe — uses sanitize-html, no jsdom).
+ * Used by both the send and preview endpoints to prevent XSS. Allows a small
+ * formatting allowlist + href/title, and HTTPS-only links; everything else is
+ * discarded (scripts, styles, event handlers, data attrs, etc.).
  */
-export const CUSTOM_HTML_SANITIZATION_CONFIG: Config = {
-    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'a'],
-    ALLOWED_ATTR: ['href', 'title'], // Only allow href and title attributes
-    ALLOWED_URI_REGEXP: /^https:\/\//, // HTTPS only, no HTTP
-    FORBID_ATTR: ['style', 'class', 'id', 'onclick', 'onerror'], // Block inline styles/scripts
-    FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form', 'input'],
-    ALLOW_DATA_ATTR: false,
+const CUSTOM_HTML_SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
+    allowedTags: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'a'],
+    allowedAttributes: { a: ['href', 'title'], '*': ['title'] },
+    allowedSchemes: ['https'], // HTTPS only, no HTTP/javascript/data
+    disallowedTagsMode: 'discard',
+    allowProtocolRelative: false,
+}
+
+/** Sanitize admin custom-HTML email content. */
+export function sanitizeEmailHtml(html: string): string {
+    return sanitizeHtml(html, CUSTOM_HTML_SANITIZE_OPTIONS)
 }
 
 /**

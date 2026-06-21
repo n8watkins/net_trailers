@@ -6,16 +6,12 @@
  * Auth via validateAdminRequest (session-based).
  */
 
-import DOMPurify from 'isomorphic-dompurify'
 import { eq } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
 
 import { db } from '@/db'
 import { profiles, users } from '@/db/schema'
-import {
-    CUSTOM_HTML_SANITIZATION_CONFIG,
-    validateEmailTemplate,
-} from '@/lib/email/email-validation'
+import { sanitizeEmailHtml, validateEmailTemplate } from '@/lib/email/email-validation'
 import {
     renderAnnouncementPreview,
     renderCustomPreview,
@@ -73,7 +69,7 @@ export async function POST(request: NextRequest) {
 
         const sanitizedHtmlContent =
             template === 'custom' && customHtmlContent
-                ? DOMPurify.sanitize(customHtmlContent, CUSTOM_HTML_SANITIZATION_CONFIG)
+                ? sanitizeEmailHtml(customHtmlContent)
                 : customHtmlContent
 
         // Fetch target user data from Drizzle.

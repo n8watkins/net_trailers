@@ -9,16 +9,12 @@
  * Auth via validateAdminRequest (session-based).
  */
 
-import DOMPurify from 'isomorphic-dompurify'
 import { NextRequest, NextResponse } from 'next/server'
 
 import { db } from '@/db'
 import { adminEmails, profiles, users } from '@/db/schema'
 import { EmailService } from '@/lib/email/email-service'
-import {
-    CUSTOM_HTML_SANITIZATION_CONFIG,
-    validateEmailTemplate,
-} from '@/lib/email/email-validation'
+import { sanitizeEmailHtml, validateEmailTemplate } from '@/lib/email/email-validation'
 import { checkAdminEmailRateLimit, checkRecipientEmailRateLimit } from '@/lib/email/rate-limiter'
 import { batchEnsureUnsubscribeTokens } from '@/lib/email/unsubscribe-token'
 import {
@@ -112,7 +108,7 @@ export async function POST(request: NextRequest) {
 
         const sanitizedHtmlContent =
             template === 'custom' && customHtmlContent
-                ? DOMPurify.sanitize(customHtmlContent, CUSTOM_HTML_SANITIZATION_CONFIG)
+                ? sanitizeEmailHtml(customHtmlContent)
                 : customHtmlContent
 
         console.log(`[AdminEmailSend] Sending ${template} to ${userIds.length} users`)

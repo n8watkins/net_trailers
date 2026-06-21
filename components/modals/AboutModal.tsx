@@ -408,7 +408,7 @@ const AboutModal: React.FC<AboutModalProps> = ({
             title: 'Input Sanitization & Headers',
             desc: 'XSS protection and secure headers',
             details: [
-                'isomorphic-dompurify on all AI endpoints',
+                'Server-side input sanitization on all AI endpoints',
                 'Content Security Policy prevents XSS attacks',
                 'HSTS enforces HTTPS, X-Frame-Options stops clickjacking',
                 'API keys never exposed to client (server-side only)',
