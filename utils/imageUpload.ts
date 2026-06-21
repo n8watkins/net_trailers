@@ -1,20 +1,13 @@
 /**
  * Image Upload Utilities
  *
- * Firebase Storage has been removed. Images are now returned as base64 data
- * URLs so that forum/thread components keep working without any server-side
- * storage dependency.
- *
- * NOTE: Data URLs are suitable for small images in a portfolio context.
- * To support large-file hosting in the future, swap `uploadImage` /
- * `uploadImages` to upload to S3, Cloudinary, or Vercel Blob — the exported
- * function signatures are unchanged, so callers need no modifications.
- *
- * Delete functions are no-ops because there is no remote object to remove;
- * data URLs live only in the document/database field that references them.
+ * Images are compressed client-side then uploaded to **Vercel Blob** via the
+ * server route `/api/upload` (which holds BLOB_READ_WRITE_TOKEN). The route
+ * returns a public CDN URL that is stored in the relevant DB field.
  */
 
 import imageCompression from 'browser-image-compression'
+import { authenticatedFetch } from '../lib/authenticatedFetch'
 
 /**
  * Compress an image file to reduce size and improve performance.
@@ -55,45 +48,36 @@ export async function compressImage(file: File): Promise<File> {
 }
 
 /**
- * Read a File as a base64 data URL.
+ * Upload an image — compresses it client-side, then uploads to Vercel Blob via
+ * `/api/upload`. Returns the public CDN URL. The `path` parameter is used as a
+ * grouping hint for the blob key.
  */
-function fileToDataURL(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = () => resolve(reader.result as string)
-        reader.onerror = () => reject(new Error('Failed to read file as data URL'))
-        reader.readAsDataURL(file)
-    })
-}
-
-/**
- * "Upload" an image — compresses it and returns a base64 data URL.
- *
- * The `path` parameter is accepted for API compatibility but not used;
- * swap this function body for a real upload when object storage is added.
- */
-export async function uploadImage(file: File, _path: string): Promise<string> {
-    try {
-        // Validate file type
-        if (!file.type.startsWith('image/')) {
-            throw new Error('File must be an image')
-        }
-
-        // Validate file size (max 5MB before compression)
-        const maxSize = 5 * 1024 * 1024
-        if (file.size > maxSize) {
-            throw new Error('Image size must be less than 5MB')
-        }
-
-        // Compress before encoding
-        const compressedFile = await compressImage(file)
-
-        // Return data URL (no remote upload)
-        return await fileToDataURL(compressedFile)
-    } catch (error) {
-        console.error('Error processing image:', error)
-        throw error
+export async function uploadImage(file: File, path: string): Promise<string> {
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+        throw new Error('File must be an image')
     }
+
+    // Validate file size (max 5MB before compression)
+    const maxSize = 5 * 1024 * 1024
+    if (file.size > maxSize) {
+        throw new Error('Image size must be less than 5MB')
+    }
+
+    // Compress before upload
+    const compressedFile = await compressImage(file)
+
+    const form = new FormData()
+    form.append('file', compressedFile, compressedFile.name || 'image.webp')
+    if (path) form.append('path', path)
+
+    const res = await authenticatedFetch('/api/upload', { method: 'POST', body: form })
+    if (!res.ok) {
+        const err = await res.json().catch(() => null)
+        throw new Error(err?.error || 'Image upload failed')
+    }
+    const data = await res.json()
+    return data.url as string
 }
 
 /**
@@ -114,18 +98,25 @@ export async function uploadImages(files: File[], path: string): Promise<string[
 }
 
 /**
- * Delete an image — no-op when using data URLs.
- * If a remote storage provider is added later, implement the delete here.
+ * Delete an image from Vercel Blob (best-effort; only the owner's blobs).
+ * Ignores non-blob URLs (e.g. legacy data URLs).
  */
-export async function deleteImage(_imageUrl: string): Promise<void> {
-    // Data URLs have no remote object to delete.
+export async function deleteImage(imageUrl: string): Promise<void> {
+    if (!imageUrl || !imageUrl.includes('.blob.vercel-storage.com')) return
+    try {
+        await authenticatedFetch(`/api/upload?url=${encodeURIComponent(imageUrl)}`, {
+            method: 'DELETE',
+        })
+    } catch (error) {
+        console.warn('Failed to delete image:', error)
+    }
 }
 
 /**
- * Delete multiple images — no-op when using data URLs.
+ * Delete multiple images (best-effort).
  */
-export async function deleteImages(_imageUrls: string[]): Promise<void> {
-    // Data URLs have no remote objects to delete.
+export async function deleteImages(imageUrls: string[]): Promise<void> {
+    await Promise.all(imageUrls.map((url) => deleteImage(url)))
 }
 
 /**
