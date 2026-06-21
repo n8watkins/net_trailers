@@ -84,13 +84,19 @@ function AuthStateProvider({ children }: AuthProviderProps) {
             isAdmin: Boolean(user?.isAdmin),
             error: null,
             signInWithGitHub: async () => {
-                await signIn('github')
+                // Return to the page the user started from after OAuth.
+                await signIn('github', { callbackUrl: window.location.href })
             },
             signInWithEmail: async (email: string) => {
                 // Sends the magic-link email via the active provider (stable id
-                // "email"); does not redirect so the modal can show a
-                // "check your inbox" message.
-                await signIn('email', { email, redirect: false })
+                // "email"); redirect:false keeps the modal so it can show a
+                // "check your inbox" message. callbackUrl is embedded in the link
+                // so clicking it returns the user to this page, signed in.
+                await signIn('email', {
+                    email,
+                    redirect: false,
+                    callbackUrl: window.location.href,
+                })
             },
             logOut: async () => {
                 await signOut({ redirect: false })

@@ -1,6 +1,7 @@
 import React from 'react'
-import { XMarkIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 import useAuth from '../../hooks/useAuth'
+import { isInAppBrowser } from '../../utils/isInAppBrowser'
 
 interface AuthModalProps {
     isOpen: boolean
@@ -19,6 +20,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     const [email, setEmail] = React.useState('')
     const [emailSent, setEmailSent] = React.useState(false)
     const [emailError, setEmailError] = React.useState<string | null>(null)
+    // Detect in-app browsers (Gmail/Facebook/Instagram webviews) where OAuth can
+    // be blocked and magic links open in the wrong browser. Set on the client to
+    // avoid hydration mismatch.
+    const [inApp, setInApp] = React.useState(false)
+    React.useEffect(() => setInApp(isInAppBrowser()), [])
 
     const handleSignIn = async () => {
         setIsWorking(true)
@@ -114,13 +120,26 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                             </p>
                         </div>
 
+                        {inApp && (
+                            <div className="mb-5 flex gap-2 p-3 bg-amber-500/15 border border-amber-500/40 rounded-md">
+                                <ExclamationTriangleIcon className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                                <p className="text-amber-200 text-sm">
+                                    You&apos;re in an in-app browser. For sign-in to work, open this
+                                    page in your default browser (Safari/Chrome) — use the menu
+                                    (&hellip;) and choose{' '}
+                                    <span className="font-semibold">Open in browser</span>.
+                                </p>
+                            </div>
+                        )}
+
                         {emailSent ? (
                             <div className="p-4 bg-green-600/20 border border-green-600/50 rounded-md text-center">
                                 <p className="text-green-400 font-medium mb-1">Check your inbox</p>
                                 <p className="text-gray-300 text-sm">
                                     We sent a sign-in link to{' '}
-                                    <span className="text-white">{email}</span>. Click it to finish
-                                    signing in.
+                                    <span className="text-white">{email}</span>. Open it in{' '}
+                                    <span className="text-white">this browser</span> to finish
+                                    signing in (the link signs you in wherever you open it).
                                 </p>
                             </div>
                         ) : (
