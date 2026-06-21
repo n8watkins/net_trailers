@@ -171,8 +171,8 @@ Social & misc:   shares (collection snapshots), user_activity, user_badges,
 - Nested arrays/objects (`Content[]`, `rankedItems`, poll `options`, `advancedFilters`)
   are stored as JSON text columns; timestamps are epoch-ms integers.
 - Migrations: `npm run db:generate` then `npm run db:migrate` (or `db:push`); `db:studio` to inspect.
-- The single former Firestore `onSnapshot` listener (notifications) is now **polling**
-  (`subscribeToNotifications` polls `/api/notifications` every 30s).
+- Notifications use **polling** (`subscribeToNotifications` polls `/api/notifications`
+  every 30s) — there is no client-side real-time listener.
 
 ### Unified Toast Notification System
 
@@ -390,8 +390,9 @@ Required environment variables are documented in the file with setup instruction
 - ADMIN_GITHUB_LOGIN (server-side only, not NEXT_PUBLIC\* — the admin's GitHub username)
 - Sentry DSN (for error monitoring)
 - Google Analytics measurement ID
-- Resend API key (optional - for admin email system)
-- RESEND_SENDER_EMAIL (defaults to onboarding@resend.dev)
+- Email (magic-link sign-in + admin emails): `BREVO_API_KEY` + `EMAIL_FROM` (a verified sender — Brevo needs only a single verified sender, no domain). `EMAIL_PROVIDER` selects the provider — `brevo` (default) or `resend` (then set `RESEND_API_KEY`)
+- `BLOB_READ_WRITE_TOKEN` (Vercel Blob — image uploads)
+- `NEXT_PUBLIC_MAX_TOTAL_ACCOUNTS` (optional, default 50 — total-signup cap enforced in the `auth.ts` `signIn` callback)
 
 ### Next.js Configuration
 
@@ -654,7 +655,7 @@ export async function myAction() {
 - **Trending/Social templates**: Not implemented (returns 501 Not Implemented)
 - **Announcement/Custom templates**: Fully functional and production-ready
 - **Batch optimization**: 100+ per-user lookups → 1 batched DB read
-- **Graceful degradation**: Returns null when Resend unavailable
+- **Graceful degradation**: Returns null when the email provider (Brevo/Resend) is unavailable
 - **Template system**: React Email components prevent injection
 
 ## Key Metrics
