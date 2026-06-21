@@ -355,6 +355,17 @@ export async function castVote(
         if (pollRows.length === 0) throw new Error('Poll not found')
         const poll = pollRows[0]
 
+        // 1a. Validate the requested option ids against the poll's own options.
+        //     Drop unknown ids (a malicious client could send arbitrary strings),
+        //     and for single-choice polls keep at most one selection so the
+        //     per-option counts can never sum past totalVotes (>100%).
+        const validIds = new Set((poll.options as PollOption[]).map((o) => o.id))
+        let optionIds = newOptionIds.filter((id) => validIds.has(id))
+        if (optionIds.length === 0) throw new Error('No valid option selected')
+        if (!poll.isMultipleChoice && optionIds.length > 1) {
+            optionIds = [optionIds[0]]
+        }
+
         // 2. Check for an existing vote
         const existingVoteRows = await tx
             .select()
@@ -372,23 +383,23 @@ export async function castVote(
             await tx.insert(pollVotes).values({
                 pollId,
                 userId,
-                optionIds: newOptionIds,
+                optionIds,
                 votedAt: ts,
             })
         } else {
             await tx
                 .update(pollVotes)
-                .set({ optionIds: newOptionIds, votedAt: ts })
+                .set({ optionIds, votedAt: ts })
                 .where(and(eq(pollVotes.pollId, pollId), eq(pollVotes.userId, userId)))
         }
 
         // 4. Update per-option vote counts
         const updatedOptions = (poll.options as PollOption[]).map((opt) => {
             let votes = opt.votes
-            if (previousOptionIds.includes(opt.id) && !newOptionIds.includes(opt.id)) {
+            if (previousOptionIds.includes(opt.id) && !optionIds.includes(opt.id)) {
                 votes = Math.max(0, votes - 1)
             }
-            if (newOptionIds.includes(opt.id) && !previousOptionIds.includes(opt.id)) {
+            if (optionIds.includes(opt.id) && !previousOptionIds.includes(opt.id)) {
                 votes = votes + 1
             }
             return { ...opt, votes }

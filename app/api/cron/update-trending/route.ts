@@ -7,6 +7,7 @@ import { generateUnsubscribeToken } from '@/lib/email/unsubscribe-token'
 import { db } from '@/db'
 import { users, userPreferences } from '@/db/schema'
 import { createNotification } from '@/db/queries/notifications'
+import { getAdminUserId } from '@/db/queries/_helpers'
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY
 const CRON_SECRET = process.env.CRON_SECRET
@@ -78,8 +79,9 @@ export async function GET(req: NextRequest) {
         const adminOnlyParam = searchParams.get('adminOnly')
         const adminOnly = adminOnlyParam === 'true'
 
-        // Get admin UID from environment variable
-        const ADMIN_UID = process.env.ADMIN_UID
+        // Resolve the admin's Turso id from ADMIN_GITHUB_LOGIN (the old ADMIN_UID
+        // env var was removed in the Firebase→Turso migration).
+        const adminUserId = adminOnly ? await getAdminUserId() : null
 
         if (adminOnly) {
             console.log(`📊 [Trending] Running in ADMIN-ONLY mode`)
@@ -106,7 +108,7 @@ export async function GET(req: NextRequest) {
             const userId = user.id
 
             // ADMIN ONLY MODE: Skip all users except admin
-            if (adminOnly && (!ADMIN_UID || userId !== ADMIN_UID)) {
+            if (adminOnly && (!adminUserId || userId !== adminUserId)) {
                 console.log(`📊 [Trending] Skipping non-admin user: ${userId}`)
                 skippedUsers++
                 continue
@@ -184,7 +186,7 @@ export async function GET(req: NextRequest) {
             const userId = user.id
 
             // ADMIN ONLY MODE: Skip all users except admin
-            if (adminOnly && (!ADMIN_UID || userId !== ADMIN_UID)) {
+            if (adminOnly && (!adminUserId || userId !== adminUserId)) {
                 continue
             }
 

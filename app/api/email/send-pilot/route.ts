@@ -4,6 +4,7 @@ import { Content } from '../../../../typings'
 import { withAuth } from '../../../../lib/auth-middleware'
 import { apiError, apiWarn } from '@/utils/debugLogger'
 import { generateUnsubscribeToken } from '@/lib/email/unsubscribe-token'
+import { isCurrentUserAdmin } from '@/db/queries/_helpers'
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
@@ -82,9 +83,9 @@ async function fetchTrendingContent(): Promise<{ movies: Content[]; tvShows: Con
  */
 async function handleSendPilot(request: NextRequest, userId: string): Promise<NextResponse> {
     try {
-        // ADMIN ONLY: Check if user is admin
-        const ADMIN_UID = process.env.ADMIN_UID
-        if (!ADMIN_UID || userId !== ADMIN_UID) {
+        // ADMIN ONLY: identity comes from the Auth.js session (ADMIN_GITHUB_LOGIN),
+        // not the removed ADMIN_UID env var.
+        if (!(await isCurrentUserAdmin())) {
             console.error('[PilotEmail] User is not admin:', userId)
             return NextResponse.json(
                 { error: 'Forbidden - Admin access required' },

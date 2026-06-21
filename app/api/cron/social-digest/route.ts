@@ -11,6 +11,7 @@ import {
     markNotificationsEmailSent,
 } from '@/db/queries/notifications'
 import { loadUserPreferences } from '@/db/queries/userPreferences'
+import { getAdminUserId } from '@/db/queries/_helpers'
 
 const CRON_SECRET = process.env.CRON_SECRET
 
@@ -124,13 +125,16 @@ export async function GET(req: NextRequest) {
 
         console.log(`📧 [Social Digest] Processing ${userNotifications.size} users`)
 
-        // Check if admin-only mode is enabled via query parameter
+        // Check if admin-only mode is enabled via query parameter.
+        // Default to ALL eligible users — the scheduled weekly run must actually
+        // deliver digests. `?adminOnly=true` is an opt-in test mode that targets
+        // only the admin account.
         const { searchParams } = new URL(req.url)
-        const adminOnlyParam = searchParams.get('adminOnly')
-        const adminOnly = adminOnlyParam === 'true' || adminOnlyParam === null // Default to admin-only for safety
+        const adminOnly = searchParams.get('adminOnly') === 'true'
 
-        // Get admin UID from environment variable
-        const ADMIN_UID = process.env.ADMIN_UID
+        // Resolve the admin's Turso id from ADMIN_GITHUB_LOGIN (the old ADMIN_UID
+        // env var was removed in the Firebase→Turso migration).
+        const adminUserId = adminOnly ? await getAdminUserId() : null
 
         if (adminOnly) {
             console.log(`📧 [Social Digest] Running in ADMIN-ONLY mode`)
@@ -145,7 +149,7 @@ export async function GET(req: NextRequest) {
         for (const [userId, userNotifList] of userNotifications.entries()) {
             try {
                 // ADMIN ONLY MODE: Skip all users except admin
-                if (adminOnly && (!ADMIN_UID || userId !== ADMIN_UID)) {
+                if (adminOnly && (!adminUserId || userId !== adminUserId)) {
                     console.log(`📧 [Social Digest] Skipping non-admin user: ${userId}`)
                     skippedUsers++
                     continue

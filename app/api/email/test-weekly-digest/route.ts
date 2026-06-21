@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withAuth } from '../../../../lib/auth-middleware'
+import { isCurrentUserAdmin } from '@/db/queries/_helpers'
 
 const CRON_SECRET = process.env.CRON_SECRET
 
@@ -11,9 +12,9 @@ const CRON_SECRET = process.env.CRON_SECRET
  */
 async function handleTestWeeklyDigest(request: NextRequest, userId: string): Promise<NextResponse> {
     try {
-        // ADMIN ONLY: Check if user is admin
-        const ADMIN_UID = process.env.ADMIN_UID
-        if (!ADMIN_UID || userId !== ADMIN_UID) {
+        // ADMIN ONLY: identity comes from the Auth.js session (ADMIN_GITHUB_LOGIN),
+        // not the removed ADMIN_UID env var.
+        if (!(await isCurrentUserAdmin())) {
             console.error('[TestWeeklyDigest] User is not admin:', userId)
             return NextResponse.json(
                 { error: 'Forbidden - Admin access required' },

@@ -92,11 +92,18 @@ function AuthStateProvider({ children }: AuthProviderProps) {
                 // "email"); redirect:false keeps the modal so it can show a
                 // "check your inbox" message. callbackUrl is embedded in the link
                 // so clicking it returns the user to this page, signed in.
-                await signIn('email', {
+                const res = await signIn('email', {
                     email,
                     redirect: false,
                     callbackUrl: window.location.href,
                 })
+                // With redirect:false the provider resolves { ok:false, error }
+                // instead of throwing when the send fails (e.g. Brevo is down or
+                // misconfigured). Surface it so the caller doesn't show a false
+                // "check your inbox".
+                if (res?.error) {
+                    throw new Error(res.error)
+                }
             },
             logOut: async () => {
                 await signOut({ redirect: false })

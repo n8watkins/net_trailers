@@ -11,6 +11,7 @@
  */
 
 import { DrizzleAdapter } from '@auth/drizzle-adapter'
+import { and, eq, sql } from 'drizzle-orm'
 import NextAuth from 'next-auth'
 import GitHub from 'next-auth/providers/github'
 import Resend from 'next-auth/providers/resend'
@@ -20,6 +21,11 @@ import { db } from '@/db'
 import { accounts, sessions, users, verificationTokens } from '@/db/schema'
 
 const adminLogin = process.env.ADMIN_GITHUB_LOGIN?.toLowerCase()
+
+// Hard cap on total accounts — a cost guard for this portfolio project. The
+// signIn callback blocks brand-new signups once the cap is hit; existing users
+// always sign in. 0 / unset disables the cap.
+const maxTotalAccounts = parseInt(process.env.NEXT_PUBLIC_MAX_TOTAL_ACCOUNTS || '50', 10)
 
 // The "From" address for magic-link emails (a verified sender). Both providers
 // share it. Falls back to Resend's shared test sender for local dev.
@@ -108,6 +114,51 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         emailProvider,
     ],
     callbacks: {
+        /**
+         * Enforce the total-account cap on new signups. This runs BEFORE the
+         * adapter creates the user (verified against @auth/core's callback
+         * ordering), so a brand-new user has no users/accounts row yet:
+         *  - returning OAuth user → an `accounts` row already matches → allow.
+         *  - returning email user → a `users` row already matches by email → allow.
+         *  - otherwise it's a new signup → block once count >= cap.
+         */
+        async signIn({ user, account }) {
+            if (!Number.isFinite(maxTotalAccounts) || maxTotalAccounts <= 0) return true
+
+            // Returning user via a linked OAuth account?
+            if (account?.provider && account.providerAccountId) {
+                const linked = await db
+                    .select({ userId: accounts.userId })
+                    .from(accounts)
+                    .where(
+                        and(
+                            eq(accounts.provider, account.provider),
+                            eq(accounts.providerAccountId, account.providerAccountId)
+                        )
+                    )
+                    .limit(1)
+                if (linked.length > 0) return true
+            }
+
+            // Returning user by email (covers the email magic-link provider)?
+            if (user.email) {
+                const existing = await db
+                    .select({ id: users.id })
+                    .from(users)
+                    .where(eq(users.email, user.email))
+                    .limit(1)
+                if (existing.length > 0) return true
+            }
+
+            // Brand-new signup — enforce the hard cap.
+            const [row] = await db.select({ count: sql<number>`count(*)` }).from(users)
+            if (Number(row?.count ?? 0) >= maxTotalAccounts) {
+                console.warn('[auth] Signup blocked — account cap reached:', maxTotalAccounts)
+                return false
+            }
+
+            return true
+        },
         session({ session, user }) {
             if (session.user) {
                 session.user.id = user.id
