@@ -71,17 +71,6 @@ if (typeof window !== 'undefined') {
             }
         } catch (error) {
             console.error('❌ Firestore initialization error:', error)
-
-            // Record error for health monitoring (async, non-blocking)
-            ;(async () => {
-                try {
-                    const { FirestoreCacheHealth } = await import('@/utils/firestore/cacheHealth')
-                    FirestoreCacheHealth.recordCacheError(error as Error)
-                } catch (recordError) {
-                    console.error('Failed to record cache error:', recordError)
-                }
-            })()
-
             // Fallback to getFirestore if initialization failed
             globalThis.firestore = getFirestore(app)
         }

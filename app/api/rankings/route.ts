@@ -11,7 +11,12 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { withAuth } from '@/lib/auth-middleware'
 import { currentUserId } from '@/db/queries/_helpers'
-import { createRanking, getPublicRankings, getUserRankings } from '@/db/queries/rankings'
+import {
+    createRanking,
+    getPublicRankings,
+    getUserRankings,
+    getUserLikedRankings,
+} from '@/db/queries/rankings'
 import type { CreateRankingRequest } from '@/types/rankings'
 
 /* -------------------------------------------------------------------------- */
@@ -39,6 +44,19 @@ export async function GET(request: NextRequest) {
             }
             const data = await getUserRankings(userId)
             return NextResponse.json({ success: true, data })
+        }
+
+        if (scope === 'liked') {
+            // Authenticated — return rankings liked by the caller
+            const userId = await currentUserId()
+            if (!userId) {
+                return NextResponse.json(
+                    { success: false, error: 'Authentication required' },
+                    { status: 401 }
+                )
+            }
+            const result = await getUserLikedRankings(userId, limit, offset)
+            return NextResponse.json({ success: true, ...result })
         }
 
         // Public feed — no auth required

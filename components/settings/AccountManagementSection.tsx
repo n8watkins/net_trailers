@@ -7,12 +7,18 @@ import {
     EnvelopeIcon,
     KeyIcon,
 } from '@heroicons/react/24/outline'
-import type { User } from 'firebase/auth'
+// Firebase Auth User type replaced with a minimal local shape.
+// The `user` prop is no longer used (auth is now Auth.js / GitHub OAuth) but
+// the component is kept for reference; callers should pass null.
+interface FirebaseUserCompat {
+    email: string | null
+    emailVerified: boolean
+}
 
 type TabType = 'email' | 'password'
 
 interface AccountManagementSectionProps {
-    user: User | null
+    user: FirebaseUserCompat | null
     isGoogleAuth: boolean
     // Email fields
     newEmail: string

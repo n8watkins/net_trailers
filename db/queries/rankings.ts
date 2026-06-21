@@ -428,3 +428,45 @@ export async function updateRankingsUsername(
 
     await db.update(rankings).set(patch).where(eq(rankings.userId, userId))
 }
+
+/* -------------------------------------------------------------------------- */
+/*  User liked rankings                                                        */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Get all public rankings liked by a specific user.
+ * Replaces getUserLikedRankings() from utils/firestore/rankings.ts.
+ */
+export async function getUserLikedRankings(
+    userId: string,
+    limit = 50,
+    offset = 0
+): Promise<{ data: Ranking[]; hasMore: boolean }> {
+    // Fetch like records for the user
+    const likes = await db
+        .select({ rankingId: rankingLikes.rankingId })
+        .from(rankingLikes)
+        .where(eq(rankingLikes.userId, userId))
+        .orderBy(desc(rankingLikes.createdAt))
+        .limit(limit + 1)
+        .offset(offset)
+
+    const hasMore = likes.length > limit
+    const rankingIds = likes.slice(0, limit).map((l) => l.rankingId)
+
+    if (rankingIds.length === 0) return { data: [], hasMore: false }
+
+    const rows = await db
+        .select()
+        .from(rankings)
+        .where(and(inArray(rankings.id, rankingIds), eq(rankings.isPublic, true)))
+
+    // Preserve like-order via rowToRanking helper
+    const byId = new Map(rows.map((r) => [r.id, r]))
+    const data = rankingIds
+        .map((id) => byId.get(id))
+        .filter((r): r is NonNullable<typeof r> => r != null)
+        .map(rowToRanking)
+
+    return { data, hasMore }
+}

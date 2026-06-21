@@ -10,8 +10,8 @@ export function useAuthData(userId: string) {
     React.useEffect(() => {
         if (authStore.userId && authStore.userId !== userId) {
             authWarn(`⚠️ Auth store user mismatch! Store: ${authStore.userId}, Expected: ${userId}`)
-            // Sync with the correct user
-            authStore.syncWithFirebase!(userId)
+            // Trigger a re-sync via the storage adapter
+            authStore.syncWithStorage?.(userId)
         }
     }, [userId, authStore.userId])
 
@@ -60,25 +60,16 @@ export function useAuthData(userId: string) {
         })
         console.log('[useAuthData] ✅ Cleared collections and ratings')
 
-        // Clear watch history from store and Firestore
+        // Clear watch history from store and API
         const { useWatchHistoryStore } = await import('../stores/watchHistoryStore')
-        const { saveWatchHistory } = await import('../utils/firestore/watchHistory')
+        const { authenticatedFetch } = await import('../lib/authenticatedFetch')
 
         console.log('[useAuthData] 🗑️ Clearing watch history...')
 
-        // First, clear watch history in Firestore
+        // Clear watch history via API (DELETE /api/watch-history)
         if (userId) {
-            await saveWatchHistory(userId, [])
-            console.log('[useAuthData] ✅ Cleared watch history from Firestore')
-
-            // Verify it was cleared (debug)
-            const { getWatchHistory } = await import('../utils/firestore/watchHistory')
-            const verifyEmpty = await getWatchHistory(userId)
-            console.log(
-                '[useAuthData] 🔍 Verification: Firestore has',
-                verifyEmpty?.length || 0,
-                'entries'
-            )
+            await authenticatedFetch('/api/watch-history', { method: 'DELETE' })
+            console.log('[useAuthData] ✅ Cleared watch history via API')
         }
 
         // Then clear watch history in store while maintaining session
@@ -257,7 +248,7 @@ export function useAuthData(userId: string) {
         getAllLists,
 
         // Auth-specific actions
-        forceSyncData: () => authStore.syncWithFirebase!(userId),
+        forceSyncData: () => authStore.syncWithStorage?.(userId),
 
         // Account management actions (auth-specific)
         clearAccountData,

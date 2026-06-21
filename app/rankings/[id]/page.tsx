@@ -18,7 +18,7 @@ import { useAuthStatus } from '../../../hooks/useAuthStatus'
 import NetflixLoader from '../../../components/common/NetflixLoader'
 import { TrophyIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
 import { useToast } from '../../../hooks/useToast'
-import { auth } from '../../../firebase'
+import useAuth from '../../../hooks/useAuth'
 
 export default function RankingDetailPage() {
     const router = useRouter()
@@ -28,6 +28,7 @@ export default function RankingDetailPage() {
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
     const { isInitialized } = useAuthStatus()
+    const { user } = useAuth()
     const { showSuccess, showError } = useToast()
 
     const {
@@ -85,7 +86,7 @@ export default function RankingDetailPage() {
         if (!userId || !currentRanking) return
 
         // Get current user's display name and username from profile
-        const currentUser = auth.currentUser
+        const currentUser = user
         if (!currentUser) {
             showError('You must be logged in to clone rankings')
             return

@@ -379,6 +379,27 @@ export async function hasUserLikedComment(userId: string, commentId: string): Pr
 /* -------------------------------------------------------------------------- */
 
 /**
+ * Get all top-level comments authored by a specific user (no replies embedded).
+ * Replaces getUserComments() from utils/firestore/rankingComments.
+ */
+export async function getUserComments(
+    userId: string,
+    limit = 50
+): Promise<{ data: RankingComment[]; hasMore: boolean }> {
+    const rows = await db
+        .select()
+        .from(rankingComments)
+        .where(and(eq(rankingComments.userId, userId), isNull(rankingComments.parentCommentId)))
+        .orderBy(desc(rankingComments.createdAt))
+        .limit(limit + 1)
+
+    const hasMore = rows.length > limit
+    const data = rows.slice(0, limit).map(rowToComment)
+
+    return { data, hasMore }
+}
+
+/**
  * Update the denormalised userName across all comments authored by a user.
  * Mirrors updateRankingCommentsUsername() in the old Firestore module.
  */

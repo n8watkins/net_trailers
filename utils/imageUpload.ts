@@ -1,18 +1,23 @@
 /**
  * Image Upload Utilities
  *
- * Handles uploading images to Firebase Storage for forum content
- * with automatic compression for optimized file sizes
+ * Firebase Storage has been removed. Images are now returned as base64 data
+ * URLs so that forum/thread components keep working without any server-side
+ * storage dependency.
+ *
+ * NOTE: Data URLs are suitable for small images in a portfolio context.
+ * To support large-file hosting in the future, swap `uploadImage` /
+ * `uploadImages` to upload to S3, Cloudinary, or Vercel Blob — the exported
+ * function signatures are unchanged, so callers need no modifications.
+ *
+ * Delete functions are no-ops because there is no remote object to remove;
+ * data URLs live only in the document/database field that references them.
  */
 
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
-import { storage } from '@/firebase'
 import imageCompression from 'browser-image-compression'
 
 /**
- * Compress an image file to reduce size and improve performance
- * @param file - The image file to compress
- * @returns Promise<File> - The compressed image file
+ * Compress an image file to reduce size and improve performance.
  */
 export async function compressImage(file: File): Promise<File> {
     try {
@@ -23,11 +28,11 @@ export async function compressImage(file: File): Promise<File> {
         }
 
         const options = {
-            maxSizeMB: 1, // Maximum file size in MB
-            maxWidthOrHeight: 1920, // Maximum dimension (width or height)
-            useWebWorker: true, // Use web worker for better performance
-            fileType: 'image/webp', // Convert to WebP for best compression
-            initialQuality: 0.85, // Quality setting (0-1)
+            maxSizeMB: 1,
+            maxWidthOrHeight: 1920,
+            useWebWorker: true,
+            fileType: 'image/webp',
+            initialQuality: 0.85,
         }
 
         console.log('Compressing image:', file.name, 'Original size:', formatFileSize(file.size))
@@ -45,17 +50,29 @@ export async function compressImage(file: File): Promise<File> {
         return compressedFile
     } catch (error) {
         console.error('Image compression failed, using original:', error)
-        return file // Fallback to original file if compression fails
+        return file
     }
 }
 
 /**
- * Upload an image to Firebase Storage with automatic compression
- * @param file - The image file to upload
- * @param path - The storage path (e.g., 'forum/threads/{threadId}')
- * @returns Promise<string> - The download URL of the uploaded image
+ * Read a File as a base64 data URL.
  */
-export async function uploadImage(file: File, path: string): Promise<string> {
+function fileToDataURL(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = () => reject(new Error('Failed to read file as data URL'))
+        reader.readAsDataURL(file)
+    })
+}
+
+/**
+ * "Upload" an image — compresses it and returns a base64 data URL.
+ *
+ * The `path` parameter is accepted for API compatibility but not used;
+ * swap this function body for a real upload when object storage is added.
+ */
+export async function uploadImage(file: File, _path: string): Promise<string> {
     try {
         // Validate file type
         if (!file.type.startsWith('image/')) {
@@ -63,101 +80,62 @@ export async function uploadImage(file: File, path: string): Promise<string> {
         }
 
         // Validate file size (max 5MB before compression)
-        const maxSize = 5 * 1024 * 1024 // 5MB in bytes
+        const maxSize = 5 * 1024 * 1024
         if (file.size > maxSize) {
             throw new Error('Image size must be less than 5MB')
         }
 
-        // Compress image before uploading
+        // Compress before encoding
         const compressedFile = await compressImage(file)
 
-        // Create a unique filename using timestamp and random string
-        const timestamp = Date.now()
-        const randomStr = Math.random().toString(36).substring(2, 15)
-        // Always use .webp extension since we convert to WebP
-        const filename = `${timestamp}_${randomStr}.webp`
-
-        // Create storage reference
-        const storageRef = ref(storage, `${path}/${filename}`)
-
-        // Upload compressed file
-        await uploadBytes(storageRef, compressedFile)
-
-        // Get download URL
-        const downloadURL = await getDownloadURL(storageRef)
-
-        return downloadURL
+        // Return data URL (no remote upload)
+        return await fileToDataURL(compressedFile)
     } catch (error) {
-        console.error('Error uploading image:', error)
+        console.error('Error processing image:', error)
         throw error
     }
 }
 
 /**
- * Upload multiple images to Firebase Storage
- * @param files - Array of image files to upload
- * @param path - The storage path (e.g., 'forum/threads/{threadId}')
- * @returns Promise<string[]> - Array of download URLs
+ * "Upload" multiple images — returns an array of base64 data URLs.
  */
 export async function uploadImages(files: File[], path: string): Promise<string[]> {
     try {
-        // Validate number of files (max 4 images per post)
         if (files.length > 4) {
             throw new Error('Maximum 4 images allowed per post')
         }
 
-        // Upload all files in parallel
         const uploadPromises = files.map((file) => uploadImage(file, path))
-        const downloadURLs = await Promise.all(uploadPromises)
-
-        return downloadURLs
+        return await Promise.all(uploadPromises)
     } catch (error) {
-        console.error('Error uploading images:', error)
+        console.error('Error processing images:', error)
         throw error
     }
 }
 
 /**
- * Delete an image from Firebase Storage
- * @param imageUrl - The download URL of the image to delete
+ * Delete an image — no-op when using data URLs.
+ * If a remote storage provider is added later, implement the delete here.
  */
-export async function deleteImage(imageUrl: string): Promise<void> {
-    try {
-        // Extract storage path from URL
-        const storageRef = ref(storage, imageUrl)
-        await deleteObject(storageRef)
-    } catch (error) {
-        console.error('Error deleting image:', error)
-        throw error
-    }
+export async function deleteImage(_imageUrl: string): Promise<void> {
+    // Data URLs have no remote object to delete.
 }
 
 /**
- * Delete multiple images from Firebase Storage
- * @param imageUrls - Array of download URLs to delete
+ * Delete multiple images — no-op when using data URLs.
  */
-export async function deleteImages(imageUrls: string[]): Promise<void> {
-    try {
-        const deletePromises = imageUrls.map((url) => deleteImage(url))
-        await Promise.all(deletePromises)
-    } catch (error) {
-        console.error('Error deleting images:', error)
-        throw error
-    }
+export async function deleteImages(_imageUrls: string[]): Promise<void> {
+    // Data URLs have no remote objects to delete.
 }
 
 /**
- * Validate image file
- * @param file - The file to validate
- * @returns boolean - True if valid, false otherwise
+ * Validate image file.
  */
 export function isValidImageFile(file: File): boolean {
-    // Check file type
     if (!file.type.startsWith('image/')) {
         return false
     }
 
-    // Check file size (max 5MB)
     const maxSize = 5 * 1024 * 1024
     if (file.size > maxSize) {
         return false
@@ -167,9 +145,7 @@ export function isValidImageFile(file: File): boolean {
 }
 
 /**
- * Get file size in human-readable format
- * @param bytes - File size in bytes
- * @returns string - Formatted file size (e.g., "2.5 MB")
+ * Get file size in human-readable format.
  */
 export function formatFileSize(bytes: number): string {
     if (bytes === 0) return '0 Bytes'

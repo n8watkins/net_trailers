@@ -9,7 +9,7 @@
 
 'use client'
 
-import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useForumStore } from '@/stores/forumStore'
@@ -20,9 +20,9 @@ import Header from '@/components/layout/Header'
 import { ThreadCard } from '@/components/forum/ThreadCard'
 import { CreateThreadModal } from '@/components/forum/CreateThreadModal'
 import type { ThreadSummary, ForumCategory } from '@/types/forum'
-import { ChatBubbleLeftRightIcon, ArrowLeftIcon, PlusIcon } from '@heroicons/react/24/outline'
+import { ChatBubbleLeftRightIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
 import { ChatBubbleLeftRightIcon as ChatBubbleSolidIcon } from '@heroicons/react/24/solid'
-import { auth } from '@/firebase'
+import useAuth from '@/hooks/useAuth'
 
 // Helper to coerce epoch-ms numbers (API) or legacy Firestore-style objects to number | null
 const timestampToNumber = (ts: unknown): number | null => {
@@ -42,6 +42,7 @@ export default function UserThreadsPage() {
     const router = useRouter()
     const { threads, isLoadingThreads, loadThreads, createThread } = useForumStore()
     const getUserId = useSessionStore((state) => state.getUserId)
+    const { user } = useAuth()
     const { isGuest } = useAuthStatus()
     const isInitialized = useSessionStore((state) => state.isInitialized)
     const userId = getUserId()
@@ -145,7 +146,7 @@ export default function UserThreadsPage() {
 
     const handleCreateThread = async (title: string, content: string, category: ForumCategory) => {
         if (!userId) return
-        const currentUser = auth.currentUser
+        const currentUser = user
         if (!currentUser) return
 
         const userName = currentUser.displayName || 'Anonymous'

@@ -3,8 +3,6 @@ import { Content, getTitle } from '../typings'
 import { UserList, UpdateListRequest, CreateListRequest } from '../types/collections'
 import { UserListsService } from '../services/userListsService'
 import { StorageAdapter, StorageLogger } from '../services/storageAdapter'
-import { firebaseTracker } from '../utils/firebaseCallTracker'
-import { syncManager } from '../utils/firebaseSyncManager'
 import { DEFAULT_NOTIFICATION_PREFERENCES } from '../types/notifications'
 import type { NotificationPreferences } from '../types/notifications'
 import {
@@ -259,16 +257,6 @@ export function createUserStore(options: CreateUserStoreOptions) {
                 `⚠️ [${trackingContext}] No ${idField}, cannot save to storage (context: ${context})`
             )
             return
-        }
-
-        // Track Firebase calls for authenticated users
-        if (adapter.name === 'Firebase') {
-            firebaseTracker.track(`saveUserData-${context}`, trackingContext, id, {
-                watchlistCount: state.defaultWatchlist.length,
-                likedCount: state.likedMovies.length,
-                hiddenCount: state.hiddenMovies.length,
-                listsCount: state.userCreatedWatchlists.length,
-            })
         }
 
         try {
@@ -807,129 +795,121 @@ export function createUserStore(options: CreateUserStoreOptions) {
                         `⚠️ [${trackingContext}] User ID mismatch! Store: ${state.userId}, Requested: ${userId}. Clearing store.`
                     )
                     set(getDefaultState())
-                    syncManager.clearUserSync(state.userId)
                 }
 
-                // Use sync manager to prevent duplicate syncs
-                await syncManager.executeSync(
-                    userId,
-                    async () => {
-                        try {
-                            logger.log(`🔄 [${trackingContext}] Executing sync for user: ${userId}`)
-                            firebaseTracker.track('syncWithFirebase', trackingContext, userId)
-                            set({ syncStatus: 'syncing', userId })
+                // Run the sync directly (sync manager deduplication removed with Firebase)
+                const runSync = async () => {
+                    try {
+                        logger.log(`🔄 [${trackingContext}] Executing sync for user: ${userId}`)
+                        set({ syncStatus: 'syncing', userId })
 
-                            const firebaseData = await adapter.load(userId)
+                        const firebaseData = await adapter.load(userId)
 
-                            // Verify we're still loading data for the correct user
-                            const currentState = get()
-                            if (currentState.userId !== userId) {
-                                logger.warn(
-                                    `⚠️ [${trackingContext}] User changed during sync (${currentState.userId} != ${userId}), aborting`
-                                )
-                                return null
-                            }
+                        // Verify we're still loading data for the correct user
+                        const currentState = get()
+                        if (currentState.userId !== userId) {
+                            logger.warn(
+                                `⚠️ [${trackingContext}] User changed during sync (${currentState.userId} != ${userId}), aborting`
+                            )
+                            return null
+                        }
 
-                            // Ensure all collections have required new fields for backward compatibility
-                            let normalizedCollections = (
-                                firebaseData.userCreatedWatchlists || []
-                            ).map((list, index) => ({
+                        // Ensure all collections have required new fields for backward compatibility
+                        let normalizedCollections = (firebaseData.userCreatedWatchlists || []).map(
+                            (list, index) => ({
                                 ...list,
                                 collectionType: list.collectionType || ('manual' as const),
                                 displayAsRow: list.displayAsRow ?? true,
                                 order: list.order ?? index,
                                 enabled: list.enabled ?? true,
-                            }))
-
-                            // Track if we need to save seeded defaults back to storage
-                            let needsSeedSave = false
-
-                            // Seed default collections for new users
-                            if (needsDefaultCollections(normalizedCollections)) {
-                                logger.log(
-                                    `🌱 [${trackingContext}] Seeding default collections for new user: ${userId}`
-                                )
-                                normalizedCollections = createDefaultCollectionsForUser()
-                                needsSeedSave = true
-                            }
-
-                            // Merge system recommendations - adds any missing defaults to existing users
-                            const systemRecommendations = mergeSystemRecommendations(
-                                firebaseData.systemRecommendations || []
-                            )
-                            // Check if we added new recommendations
-                            const existingCount = (firebaseData.systemRecommendations || []).length
-                            if (systemRecommendations.length > existingCount) {
-                                logger.log(
-                                    `🌱 [${trackingContext}] Added ${systemRecommendations.length - existingCount} new system recommendations for user: ${userId}`
-                                )
-                                needsSeedSave = true
-                            } else if (existingCount === 0) {
-                                logger.log(
-                                    `🌱 [${trackingContext}] Seeding default system recommendations for new user: ${userId}`
-                                )
-                                needsSeedSave = true
-                            }
-
-                            set({
-                                userId,
-                                likedMovies: firebaseData.likedMovies,
-                                hiddenMovies: firebaseData.hiddenMovies,
-                                defaultWatchlist: firebaseData.defaultWatchlist,
-                                userCreatedWatchlists: normalizedCollections,
-                                systemRecommendations,
-                                lastActive: firebaseData.lastActive,
-                                autoMute: firebaseData.autoMute ?? true,
-                                defaultVolume: firebaseData.defaultVolume ?? 50,
-                                childSafetyMode: firebaseData.childSafetyMode ?? false,
-                                improveRecommendations: firebaseData.improveRecommendations ?? true,
-                                showRecommendations: firebaseData.showRecommendations ?? true,
-                                trackWatchHistory: firebaseData.trackWatchHistory ?? true,
-                                notifications:
-                                    firebaseData.notifications ?? cloneDefaultNotifications(),
-                                genrePreferences: firebaseData.genrePreferences ?? [],
-                                contentPreferences: firebaseData.contentPreferences ?? [],
-                                shownPreferenceContent: firebaseData.shownPreferenceContent ?? [],
-                                votedContent: firebaseData.votedContent ?? [],
-                                skippedContent: filterExpiredSkips(
-                                    firebaseData.skippedContent ?? []
-                                ),
-                                myRatings: migrateToMyRatings(
-                                    firebaseData.myRatings,
-                                    firebaseData.likedMovies,
-                                    firebaseData.hiddenMovies
-                                ),
-                                syncStatus: 'synced',
                             })
+                        )
 
-                            // Persist seeded defaults to Firestore so they survive refresh
-                            if (needsSeedSave) {
-                                logger.log(
-                                    `💾 [${trackingContext}] Saving seeded defaults to Firestore for user: ${userId}`
-                                )
-                                try {
-                                    await saveToStorage(get(), 'seedDefaults')
-                                } catch (saveError) {
-                                    logger.error(
-                                        `❌ [${trackingContext}] Failed to save seeded defaults:`,
-                                        saveError
-                                    )
-                                    // Don't fail the whole sync - defaults are still in memory
-                                }
-                            }
+                        // Track if we need to save seeded defaults back to storage
+                        let needsSeedSave = false
 
+                        // Seed default collections for new users
+                        if (needsDefaultCollections(normalizedCollections)) {
                             logger.log(
-                                `✅ [${trackingContext}] Successfully synced for user ${userId}`
+                                `🌱 [${trackingContext}] Seeding default collections for new user: ${userId}`
                             )
-                            return firebaseData
-                        } catch (error) {
-                            logger.error(`❌ [${trackingContext}] Failed to sync:`, error)
-                            set({ syncStatus: 'offline' })
-                            throw error
+                            normalizedCollections = createDefaultCollectionsForUser()
+                            needsSeedSave = true
                         }
-                    },
-                    trackingContext
-                )
+
+                        // Merge system recommendations - adds any missing defaults to existing users
+                        const systemRecommendations = mergeSystemRecommendations(
+                            firebaseData.systemRecommendations || []
+                        )
+                        // Check if we added new recommendations
+                        const existingCount = (firebaseData.systemRecommendations || []).length
+                        if (systemRecommendations.length > existingCount) {
+                            logger.log(
+                                `🌱 [${trackingContext}] Added ${systemRecommendations.length - existingCount} new system recommendations for user: ${userId}`
+                            )
+                            needsSeedSave = true
+                        } else if (existingCount === 0) {
+                            logger.log(
+                                `🌱 [${trackingContext}] Seeding default system recommendations for new user: ${userId}`
+                            )
+                            needsSeedSave = true
+                        }
+
+                        set({
+                            userId,
+                            likedMovies: firebaseData.likedMovies,
+                            hiddenMovies: firebaseData.hiddenMovies,
+                            defaultWatchlist: firebaseData.defaultWatchlist,
+                            userCreatedWatchlists: normalizedCollections,
+                            systemRecommendations,
+                            lastActive: firebaseData.lastActive,
+                            autoMute: firebaseData.autoMute ?? true,
+                            defaultVolume: firebaseData.defaultVolume ?? 50,
+                            childSafetyMode: firebaseData.childSafetyMode ?? false,
+                            improveRecommendations: firebaseData.improveRecommendations ?? true,
+                            showRecommendations: firebaseData.showRecommendations ?? true,
+                            trackWatchHistory: firebaseData.trackWatchHistory ?? true,
+                            notifications:
+                                firebaseData.notifications ?? cloneDefaultNotifications(),
+                            genrePreferences: firebaseData.genrePreferences ?? [],
+                            contentPreferences: firebaseData.contentPreferences ?? [],
+                            shownPreferenceContent: firebaseData.shownPreferenceContent ?? [],
+                            votedContent: firebaseData.votedContent ?? [],
+                            skippedContent: filterExpiredSkips(firebaseData.skippedContent ?? []),
+                            myRatings: migrateToMyRatings(
+                                firebaseData.myRatings,
+                                firebaseData.likedMovies,
+                                firebaseData.hiddenMovies
+                            ),
+                            syncStatus: 'synced',
+                        })
+
+                        // Persist seeded defaults to Firestore so they survive refresh
+                        if (needsSeedSave) {
+                            logger.log(
+                                `💾 [${trackingContext}] Saving seeded defaults to Firestore for user: ${userId}`
+                            )
+                            try {
+                                await saveToStorage(get(), 'seedDefaults')
+                            } catch (saveError) {
+                                logger.error(
+                                    `❌ [${trackingContext}] Failed to save seeded defaults:`,
+                                    saveError
+                                )
+                                // Don't fail the whole sync - defaults are still in memory
+                            }
+                        }
+
+                        logger.log(`✅ [${trackingContext}] Successfully synced for user ${userId}`)
+                        return firebaseData
+                    } catch (error) {
+                        logger.error(`❌ [${trackingContext}] Failed to sync:`, error)
+                        set({ syncStatus: 'offline' })
+                        throw error
+                    }
+                }
+
+                await runSync()
             },
             // Alias for backward compatibility with authStore
             get syncWithFirebase() {
