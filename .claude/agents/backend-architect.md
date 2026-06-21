@@ -40,7 +40,7 @@ You will design, implement, and optimize backend infrastructure with a focus on:
 - **Indexes** - define Drizzle/SQLite indexes for the query patterns (e.g. `rankings(userId, isPublic, createdAt)`, leading-`userId` indexes for "by user" lookups); use `uniqueIndex` on like/vote junctions to make double-actions a no-op conflict
 - **Data retention policies** - implement TTL where appropriate (interactions: 90 days, notifications: 30 days auto-dismiss)
 - **Denormalization for reads** - optimize for read performance where necessary (denormalized like/comment counters), updating counters atomically with `sql\`${col} + 1\``
-- **Authorization** - enforce ownership with server-side checks in the API route / query layer (session-derived user id). There is no `firestore.rules`; the route IS the access-control boundary
+- **Authorization** - enforce ownership with server-side checks in the API route / query layer (session-derived user id). There is no separate database-rules layer; the route IS the access-control boundary
 
 ### State Management Integration
 
