@@ -87,9 +87,10 @@ function AuthStateProvider({ children }: AuthProviderProps) {
                 await signIn('github')
             },
             signInWithEmail: async (email: string) => {
-                // Sends the magic-link email; does not redirect so the modal can
-                // show a "check your inbox" message.
-                await signIn('resend', { email, redirect: false })
+                // Sends the magic-link email via the active provider (stable id
+                // "email"); does not redirect so the modal can show a
+                // "check your inbox" message.
+                await signIn('email', { email, redirect: false })
             },
             logOut: async () => {
                 await signOut({ redirect: false })

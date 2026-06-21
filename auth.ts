@@ -14,11 +14,27 @@ import { DrizzleAdapter } from '@auth/drizzle-adapter'
 import NextAuth from 'next-auth'
 import GitHub from 'next-auth/providers/github'
 import Resend from 'next-auth/providers/resend'
+import SendGrid from 'next-auth/providers/sendgrid'
 
 import { db } from '@/db'
 import { accounts, sessions, users, verificationTokens } from '@/db/schema'
 
 const adminLogin = process.env.ADMIN_GITHUB_LOGIN?.toLowerCase()
+
+// The "From" address for magic-link emails (a verified sender). Both providers
+// share it. Falls back to Resend's shared test sender for local dev.
+const emailFrom =
+    process.env.EMAIL_FROM || process.env.RESEND_SENDER_EMAIL || 'onboarding@resend.dev'
+
+// Email magic-link provider, selectable via EMAIL_PROVIDER without code changes.
+// Both providers use the same verificationToken table, so switching is seamless.
+// Default: SendGrid (single-sender verification — no domain needed). Set
+// EMAIL_PROVIDER=resend to switch to Resend (requires a verified domain).
+// Both expose the stable provider id "email" so the client never changes.
+const emailProvider =
+    process.env.EMAIL_PROVIDER === 'resend'
+        ? Resend({ id: 'email', apiKey: process.env.RESEND_API_KEY, from: emailFrom })
+        : SendGrid({ id: 'email', apiKey: process.env.AUTH_SENDGRID_KEY, from: emailFrom })
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
     adapter: DrizzleAdapter(db, {
@@ -45,11 +61,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 }
             },
         }),
-        // Passwordless email magic links via Resend (uses the verificationToken table).
-        Resend({
-            apiKey: process.env.RESEND_API_KEY,
-            from: process.env.RESEND_SENDER_EMAIL || 'onboarding@resend.dev',
-        }),
+        // Passwordless email magic links (SendGrid or Resend — see emailProvider above).
+        emailProvider,
     ],
     callbacks: {
         session({ session, user }) {
