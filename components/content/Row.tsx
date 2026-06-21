@@ -151,17 +151,11 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onI
             const separator = apiEndpoint.includes('?') ? '&' : '?'
             let url = `${apiEndpoint}${separator}page=${currentPage + 1}`
 
-            // Add authentication header if this is a protected endpoint (recommendations)
+            // Recommendations is a protected endpoint; auth rides on the session
+            // cookie (sent automatically for same-origin requests).
             const fetchOptions: RequestInit = {}
             if (apiEndpoint.includes('/recommendations/personalized')) {
-                const { auth } = await import('../../firebase')
-                const currentUser = auth.currentUser
-                if (currentUser) {
-                    const idToken = await currentUser.getIdToken()
-                    fetchOptions.headers = {
-                        Authorization: `Bearer ${idToken}`,
-                    }
-                }
+                fetchOptions.credentials = 'same-origin'
 
                 // Pass already-shown IDs to avoid duplicates
                 // The API will use these to exclude content we've already rendered

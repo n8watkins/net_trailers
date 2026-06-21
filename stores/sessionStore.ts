@@ -90,18 +90,8 @@ export const useSessionStore = create<SessionStore>((set) => ({
         // Initialize session isolation service
         SessionStorageService.initializeSession(userId, 'auth')
 
-        // Update lastLoginAt in Firestore for trending notifications
-        try {
-            const { doc, updateDoc } = await import('firebase/firestore')
-            const { db } = await import('../firebase')
-            await updateDoc(doc(db, 'users', userId), {
-                lastLoginAt: Date.now(),
-            })
-            sessionLog('🎯 [SessionStore] Updated lastLoginAt for user:', userId)
-        } catch (error) {
-            // Silently fail - this is non-critical
-            sessionLog('⚠️  [SessionStore] Failed to update lastLoginAt:', error)
-        }
+        // lastLoginAt/lastActive is stamped server-side when preferences are
+        // saved (db/queries/userPreferences); no separate write needed here.
 
         sessionLog('🎯 [SessionStore] Auth session initialized:', userId)
     },

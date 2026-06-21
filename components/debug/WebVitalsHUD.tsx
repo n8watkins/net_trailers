@@ -82,7 +82,7 @@ export default function WebVitalsHUD() {
         // This ensures metrics are captured even if Next.js reportWebVitals isn't called
         const loadWebVitals = async () => {
             try {
-                const { onCLS, onFCP, onINP, onLCP, onTTFB, onFID } = await import('web-vitals')
+                const { onCLS, onFCP, onINP, onLCP, onTTFB } = await import('web-vitals')
 
                 const handleMetric = (metric: any) => {
                     const rating = getRating(metric.name, metric.value)
@@ -102,7 +102,6 @@ export default function WebVitalsHUD() {
                 onINP(handleMetric)
                 onLCP(handleMetric)
                 onTTFB(handleMetric)
-                onFID(handleMetric)
             } catch (error) {
                 console.error('[WebVitalsHUD] Error loading web-vitals:', error)
             }

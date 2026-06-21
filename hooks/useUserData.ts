@@ -344,28 +344,20 @@ export default function useUserData() {
                 accountCreated: new Date(), // This would come from Firebase auth
             }),
             clearAccountData: async () => {
-                const { auth } = await import('../firebase')
+                const { useSessionStore } = await import('../stores/sessionStore')
+                const userId = useSessionStore.getState().getUserId()
 
-                if (!auth.currentUser) {
+                if (!userId) {
                     throw new Error('No authenticated user found')
                 }
 
-                const userId = auth.currentUser.uid
-
                 console.log('[useUserData] 🗑️ Starting clearAccountData for user:', userId)
-                console.log('[useUserData] Using server-side API with Admin SDK...')
 
                 try {
-                    // Get Firebase auth token
-                    const idToken = await auth.currentUser.getIdToken()
-
-                    // Call server-side clear data API (uses Admin SDK, bypasses security rules)
-                    const response = await fetch('/api/user/clear-data', {
+                    // Call server-side clear-data API (auth via session cookie).
+                    const { authenticatedFetch } = await import('../lib/authenticatedFetch')
+                    const response = await authenticatedFetch('/api/user/clear-data', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            Authorization: `Bearer ${idToken}`,
-                        },
                     })
 
                     if (!response.ok) {
@@ -437,37 +429,25 @@ export default function useUserData() {
                 exportDate: new Date(),
             }),
             deleteAccount: async () => {
-                const { auth, db } = await import('../firebase')
-                const { deleteUser } = await import('firebase/auth')
-                const { doc, deleteDoc } = await import('firebase/firestore')
+                const { useSessionStore } = await import('../stores/sessionStore')
+                const userId = useSessionStore.getState().getUserId()
 
-                if (!auth.currentUser) {
+                if (!userId) {
                     throw new Error('No authenticated user found')
                 }
 
-                const userId = auth.currentUser.uid
-
-                // Step 1: Delete Firestore user data
-                try {
-                    const userDocRef = doc(db, 'users', userId)
-                    await deleteDoc(userDocRef)
-                } catch (firestoreError) {
-                    authError('Error deleting Firestore data:', firestoreError)
-                    // Continue with auth deletion even if Firestore fails
+                // Delete all of the user's data (Turso) via the server.
+                const { authenticatedFetch } = await import('../lib/authenticatedFetch')
+                const response = await authenticatedFetch('/api/user/clear-data', {
+                    method: 'POST',
+                })
+                if (!response.ok) {
+                    throw new Error('Failed to delete account data')
                 }
 
-                // Step 2: Delete Firebase Auth account
-                try {
-                    await deleteUser(auth.currentUser)
-                } catch (deleteError) {
-                    // Handle re-authentication requirement
-                    if ((deleteError as { code?: string }).code === 'auth/requires-recent-login') {
-                        throw new Error(
-                            'This operation requires recent authentication. Please sign out and sign in again before deleting your account.'
-                        )
-                    }
-                    throw deleteError
-                }
+                // Sign the user out of the Auth.js session.
+                const { signOut } = await import('next-auth/react')
+                await signOut({ redirect: false })
             },
 
             // Legacy compatibility - user session structure
