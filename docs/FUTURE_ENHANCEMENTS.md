@@ -8,19 +8,20 @@
 
 ## Priority Legend
 
-| Score | Priority | Timeline | Description |
-|-------|----------|----------|-------------|
-| 🔴 **9-10** | Critical | 1-2 weeks | Major impact, high urgency |
-| 🟠 **7-8** | High | 1-2 months | Significant improvement |
-| 🟡 **5-6** | Medium | 2-4 months | Worthwhile investment |
-| 🟢 **3-4** | Low | 4-6 months | Nice to have |
-| ⚪ **1-2** | Optional | Future | Can be deferred |
+| Score       | Priority | Timeline   | Description                |
+| ----------- | -------- | ---------- | -------------------------- |
+| 🔴 **9-10** | Critical | 1-2 weeks  | Major impact, high urgency |
+| 🟠 **7-8**  | High     | 1-2 months | Significant improvement    |
+| 🟡 **5-6**  | Medium   | 2-4 months | Worthwhile investment      |
+| 🟢 **3-4**  | Low      | 4-6 months | Nice to have               |
+| ⚪ **1-2**  | Optional | Future     | Can be deferred            |
 
 ---
 
 ## 🏗️ Architecture & Code Quality
 
 ### 1. Complete Store Migration (useAppStore → Focused Stores)
+
 **Score**: 🔴 **9/10**
 
 **Current**: 99 components still use deprecated `useAppStore`
@@ -28,6 +29,7 @@
 **Effort**: Medium (2-3 weeks)
 
 **Action Items**:
+
 - Migrate 99 components to `useModalStore`, `useToastStore`, etc.
 - Add ESLint rule to warn on `useAppStore` usage
 - Update documentation with migration examples
@@ -37,9 +39,11 @@
 ---
 
 ### 2. Split Monolithic Components
+
 **Score**: 🟠 **8/10**
 
 **Files to Split**:
+
 - `RankingCreator.tsx` (1,471 lines) → 4 components
 - `ListSelectionModal.tsx` (1,001 lines, **345 lines duplicated**)
 - `Modal.tsx` (949 lines)
@@ -50,6 +54,7 @@
 **Effort**: High (4-6 weeks)
 
 **Priority Order**:
+
 1. ListSelectionModal (eliminate duplication)
 2. RankingCreator (complexity reduction)
 3. Modal (feature separation)
@@ -61,14 +66,16 @@
 ---
 
 ### 3. Increase Test Coverage
+
 **Score**: 🔴 **9/10**
 
 **Current**: 19 test files for 394 source files (4.8%)
 **Target**: 40% coverage (Month 1), 70% coverage (Month 3)
 
 **Critical Paths to Test**:
+
 - ✅ Authentication flows (useAuth, session management)
-- ✅ Firebase sync operations (race conditions)
+- ✅ Turso/Drizzle sync operations (race conditions)
 - ✅ Child safety filtering
 - ✅ Payment/subscription logic (if applicable)
 - ✅ Data persistence (authStore, guestStore)
@@ -80,14 +87,16 @@
 ---
 
 ### 4. Fix TypeScript `any` Usage
+
 **Score**: 🟡 **6/10**
 
 **Current**: 44 instances across 30 files
 
 **Top Offenders**:
+
 - `components/content/Row.tsx`
 - `app/api/gemini/analyze/route.ts`
-- `utils/firestore/**`
+- `db/queries/**`
 - `components/debug/**`
 
 **Impact**: Type safety, IDE support, bug prevention
@@ -102,12 +111,14 @@
 ## 🔒 Security Enhancements
 
 ### 5. TMDB API v4 Migration (Bearer Tokens)
+
 **Score**: 🟢 **4/10**
 
 **Current**: TMDB v3 with query parameter API keys
 **Future**: TMDB v4 with `Authorization: Bearer TOKEN`
 
 **Benefits**:
+
 - API keys in headers (not URLs)
 - Better security posture
 - Modern API features
@@ -117,6 +128,7 @@
 **Why Low Priority**: Current implementation is secure for server-side
 
 **Steps**:
+
 1. Obtain Read Access Token from TMDB
 2. Update all endpoints to v4 URLs
 3. Migrate authentication to headers
@@ -125,11 +137,13 @@
 ---
 
 ### 6. Implement API Usage Monitoring
+
 **Score**: 🟡 **6/10**
 
 **Current**: No monitoring of TMDB/Gemini API usage
 
 **Implement**:
+
 - API call tracking and metrics
 - Cost monitoring dashboard
 - Rate limit violation alerts
@@ -144,11 +158,13 @@
 ---
 
 ### 7. API Key Rotation Strategy
+
 **Score**: 🟢 **3/10**
 
 **Current**: Manual key management
 
 **Implement**:
+
 - Scheduled key rotation (quarterly)
 - Zero-downtime rotation process
 - Key versioning system
@@ -161,11 +177,13 @@
 ---
 
 ### 8. Log Sanitization
+
 **Score**: 🟢 **4/10**
 
 **Current**: API keys may appear in server logs
 
 **Implement**:
+
 - Automatic API key redaction in logs
 - Structured logging with Winston/Pino
 - Log aggregation (Datadog, LogRocket)
@@ -179,11 +197,13 @@
 ## 🎨 UI/UX Improvements
 
 ### 9. Add Error Boundaries to Critical Components
+
 **Score**: 🟠 **7/10**
 
 **Current**: ErrorBoundary exists but rarely used
 
 **Add to**:
+
 - Row components (data fetching)
 - Modal (video player)
 - SearchBar (API calls)
@@ -197,11 +217,13 @@
 ---
 
 ### 10. Implement Focus Management in Modals
+
 **Score**: 🟡 **5/10**
 
 **Current**: No focus trap in modals
 
 **Implement**:
+
 - Focus lock (prevent tabbing outside modal)
 - Return focus to trigger on close
 - Keyboard navigation (Escape to close)
@@ -214,11 +236,13 @@
 ---
 
 ### 11. Add Keyboard Navigation to Drag-Drop
+
 **Score**: 🟠 **7/10**
 
 **Current**: RankingCreator drag-drop has no keyboard alternative
 
 **Implement**:
+
 - Arrow keys to navigate
 - Space/Enter to select
 - Up/Down to reorder
@@ -231,11 +255,13 @@
 ---
 
 ### 12. Improve Color Contrast (WCAG AA)
+
 **Score**: 🟡 **5/10**
 
 **Current**: Some gray text may fail contrast ratios
 
 **Audit**:
+
 - `text-gray-400` on dark backgrounds
 - `text-gray-500` on colored backgrounds
 - Button states (hover, disabled)
@@ -251,18 +277,21 @@
 ## ⚡ Performance Optimizations
 
 ### 13. Add Missing Memoization
+
 **Score**: 🟡 **6/10**
 
 **Issues**:
+
 - `Row.tsx`: `filteredContent` recalculated every render
 - `RankingCreator.tsx`: 20+ state variables cause cascades
 - `ListSelectionModal.tsx`: `getAllLists()` called in render
 
 **Fix**:
+
 ```typescript
 const filteredContent = useMemo(
-  () => filterDislikedContent(allContent, hiddenMovies),
-  [allContent, hiddenMovies]
+    () => filterDislikedContent(allContent, hiddenMovies),
+    [allContent, hiddenMovies]
 )
 ```
 
@@ -273,14 +302,17 @@ const filteredContent = useMemo(
 ---
 
 ### 14. Optimize Bundle Size
+
 **Score**: 🟡 **5/10**
 
 **Current Issues**:
+
 - `seedData.ts` (51KB)
 - `popularTags.ts` (31KB)
 - Large utility files in bundle
 
 **Implement**:
+
 - Code splitting
 - Dynamic imports for heavy features
 - Tree shaking optimization
@@ -293,9 +325,11 @@ const filteredContent = useMemo(
 ---
 
 ### 15. Implement Service Worker (PWA)
+
 **Score**: 🟢 **4/10**
 
 **Benefits**:
+
 - Offline support
 - Faster page loads
 - Install as app
@@ -310,11 +344,13 @@ const filteredContent = useMemo(
 ## 📚 Documentation & DX
 
 ### 16. Consolidate Documentation
+
 **Score**: 🟡 **5/10**
 
 **Current**: 14 markdown files, some outdated
 
 **Action**:
+
 - Merge duplicate docs
 - Create clear hierarchy
 - Add table of contents
@@ -327,9 +363,11 @@ const filteredContent = useMemo(
 ---
 
 ### 17. Create Component Architecture Diagram
+
 **Score**: 🟢 **3/10**
 
 **Create**:
+
 - Visual component hierarchy
 - State flow diagrams
 - Data flow charts
@@ -344,9 +382,11 @@ const filteredContent = useMemo(
 ---
 
 ### 18. Add Storybook for Component Library
+
 **Score**: 🟢 **4/10**
 
 **Benefits**:
+
 - Visual component testing
 - Design system documentation
 - Isolated development
@@ -361,17 +401,20 @@ const filteredContent = useMemo(
 ## 🗄️ Data & Backend
 
 ### 19. Implement Redis-backed Rate Limiting
+
 **Score**: 🟠 **7/10**
 
 **Current**: In-memory Map (resets on restart)
 
 **Issues**:
+
 - No persistence
 - Easy to bypass (server restart)
 - Memory leak potential
 - Not distributed
 
 **Implement**:
+
 - Redis for rate limit storage
 - Distributed rate limiting
 - Proper cleanup/expiration
@@ -383,16 +426,18 @@ const filteredContent = useMemo(
 
 ---
 
-### 20. Optimize Firebase Operations
+### 20. Optimize Turso/Drizzle Queries
+
 **Score**: 🟠 **7/10**
 
-**Current**: `firebaseCallTracker` shows high call volume
+**Current**: Some API routes issue repeated/unbatched Turso reads
 
 **Implement**:
+
 - Request coalescing
-- Batch operations
+- Batch operations (single round-trips via Drizzle)
 - Caching layer (Redis)
-- Connection pooling
+- Connection reuse
 
 **Effort**: High (3-4 weeks)
 
@@ -401,10 +446,12 @@ const filteredContent = useMemo(
 ---
 
 ### 21. Add Database Indexes
+
 **Score**: 🟡 **6/10**
 
 **Review**:
-- Firestore composite indexes
+
+- Turso/SQLite indexes on hot columns (userId, foreign keys)
 - Slow query analysis
 - Query optimization
 
@@ -417,9 +464,11 @@ const filteredContent = useMemo(
 ## 🧪 Testing & CI/CD
 
 ### 22. Set Up CI/CD Pipeline
+
 **Score**: 🟠 **8/10**
 
 **Implement**:
+
 - Automated testing on PR
 - Lint/type check gates
 - Build verification
@@ -435,16 +484,18 @@ const filteredContent = useMemo(
 ---
 
 ### 23. Add E2E Testing
+
 **Score**: 🟡 **6/10**
 
 **Current**: Only unit tests
 
 **Implement**:
+
 - Playwright/Cypress for E2E
 - Critical user flows:
-  - Sign up → browse → add to watchlist → watch
-  - Create custom row → share
-  - Search → discover → modal
+    - Sign up → browse → add to watchlist → watch
+    - Create custom row → share
+    - Search → discover → modal
 
 **Effort**: High (3-4 weeks)
 
@@ -453,9 +504,11 @@ const filteredContent = useMemo(
 ---
 
 ### 24. Performance Monitoring
+
 **Score**: 🟠 **7/10**
 
 **Implement**:
+
 - Core Web Vitals tracking
 - Real User Monitoring (RUM)
 - Performance budgets
@@ -472,19 +525,22 @@ const filteredContent = useMemo(
 ## 📊 Priority Matrix
 
 ### Immediate (Next 2 Weeks)
+
 1. 🔴 **Complete Store Migration** (9/10)
 2. 🔴 **Increase Test Coverage** (9/10) - Start with critical paths
 
 ### Short-term (1-2 Months)
+
 3. 🟠 **Split Monolithic Components** (8/10)
 4. 🟠 **Set Up CI/CD Pipeline** (8/10)
 5. 🟠 **Add Error Boundaries** (7/10)
 6. 🟠 **Keyboard Navigation** (7/10)
 7. 🟠 **Redis Rate Limiting** (7/10)
-8. 🟠 **Optimize Firebase** (7/10)
+8. 🟠 **Optimize Turso/Drizzle Queries** (7/10)
 9. 🟠 **Performance Monitoring** (7/10)
 
 ### Medium-term (2-4 Months)
+
 10. 🟡 **Fix TypeScript `any`** (6/10)
 11. 🟡 **API Usage Monitoring** (6/10)
 12. 🟡 **Add Memoization** (6/10)
@@ -496,6 +552,7 @@ const filteredContent = useMemo(
 18. 🟡 **Consolidate Docs** (5/10)
 
 ### Long-term (4-6 Months)
+
 19. 🟢 **TMDB v4 Migration** (4/10)
 20. 🟢 **Log Sanitization** (4/10)
 21. 🟢 **Service Worker/PWA** (4/10)
@@ -508,25 +565,29 @@ const filteredContent = useMemo(
 ## 🎯 Recommended Sprint Plan
 
 ### Sprint 1 (2 weeks)
+
 - Store migration (high-traffic components)
 - Add error boundaries
 - Set up CI/CD pipeline
 - Start test coverage (auth flows)
 
 ### Sprint 2 (2 weeks)
+
 - Continue store migration
 - Split ListSelectionModal (eliminate duplication)
 - Add keyboard navigation to drag-drop
 - Performance monitoring setup
 
 ### Sprint 3 (2 weeks)
+
 - Complete store migration
 - Split RankingCreator
 - Implement Redis rate limiting
-- Continue test coverage (Firebase sync)
+- Continue test coverage (Turso/Drizzle sync)
 
 ### Sprint 4 (2 weeks)
-- Optimize Firebase operations
+
+- Optimize Turso/Drizzle queries
 - Fix TypeScript `any` usage
 - Add memoization to critical paths
 - E2E testing setup
@@ -535,12 +596,12 @@ const filteredContent = useMemo(
 
 ## 💰 Estimated Total Effort
 
-| Priority | Effort | Timeline |
-|----------|--------|----------|
-| **Critical (9-10)** | 5-6 weeks | Immediate |
-| **High (7-8)** | 10-12 weeks | 1-2 months |
-| **Medium (5-6)** | 8-10 weeks | 2-4 months |
-| **Low (3-4)** | 6-8 weeks | 4-6 months |
+| Priority            | Effort      | Timeline   |
+| ------------------- | ----------- | ---------- |
+| **Critical (9-10)** | 5-6 weeks   | Immediate  |
+| **High (7-8)**      | 10-12 weeks | 1-2 months |
+| **Medium (5-6)**    | 8-10 weeks  | 2-4 months |
+| **Low (3-4)**       | 6-8 weeks   | 4-6 months |
 
 **Total**: ~29-36 weeks (7-9 months for all enhancements)
 
@@ -549,15 +610,17 @@ const filteredContent = useMemo(
 ## 🎓 Key Takeaways
 
 **Focus On**:
+
 1. User-facing improvements (performance, accessibility)
 2. Developer experience (testing, tooling)
 3. Technical debt reduction (component splitting, store migration)
 
 **Defer**:
+
 1. Nice-to-have features (PWA, Storybook)
 2. Optional migrations (TMDB v4)
 3. Advanced tooling (until team grows)
 
 ---
 
-*This roadmap is based on the comprehensive code review and prioritizes impact vs. effort.*
+_This roadmap is based on the comprehensive code review and prioritizes impact vs. effort._

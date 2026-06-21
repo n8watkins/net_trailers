@@ -27,7 +27,7 @@ The Collection Sharing System allows users to create shareable links for their c
 ### Data Flow
 
 ```
-User → Settings → Manage Sharing → ShareModal → API → Firestore
+User → Settings → Manage Sharing → ShareModal → API → Turso
                                                 ↓
                                           Share Created
                                                 ↓
@@ -38,10 +38,10 @@ User → Settings → Manage Sharing → ShareModal → API → Firestore
 
 ### Storage Structure
 
-**Firestore**:
+**Turso** (via Drizzle):
 
-- `/shares/{shareId}` → ShareableLink document
-- `/users/{userId}/collections/{collectionId}` → updated with `sharedLinkId` and `shareSettings`
+- `shares` table → one ShareableLink row per shareId (keyed by `userId`)
+- The owner's collection (in `user_preferences`) is updated with `sharedLinkId` and `shareSettings`
 
 **localStorage** (guest users):
 
@@ -54,7 +54,7 @@ User → Settings → Manage Sharing → ShareModal → API → Firestore
 | Phase | Description                | Lines | Files                                            |
 | ----- | -------------------------- | ----- | ------------------------------------------------ |
 | 2.1   | Data model & types         | 195   | `types/sharing.ts`, `types/userLists.ts`         |
-| 2.3   | Firestore utilities        | 557   | `utils/firestore/shares.ts` + nanoid             |
+| 2.3   | Query layer                | 557   | `db/queries/shares.ts` + nanoid                  |
 | 2.2   | Backend API routes         | 339   | 4 API route files                                |
 | 2.4   | ShareModal component       | 455   | `components/sharing/ShareModal.tsx`              |
 | 2.5   | SharedCollectionView page  | 433   | `/app/shared/[shareId]/page.tsx` + duplicate API |
@@ -102,7 +102,7 @@ const SHARE_CONSTRAINTS = {
 }
 ```
 
-#### 2. Firestore Utilities (`utils/firestore/shares.ts`)
+#### 2. Query Layer (`db/queries/shares.ts`)
 
 **Core Functions**:
 
@@ -119,12 +119,12 @@ const SHARE_CONSTRAINTS = {
 **Security Features**:
 
 - Share ID validation (alphanumeric + hyphen/underscore)
-- Ownership verification on all mutations
+- Ownership verification on all mutations (session userId === share's userId)
 - Expiration checking before serving
 - Active status validation
 - User share limits (50 total, 25 active)
 - Client-side view cooldown (1 minute)
-- Rate limiting via Firestore security rules
+- Server-side authorization enforced in the API routes
 
 #### 3. Backend API Routes (`app/api/shares/`)
 
@@ -134,7 +134,7 @@ const SHARE_CONSTRAINTS = {
     - Creates shareable link
     - Request: `{ collectionId, expiresIn, settings, allowDuplicates }`
     - Response: `{ success, shareId, shareUrl, share }`
-    - Auth: Required (x-user-id header)
+    - Auth: Required (Auth.js session cookie; user id derived server-side)
 
 2. **GET /api/shares/[shareId]**
     - Public endpoint (no auth)
@@ -389,7 +389,7 @@ const SHARE_CONSTRAINTS = {
 
 - [ ] **Delete Share**
     - [ ] Requires confirmation
-    - [ ] Removes from Firestore
+    - [ ] Removes the row from the `shares` table
     - [ ] Removes sharedLinkId from collection
     - [ ] Only owner can delete
     - [ ] Shows success toast
@@ -458,15 +458,15 @@ const SHARE_CONSTRAINTS = {
 
 ### Runtime Performance
 
-- **Share creation**: ~200-400ms (includes Firestore write)
+- **Share creation**: ~200-400ms (includes Turso write)
 - **Share fetch**: ~100-200ms (cached after first load)
 - **View count increment**: ~50-100ms (async, non-blocking)
 - **OG image generation**: ~500-800ms (edge runtime, cached 1 hour)
 - **Page load** (/shared/[shareId]): ~1-2s (includes TMDB fetches)
 
-### Firestore Usage
+### Database Usage
 
-- **Shares collection**: 1 read per view, 1 write per creation
+- **shares table**: 1 read per view, 1 write per creation
 - **View increment**: 1 update per unique view (cooldown prevents spam)
 - **User shares fetch**: 1 query per "Manage Sharing" open
 - **Stats calculation**: Client-side from fetched shares
@@ -570,7 +570,7 @@ const SHARE_CONSTRAINTS = {
 ## Commits (7 total)
 
 1. `feat: add collection sharing data model (Phase 2.1)` - 195 lines
-2. `feat: add Firestore utilities for collection sharing (Phase 2.3)` - 557 lines
+2. `feat: add query layer for collection sharing (Phase 2.3)` - 557 lines
 3. `feat: add backend API routes for collection sharing (Phase 2.2)` - 339 lines
 4. `feat: add ShareModal component for collection sharing (Phase 2.4)` - 455 lines
 5. `feat: add public SharedCollectionView page (Phase 2.5)` - 433 lines

@@ -2,18 +2,19 @@
 
 ## At a Glance
 
-**Netflix-inspired movie/TV show discovery platform** | Next.js 16 + React 19 + Zustand + Firebase
+**Netflix-inspired movie/TV show discovery platform** | Next.js 16 + React 19 + Zustand + Turso + Auth.js
 
-| Metric               | Value                             |
-| -------------------- | --------------------------------- |
-| **Framework**        | Next.js 16 + React 19             |
-| **State Management** | Zustand (10 stores)               |
-| **Database**         | Firebase Firestore + localStorage |
-| **TypeScript Files** | 19,090                            |
-| **Components**       | 100+                              |
-| **Test Files**       | 20+                               |
-| **API Routes**       | 18 (TMDB proxy)                   |
-| **Hooks**            | 25+ custom hooks                  |
+| Metric               | Value                                       |
+| -------------------- | ------------------------------------------- |
+| **Framework**        | Next.js 16 + React 19                       |
+| **State Management** | Zustand (18 stores)                         |
+| **Database**         | Turso (libSQL) + Drizzle ORM + localStorage |
+| **Auth**             | Auth.js (NextAuth v5)                       |
+| **TypeScript Files** | 19,090                                      |
+| **Components**       | 100+                                        |
+| **Test Files**       | 20+                                         |
+| **API Routes**       | 49+ (TMDB proxy + app data)                 |
+| **Hooks**            | 25+ custom hooks                            |
 
 ---
 
@@ -26,15 +27,17 @@ app/                      Next.js 16 App Router + API routes
 components/               100+ reusable React components
 stores/                   Zustand state management
 hooks/                    Custom React hooks
-services/                 Business logic (Firebase, storage)
+services/                 Business logic (storage adapters)
 utils/                    Utility functions & helpers
 types/                    TypeScript type definitions
 lib/                      Server-side data fetching
+db/                       Drizzle schema, queries, Turso client
 styles/                   Global Tailwind CSS
 public/                   Static assets (images, icons)
 __tests__/                Jest test files
 scripts/                  Dev utilities & automation
-firebase.ts               Firebase initialization
+auth.ts                   Auth.js (NextAuth v5) configuration
+db/index.ts               Turso (libSQL) + Drizzle client
 ```
 
 ---
@@ -43,16 +46,18 @@ firebase.ts               Firebase initialization
 
 ### Store Purpose Map
 
-| Store                | Purpose                                  | Data                                | Storage        |
-| -------------------- | ---------------------------------------- | ----------------------------------- | -------------- |
-| **appStore**         | Global UI state (modals, toasts, search) | 6 modals, 6 toast types             | Memory         |
-| **authStore**        | Authenticated user data                  | Watchlists, preferences, auth data  | Firestore      |
-| **guestStore**       | Guest user data                          | Watchlists, preferences (guest)     | localStorage   |
-| **sessionStore**     | Session management                       | Session type, user ID, auth state   | Memory         |
-| **cacheStore**       | API response caching                     | Page data, cache metadata           | sessionStorage |
-| **searchStore**      | Search state                             | Query, results, filters, pagination | Memory         |
-| **customRowsStore**  | Custom row management                    | User-created rows, ordering         | Firestore      |
-| **smartSearchStore** | AI search state                          | Smart suggestions, queries          | Memory         |
+| Store                | Purpose                                  | Data                                | Storage         |
+| -------------------- | ---------------------------------------- | ----------------------------------- | --------------- |
+| **appStore**         | Global UI state (modals, toasts, search) | 6 modals, 6 toast types             | Memory          |
+| **authStore**        | Authenticated user data                  | Watchlists, preferences, auth data  | Turso (via API) |
+| **guestStore**       | Guest user data                          | Watchlists, preferences (guest)     | localStorage    |
+| **sessionStore**     | Session management                       | Session type, user ID, auth state   | Memory          |
+| **cacheStore**       | API response caching                     | Page data, cache metadata           | sessionStorage  |
+| **searchStore**      | Search state                             | Query, results, filters, pagination | Memory          |
+| **customRowsStore**  | Custom row management                    | User-created rows, ordering         | Turso (via API) |
+| **smartSearchStore** | AI search state                          | Smart suggestions, queries          | Memory          |
+
+> Showing a representative subset — the app runs 18 focused Zustand stores in total (see `CLAUDE.md` for the full list). Authenticated data persists to Turso through API routes (`ApiStorageAdapter`); guest data stays in localStorage (`LocalStorageAdapter`).
 
 **Key Pattern**: No context providers needed - Zustand stores are self-contained
 
@@ -90,7 +95,7 @@ User Action
     ↓
 Zustand Store Update (setState)
     ↓
-Persist to Storage (Firebase/localStorage)
+Persist to Storage (Turso via API route / localStorage)
     ↓
 Component Re-render (via hook subscription)
     ↓
@@ -108,18 +113,20 @@ Toast Notification (showSuccess/showError)
 ### Flow
 
 ```
-Firebase Auth (Email/Google/Guest)
+Auth.js (GitHub OAuth / email magic-link) or Guest mode
     ↓
-useAuth() Hook
+useAuth() Hook (Auth.js session cookie)
     ↓
 sessionStore (session type + user ID)
     ↓
-authStore (Firebase) OR guestStore (localStorage)
+authStore (Turso via API) OR guestStore (localStorage)
     ↓
 Components read from store
     ↓
-Data persisted to Firestore or localStorage
+Data persisted to Turso (via /api/user/preferences) or localStorage
 ```
+
+> Auth.js (NextAuth v5) uses database sessions with the `@auth/drizzle-adapter` and cookie-based session validation. Providers: GitHub OAuth and passwordless email magic-link (Brevo by default, Resend optional). No password login, no email/password reset flow. The admin is identified by GitHub login via `ADMIN_GITHUB_LOGIN` (`session.user.isAdmin`).
 
 ### User Data Structure
 
@@ -227,7 +234,7 @@ Client → Next.js Route → TMDBApiClient → TMDB API → Cache → Client
 ### Authentication & Session
 
 ```typescript
-useAuth() // Firebase auth + user
+useAuth() // Auth.js session + user
 useSessionStore() // Session type, user ID
 useAuthStatus() // Is authenticated?
 useSessionData() // Sync user data
@@ -291,17 +298,20 @@ try {
 
 **Required**:
 
-- `NEXT_PUBLIC_FIREBASE_API_KEY`
-- `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
-- `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
-- `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
-- `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
-- `NEXT_PUBLIC_FIREBASE_APP_ID`
+- `TURSO_DATABASE_URL`
+- `TURSO_AUTH_TOKEN`
+- `AUTH_SECRET`
+- `AUTH_GITHUB_ID`
+- `AUTH_GITHUB_SECRET`
+- `ADMIN_GITHUB_LOGIN` (server-side only — admin's GitHub username)
 - `TMDB_API_KEY`
 
 **Optional**:
 
-- `GEMINI_API_KEY` (for AI features)
+- `BREVO_API_KEY` (email magic-link sender; Resend optional alternative)
+- `BLOB_READ_WRITE_TOKEN` (Vercel Blob image storage)
+- `GEMINI_API_KEY` (server-side, for AI features)
+- `CRON_SECRET` (protects cron job endpoints)
 - `SENTRY_DSN` (error monitoring)
 - `NEXT_PUBLIC_GA_MEASUREMENT_ID` (analytics)
 
@@ -359,15 +369,17 @@ const openModal = useAppStore((state) => state.openModal)
 openModal(content, autoPlay, sound)
 ```
 
-### Firebase Firestore Access
+### Turso Data Access (via API routes)
 
 ```typescript
-// User data is at: /users/{userId}
-// Auto-synced via authStore + authStorageService
-// 5-second timeout protection built in
+// User data lives in the user_preferences table (one JSON blob column per user)
+// The browser never touches Turso directly — it calls Next.js API routes
+// (e.g. /api/user/preferences) which use Drizzle. The user id is derived
+// server-side from the Auth.js session, never from the request body.
+// Auto-synced via authStore + ApiStorageAdapter.
 
 // Add to watchlist
-authStore.addToWatchlist(content) // Auto-saves to Firestore
+authStore.addToWatchlist(content) // Auto-saves to Turso via API route
 ```
 
 ### Server Components
@@ -386,7 +398,7 @@ async function HomeContent() {
 
 ✓ **Type Safety** - Full TypeScript with strict mode
 ✓ **State Management** - Zustand with minimal boilerplate
-✓ **Authentication** - Multi-provider with proper isolation
+✓ **Authentication** - Auth.js (GitHub OAuth + email magic-link) with server-side user isolation
 ✓ **Error Handling** - Unified toast-based system
 ✓ **Content Handling** - Discriminated unions for type safety
 ✓ **Performance** - Caching, lazy loading, debouncing

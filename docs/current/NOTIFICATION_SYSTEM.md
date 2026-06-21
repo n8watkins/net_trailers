@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Notification System provides in-app notifications for users to stay informed about collection updates, new releases, share activity, and system announcements. The system uses Firestore for real-time updates and supports auto-expiration and cleanup of old notifications.
+The Notification System provides in-app notifications for users to stay informed about collection updates, new releases, share activity, and system announcements. The system stores notifications in Turso (libSQL/SQLite via Drizzle) and delivers updates by polling `/api/notifications` every 30s, with auto-expiration and cleanup of old notifications.
 
 **Status**: ✅ Implemented (Phase 3 - Feature Roadmap 2025)
 
@@ -12,10 +12,10 @@ The Notification System provides in-app notifications for users to stay informed
 
 ### Core Capabilities
 
-1. **Real-time Notifications**
-    - Live updates via Firestore onSnapshot
-    - Instant delivery to all active sessions
-    - Automatic syncing across devices
+1. **Near Real-time Notifications**
+    - Updates via polling `/api/notifications` every 30s
+    - Delivered to the active session on each poll
+    - Syncs across devices on the next poll cycle
 
 2. **Notification Types**
     - `collection_update` - New content added to followed collections
@@ -40,7 +40,7 @@ The Notification System provides in-app notifications for users to stay informed
 
 ### Data Model
 
-**Firestore Location**: `/users/{userId}/notifications/{notificationId}`
+**Storage**: Turso `notifications` table (Drizzle), keyed by the `userId` column
 
 ```typescript
 interface Notification {
@@ -75,7 +75,7 @@ interface Notification {
 
 **Key Features**:
 
-- Real-time subscription to notifications
+- Polling subscription to notifications (every 30s)
 - Auto-cleanup on unmount
 - Accessible with ARIA labels
 
@@ -117,7 +117,7 @@ interface Notification {
 
 #### notificationStore (`stores/notificationStore.ts`)
 
-Zustand store for notification state with real-time Firestore sync.
+Zustand store for notification state, synced via polling `/api/notifications` every 30s.
 
 **State**:
 
@@ -144,20 +144,20 @@ Zustand store for notification state with real-time Firestore sync.
 - `deleteNotification(userId, notificationId)` - Delete single
 - `deleteAllNotifications(userId)` - Delete all
 - `togglePanel()` / `openPanel()` / `closePanel()` - Panel control
-- `subscribe(userId)` - Start real-time subscription
-- `unsubscribeFromNotifications()` - Stop subscription
+- `subscribe(userId)` - Start polling subscription
+- `unsubscribeFromNotifications()` - Stop polling
 - `clearNotifications()` - Clear local state
 
-**Real-time Subscription**:
+**Polling Subscription**:
 
-- Automatically subscribes when userId changes
-- Unsubscribes on component unmount
+- Automatically starts polling when userId changes
+- Stops polling on component unmount
 - Handles errors gracefully
 - Updates unread count automatically
 
-### Firestore Utilities
+### Query Layer
 
-#### notifications.ts (`utils/firestore/notifications.ts`)
+#### notifications.ts (`db/queries/notifications.ts`)
 
 **CRUD Operations**:
 
@@ -178,10 +178,10 @@ Zustand store for notification state with real-time Firestore sync.
     - Counts by type
     - Most recent notification
 
-**Real-time Subscription**:
+**Polling Subscription**:
 
-- `subscribeToNotifications(userId, onUpdate)` - Subscribe with callback
-- Returns unsubscribe function
+- `subscribeToNotifications(userId, onUpdate)` - Polls `/api/notifications` every 30s and invokes the callback
+- Returns an unsubscribe function that stops the polling interval
 - Handles errors with empty array fallback
 
 **Auto-cleanup**:
@@ -196,7 +196,7 @@ Zustand store for notification state with real-time Firestore sync.
 ### Creating a Notification
 
 ```typescript
-import { createNotification } from '@/utils/firestore/notifications'
+import { createNotification } from '@/db/queries/notifications'
 
 // Example: Notify when someone views your shared collection
 await createNotification(shareOwnerId, {
@@ -215,8 +215,8 @@ await createNotification(shareOwnerId, {
 
 ```typescript
 // When a share is viewed, notify the owner
-import { incrementViewCount } from '@/utils/firestore/shares'
-import { createNotification } from '@/utils/firestore/notifications'
+import { incrementViewCount } from '@/db/queries/shares'
+import { createNotification } from '@/db/queries/notifications'
 
 const handleViewShare = async (shareId: string) => {
     const shareData = await incrementViewCount(shareId)
@@ -250,7 +250,7 @@ function MyComponent() {
 
     useEffect(() => {
         if (userId) {
-            subscribe(userId) // Start real-time updates
+            subscribe(userId) // Start polling for updates (every 30s)
         }
 
         return () => {
@@ -334,29 +334,24 @@ export const NOTIFICATION_CONSTRAINTS = {
 
 ## Security Considerations
 
-1. **User Isolation**: Notifications stored per user (`/users/{userId}/notifications`)
-2. **Firestore Security Rules**: Only authenticated users can read/write their own notifications
+1. **User Isolation**: Notifications stored per user in the `notifications` table, keyed by the `userId` column
+2. **Server-side Authorization**: API routes derive the user id from the Auth.js session and enforce that it matches the row's `userId`
 3. **No Cross-user Access**: Each user can only access their own notifications
-4. **Input Validation**: All requests validated before Firestore operations
+4. **Input Validation**: All requests validated before database operations
 5. **Error Handling**: Graceful fallbacks prevent data leaks
 
-### Recommended Firestore Security Rules
+### Server-side Authorization
 
-```javascript
-// /users/{userId}/notifications/{notificationId}
-match /users/{userId}/notifications/{notificationId} {
-  allow read, write: if request.auth != null && request.auth.uid == userId;
-}
-```
+The browser never queries Turso directly. All access goes through the `/api/notifications` routes, which resolve the current user from the Auth.js session cookie and scope every query/mutation to that `userId`. A user can only ever read or write rows where `notifications.userId` matches their session user id, which replaces the former Firestore security rules.
 
 ## Performance Optimizations
 
-1. **Real-time Subscription**: Only subscribes when user is active
+1. **Polling Subscription**: Only polls while the user is active
 2. **Query Limits**: Fetch max 50 notifications at a time
 3. **Auto-cleanup**: Removes old data to prevent unbounded growth
 4. **Optimistic Updates**: Local state updates immediately, syncs async
 5. **Parallel Operations**: Batch operations use Promise.all()
-6. **Indexed Queries**: Firestore queries use createdAt for sorting
+6. **Indexed Queries**: Queries sort by createdAt
 
 ## Future Enhancements
 
@@ -393,7 +388,7 @@ match /users/{userId}/notifications/{notificationId} {
 - [ ] Delete removes notification
 - [ ] Mark all as read works
 - [ ] Clear all shows confirmation and works
-- [ ] Real-time updates (test with multiple browser tabs)
+- [ ] Polling updates appear within ~30s (test with multiple browser tabs)
 - [ ] Guest users don't see bell
 
 ### Integration Testing
@@ -408,7 +403,7 @@ await createNotification(userId, {
 })
 ```
 
-2. **Verify Real-time Update**: Notification appears instantly in open panels
+2. **Verify Polling Update**: Notification appears in open panels within the next poll cycle (~30s)
 
 3. **Verify Expiration**: Create notification with short expiration, verify auto-delete
 
@@ -419,7 +414,7 @@ await createNotification(userId, {
 ### New Files (Phase 3)
 
 1. `types/notifications.ts` (183 lines) - Data model and types
-2. `utils/firestore/notifications.ts` (358 lines) - Firestore utilities
+2. `db/queries/notifications.ts` (358 lines) - Turso/Drizzle query layer
 3. `stores/notificationStore.ts` (368 lines) - Zustand store
 4. `components/notifications/NotificationBell.tsx` (85 lines) - Bell icon
 5. `components/notifications/NotificationPanel.tsx` (170 lines) - Dropdown panel
@@ -445,17 +440,17 @@ await createNotification(userId, {
 
 For questions or issues with the notification system:
 
-1. Check Firestore security rules are properly configured
+1. Verify the API routes scope queries to the session user id (server-side authorization)
 2. Verify user is authenticated (notifications require auth)
 3. Check browser console for errors
-4. Verify Firestore indexes exist for queries
+4. Verify the `notifications` table and its indexes exist in Turso
 
 ## Changelog
 
 **January 2025 - v1.0.0 (Phase 3)**
 
 - ✅ Initial implementation
-- ✅ Real-time notifications with Firestore onSnapshot
+- ✅ Near real-time notifications via polling `/api/notifications` every 30s
 - ✅ Four notification types (collection_update, new_release, share_activity, system)
 - ✅ Auto-expiration and cleanup
 - ✅ Full UI with bell, panel, and item components

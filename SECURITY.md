@@ -24,40 +24,41 @@ This document outlines the security measures implemented in NetTrailer to protec
 
 ## Authentication & Authorization
 
-### Firebase Authentication
+### Auth.js Authentication
 
-NetTrailer uses **Firebase Authentication** for secure user identity management:
+NetTrailer uses **Auth.js (NextAuth v5)** for secure user identity management:
 
-- **Multiple providers**: Google Sign-In, Email/Password
-- **Server-side token verification**: All protected API routes verify Firebase ID tokens
-- **Session persistence**: Auth state persists across browser refreshes
-- **Secure token handling**: ID tokens are short-lived and automatically refreshed
+- **Providers**: GitHub OAuth and passwordless email magic-link (Brevo by default, Resend optional)
+- **Database sessions**: Sessions are persisted in Turso via `@auth/drizzle-adapter`
+- **Cookie-based**: Auth state is carried by an HttpOnly session cookie — no client-supplied bearer/ID tokens
+- **Server-side validation**: All protected API routes validate the session cookie via the Drizzle adapter
 
 **Implementation:**
 
-- `lib/firebase-admin.ts` - Server-side Firebase Admin SDK
-- `lib/auth-middleware.ts` - API route authentication middleware
-- `lib/authenticatedFetch.ts` - Client-side authenticated requests
+- `auth.ts` - Auth.js configuration and provider setup
+- `db/queries/*.ts` - Server-side data access (session-derived user id)
+- `lib/authenticatedFetch.ts` - Client-side requests (sends the session cookie)
 
 ### Authorization Levels
 
-| Level             | Access                       | Verification                         |
-| ----------------- | ---------------------------- | ------------------------------------ |
-| **Public**        | Browse, search               | None required                        |
-| **Authenticated** | Personal data, collections   | Firebase ID token                    |
-| **Admin**         | Admin panel, user management | Firebase token + Admin UID check     |
-| **Cron**          | Scheduled jobs               | CRON_SECRET (timing-safe comparison) |
+| Level             | Access                       | Verification                          |
+| ----------------- | ---------------------------- | ------------------------------------- |
+| **Public**        | Browse, search               | None required                         |
+| **Authenticated** | Personal data, collections   | Auth.js session cookie                |
+| **Admin**         | Admin panel, user management | Session cookie + `ADMIN_GITHUB_LOGIN` |
+| **Cron**          | Scheduled jobs               | CRON_SECRET (timing-safe comparison)  |
 
 ### Admin Authorization
 
 Admin access requires:
 
-1. Valid Firebase ID token
-2. User ID in `ADMIN_UIDS` environment variable
+1. A valid Auth.js session cookie
+2. The signed-in GitHub login to match the `ADMIN_GITHUB_LOGIN` environment variable
+   (surfaced as `session.user.isAdmin`)
 
 **Files:**
 
-- `utils/adminAuth.ts` - Admin UID validation
+- `auth.ts` - Sets `session.user.isAdmin` from `ADMIN_GITHUB_LOGIN`
 - `utils/adminMiddleware.ts` - Admin request middleware
 
 ---
@@ -91,11 +92,11 @@ const cleanInput = result.sanitized
 - Search queries
 - User-generated content (rankings, comments, threads)
 
-### Firestore Data Validation
+### Database Write Validation
 
 Server-side validation for database operations:
 
-- `utils/firestore/validation.ts` - Schema validation functions
+- API routes validate payloads before writing via `db/queries/*.ts`
 - Title length limits (3-100 characters)
 - Description limits (max 1000 characters)
 - Tag validation and sanitization
@@ -151,10 +152,10 @@ npm test -- --testPathPatterns="csrf|proxy|serverAction"
 - Configurable via environment variables
 - Returns 429 with retry-after information
 
-**Password Reset Rate Limiting:**
+**Magic-Link Rate Limiting:**
 
-- Max 3 requests per email per hour
-- Prevents brute-force attacks
+- Limits repeated email sign-in requests per address
+- Prevents email-bombing and brute-force attacks
 
 **Implementation:**
 
@@ -194,54 +195,58 @@ function isValidCronSecret(token: string | null): boolean {
 
 - **TMDB API Key**: Server-side only, never exposed to client
 - **Gemini API Key**: Server-side only with rate limiting
-- **Firebase Admin Credentials**: Secure service account management
+- **Turso Auth Token**: Server-side only; the browser never talks to the database directly
+- **Vercel Blob Token**: `BLOB_READ_WRITE_TOKEN` kept server-side for uploads
 
 ---
 
 ## Data Protection
 
-### Firestore Security Rules
+### Server-Side Authorization
 
-Comprehensive security rules (540+ lines) protect all data:
+The browser cannot talk to Turso directly — every read and write goes through a
+Next.js API route. Each route derives the user id from the Auth.js session and
+enforces ownership server-side, which replaces the old database security rules:
 
 **User Data:**
 
-```javascript
-match /users/{userId} {
-    allow read: if request.auth.uid == userId;
-    allow write: if request.auth.uid == userId && isValidUserData();
-}
+```typescript
+// Ownership is derived from the session, never from the request body
+const userId = await currentUserId() // from the Auth.js session
+if (!userId) return unauthorized()
+// queries are scoped to userId
+await db.query.user_preferences.findFirst({ where: eq(user_preferences.userId, userId) })
 ```
 
 **Key Protections:**
 
-- Users can only access their own data
-- Schema validation on all writes
+- Users can only access their own rows (session-derived user id, never request-supplied)
+- Payload validation on all writes
 - Stat manipulation prevention (views, likes limited to +1/-1)
 - Comment deletion by owner or content author
 - Immutable poll votes (no editing/deleting)
 
-**Collections Protected:**
+**Data Protected:**
 
-- `/users/{userId}` - User profiles and settings
-- `/users/{userId}/notifications` - User notifications
-- `/users/{userId}/interactions` - Recommendation data (90-day TTL)
-- `/rankings/{rankingId}` - Public/private rankings
-- `/threads/{threadId}` - Forum threads
-- `/polls/{pollId}` - Community polls
+- `user_preferences` - User profiles and settings
+- `notifications` - User notifications
+- `interactions` - Recommendation data (90-day TTL)
+- `rankings` - Public/private rankings
+- `threads` - Forum threads
+- `polls` - Community polls
 
-### Firebase Storage Rules
+### Vercel Blob Storage
 
-Image upload security:
+Image upload security (via `@vercel/blob`):
 
-- **File size limit**: 5MB maximum
-- **Content type**: Images only (`image/*`)
-- **Authentication required**: All uploads require valid auth
-- **Path restrictions**: Only specific paths allowed
+- **Per-user path scoping**: Uploads are written under `uploads/{userId}/...`
+- **File size limit**: Enforced on upload
+- **Content type**: Images only, validated server-side
+- **Authentication required**: All uploads require a valid session
 
 ### User Data Isolation
 
-- Each user has isolated Firestore document at `/users/{userId}`
+- Each user's rows are keyed by their session-derived user id
 - User ID validated before all state updates
 - Race condition prevention in concurrent operations
 - Guest data stored in localStorage with unique ID
@@ -273,7 +278,7 @@ Age-appropriate content filtering based on ratings:
 
 **Implementation:**
 
-- `utils/firestore/childSafetyPIN.ts` - PIN management
+- `db/queries/childSafety.ts` - PIN management
 - `stores/childSafetyStore.ts` - Session state
 
 ### Genre Filtering
@@ -330,12 +335,12 @@ User-facing errors are sanitized:
 - Consistent error response format
 - User-friendly messages for common errors
 
-**Firebase Auth Error Mapping:**
+**Auth Error Mapping:**
 
 ```typescript
-'auth/user-not-found' → "No account found with this email address."
-'auth/wrong-password' → "Invalid password. Please try again."
-'auth/too-many-requests' → "Too many failed attempts. Please try again later."
+'OAuthAccountNotLinked' → "This email is already linked to a different sign-in method."
+'AccessDenied' → "Access denied. Please try signing in again."
+'Verification' → "This sign-in link is invalid or has expired."
 ```
 
 **Implementation:** `utils/errorHandler.ts`
@@ -351,11 +356,11 @@ User-facing errors are sanitized:
 
 ## Session Security
 
-### Token Handling
+### Session Handling
 
-- **Firebase ID tokens**: Short-lived, automatically refreshed
-- **Bearer token format**: `Authorization: Bearer {token}`
-- **Server-side verification**: All tokens verified via Firebase Admin SDK
+- **Database sessions**: Session records are stored in Turso via `@auth/drizzle-adapter`
+- **Cookie-based**: An HttpOnly session cookie identifies the user — no bearer/ID tokens
+- **Server-side validation**: Every protected route resolves the session via the Drizzle adapter
 
 ### Cookie Security
 
@@ -399,17 +404,18 @@ beforeSend(event) {
 Only approved domains allowed:
 
 - `image.tmdb.org` - TMDB images
-- `lh3.googleusercontent.com` - Google profile pictures
-- `firebasestorage.googleapis.com` - User uploads
+- `avatars.githubusercontent.com` - GitHub profile pictures
+- `*.public.blob.vercel-storage.com` - User uploads (Vercel Blob)
 - Netflix CDN domains for fallbacks
 
 ### Third-Party API Security
 
-| Service   | Authentication        | Protection                      |
-| --------- | --------------------- | ------------------------------- |
-| TMDB      | API Key (server-side) | Rate limiting, proxied requests |
-| Gemini AI | API Key (server-side) | Per-user rate limits            |
-| Firebase  | Service account       | Credential rotation support     |
+| Service     | Authentication        | Protection                      |
+| ----------- | --------------------- | ------------------------------- |
+| TMDB        | API Key (server-side) | Rate limiting, proxied requests |
+| Gemini AI   | API Key (server-side) | Per-user rate limits            |
+| Turso       | Auth token (server)   | Server-mediated access only     |
+| Vercel Blob | Token (server-side)   | Per-user path scoping           |
 
 ---
 
@@ -417,15 +423,15 @@ Only approved domains allowed:
 
 ### Implemented Protections
 
-- [x] Firebase Authentication with multiple providers
-- [x] Server-side token verification
-- [x] Admin authorization with UID validation
+- [x] Auth.js authentication (GitHub OAuth + email magic-link)
+- [x] Server-side session validation (cookie-based, database sessions)
+- [x] Admin authorization via `ADMIN_GITHUB_LOGIN`
 - [x] Timing-safe secret comparison for cron jobs
 - [x] Input sanitization on all user inputs
-- [x] Rate limiting (general, AI, password reset)
+- [x] Rate limiting (general, AI, magic-link)
 - [x] Request size limits
-- [x] Comprehensive Firestore security rules
-- [x] Firebase Storage rules with size/type limits
+- [x] Server-side ownership checks in every API route (session-derived user id)
+- [x] Vercel Blob uploads with per-user path scoping + size/type limits
 - [x] Child safety PIN with bcrypt + rate limiting
 - [x] Content Security Policy headers
 - [x] HSTS and other security headers
@@ -444,17 +450,17 @@ Only approved domains allowed:
 
 ## Additional Security Measures
 
-### Email & Password Security
+### Email Sign-In Security
 
-- **Password Reset Tokens**: `crypto.randomBytes(32)`, 1-hour expiration, single-use
-- **Email Verification Tokens**: 24-hour expiration, rate limited (5/hour per user)
-- **Password Requirements**: 8-256 characters, server-side validation
-- **OAuth Detection**: Prevents password reset for Google-only accounts
-- **Token Cleanup**: Tokens deleted from Firestore after use (prevents reuse)
+- **Magic-Link Tokens**: Single-use, time-limited verification tokens issued by Auth.js
+  and stored in the `verificationToken` table (deleted after use to prevent reuse)
+- **Provider**: Magic-link emails are sent through Brevo by default (Resend optional via `EMAIL_PROVIDER`)
+- **No passwords**: The app is passwordless — there is no password storage, reset, or
+  separate email-verification flow
 
 ### XSS Prevention
 
-- **DOMPurify**: Sanitizes collection names/descriptions (strips all HTML)
+- **sanitize-html**: Sanitizes collection names/descriptions (strips all HTML)
 - **Emoji Validation**: Blocks dangerous characters (`< > " ' / \ { } ( ) ; = & | $ \``)
 - **React Auto-escaping**: All rendered text automatically escaped
 
@@ -484,17 +490,17 @@ Only approved domains allowed:
 
 **Admin Email System (December 2025):**
 
-- **XSS Prevention**: DOMPurify sanitization on all custom HTML content
+- **XSS Prevention**: sanitize-html sanitization on all custom HTML content
 - **HTTPS-Only Links**: ALLOWED_URI_REGEXP enforces `https://` scheme only
 - **Rate Limiting**: 100 emails/hour per admin, 3/day per recipient
 - **Recipient Limit**: Maximum 100 recipients per request (DoS protection)
 - **Input Validation**: 200/10K/50K character limits on subject/message/HTML
 - **PII Minimization**: Email history stores counts only, not recipient lists
 - **CAN-SPAM Compliance**: Crypto-secure unsubscribe tokens (64-character hex)
-- **Transaction Safety**: Firestore transactions prevent token generation race conditions
-- **Batch Optimization**: Batched Firestore reads (100+ queries → 1 read)
+- **Transaction Safety**: Drizzle/libSQL transactions prevent token generation race conditions
+- **Batch Optimization**: Batched database reads (100+ queries → 1 read)
 - **CSRF Protection**: authenticatedFetch() used for all email endpoints
-- **Admin-Only Access**: ADMIN_UID verification required for all email operations
+- **Admin-Only Access**: `ADMIN_GITHUB_LOGIN` verification required for all email operations
 - **Content Sanitization Config**: Shared CUSTOM_HTML_SANITIZATION_CONFIG
     - Allowed tags: p, br, strong, em, u, h1-h3, ul, ol, li, a
     - Allowed attributes: href, title only
@@ -520,7 +526,7 @@ NetTrailer is a portfolio project demonstrating modern web security practices in
 
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [OWASP Input Validation Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html)
-- [Firebase Security Rules](https://firebase.google.com/docs/rules)
+- [Auth.js Documentation](https://authjs.dev)
 - [Next.js Security Headers](https://nextjs.org/docs/advanced-features/security-headers)
 - [Timing Attack Prevention](https://codahale.com/a-lesson-in-timing-attacks/)
 

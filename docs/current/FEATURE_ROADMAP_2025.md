@@ -47,13 +47,13 @@ interface ChildSafetyPIN {
     enabled: boolean // Whether PIN protection is active
 }
 
-// Firestore: /users/{userId}/settings/childSafety
+// Turso: child_safety_pins table (keyed by userId)
 // localStorage: nettrailer_guest_child_safety_pin_{guestId}
 ```
 
-**1.2 Backend/Firestore** (6 hours)
+**1.2 Backend / Turso (Drizzle)** (6 hours)
 
-- Create `utils/firestore/childSafetyPIN.ts`
+- Create `db/queries/childSafety.ts` (accessed via API routes)
     - `createPIN(userId: string, pin: string): Promise<void>`
     - `verifyPIN(userId: string, pin: string): Promise<boolean>`
     - `updatePIN(userId: string, oldPin: string, newPin: string): Promise<void>`
@@ -105,7 +105,7 @@ interface ChildSafetyPIN {
 - [ ] PIN creation modal with validation
 - [ ] PIN verification flow before disabling Child Safety
 - [ ] PIN change/removal in settings
-- [ ] Firestore integration with bcrypt hashing
+- [ ] Turso (Drizzle) integration with bcrypt hashing
 - [ ] Guest mode support (localStorage)
 - [ ] Unit tests for PIN verification logic
 
@@ -119,7 +119,7 @@ interface ChildSafetyPIN {
 
 - UI exists: `components/settings/ShareSection.tsx:36-48`
 - "Manage Sharing" button is non-functional placeholder
-- Collections (watchlists) exist in Firestore
+- Collections (watchlists) exist in Turso (user_preferences)
 
 #### Implementation Plan
 
@@ -144,9 +144,9 @@ interface ShareSettings {
     showOwnerName: boolean // Show/hide creator
 }
 
-// Firestore structure:
-// /shares/{shareId} -> ShareableLink
-// /users/{userId}/collections/{collectionId} -> add shareSettings field
+// Turso structure:
+// shares table -> ShareableLink (keyed by shareId, owned by userId)
+// user_preferences.collections[collectionId] -> add shareSettings field
 ```
 
 **2.2 Backend API Routes** (8 hours)
@@ -178,9 +178,9 @@ Create `/app/api/shares/` routes:
     // List all shares for a user (requires auth)
     ```
 
-**2.3 Firestore Functions** (6 hours)
+**2.3 Turso (Drizzle) Functions** (6 hours)
 
-- Create `utils/firestore/shares.ts`
+- Create `db/queries/shares.ts` (accessed via API routes)
     - `createShareLink(userId, collectionId, options): Promise<ShareableLink>`
     - `getShareByID(shareId): Promise<ShareableLink | null>`
     - `deactivateShare(shareId, userId): Promise<void>`
@@ -277,12 +277,12 @@ interface Notification {
     expiresAt?: number // Auto-delete old notifications
 }
 
-// Firestore: /users/{userId}/notifications/{notificationId}
+// Turso: notifications table (keyed by userId)
 ```
 
-**3.2 Firestore Functions** (4 hours)
+**3.2 Turso (Drizzle) Functions** (4 hours)
 
-- Create `utils/firestore/notifications.ts`
+- Create `db/queries/notifications.ts` (accessed via API routes)
     - `createNotification(userId, notification): Promise<void>`
     - `getUnreadNotifications(userId): Promise<Notification[]>`
     - `getAllNotifications(userId, limit?): Promise<Notification[]>`
@@ -309,7 +309,7 @@ interface Notification {
         deleteNotification: (id: string) => Promise<void>
         togglePanel: () => void
 
-        // Real-time subscription
+        // Polling-based updates (polls /api/notifications every 30s)
         subscribeToNotifications: (userId: string) => () => void
     }
     ```
@@ -342,18 +342,18 @@ interface Notification {
 - Click to navigate to actionUrl
 - Unread indicator (blue dot or bold text)
 
-**3.5 Real-time Updates** (3 hours)
+**3.5 Polling Updates** (3 hours)
 
-- Use Firestore `onSnapshot` for real-time notifications
-- Subscribe when user logs in
-- Unsubscribe on logout
+- Poll `/api/notifications` every 30s for updates (no realtime socket)
+- Start polling when user logs in
+- Stop polling on logout
 - Show toast when new notification arrives (optional, non-intrusive)
 
 **Deliverables**:
 
 - [ ] NotificationBell component in header
 - [ ] NotificationPanel dropdown UI
-- [ ] Firestore real-time subscription
+- [ ] Polling subscription (`/api/notifications` every 30s)
 - [ ] Mark as read/unread functionality
 - [ ] Delete notifications
 - [ ] Unread count badge
@@ -370,33 +370,31 @@ interface Notification {
 **4.1 Email Service Selection** (Research: 2 hours)
 **Options**:
 
-1. **SendGrid** (Recommended)
-    - Free tier: 100 emails/day
-    - Easy Next.js integration
-    - Template system
-    - Good deliverability
+1. **Brevo** (Current default)
+    - Generous free tier
+    - Already wired up for magic-link auth email
+    - Reuse the same provider for notifications
 
-2. **Resend** (Modern alternative)
+2. **Resend** (Selectable alternative)
     - Free tier: 3,000 emails/month
     - Built for developers
     - React Email integration
     - Simpler API
 
-3. **Firebase Functions + Nodemailer**
-    - Use existing Firebase
-    - More complex setup
-    - Cheaper at scale
+3. **Vercel cron + chosen provider**
+    - Trigger sends from Vercel cron (`/api/cron/*`), no separate function runtime
+    - Stays on the current Vercel/Turso stack
 
-**Recommendation**: Start with **Resend** for ease of use, switch to SendGrid if you need more volume.
+**Recommendation**: Use the existing **Brevo** integration (or Resend via `EMAIL_PROVIDER`) and trigger sends from Vercel cron.
 
-**4.2 Setup Resend** (2 hours)
+**4.2 Setup email provider** (2 hours)
 
 ```bash
 npm install resend
 ```
 
-- Get API key from resend.com
-- Verify domain (nettrailers.com) or use resend test domain
+- Get API key from your provider (Brevo or Resend)
+- Verify domain (nettrailers.com) or use the provider test domain
 - Create email templates folder: `/emails/`
 
 **4.3 Email Templates with React Email** (8 hours)
@@ -466,17 +464,13 @@ Create `/app/api/notifications/email/` routes:
     - "Send test email" button
 
 **4.6 Trigger System** (6 hours)
-**Option A: Firebase Cloud Functions** (Recommended if using Firebase)
+**Approach: Next.js API Routes + Vercel Cron** (current stack)
 
-- Trigger on Firestore writes
-- Send email when notification is created
-- Respect user's email preferences
-
-**Option B: Next.js API Routes + Cron Jobs**
-
-- Use Vercel Cron Jobs (free tier available)
-- Check for new releases daily
-- Check for collection updates hourly
+- Use Vercel Cron Jobs (`vercel.json` → `/api/cron/*`, gated by `CRON_SECRET`)
+- Cron handlers read users/notifications from Turso via Drizzle
+- Send email when a notification is created (or batched in a digest)
+- Respect the user's email preferences
+- Check for new releases daily; check for collection updates on schedule
 - Send digest emails based on user frequency
 
 **4.7 Unsubscribe Flow** (3 hours)
@@ -492,7 +486,7 @@ Create `/app/api/notifications/email/` routes:
 - [ ] 4 email templates (React Email components)
 - [ ] Email preferences in settings
 - [ ] Send email API route
-- [ ] Trigger system (cron or cloud functions)
+- [ ] Trigger system (Vercel cron + email provider)
 - [ ] Unsubscribe flow
 - [ ] Test email functionality
 
@@ -530,7 +524,7 @@ interface CollectionUpdate {
     notificationSent: boolean
 }
 
-// Firestore: /collectionUpdates/{updateId}
+// Turso: collection_updates table (keyed by updateId, owned by userId)
 ```
 
 **5.2 TMDB Content Discovery** (8 hours)
@@ -546,19 +540,15 @@ interface CollectionUpdate {
         - Update lastCheckedAt timestamp
 
 **5.3 Background Job System** (10 hours)
-**Option A: Vercel Cron Jobs** (Simpler, free tier limits)
+**Approach: Vercel Cron Jobs** (current stack)
 
 - Create `/app/api/cron/update-collections/route.ts`
+- Wire it up in `vercel.json`; gate with `CRON_SECRET`
 - Runs daily at 2 AM UTC
-- Queries all collections where `autoUpdateEnabled = true`
+- Reads all users/collections from Turso via Drizzle, filters `autoUpdateEnabled = true`
 - Checks TMDB for new matches
 - Creates notifications + sends emails
-
-**Option B: Firebase Cloud Functions** (More robust)
-
-- Scheduled function runs daily
-- Better for scale (no Vercel timeout limits)
-- Can batch process large numbers of collections
+- For very large user bases, paginate the Drizzle query to stay within Vercel timeouts
 
 **Implementation**:
 
@@ -755,7 +745,7 @@ interface UserInteraction {
     durationSeconds?: number // How long they watched trailer
 }
 
-// Firestore: /users/{userId}/interactions/{interactionId}
+// Turso: interactions table (keyed by userId)
 ```
 
 Track these events:
@@ -820,7 +810,7 @@ function getRecommendations(userId: string): Content[] {
 - [ ] Track modal views in ContentModal
 - [ ] Track watchlist additions
 - [ ] Track trailer plays in video player
-- [ ] Firestore write for each interaction
+- [ ] Turso write for each interaction (via API route)
 - [ ] Privacy settings: "Improve recommendations" toggle
 
 ---
@@ -936,29 +926,26 @@ CRON_SECRET=your_secret_key_here
 ANALYTICS_API_KEY=xxx
 ```
 
-### Firestore Security Rules Updates
+### Access Control (server-side ownership checks)
 
-```javascript
-// Phase 1: PIN access
-match /users/{userId}/settings/childSafety {
-  allow read, write: if request.auth.uid == userId;
-}
+All Turso access is server-mediated through API routes. There are no
+client-side database rules; instead each route derives the user id from the
+Auth.js session (`withAuth` / `currentUserId()`) and only reads/writes that
+user's rows. Conceptually:
 
-// Phase 2: Share links (public read)
-match /shares/{shareId} {
-  allow read: if true;  // Public
-  allow write: if request.auth.uid == resource.data.userId;  // Owner only
-}
+```typescript
+// Phase 1: PIN access (child_safety_pins table)
+//   API route: only the session user can read/write their own PIN row
 
-// Phase 3: Notifications
-match /users/{userId}/notifications/{notificationId} {
-  allow read, write: if request.auth.uid == userId;
-}
+// Phase 2: Share links (shares table)
+//   GET /api/shares/[shareId] -> public read (no auth)
+//   create/delete -> session user must own the share
 
-// Phase 7: Interactions
-match /users/{userId}/interactions/{interactionId} {
-  allow read, write: if request.auth.uid == userId;
-}
+// Phase 3: Notifications (notifications table)
+//   API route: rows are filtered by the session userId
+
+// Phase 7: Interactions (interactions table)
+//   API route: rows are filtered by the session userId
 ```
 
 ---
@@ -988,7 +975,7 @@ match /users/{userId}/interactions/{interactionId} {
 ### Scaling Considerations
 
 - **Email limits**: Resend free tier = 3,000/month. If you exceed, upgrade ($20/mo for 50k emails)
-- **Firestore reads**: Notification subscriptions cost reads. Use pagination (load 20 at a time)
+- **Turso reads**: Notification polling costs row reads. Use pagination (load 20 at a time)
 - **TMDB API limits**: 40 req/second. Auto-update cron should batch requests with delays
 - **Cron job limits**: Vercel free tier = 1 cron per day. Upgrade if you need hourly checks
 

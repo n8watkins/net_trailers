@@ -25,13 +25,13 @@ The User Interaction Tracking System collects user interaction data to improve p
 3. **Privacy-First Design**
     - Tracking fails silently (doesn't disrupt UX)
     - Skips tracking for guest users (optional - can be enabled)
-    - All data stored in user's own Firestore document
+    - All data stored in the user's own rows (keyed by userId) in Turso
     - 90-day data retention with automatic cleanup
 
 4. **Batch Logging Support**
     - Efficient batch operations (up to 50 interactions)
     - Automatic summary refresh triggers
-    - Minimal Firestore write costs
+    - Minimal database write overhead
 
 5. **Analytics & Insights**
     - Interaction counts by type
@@ -48,7 +48,7 @@ The User Interaction Tracking System collects user interaction data to improve p
 ```typescript
 export interface UserInteraction {
     id: string // Interaction ID
-    userId: string // Firebase Auth UID or Guest ID
+    userId: string // Auth.js session user id or Guest ID
     contentId: number // TMDB content ID
     mediaType: 'movie' | 'tv' // Content type
     interactionType: InteractionType
@@ -115,15 +115,16 @@ export interface GenrePreference {
 }
 ```
 
-### Firestore Structure
+### Turso Structure
 
 ```
-/users/{userId}/
-  interactions/
-    {interactionId}/ → UserInteraction
-  interactionSummary/
-    summary → UserInteractionSummary
+interactions          → UserInteraction rows, keyed by the userId column
+interaction_summary   → one UserInteractionSummary row per userId
 ```
+
+Both tables are Drizzle-defined (snake_case) and accessed only through the API
+routes; nested arrays (e.g. genreIds, genrePreferences) are stored as JSON text
+columns.
 
 **Data Retention**: 90 days (configurable via INTERACTION_CONSTRAINTS.RETENTION_DAYS)
 
@@ -215,7 +216,7 @@ hideContent(content) // Tracks 'hide_content'
 
 ### Utilities
 
-#### Firestore Utilities (`utils/firestore/interactions.ts`)
+#### Query Layer (`db/queries/interactions.ts`)
 
 ##### `logInteraction(userId, interaction): Promise<UserInteraction>`
 
@@ -502,7 +503,7 @@ export const INTERACTION_WEIGHTS: Record<InteractionType, number> = {
 
 ## Performance Considerations
 
-### Firestore Operations
+### Database Operations
 
 **Per Interaction**:
 
@@ -523,7 +524,7 @@ export const INTERACTION_WEIGHTS: Record<InteractionType, number> = {
 3. **Fail Silently**: Tracking errors don't disrupt UX
 4. **Skip Guest Users**: Currently skips guests to reduce load (can be enabled)
 
-### Firestore Costs
+### Storage & Write Volume
 
 Assuming 1000 active users with 10 interactions/day each:
 
@@ -533,14 +534,13 @@ Assuming 1000 active users with 10 interactions/day each:
 
 With 90-day retention:
 
-- **Total storage**: ~450 MB
-- **Monthly cost**: <$1 (Firestore free tier covers this)
+- **Total storage**: ~450 MB — comfortably within Turso/SQLite limits for this workload
 
 ## Data Privacy
 
 ### Privacy Features
 
-1. **User-Specific Data**: All interactions stored in user's own Firestore document
+1. **User-Specific Data**: All interactions stored in the user's own rows (keyed by userId) in Turso
 2. **No Cross-User Sharing**: Data never shared between users
 3. **Automatic Cleanup**: 90-day retention with auto-deletion
 4. **Fail-Silent Design**: Tracking failures don't affect user experience
@@ -548,7 +548,7 @@ With 90-day retention:
 
 ### GDPR Compliance
 
-- **Data Access**: Users can request interaction data via Firestore
+- **Data Access**: Users can request their interaction data (served from the `interactions` table via the API)
 - **Data Deletion**: Use `cleanupOldInteractions(userId, 0)` to delete all
 - **Data Export**: Use `getRecentInteractions(userId, 10000)` to export
 - **Consent**: Should add UI toggle for "Improve Recommendations" (Phase 7.5 - pending)
@@ -614,7 +614,7 @@ useEffect(() => {
 1. User ID is available (`getUserId()` returns non-null)
 2. Content has required fields (id, media_type, genre_ids)
 3. Browser console for tracking errors
-4. Firestore permissions allow writes to `/users/{userId}/interactions`
+4. The interactions API route resolves the session user and writes to the `interactions` table
 
 **Solution**:
 
@@ -628,7 +628,7 @@ console.log('[Tracking] Content:', content)
 
 **Check**:
 
-1. Summary exists in Firestore
+1. A summary row exists in the `interaction_summary` table for the user
 2. `lastUpdated` timestamp is >24 hours old
 3. User has interactions logged
 
@@ -639,7 +639,7 @@ console.log('[Tracking] Content:', content)
 await calculateInteractionSummary(userId)
 ```
 
-### High Firestore Costs
+### High Write Volume
 
 **Check**:
 
@@ -748,7 +748,7 @@ await cleanupOldInteractions(userId, 90)
 ### New Files (Phase 7.1-7.3)
 
 1. `types/interactions.ts` (187 lines) - Data types and weights
-2. `utils/firestore/interactions.ts` (464 lines) - Firestore utilities
+2. `db/queries/interactions.ts` (464 lines) - Turso/Drizzle query layer
 3. `hooks/useInteractionTracking.ts` (164 lines) - React hook
 4. `docs/current/INTERACTION_TRACKING.md` (this file) - Documentation
 
@@ -770,10 +770,10 @@ await cleanupOldInteractions(userId, 90)
 For questions or issues with interaction tracking:
 
 1. Check user is authenticated (tracking currently skips guests)
-2. Verify Firestore rules allow writes to `/users/{userId}/interactions`
+2. Verify the interactions API route scopes writes to the session user id (server-side authorization)
 3. Check browser console for tracking errors
 4. Ensure content has all required fields (id, media_type, genre_ids)
-5. Review Firestore for actual interactions logged
+5. Inspect the `interactions` table in Turso for actual rows logged
 
 ## Changelog
 
@@ -781,7 +781,7 @@ For questions or issues with interaction tracking:
 
 - ✅ Initial implementation
 - ✅ 10 interaction types with weighted scoring
-- ✅ Firestore logging and batch operations
+- ✅ Turso logging and batch operations
 - ✅ Automatic summary calculation (24h refresh)
 - ✅ useInteractionTracking hook
 - ✅ Integration into Modal component

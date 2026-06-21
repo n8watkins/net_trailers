@@ -2,11 +2,11 @@
 
 ## Executive Summary
 
-**NetTrailers** is a full-stack Netflix-inspired movie and TV show discovery platform built with modern JavaScript/TypeScript technologies. It's a sophisticated, production-grade application with ~19,000 TypeScript/JavaScript files, featuring comprehensive state management, authentication, real-time data synchronization, and advanced content discovery capabilities.
+**NetTrailers** is a full-stack Netflix-inspired movie and TV show discovery platform built with modern JavaScript/TypeScript technologies. It's a sophisticated, production-grade application with ~19,000 TypeScript/JavaScript files, featuring comprehensive state management, authentication, server-mediated data synchronization, and advanced content discovery capabilities.
 
 **Project Type**: Full-Stack Web Application (Portfolio Project)
-**Scale**: ~100+ React components, 10+ Zustand stores, 20+ API routes
-**Tech Maturity**: Advanced - implements complex patterns like discriminated unions, Firebase Firestore sync, child safety filtering, voice input
+**Scale**: ~100+ React components, 18 Zustand stores, 49+ API routes
+**Tech Maturity**: Advanced - implements complex patterns like discriminated unions, Turso (libSQL) + Drizzle persistence via API routes, child safety filtering, voice input
 
 ---
 
@@ -18,10 +18,11 @@
 net_trailers/
 ├── app/                      # Next.js 16 App Router
 ├── components/               # 100+ React components (reusable UI)
-├── stores/                   # 10 Zustand stores (state management)
+├── stores/                   # 18 Zustand stores (state management)
 ├── hooks/                    # 25+ custom React hooks
-├── services/                 # Business logic services (10 files)
+├── services/                 # Business logic services (storage adapters, etc.)
 ├── utils/                    # Utility functions (30+ files)
+├── db/                       # Drizzle schema, queries, Turso client
 ├── types/                    # TypeScript type definitions
 ├── lib/                      # Server-side logic (4 files)
 ├── styles/                   # Global Tailwind CSS
@@ -30,7 +31,9 @@ net_trailers/
 ├── config/                   # Configuration files
 ├── schemas/                  # Zod validation schemas
 ├── __tests__/               # Jest test suite (20+ test files)
-├── firebase.ts              # Firebase initialization
+├── auth.ts                  # Auth.js (NextAuth v5) configuration
+├── db/index.ts              # Turso (libSQL) + Drizzle client
+├── db/schema.ts             # Drizzle table definitions
 ├── typings.ts               # Global TypeScript types
 ├── sentry.client.config.ts  # Sentry error monitoring
 ├── instrumentation.ts       # Server-side Sentry setup
@@ -44,7 +47,7 @@ net_trailers/
 
 **Total TypeScript/JavaScript Files**: ~19,090
 **Component Count**: 100+
-**Store Count**: 10
+**Store Count**: 18
 **Hook Count**: 25+
 **Test Files**: 20+
 
@@ -57,24 +60,23 @@ net_trailers/
 **Pattern**: Zustand + Factory Pattern
 **Philosophy**: Lightweight, no provider wrapper needed
 
-#### Zustand Stores (10 Total)
+#### Zustand Stores (18 Total)
+
+The app runs 18 focused stores (migrated from a monolithic "god store"). Highlights below; see `CLAUDE.md` for the full enumerated list.
 
 1. **appStore.ts** - Global app state
-    - Modal management (6 different modal types)
-    - Toast notifications (6 toast types)
-    - Global loading states
-    - Search state management
-    - ~350+ lines
+    - Global loading indicators and app-wide UI
+    - Companion stores (`modalStore`, `toastStore`, `loadingStore`) handle modals, toasts, and loading
 
 2. **authStore.ts** - Authenticated user data
-    - Uses Firebase Storage Adapter
-    - Syncs with Firestore
+    - Uses `ApiStorageAdapter`
+    - Syncs to Turso via API routes (`/api/user/preferences`)
     - User preferences, liked/hidden content, watchlists
     - Implements `createUserStore` factory
 
 3. **guestStore.ts** - Guest user data
-    - Uses localStorage Storage Adapter
-    - No Firebase sync (local only)
+    - Uses `LocalStorageAdapter`
+    - No cloud sync (local only)
     - Demo/trial access management
     - Implements `createUserStore` factory
 
@@ -96,7 +98,7 @@ net_trailers/
     - Search history
 
 7. **customRowsStore.ts** - Custom row management
-    - User-created content rows
+    - User-created content rows (system + user-created)
     - Row ordering, filtering
     - Advanced filter state
 
@@ -108,16 +110,18 @@ net_trailers/
 9. **createUserStore.ts** - Factory pattern store
     - Reusable user data store factory
     - Storage adapter abstraction
-    - Works with Firebase or localStorage
+    - Works with `ApiStorageAdapter` (Turso) or `LocalStorageAdapter`
 
-10. **appStore.ts.backup** - Legacy backup (not used)
+10. **Additional stores** - `profileStore`, `watchHistoryStore`, `uiStore`,
+    `modalStore`, `toastStore`, `loadingStore`, `notificationStore`,
+    `childSafetyStore`, `rankingStore`, `forumStore` round out the 18.
 
 **Key Design Decisions**:
 
 - No context providers needed (Zustand is self-contained)
 - Separate auth/guest stores for clean isolation
 - Factory pattern (`createUserStore`) reduces duplication
-- Storage adapters enable multiple backends
+- Storage adapters enable multiple backends (Turso via API, or localStorage)
 - Type-safe selectors for performance optimization
 
 ### 2.2 Frontend Architecture
@@ -187,39 +191,40 @@ components/
 ```
 ┌─────────────────────────────────────────────┐
 │         useAuth() Hook / authStore          │
-│  (Firebase Authentication + User Session)   │
+│   (Auth.js session cookie + User Session)   │
 └────────────────────┬────────────────────────┘
                      │
         ┌────────────┴────────────┐
         │                         │
 ┌───────▼────────────┐  ┌────────▼──────────┐
-│  AuthStore (FB)    │  │  GuestStore (LS)  │
-│  - Firestore sync  │  │  - localStorage   │
+│  AuthStore (API)   │  │  GuestStore (LS)  │
+│  - Turso via API   │  │  - localStorage   │
 │  - User prefs      │  │  - Demo mode      │
 └────────┬───────────┘  └────────┬──────────┘
          │                       │
-    ┌────▼────┐           ┌──────▼────┐
-    │ Firebase │           │ localStorage
-    │Firestore │           │             │
-    └──────────┘           └─────────────┘
+   ┌─────▼──────────┐     ┌──────▼──────┐
+   │ Next.js API    │     │ localStorage │
+   │ routes (Drizzle│     │             │
+   │ → Turso/libSQL)│     │             │
+   └────────────────┘     └─────────────┘
 ```
 
 **Features**:
 
-- **Firebase Authentication**: Email/Password, Google OAuth
+- **Auth.js (NextAuth v5)**: GitHub OAuth + passwordless email magic-link (Brevo by default, Resend optional). Database sessions via `@auth/drizzle-adapter`, cookie-based (no bearer tokens). No password login, no Google, no password reset, no email verification.
 - **Guest Mode**: Full feature access without auth (localStorage)
-- **Session Persistence**: Auth state survives page refreshes
-- **User Isolation**: Separate Firestore documents per user
+- **Session Persistence**: Auth.js session cookie survives page refreshes (validated server-side)
+- **User Isolation**: Server-side ownership checks — API routes derive the user id from the session (`withAuth`/`currentUserId()`), never from the request body, so a user only reads/writes their own rows
 - **Race Condition Prevention**: User ID validation before all updates
-- **5-Second Firebase Timeout**: Prevents hanging operations
+- **Admin**: identified by GitHub login via `ADMIN_GITHUB_LOGIN` (`session.user.isAdmin`)
 
 **Services**:
 
-1. **authStorageService.ts** - Firebase Firestore operations
+1. **authStorageService.ts** - Authenticated persistence to Turso via API routes
 2. **guestStorageService.ts** - localStorage operations
 3. **sessionManagerService.ts** - Session coordination
 4. **sessionStorageService.ts** - Per-session data isolation
-5. **firebaseStorageAdapter.ts** - Adapter pattern for Firebase
+5. **ApiStorageAdapter** - Adapter routing auth writes through API routes (Turso); replaces the former `firebaseStorageAdapter.ts`
 6. **localStorageAdapter.ts** - Adapter pattern for localStorage
 
 ### 2.4 Content Type System
@@ -285,7 +290,7 @@ Caching (apiCache.ts)
 Client Response
 ```
 
-**API Routes** (18 routes):
+**API Routes** (49+ routes — TMDB proxy plus app-data endpoints backed by Drizzle/Turso):
 
 - `/api/movies/trending` - Trending movies
 - `/api/movies/top-rated` - Top rated movies
@@ -296,7 +301,9 @@ Client Response
 - `/api/smart-search` - AI-powered search
 - `/api/smart-suggestions` - AI suggestions
 - `/api/custom-rows/[id]/content` - Custom row content
-- Plus 8+ more specialized routes
+- `/api/user/preferences` - Authenticated user data (read/write to Turso)
+- `/api/notifications` - In-app notifications (polled every 30s)
+- Plus many more specialized routes (rankings, forum, shares, admin email, cron)
 
 **Caching Strategy**:
 
@@ -390,7 +397,7 @@ Suggestions Dropdown
 
 **Storage**:
 
-- Firestore for authenticated users
+- Turso (via API routes) for authenticated users
 - localStorage for guests
 - Customizable icons, colors, names
 
@@ -482,7 +489,7 @@ class ErrorHandler {
 **Integration Points**:
 
 - API route error handling
-- Firebase auth error handling
+- Auth.js sign-in error handling
 - Validation error handling
 - Network error handling
 
@@ -499,7 +506,8 @@ class ErrorHandler {
 - **Image Optimization**:
     - TMDB CDN support
     - Netflix CDN support
-    - Google userContent CDN
+    - GitHub avatar CDN support
+    - Vercel Blob (user-uploaded images)
 - **Sentry Integration**: Error monitoring with webpack plugin
 - **Security Headers**: Comprehensive CSP, HSTS, X-Frame-Options
 - **Bundle Analysis**: Optional webpack analyzer
@@ -625,12 +633,17 @@ npm run type-check   # No emit, fast checking
 
 ## 6. Database & Storage
 
-### 6.1 Firebase Firestore
+### 6.1 Turso (libSQL/SQLite) + Drizzle ORM
 
-**Structure**:
+The former Firestore `users/{userId}` document is now the `user_preferences` table,
+which stores that blob as a single JSON text column. The browser never talks to Turso
+directly — all access is server-mediated through Next.js API routes that use Drizzle
+(`db/schema.ts`, `db/queries/*`, `db/index.ts`).
+
+**`user_preferences` JSON column (shape)**:
 
 ```
-/users/{userId}
+user_preferences (keyed by user id)
   ├── defaultWatchlist: Content[]
   ├── likedMovies: Content[]
   ├── hiddenMovies: Content[]
@@ -639,14 +652,21 @@ npm run type-check   # No emit, fast checking
   └── preferences: UserPreferences
 ```
 
+**Other tables** (Drizzle schema): Auth.js adapter tables (`user`, `account`,
+`session`, `verificationToken`); user data (`profiles`, `interactions`,
+`notifications`, `watch_history`, `child_safety_pins`); rankings and comments;
+forum threads/replies/polls; and social/misc tables (`shares`, `user_follows`,
+`admin_emails`, etc.). Nested arrays/objects are stored as JSON text columns;
+timestamps are epoch-ms integers.
+
 **Features**:
 
-- Real-time sync
-- Offline persistence
-- Automatic updates
-- 5-second operation timeout
+- Server-mediated reads/writes via API routes (Drizzle)
+- Database sessions for Auth.js (`@auth/drizzle-adapter`)
+- Migrations via `npm run db:generate` then `db:migrate` (or `db:push`); `db:studio` to inspect
+- Notifications are polled (`/api/notifications` every 30s) rather than real-time listeners
 
-**Collection Operations**:
+**Operations**:
 
 - Add/remove items from watchlists
 - Sync user preferences
@@ -726,19 +746,28 @@ npm run type-check   # No emit, fast checking
 
 ### Required Environment Variables
 
-**Firebase** (6 variables):
+**Turso (database)** (2 variables):
 
-- NEXT_PUBLIC_FIREBASE_API_KEY
-- NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-- NEXT_PUBLIC_FIREBASE_PROJECT_ID
-- NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-- NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-- NEXT_PUBLIC_FIREBASE_APP_ID
+- TURSO_DATABASE_URL
+- TURSO_AUTH_TOKEN
+
+**Auth.js (authentication)** (4 variables):
+
+- AUTH_SECRET
+- AUTH_GITHUB_ID
+- AUTH_GITHUB_SECRET
+- ADMIN_GITHUB_LOGIN (server-side only — admin's GitHub username)
 
 **APIs** (2 variables):
 
 - TMDB_API_KEY (required)
-- GEMINI_API_KEY (for AI features)
+- GEMINI_API_KEY (server-side, for AI features)
+
+**Email & storage** (optional):
+
+- BREVO_API_KEY (email magic-link sender; Resend optional alternative)
+- BLOB_READ_WRITE_TOKEN (Vercel Blob image storage)
+- CRON_SECRET (protects cron job endpoints)
 
 **Sentry** (3 variables, optional):
 
@@ -768,10 +797,10 @@ npm run type-check   # No emit, fast checking
     - No context API overhead
 
 3. **Authentication**
-    - Multi-provider support (Email, Google, Guest)
-    - Proper user isolation
+    - Auth.js (NextAuth v5): GitHub OAuth + email magic-link, plus Guest mode
+    - Proper user isolation (server-side ownership checks, session-derived user id)
     - Race condition prevention
-    - Session persistence
+    - Session persistence (cookie-based database sessions)
 
 4. **Error Handling**
     - Unified ErrorHandler class
@@ -831,7 +860,7 @@ npm run type-check   # No emit, fast checking
 
 **Issue 2: Cache Invalidation**
 
-- Multiple cache layers (apiCache, cacheStore, Firebase offline)
+- Multiple cache layers (apiCache, cacheStore)
 - No clear invalidation strategy
 - Recommendation: Implement explicit cache invalidation API
 
@@ -859,8 +888,7 @@ npm run type-check   # No emit, fast checking
 
 **Issue 3: Timeout Handling**
 
-- 5-second Firebase timeout
-- No timeout for API routes
+- No explicit timeout on API routes (Turso/Drizzle calls run server-side)
 - No retry logic visible
 
 ### 10.4 Testing & Coverage
@@ -875,7 +903,7 @@ npm run type-check   # No emit, fast checking
 **Issue 2: Mock Data**
 
 - Some TMDB mocks exist but not comprehensive
-- No Firebase emulator setup visible
+- DB tests can use in-memory libSQL (`file::memory:`) or mocked `db/queries/*`
 - Recommendation: Add comprehensive mock factories
 
 ### 10.5 Type Safety Concerns
@@ -914,11 +942,11 @@ npm run type-check   # No emit, fast checking
 
 ### 10.7 Scalability Concerns
 
-**Issue 1: Firebase Firestore Writes**
+**Issue 1: Turso Write Patterns**
 
 - No batching of writes visible
-- Individual updates could hit quota
-- Recommendation: Implement batch operations
+- Individual updates could add round-trips
+- Recommendation: Implement batch operations / Drizzle transactions
 
 **Issue 2: Search Index**
 
@@ -955,10 +983,10 @@ npm run type-check   # No emit, fast checking
     - Type guards for runtime safety
 
 4. **Authentication**
-    - Multi-provider support
+    - Auth.js (GitHub OAuth + email magic-link)
     - Guest mode fallback
-    - User isolation by ID
-    - Session persistence
+    - User isolation by session-derived ID (server-side ownership checks)
+    - Cookie-based session persistence
 
 5. **Monitoring**
     - Sentry integration
@@ -1008,8 +1036,10 @@ npm run type-check   # No emit, fast checking
 ### Backend
 
 - **Runtime**: Node.js 18+
-- **Auth**: Firebase Auth
-- **Database**: Firebase Firestore
+- **Auth**: Auth.js (NextAuth v5) + `@auth/drizzle-adapter` (GitHub OAuth + email magic-link)
+- **Database**: Turso (libSQL/SQLite) via Drizzle ORM
+- **Email**: Brevo (magic-link sender; Resend optional)
+- **Image Storage**: Vercel Blob
 - **External APIs**: TMDB, Gemini
 
 ### Development
@@ -1065,7 +1095,8 @@ npm run type-check   # No emit, fast checking
 
 - Node.js 18+
 - All environment variables set
-- Firebase project configured
+- Turso database provisioned + migrated (`db:migrate`)
+- GitHub OAuth App created (Auth.js)
 - TMDB API key obtained
 
 ### Vercel Deployment (Recommended)
@@ -1086,8 +1117,8 @@ vercel --prod
 ### Pre-deployment Checklist
 
 - All env vars configured
-- Firebase Firestore rules set
-- Authentication providers enabled
+- Turso database provisioned + migrated (server-side ownership checks enforced in API routes)
+- Authentication providers enabled (GitHub OAuth App + email magic-link sender)
 - Sentry project created
 - Google Analytics configured
 - TMDB API rate limits understood
@@ -1096,7 +1127,7 @@ vercel --prod
 
 ## Conclusion
 
-NetTrailers is a **well-architected, production-grade application** that demonstrates advanced React and full-stack development patterns. The use of Zustand for state management, Firebase for backend, and Next.js 16 for the framework shows strong technical decision-making.
+NetTrailers is a **well-architected, production-grade application** that demonstrates advanced React and full-stack development patterns. The use of Zustand for state management, Turso (libSQL) + Drizzle with Auth.js for the backend, and Next.js 16 for the framework shows strong technical decision-making.
 
 **Key Strengths**: Type safety, clean state management, comprehensive authentication, error handling, and performance optimization.
 

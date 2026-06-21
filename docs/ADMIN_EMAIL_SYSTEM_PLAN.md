@@ -27,7 +27,7 @@ This document outlines a comprehensive plan to add manual email management and p
 - ✅ Unsubscribe links integrated
 - ✅ Direct rendering via Resend's `react` parameter (no HTML conversion needed)
 
-**User Data Structure** (Firestore `/users/{userId}`):
+**User Data Structure** (Turso `user_preferences` row, keyed by userId):
 
 ```typescript
 {
@@ -46,8 +46,8 @@ This document outlines a comprehensive plan to add manual email management and p
 
 **User Filtering Capabilities**:
 
-- `/api/admin/users` - Lists all Firebase Auth users (pagination supported)
-- Cron jobs iterate Firestore `/users` collection
+- `/api/admin/users` - Lists all users from the Turso `user` table (pagination supported)
+- Cron jobs read users from Turso via Drizzle (`db.select().from(users)`)
 - Current filtering: by notification preferences only
 - No advanced segmentation (signup date, activity, etc.)
 
@@ -398,7 +398,7 @@ interface AnnouncementEmailProps {
 
 #### 5.1 - Email History Storage
 
-**Firestore Collection**: `/admin_emails/{emailId}`
+**Turso Table**: `admin_emails` (keyed by emailId; stores counts only, not recipient emails)
 
 **Schema**:
 
@@ -467,7 +467,7 @@ interface EmailHistoryEntry {
 
 ### Phase 4: Email History (Day 5)
 
-- [ ] Firestore collection setup
+- [ ] `admin_emails` Turso table + Drizzle migration
 - [ ] EmailHistory component
 - [ ] Save email history after send
 - [ ] Display in admin panel
@@ -518,7 +518,7 @@ interface EmailHistoryEntry {
     - Show progress indicator during send
 
 2. **User Filtering**
-    - Index Firestore queries (email, notifications.email)
+    - Index Turso queries (email, notifications.email)
     - Paginate user lists (100 per page)
     - Cache user list for 5 minutes
 
@@ -564,7 +564,7 @@ interface EmailHistoryEntry {
 
 - `resend` - Already configured
 - `lucide-react` - Icons
-- `firebase-admin` - User management
+- Drizzle ORM + Auth.js - User management via the Turso `user` table and the Auth.js session
 
 ---
 

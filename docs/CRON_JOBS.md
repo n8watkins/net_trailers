@@ -97,7 +97,7 @@ Sends weekly trending content emails to users who have opted in for trending not
     - Extracts top 5 of each type
 
 2. **Query Eligible Users**
-    - Fetches all users from Firestore: `db.collection('users').get()`
+    - Reads all users from Turso via Drizzle: `db.select().from(users)`
     - Filters for users with:
         - `notifications.types.trending_update === true`
         - `notifications.email === true`
@@ -123,7 +123,7 @@ Sends weekly trending content emails to users who have opted in for trending not
 For a user to receive trending emails:
 
 ```typescript
-// Firestore: /users/{userId}
+// Turso: user_preferences row (keyed by userId)
 {
   email: "user@example.com",  // Valid email
   notifications: {
@@ -154,7 +154,7 @@ GET /api/cron/update-trending?adminOnly=true
 
 This will:
 
-- Process only the admin user (NEXT_PUBLIC_ADMIN_UID)
+- Process only the admin user (identified by `ADMIN_GITHUB_LOGIN`)
 - Skip all non-admin users
 - Safe for development testing
 
@@ -173,7 +173,7 @@ Refreshes cached content for user collections that use advanced filters (actors/
 ### Process Flow
 
 1. **Query All Users**
-    - Fetches all users from Firestore
+    - Reads all users from Turso via Drizzle (`db.select().from(users)`)
     - For each user, gets their custom collections
 
 2. **Filter Collections**
@@ -210,7 +210,7 @@ Refreshes cached content for user collections that use advanced filters (actors/
 For a collection to be refreshed:
 
 ```typescript
-// Firestore: /users/{userId}/customRows/{collectionId}
+// Turso: user_preferences.customRows[collectionId] (keyed by userId)
 {
   collectionType: 'tmdb-genre',
   advancedFilters: {
@@ -260,7 +260,7 @@ Batches social interaction notifications (comments, likes) and sends weekly dige
 ### Process Flow
 
 1. **Query Pending Notifications**
-    - Queries all users' notification subcollections
+    - Queries the Turso `notifications` table across users
     - Filters for:
         - `type IN ['ranking_comment', 'ranking_like']`
         - `emailSent === false` OR `emailSent` doesn't exist
@@ -329,7 +329,7 @@ Batches social interaction notifications (comments, likes) and sends weekly dige
 For a user to receive social digest emails:
 
 ```typescript
-// Firestore: /users/{userId}
+// Turso: user_preferences row (keyed by userId)
 {
   email: "user@example.com",  // Valid email
   notifications: {
@@ -406,7 +406,7 @@ The admin panel (`/admin`) provides a comprehensive interface for managing cron 
 ### Access Control
 
 - **URL**: `/admin`
-- **Authentication**: Requires admin user (NEXT_PUBLIC_ADMIN_UID)
+- **Authentication**: Requires admin user (identified by `ADMIN_GITHUB_LOGIN`)
 - **Server-side check**: `/api/admin/check` validates admin status
 - **Client-side redirect**: Non-admin users redirected to home page
 
@@ -470,7 +470,7 @@ TMDB_API_KEY=your_tmdb_api_key
 CRON_SECRET=your_secure_random_string
 
 # Admin User
-NEXT_PUBLIC_ADMIN_UID=firebase_uid_of_admin
+ADMIN_GITHUB_LOGIN=your_github_username
 
 # Email (Resend)
 RESEND_API_KEY=your_resend_api_key
@@ -517,8 +517,9 @@ NEXT_PUBLIC_APP_URL=https://your-app.vercel.app
 **Solutions**:
 
 ```bash
-# Check user settings
-db.collection('users').where('notifications.email', '==', true).get()
+# Check user settings (Drizzle / Turso)
+#   db.select().from(users)  then filter notifications.email === true
+#   or inspect rows via: npm run db:studio
 
 # Verify Resend API key
 curl -X GET https://api.resend.com/emails \
@@ -557,13 +558,13 @@ curl -X GET https://your-app.vercel.app/api/cron/update-trending \
 
 - Too many users to process
 - TMDB API slow/rate limited
-- Firestore queries taking too long
+- Turso queries taking too long
 
 **Solutions**:
 
 - Implement pagination for large user bases
 - Add retry logic for API calls
-- Optimize Firestore queries with indexes
+- Optimize Turso queries with indexes
 - Consider splitting into smaller jobs
 
 #### 5. Duplicate Emails
@@ -579,12 +580,15 @@ curl -X GET https://your-app.vercel.app/api/cron/update-trending \
 **Solutions**:
 
 ```typescript
-// Use Firestore transactions for atomic updates
-const batch = db.batch()
-notifications.forEach((notif) => {
-    batch.update(notif.ref, { emailSent: true })
+// Use a Drizzle/libSQL transaction for atomic updates
+await db.transaction(async (tx) => {
+    for (const notif of notifications) {
+        await tx
+            .update(notificationsTable)
+            .set({ emailSent: true })
+            .where(eq(notificationsTable.id, notif.id))
+    }
 })
-await batch.commit()
 ```
 
 ### Monitoring
@@ -601,10 +605,10 @@ await batch.commit()
 - Check: Delivered, Bounced, Complained
 - Monitor: Delivery rates and bounce rates
 
-**Firestore Metrics**:
+**Database Metrics**:
 
-- Firebase Console → Firestore → Usage
-- Monitor: Document reads, writes, deletes
+- Turso dashboard (or Vercel observability) → Usage
+- Monitor: row reads, writes, deletes
 - Alert: High read/write counts
 
 ### Debug Logging
@@ -715,7 +719,7 @@ Look for these emoji prefixes:
 
 - Default to admin-only for sensitive operations
 - Require explicit `adminOnly=false` for production runs
-- Validate NEXT_PUBLIC_ADMIN_UID server-side
+- Validate `ADMIN_GITHUB_LOGIN` server-side (via the Auth.js session)
 - Log all admin vs production runs
 
 ### Email Security
@@ -743,7 +747,7 @@ Look for these emoji prefixes:
 - Respect rate limits (40 req/second)
 - Use conditional requests (If-Modified-Since)
 
-### Firestore Optimization
+### Turso (Drizzle) Optimization
 
 - Use indexes for common queries
 - Batch writes for efficiency

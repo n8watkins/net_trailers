@@ -6,23 +6,23 @@
 
 ## Overview
 
-The PIN Protection feature adds an optional security layer to Child Safety Mode, preventing children from disabling content filtering without parental authorization. This feature supports both authenticated users (Firebase Firestore) and guest users (localStorage).
+The PIN Protection feature adds an optional security layer to Child Safety Mode, preventing children from disabling content filtering without parental authorization. This feature supports both authenticated users (Turso via Drizzle) and guest users (localStorage).
 
 ## Feature Highlights
 
 - 🔒 **bcrypt Hashing** - PINs never stored in plaintext (10 rounds)
 - ⏱️ **Rate Limiting** - 5 failed attempts → 5-minute lockout
 - 🔄 **Session-based Verification** - PIN verification resets on browser close
-- 👥 **Dual Storage** - Firestore for authenticated users, localStorage for guests
+- 👥 **Dual Storage** - Turso for authenticated users, localStorage for guests
 - 🎨 **Unified Modal** - Single component handles create/verify/change modes
-- 🛡️ **Firestore Security** - Comprehensive security rules protect PIN data
+- 🛡️ **Server-side Authorization** - API routes scope PIN data to the session user id
 
 ## Architecture
 
 ### Data Flow
 
 ```
-User Action → PIN Modal → childSafetyStore → Firestore Utils → Firebase/localStorage
+User Action → PIN Modal → childSafetyStore → API route + db/queries → Turso/localStorage
                 ↓                ↓                   ↓
           UI Feedback  ← State Updates ← Data Validation
 ```
@@ -31,9 +31,9 @@ User Action → PIN Modal → childSafetyStore → Firestore Utils → Firebase/
 
 **Authenticated Users:**
 
-- Path: `/users/{userId}/settings/childSafety`
-- Storage: Firebase Firestore
-- Security: User-specific access rules
+- Storage: Turso `child_safety_pins` table (Drizzle), keyed by the `userId` column
+- Access: server-mediated through API routes + `db/queries/childSafety.ts`
+- Security: server-side ownership check (session userId === row userId)
 
 **Guest Users:**
 
@@ -48,12 +48,12 @@ User Action → PIN Modal → childSafetyStore → Firestore Utils → Firebase/
 | Phase | Description          | Lines | Files                                         |
 | ----- | -------------------- | ----- | --------------------------------------------- |
 | 1.1   | Data model & types   | 99    | `types/childSafety.ts`                        |
-| 1.2   | Firestore utilities  | 397   | `utils/firestore/childSafetyPIN.ts`           |
+| 1.2   | Query layer          | 397   | `db/queries/childSafety.ts`                   |
 | 1.3   | Zustand store        | 235   | `stores/childSafetyStore.ts`                  |
 | 1.4   | PIN modal component  | 351   | `components/settings/ChildSafetyPINModal.tsx` |
 | 1.5   | Settings integration | 92    | `app/settings/page.tsx`                       |
 | 1.6   | Preferences UI       | 110   | `components/settings/PreferencesSection.tsx`  |
-| 1.7   | Security rules       | 23    | `firestore.rules`                             |
+| 1.7   | Server-side authz    | 23    | API route ownership checks                    |
 | 1.8   | Testing & docs       | -     | This file                                     |
 
 **Total**: 1,307 lines across 7 files + documentation
@@ -81,7 +81,7 @@ const PIN_CONSTRAINTS = {
 }
 ```
 
-#### 2. Firestore Utilities (`utils/firestore/childSafetyPIN.ts`)
+#### 2. Query Layer (`db/queries/childSafety.ts`)
 
 **Core Functions:**
 
@@ -176,34 +176,17 @@ interface ChildSafetyPINState {
 - Only shown when Child Safety Mode is enabled
 - Memoized component for performance optimization
 
-#### 7. Firestore Security Rules (`firestore.rules`)
+#### 7. Server-side Authorization (API routes)
 
-```javascript
-// Child Safety PIN settings subcollection
-match /settings/childSafety {
-  // Only authenticated user can access their own PIN
-  allow read, write: if request.auth != null
-                     && request.auth.uid == userId;
+The browser never queries Turso directly. PIN reads and writes go through the
+child-safety API routes, which resolve the current user from the Auth.js session
+cookie and scope every operation to that `userId`. A user can only ever access the
+`child_safety_pins` row where `userId` matches their session user id — this replaces
+the former Firestore security rules.
 
-  // Validate data structure on create/update
-  allow create, update: if request.auth != null
-                        && request.auth.uid == userId
-                        && isValidPINData(request.resource.data);
-}
-
-function isValidPINData(data) {
-  return data.keys().hasAll(['hash', 'createdAt', 'lastChangedAt', 'enabled'])
-         && data.hash is string
-         && data.hash.size() > 0
-         && data.createdAt is number
-         && data.lastChangedAt is number
-         && data.enabled is bool
-         && (!data.keys().hasAny(['failedAttempts'])
-             || data.failedAttempts is number)
-         && (!data.keys().hasAny(['rateLimitResetAt'])
-             || data.rateLimitResetAt is number);
-}
-```
+The same routes validate the PIN payload before persisting (hash present and
+non-empty, numeric `createdAt`/`lastChangedAt`, boolean `enabled`, and optional
+numeric `failedAttempts`/`rateLimitResetAt`).
 
 ## Security Considerations
 
@@ -212,7 +195,7 @@ function isValidPINData(data) {
 1. **bcrypt Hashing** - Industry-standard password hashing (10 rounds)
 2. **No Plaintext Storage** - PINs never stored in readable format
 3. **Rate Limiting** - Prevents brute-force attacks (5 attempts max)
-4. **Firestore Rules** - Server-side access control for authenticated users
+4. **Server-side Authorization** - API routes enforce session-derived ownership for authenticated users
 5. **Session-based Verification** - Requires re-verification after browser close
 6. **User Isolation** - Each user can only access their own PIN data
 
@@ -328,7 +311,7 @@ function isValidPINData(data) {
 - [ ] **Cross-Session**
     - [ ] PIN verification persists within session
     - [ ] PIN verification resets on browser close
-    - [ ] PIN settings sync across tabs (Firestore)
+    - [ ] PIN settings sync across tabs (Turso, via API)
     - [ ] Guest PINs persist in localStorage
 
 - [ ] **Error Handling**
@@ -340,10 +323,10 @@ function isValidPINData(data) {
 ### Security Tests
 
 - [ ] **Authenticated Users**
-    - [ ] PIN stored in Firestore (not localStorage)
-    - [ ] PIN is bcrypt hashed (inspect Firestore)
-    - [ ] Other users cannot access PIN (security rules)
-    - [ ] Cannot write invalid PIN data (security rules)
+    - [ ] PIN stored in Turso `child_safety_pins` table (not localStorage)
+    - [ ] PIN is bcrypt hashed (inspect the table via `db:studio`)
+    - [ ] Other users cannot access PIN (server-side ownership check)
+    - [ ] Cannot write invalid PIN data (API route validation)
 
 - [ ] **Guest Users**
     - [ ] PIN stored in localStorage only
@@ -370,8 +353,8 @@ function isValidPINData(data) {
 
 - **PIN Verification**: ~100-200ms (bcrypt.compare)
 - **PIN Creation**: ~100-200ms (bcrypt.hash)
-- **Firestore Read**: ~50-150ms (cached after first load)
-- **Firestore Write**: ~100-300ms (async, non-blocking)
+- **DB Read** (via API): ~50-150ms (cached after first load)
+- **DB Write** (via API): ~100-300ms (async, non-blocking)
 
 ### User Experience
 
@@ -403,13 +386,12 @@ function isValidPINData(data) {
 
 - [FEATURE_ROADMAP_2025.md](./FEATURE_ROADMAP_2025.md) - Full feature roadmap (PIN is Phase 1)
 - [CHILD_SAFETY_MODE.md](../archived/CHILD_SAFETY_MODE.md) - Original Child Safety Mode implementation
-- [FIRESTORE_SECURITY.md](./FIRESTORE_SECURITY.md) - Complete security rules documentation
 
 ## Commits
 
 1. `feat: add PIN protection foundation (Phase 1.1-1.4)` - Core types, utilities, store, modal (1,091 lines)
 2. `feat: integrate PIN protection into Child Safety Mode settings` - Settings integration (198 lines)
-3. `feat: add Firestore security rules for PIN protection` - Security rules (23 lines)
+3. `feat: add server-side authorization for PIN protection` - API route ownership checks (23 lines)
 4. `fix: resolve TypeScript errors in PIN protection utilities` - Type safety fixes
 
 **Total**: 4 commits, ~1,312 lines across 7 files
