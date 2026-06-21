@@ -32,9 +32,19 @@ jest.mock('next-auth/react', () => ({
     SessionProvider: ({ children }) => children,
 }))
 
+// Mock the server Auth.js entry (auth.ts) so tests don't load the ESM-only
+// @auth/drizzle-adapter. auth() resolves to null (signed out) by default.
+jest.mock('@/auth', () => ({
+    __esModule: true,
+    auth: jest.fn(async () => null),
+    signIn: jest.fn(),
+    signOut: jest.fn(),
+    handlers: { GET: jest.fn(), POST: jest.fn() },
+}))
+
 // Environment variables for the Turso + Auth.js stack
 // (in-memory libSQL so importing the db client never throws in tests)
-process.env.TURSO_DATABASE_URL = 'file::memory:'
+process.env.TURSO_DATABASE_URL = ':memory:'
 process.env.AUTH_SECRET = 'test-auth-secret'
 process.env.AUTH_GITHUB_ID = 'test-github-id'
 process.env.AUTH_GITHUB_SECRET = 'test-github-secret'
