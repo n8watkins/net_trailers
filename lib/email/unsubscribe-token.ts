@@ -72,6 +72,9 @@ export async function ensureUnsubscribeToken(userId: string): Promise<string> {
     return token
 }
 
+/** Back-compat alias for the former route-level export. */
+export const generateUnsubscribeToken = ensureUnsubscribeToken
+
 /**
  * Batch-ensure unsubscribe tokens for multiple users.
  * Single SELECT reads all existing tokens; writes only the missing ones.

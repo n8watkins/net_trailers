@@ -12,7 +12,6 @@
 import { Movie, TVShow, Content } from '../typings'
 import type { CreateNotificationRequest } from '../types/notifications'
 import type { ForumCategory, Thread, Poll } from '../types/forum'
-import { Timestamp } from 'firebase/firestore'
 
 // Sample movies for seeding (25 popular movies)
 export const sampleMovies: Movie[] = [
@@ -917,13 +916,13 @@ export async function seedForumThreads({
             category: threadData.category,
             userId,
             userName,
-            createdAt: Timestamp.fromMillis(baseTime - index * 60 * 60 * 1000),
-            updatedAt: Timestamp.fromMillis(baseTime - index * 60 * 60 * 1000),
+            createdAt: baseTime - index * 60 * 60 * 1000,
+            updatedAt: baseTime - index * 60 * 60 * 1000,
             isPinned: false,
             isLocked: false,
             views: Math.floor(Math.random() * 500) + 50,
             replyCount: Math.floor(Math.random() * 40) + 5,
-            lastReplyAt: Timestamp.fromMillis(baseTime - index * 30 * 60 * 1000),
+            lastReplyAt: baseTime - index * 30 * 60 * 1000,
             lastReplyBy: { userId, userName },
             tags: threadData.tags,
             likes: Math.floor(Math.random() * 80) + 10,
@@ -950,7 +949,7 @@ export async function seedForumThreads({
 
     for (const threadData of selectedThreads) {
         try {
-            const now = Timestamp.now()
+            const now = Date.now()
             const threadId = await useForumStore
                 .getState()
                 .createThread(
@@ -1031,7 +1030,7 @@ export async function seedForumPolls({
                 category: pollData.category,
                 userId,
                 userName,
-                createdAt: Timestamp.fromMillis(baseTime - index * 90 * 60 * 1000),
+                createdAt: baseTime - index * 90 * 60 * 1000,
                 options: pollData.options.map((optionText, optionIndex) => ({
                     id: `seed-option-${optionIndex}`,
                     text: optionText,
@@ -1083,7 +1082,7 @@ export async function seedForumPolls({
                 category: pollData.category,
                 userId,
                 userName,
-                createdAt: Timestamp.now(),
+                createdAt: Date.now(),
                 options: pollData.options.map((optionText, optionIndex) => ({
                     id: `seed-option-${optionIndex}`,
                     text: optionText,

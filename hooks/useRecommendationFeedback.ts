@@ -3,13 +3,18 @@
  * Phase 2: Feedback Loop Integration
  *
  * Provides utilities for tracking user interactions with recommended content.
- * Logs feedback to the API for learning and improvement of recommendations.
+ * Logs feedback to /api/recommendations/feedback for learning and improvement.
+ *
+ * Auth note: previously obtained a Firebase ID token and attached it as a
+ * bearer header. Auth.js (NextAuth) now authenticates via the session cookie,
+ * which the browser sends automatically for same-origin requests, so no token
+ * retrieval is needed here.
  */
 
 'use client'
 
 import { useCallback, useRef } from 'react'
-import { auth } from '../firebase'
+import { authenticatedFetch } from '../lib/authenticatedFetch'
 import { FeedbackAction } from '../types/recommendations'
 
 interface FeedbackParams {
@@ -19,16 +24,16 @@ interface FeedbackParams {
 }
 
 /**
- * Hook for tracking recommendation feedback
- * Provides fire-and-forget feedback logging with client-side debouncing
+ * Hook for tracking recommendation feedback.
+ * Provides fire-and-forget feedback logging with client-side debouncing.
  */
 export function useRecommendationFeedback() {
     // Track recent feedback to prevent duplicates (60-second window)
     const recentFeedback = useRef<Map<string, number>>(new Map())
 
     /**
-     * Log feedback to API (fire-and-forget)
-     * Includes client-side deduplication to prevent spamming
+     * Log feedback to the API (fire-and-forget).
+     * Includes client-side deduplication to prevent spamming.
      */
     const logFeedback = useCallback(
         async (action: FeedbackAction, params: FeedbackParams): Promise<void> => {
@@ -59,50 +64,29 @@ export function useRecommendationFeedback() {
                 }
             }
 
-            try {
-                // Get Firebase ID token for authentication
-                const currentUser = auth.currentUser
-                if (!currentUser) {
-                    console.warn('[Feedback] No authenticated user, skipping feedback')
-                    return
-                }
-
-                const idToken = await currentUser.getIdToken()
-
-                // Fire-and-forget API call (don't await or handle errors)
-                fetch('/api/recommendations/feedback', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${idToken}`,
-                    },
-                    body: JSON.stringify({
-                        contentId,
-                        mediaType,
-                        action,
-                        page,
-                    }),
+            // Fire-and-forget API call. The session cookie is included automatically
+            // by authenticatedFetch (credentials: 'same-origin').
+            authenticatedFetch('/api/recommendations/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contentId, mediaType, action, page }),
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        console.warn(
+                            `[Feedback] API returned ${response.status} for ${action} on ${contentId}`
+                        )
+                    }
                 })
-                    .then((response) => {
-                        if (!response.ok) {
-                            console.warn(
-                                `[Feedback] API returned ${response.status} for ${action} on ${contentId}`
-                            )
-                        }
-                    })
-                    .catch((error) => {
-                        console.warn('[Feedback] Failed to log feedback:', error)
-                    })
-            } catch (error) {
-                console.warn('[Feedback] Error logging feedback:', error)
-            }
+                .catch((error) => {
+                    console.warn('[Feedback] Failed to log feedback:', error)
+                })
         },
         []
     )
 
     /**
-     * Track when content is viewed (visible for >3 seconds)
-     * Use IntersectionObserver in component to detect visibility duration
+     * Track when content is viewed (visible for >3 seconds).
      */
     const trackViewed = useCallback(
         (params: FeedbackParams) => {
@@ -112,8 +96,7 @@ export function useRecommendationFeedback() {
     )
 
     /**
-     * Track when content is dismissed (user explicitly dismissed)
-     * Call when user clicks dismiss/close button
+     * Track when content is dismissed (user explicitly dismissed).
      */
     const trackDismissed = useCallback(
         (params: FeedbackParams) => {
@@ -123,8 +106,7 @@ export function useRecommendationFeedback() {
     )
 
     /**
-     * Track when content is hidden (added to hidden list)
-     * Call when user hides content via menu
+     * Track when content is hidden (added to hidden list).
      */
     const trackHidden = useCallback(
         (params: FeedbackParams) => {
@@ -134,8 +116,7 @@ export function useRecommendationFeedback() {
     )
 
     /**
-     * Track when content is liked
-     * Call when user adds to liked movies/shows
+     * Track when content is liked.
      */
     const trackLiked = useCallback(
         (params: FeedbackParams) => {
@@ -145,8 +126,7 @@ export function useRecommendationFeedback() {
     )
 
     /**
-     * Track when content is added to watchlist
-     * Call when user adds to watchlist
+     * Track when content is added to watchlist.
      */
     const trackWatchlisted = useCallback(
         (params: FeedbackParams) => {
@@ -156,8 +136,7 @@ export function useRecommendationFeedback() {
     )
 
     /**
-     * Track when content is scrolled past without interaction
-     * Call from IntersectionObserver when content exits viewport without action
+     * Track when content is scrolled past without interaction.
      */
     const trackScrolledPast = useCallback(
         (params: FeedbackParams) => {

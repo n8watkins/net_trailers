@@ -3,7 +3,6 @@
  */
 
 import type { ForumCategory, Thread, Poll } from '../../types/forum'
-import { Timestamp } from 'firebase/firestore'
 
 export interface SeedForumOptions {
     userId: string
@@ -111,13 +110,13 @@ export async function seedForumThreads(options: SeedForumOptions): Promise<strin
             category: t.category,
             userId,
             userName,
-            createdAt: Timestamp.fromMillis(baseTime - index * 60 * 60 * 1000),
-            updatedAt: Timestamp.fromMillis(baseTime - index * 60 * 60 * 1000),
+            createdAt: baseTime - index * 60 * 60 * 1000,
+            updatedAt: baseTime - index * 60 * 60 * 1000,
             isPinned: false,
             isLocked: false,
             views: Math.floor(Math.random() * 500) + 50,
             replyCount: Math.floor(Math.random() * 40) + 5,
-            lastReplyAt: Timestamp.fromMillis(baseTime - index * 30 * 60 * 1000),
+            lastReplyAt: baseTime - index * 30 * 60 * 1000,
             lastReplyBy: { userId, userName },
             tags: t.tags,
             likes: Math.floor(Math.random() * 80) + 10,
@@ -189,7 +188,7 @@ export async function seedForumPolls(options: SeedForumOptions): Promise<string[
                 category: p.category,
                 userId,
                 userName,
-                createdAt: Timestamp.fromMillis(baseTime - index * 90 * 60 * 1000),
+                createdAt: baseTime - index * 90 * 60 * 1000,
                 options: p.options.map((text, i) => ({
                     id: `seed-option-${i}`,
                     text,

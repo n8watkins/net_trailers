@@ -1,15 +1,14 @@
 /**
  * Public User Liked Content Page
  *
- * Shows all liked movies/TV shows for a specific user's public profile
+ * Shows all liked movies/TV shows for a specific user's public profile.
+ * Data is fetched from /api/public-profile/[userId] (Turso-backed).
  */
 
 'use client'
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { doc, getDoc } from 'firebase/firestore'
-import { db } from '../../../../firebase'
 import SubPageLayout from '../../../../components/layout/SubPageLayout'
 import ContentCard from '../../../../components/common/ContentCard'
 import ContentGridSpacer from '../../../../components/common/ContentGridSpacer'
@@ -38,38 +37,20 @@ export default function UserLikedContentPage() {
             setError(null)
 
             try {
-                // Try to get profile data from API first (includes liked content)
-                let profileDisplayName = 'User'
-                let liked: (Movie | TVShow)[] = []
-
-                try {
-                    const response = await fetch(`/api/public-profile/${userId}`)
-                    if (response.ok) {
-                        const payload = (await response.json()) as PublicProfilePayload
-                        profileDisplayName = payload.profile.displayName
-                        liked = payload.likedContent
-                    }
-                } catch (apiError) {
-                    console.warn('[UserLiked] API failed, will use client-side data')
+                // Fetch aggregated public profile from the Turso-backed API.
+                // The payload includes likedContent when the user's visibility allows it.
+                const response = await fetch(`/api/public-profile/${userId}`)
+                if (!response.ok) {
+                    const body = await response.json().catch(() => null)
+                    throw new Error(body?.error || 'Failed to load liked content')
                 }
 
-                // Fallback to client-side lookup for display name if API failed
-                if (profileDisplayName === 'User') {
-                    try {
-                        const profileDoc = await getDoc(doc(db, 'profiles', userId))
-                        if (profileDoc.exists()) {
-                            const profileData = profileDoc.data()
-                            profileDisplayName = profileData?.displayName || 'User'
-                        }
-                    } catch (profileError) {
-                        console.warn('[UserLiked] Could not load profile, using default name')
-                    }
-                }
+                const payload = (await response.json()) as PublicProfilePayload
 
                 if (!isMounted) return
 
-                setDisplayName(profileDisplayName)
-                setLikedContent(liked)
+                setDisplayName(payload.profile.displayName)
+                setLikedContent(payload.likedContent ?? [])
             } catch (err) {
                 console.error('Error loading liked content:', err)
                 if (isMounted) {

@@ -1,15 +1,14 @@
 /**
  * Public User Collections Page
  *
- * Shows all public collections for a specific user's profile
+ * Shows all public collections for a specific user's profile.
+ * Data is fetched from /api/public-profile/[userId] (Turso-backed).
  */
 
 'use client'
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { doc, getDoc } from 'firebase/firestore'
-import { db } from '../../../../firebase'
 import SubPageLayout from '../../../../components/layout/SubPageLayout'
 import NetflixLoader from '../../../../components/common/NetflixLoader'
 import { RectangleStackIcon, UserIcon } from '@heroicons/react/24/outline'
@@ -36,38 +35,20 @@ export default function UserCollectionsPage() {
             setError(null)
 
             try {
-                // Try to get profile data from API first (includes collections)
-                let profileDisplayName = 'User'
-                let userCollections: UserList[] = []
-
-                try {
-                    const response = await fetch(`/api/public-profile/${userId}`)
-                    if (response.ok) {
-                        const payload = (await response.json()) as PublicProfilePayload
-                        profileDisplayName = payload.profile.displayName
-                        userCollections = payload.collections
-                    }
-                } catch (apiError) {
-                    console.warn('[UserCollections] API failed, will use client-side data')
+                // Fetch aggregated public profile from the Turso-backed API.
+                // The payload includes collections filtered to showOnPublicProfile === true.
+                const response = await fetch(`/api/public-profile/${userId}`)
+                if (!response.ok) {
+                    const body = await response.json().catch(() => null)
+                    throw new Error(body?.error || 'Failed to load collections')
                 }
 
-                // Fallback to client-side lookup for display name if API failed
-                if (profileDisplayName === 'User') {
-                    try {
-                        const profileDoc = await getDoc(doc(db, 'profiles', userId))
-                        if (profileDoc.exists()) {
-                            const profileData = profileDoc.data()
-                            profileDisplayName = profileData?.displayName || 'User'
-                        }
-                    } catch (profileError) {
-                        console.warn('[UserCollections] Could not load profile, using default name')
-                    }
-                }
+                const payload = (await response.json()) as PublicProfilePayload
 
                 if (!isMounted) return
 
-                setDisplayName(profileDisplayName)
-                setCollections(userCollections)
+                setDisplayName(payload.profile.displayName)
+                setCollections(payload.collections ?? [])
             } catch (err) {
                 console.error('Error loading collections:', err)
                 if (isMounted) {

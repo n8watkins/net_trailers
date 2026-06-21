@@ -32,23 +32,21 @@ import { RankingsSection } from '../../components/profile/RankingsSection'
 import { CollectionsSection } from '../../components/profile/CollectionsSection'
 import { ForumActivitySection } from '../../components/profile/ForumActivitySection'
 import type { PollSummary, ThreadSummary } from '../../types/forum'
-import {
-    Timestamp,
-    collection,
-    doc,
-    getDoc,
-    getDocs,
-    limit,
-    query,
-    where,
-} from 'firebase/firestore'
-import { db } from '@/firebase'
+import { authenticatedFetch } from '@/lib/authenticatedFetch'
+import type { PollRowWithVote } from '@/db/queries/polls'
 
-// Helper to convert Firestore Timestamp to number
-const timestampToNumber = (ts: Timestamp | number | null | undefined): number | null => {
+// Helper to coerce epoch-ms numbers (API) or legacy Firestore-style objects to number | null
+const timestampToNumber = (ts: unknown): number | null => {
     if (!ts) return null
     if (typeof ts === 'number') return ts
-    return ts.toMillis()
+    if (typeof ts === 'object' && ts !== null && 'toMillis' in ts) {
+        try {
+            return (ts as { toMillis: () => number }).toMillis()
+        } catch {
+            return null
+        }
+    }
+    return null
 }
 
 export default function ProfilePage() {
@@ -97,62 +95,40 @@ export default function ProfilePage() {
         const fetchVotedPolls = async () => {
             setIsLoadingVotedPolls(true)
             try {
-                const votesQuery = query(
-                    collection(db, 'poll_votes'),
-                    where('userId', '==', currentUserId),
-                    limit(25)
-                )
-                const votesSnap = await getDocs(votesQuery)
-
-                const pollsFromVotes = await Promise.all(
-                    votesSnap.docs.map(async (voteDoc) => {
-                        const voteData = voteDoc.data() || {}
-                        const pollId = voteData.pollId as string | undefined
-                        if (!pollId) {
-                            return null
-                        }
-
-                        const pollDoc = await getDoc(doc(db, 'polls', pollId))
-                        if (!pollDoc.exists()) {
-                            return null
-                        }
-                        const pollData = pollDoc.data() || {}
-
-                        return {
-                            id: pollDoc.id,
-                            question: pollData.question ?? 'Untitled poll',
-                            category: pollData.category ?? 'general',
-                            totalVotes: pollData.totalVotes ?? 0,
-                            isMultipleChoice: Boolean(pollData.isMultipleChoice),
-                            allowAddOptions: Boolean(pollData.allowAddOptions),
-                            options: Array.isArray(pollData.options)
-                                ? pollData.options.map((option: any) => ({
-                                      id: option.id ?? '',
-                                      text: option.text ?? '',
-                                      votes: option.votes ?? 0,
-                                      percentage: option.percentage ?? 0,
-                                  }))
-                                : [],
-                            createdAt: timestampToNumber(
-                                pollData.createdAt as Timestamp | number | null | undefined
-                            ),
-                            expiresAt: timestampToNumber(
-                                pollData.expiresAt as Timestamp | number | null | undefined
-                            ),
-                            votedAt: timestampToNumber(
-                                voteData.votedAt as Timestamp | number | null | undefined
-                            ),
-                        } as PollSummary
-                    })
-                )
+                // Use the Turso-backed API. ?voted=true returns polls the user has voted on.
+                // authenticatedFetch sends credentials (session cookie) automatically.
+                const res = await authenticatedFetch(`/api/polls/user/${currentUserId}?voted=true`)
+                if (!res.ok) {
+                    throw new Error('Failed to load voted polls')
+                }
+                const json = await res.json()
 
                 if (!isMounted) return
 
-                const filtered = pollsFromVotes
-                    .filter((poll): poll is PollSummary => Boolean(poll))
-                    .sort((a, b) => (b.votedAt ?? 0) - (a.votedAt ?? 0))
+                // The ?voted=true route returns PollRowWithVote[]; votedAt is not
+                // on the poll row itself (it lives in the vote row) so we set it null.
+                const polls: PollSummary[] = ((json.polls as PollRowWithVote[]) ?? []).map((p) => ({
+                    id: p.id,
+                    question: p.question,
+                    category: p.category,
+                    userId: p.userId,
+                    userName: p.userName ?? 'Anonymous',
+                    userAvatar: p.userAvatar ?? undefined,
+                    totalVotes: p.totalVotes,
+                    isMultipleChoice: p.isMultipleChoice,
+                    allowAddOptions: p.allowAddOptions,
+                    options: p.options.map((opt) => ({
+                        id: opt.id,
+                        text: opt.text,
+                        votes: opt.votes,
+                        percentage: opt.percentage,
+                    })),
+                    createdAt: timestampToNumber(p.createdAt),
+                    expiresAt: timestampToNumber(p.expiresAt),
+                    votedAt: null,
+                }))
 
-                setVotedPolls(filtered)
+                setVotedPolls(polls)
             } catch (error) {
                 console.error('Failed to load voted polls:', error)
                 if (isMounted) {
@@ -172,7 +148,9 @@ export default function ProfilePage() {
         }
     }, [currentUserId, isGuest])
 
-    // Fetch voted (liked) threads
+    // Fetch threads the user has liked (voted on).
+    // The public-profile API aggregates these in forum.threadsVoted — use it for
+    // the own-profile view too, since it already reads from Turso (thread_likes join).
     useEffect(() => {
         if (!currentUserId || isGuest) {
             setVotedThreads([])
@@ -184,60 +162,16 @@ export default function ProfilePage() {
         const fetchVotedThreads = async () => {
             setIsLoadingVotedThreads(true)
             try {
-                const likesQuery = query(
-                    collection(db, 'thread_likes'),
-                    where('userId', '==', currentUserId),
-                    limit(25)
-                )
-                const likesSnap = await getDocs(likesQuery)
-
-                const threadsFromLikes = await Promise.all(
-                    likesSnap.docs.map(async (likeDoc) => {
-                        const likeData = likeDoc.data() || {}
-                        const threadId = likeData.threadId as string | undefined
-                        if (!threadId) return null
-
-                        const threadDoc = await getDoc(doc(db, 'threads', threadId))
-                        if (!threadDoc.exists()) return null
-                        const threadData = threadDoc.data() || {}
-
-                        // Don't include user's own threads in voted tab
-                        if (threadData.userId === currentUserId) return null
-
-                        return {
-                            id: threadDoc.id,
-                            title: threadData.title ?? 'Untitled thread',
-                            content: threadData.content ?? '',
-                            category: threadData.category ?? 'general',
-                            userId: threadData.userId ?? '',
-                            userName: threadData.userName ?? 'Anonymous',
-                            userAvatar: threadData.userAvatar,
-                            likes: threadData.likes ?? 0,
-                            views: threadData.views ?? 0,
-                            replyCount: threadData.replyCount ?? 0,
-                            createdAt: timestampToNumber(
-                                threadData.createdAt as Timestamp | number | null | undefined
-                            ),
-                            updatedAt: timestampToNumber(
-                                threadData.updatedAt as Timestamp | number | null | undefined
-                            ),
-                            lastReplyAt: timestampToNumber(
-                                threadData.lastReplyAt as Timestamp | number | null | undefined
-                            ),
-                            lastReplyBy: threadData.lastReplyBy,
-                            tags: threadData.tags,
-                            isPinned: threadData.isPinned ?? false,
-                        } as ThreadSummary
-                    })
-                )
+                const res = await fetch(`/api/public-profile/${currentUserId}`)
+                if (!res.ok) {
+                    throw new Error('Failed to load voted threads')
+                }
+                const json = await res.json()
 
                 if (!isMounted) return
 
-                const filtered = threadsFromLikes
-                    .filter((thread): thread is ThreadSummary => Boolean(thread))
-                    .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
-
-                setVotedThreads(filtered)
+                const threadsVoted: ThreadSummary[] = json.forum?.threadsVoted ?? []
+                setVotedThreads(threadsVoted)
             } catch (error) {
                 console.error('Failed to load voted threads:', error)
                 if (isMounted) {

@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
 
         // Merge unsubscribe flags into the existing prefs blob.
         const updatedData = {
-            ...(currentData as Record<string, unknown>),
+            ...(currentData as unknown as Record<string, unknown>),
             notificationPreferences: {
                 ...((currentData as any)?.notificationPreferences ?? {}),
                 email: false,

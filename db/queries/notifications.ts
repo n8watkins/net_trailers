@@ -217,6 +217,78 @@ export async function createNotification(
     return rowToNotification(inserted)
 }
 
+/* -------------------------------------------------------------------------- */
+/*  Cron helpers                                                               */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * List all notifications of the given type(s) whose `data.emailSent` field is
+ * falsy and whose `createdAt` is on or after `sinceMs`.
+ *
+ * `emailSent` lives inside the JSON `data` column, so we use SQLite's
+ * `json_extract` to filter it.  A missing key (NULL) is treated the same as
+ * false — both mean "not yet sent".
+ *
+ * Used by the social-digest cron to find pending digest candidates.
+ *
+ * @param types    - Notification type strings to match (e.g. ['ranking_comment', 'ranking_like'])
+ * @param sinceMs  - Epoch-ms lower bound for createdAt (inclusive)
+ */
+export async function listUnsentNotificationsByTypes(
+    types: string[],
+    sinceMs: number
+): Promise<Notification[]> {
+    if (types.length === 0) return []
+
+    // Embed the type list as a sql`` template so Drizzle parameterises each
+    // value safely. We join them with commas inside a single sql expression.
+    const typeList = sql.join(
+        types.map((t) => sql`${t}`),
+        sql`, `
+    )
+
+    const rows = await db
+        .select()
+        .from(notifications)
+        .where(
+            sql`${notifications.type} IN (${typeList})
+            AND ${notifications.createdAt} >= ${sinceMs}
+            AND (json_extract(${notifications.data}, '$.emailSent') IS NULL
+                 OR json_extract(${notifications.data}, '$.emailSent') = 0)`
+        )
+        .orderBy(desc(notifications.createdAt))
+
+    return rows.map(rowToNotification)
+}
+
+/**
+ * Mark the `emailSent` flag inside the JSON `data` column to true for a list
+ * of notification ids.
+ *
+ * Each row is updated individually because SQLite's `json_set` cannot be
+ * applied in a single WHERE id IN (...) across rows without a subquery; a
+ * loop of targeted updates is clearer and safe at the expected batch sizes
+ * (tens to low hundreds of rows per weekly digest run).
+ *
+ * Used by the social-digest cron after a digest email is successfully sent.
+ *
+ * @param notificationIds - Array of notification ids to mark as sent
+ */
+export async function markNotificationsEmailSent(notificationIds: string[]): Promise<void> {
+    if (notificationIds.length === 0) return
+
+    await Promise.all(
+        notificationIds.map((id) =>
+            db
+                .update(notifications)
+                .set({
+                    data: sql`json_set(COALESCE(${notifications.data}, '{}'), '$.emailSent', 1)`,
+                })
+                .where(eq(notifications.id, id))
+        )
+    )
+}
+
 /**
  * Delete notifications older than CLEANUP_THRESHOLD_DAYS or past their
  * expiresAt. Called automatically after createNotification but can also be

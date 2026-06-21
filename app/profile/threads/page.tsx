@@ -22,14 +22,20 @@ import { CreateThreadModal } from '@/components/forum/CreateThreadModal'
 import type { ThreadSummary, ForumCategory } from '@/types/forum'
 import { ChatBubbleLeftRightIcon, ArrowLeftIcon, PlusIcon } from '@heroicons/react/24/outline'
 import { ChatBubbleLeftRightIcon as ChatBubbleSolidIcon } from '@heroicons/react/24/solid'
-import { Timestamp, collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore'
-import { db, auth } from '@/firebase'
+import { auth } from '@/firebase'
 
-// Helper to convert Firestore Timestamp to number
-const timestampToNumber = (ts: Timestamp | number | null | undefined): number | null => {
+// Helper to coerce epoch-ms numbers (API) or legacy Firestore-style objects to number | null
+const timestampToNumber = (ts: unknown): number | null => {
     if (!ts) return null
     if (typeof ts === 'number') return ts
-    return ts.toMillis()
+    if (typeof ts === 'object' && ts !== null && 'toMillis' in ts) {
+        try {
+            return (ts as { toMillis: () => number }).toMillis()
+        } catch {
+            return null
+        }
+    }
+    return null
 }
 
 export default function UserThreadsPage() {
@@ -65,7 +71,8 @@ export default function UserThreadsPage() {
         }
     }, [userId, isInitialized, loadThreads])
 
-    // Fetch voted (liked) threads
+    // Fetch threads the user has liked via the Turso-backed public-profile API.
+    // forum.threadsVoted contains threads liked by the user, excluding their own.
     useEffect(() => {
         if (!userId || isGuest) {
             setVotedThreads([])
@@ -77,60 +84,16 @@ export default function UserThreadsPage() {
         const fetchVotedThreads = async () => {
             setIsLoadingVotedThreads(true)
             try {
-                const likesQuery = query(
-                    collection(db, 'thread_likes'),
-                    where('userId', '==', userId)
-                )
-                const likesSnap = await getDocs(likesQuery)
-
-                const threadsFromLikes = await Promise.all(
-                    likesSnap.docs.map(async (likeDoc) => {
-                        const likeData = likeDoc.data() || {}
-                        const threadId = likeData.threadId as string | undefined
-                        if (!threadId) return null
-
-                        const threadDoc = await getDoc(doc(db, 'threads', threadId))
-                        if (!threadDoc.exists()) return null
-                        const threadData = threadDoc.data() || {}
-
-                        // Don't include user's own threads in voted tab
-                        if (threadData.userId === userId) return null
-
-                        return {
-                            id: threadDoc.id,
-                            title: threadData.title ?? 'Untitled thread',
-                            content: threadData.content ?? '',
-                            category: threadData.category ?? 'general',
-                            userId: threadData.userId ?? '',
-                            userName: threadData.userName ?? 'Anonymous',
-                            userAvatar: threadData.userAvatar,
-                            likes: threadData.likes ?? 0,
-                            views: threadData.views ?? 0,
-                            replyCount: threadData.replyCount ?? 0,
-                            createdAt: timestampToNumber(
-                                threadData.createdAt as Timestamp | number | null | undefined
-                            ),
-                            updatedAt: timestampToNumber(
-                                threadData.updatedAt as Timestamp | number | null | undefined
-                            ),
-                            lastReplyAt: timestampToNumber(
-                                threadData.lastReplyAt as Timestamp | number | null | undefined
-                            ),
-                            lastReplyBy: threadData.lastReplyBy,
-                            tags: threadData.tags,
-                            isPinned: threadData.isPinned ?? false,
-                            isLocked: threadData.isLocked ?? false,
-                        } as ThreadSummary
-                    })
-                )
+                const res = await fetch(`/api/public-profile/${userId}`)
+                if (!res.ok) {
+                    throw new Error('Failed to load voted threads')
+                }
+                const json = await res.json()
 
                 if (!isMounted) return
 
-                const filtered = threadsFromLikes
-                    .filter((thread): thread is ThreadSummary => Boolean(thread))
-                    .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
-
-                setVotedThreads(filtered)
+                const threadsVoted: ThreadSummary[] = json.forum?.threadsVoted ?? []
+                setVotedThreads(threadsVoted)
             } catch (error) {
                 console.error('Failed to load voted threads:', error)
                 if (isMounted) {

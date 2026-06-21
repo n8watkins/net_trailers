@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
-import { getAdminDb } from '@/lib/firebase-admin'
 import { validateAdminRequest } from '@/utils/adminMiddleware'
 import { EmailService } from '@/lib/email/email-service'
 import { Content } from '@/typings'
-import { generateUnsubscribeToken } from '../../email/unsubscribe/route'
+import { generateUnsubscribeToken } from '@/lib/email/unsubscribe-token'
+import { db } from '@/db'
+import { users, userPreferences } from '@/db/schema'
+import { createNotification } from '@/db/queries/notifications'
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY
 const CRON_SECRET = process.env.CRON_SECRET
@@ -37,7 +39,7 @@ export async function GET(req: NextRequest) {
         // Check if it's a cron request (timing-safe comparison)
         const isCron = isValidCronSecret(token)
 
-        // Check if it's an admin request via Firebase Auth
+        // Check if it's an admin request via Auth.js session
         let isAdmin = false
         if (!isCron) {
             const authResult = await validateAdminRequest(req)
@@ -85,16 +87,23 @@ export async function GET(req: NextRequest) {
             console.log(`📊 [Trending] Running in ALL USERS mode`)
         }
 
+        // -----------------------------------------------------------------------
+        // Enumerate all users from Turso/Drizzle.
+        // We need: id, email, name from `users` table, and notification prefs
+        // from the `userPreferences.data` JSON blob.
+        // -----------------------------------------------------------------------
+        const allUsers = await db.select().from(users)
+        const allPrefs = await db.select().from(userPreferences)
+
+        // Build a fast lookup map: userId -> preferences data
+        const prefsMap = new Map(allPrefs.map((row) => [row.userId, row.data]))
+
         // Send weekly digest emails to all opted-in users
         let emailsSent = 0
         let skippedUsers = 0
 
-        const db = getAdminDb()
-        const usersSnapshot = await db.collection('users').get()
-
-        for (const userDoc of usersSnapshot.docs) {
-            const userData = userDoc.data()
-            const userId = userDoc.id
+        for (const user of allUsers) {
+            const userId = user.id
 
             // ADMIN ONLY MODE: Skip all users except admin
             if (adminOnly && (!ADMIN_UID || userId !== ADMIN_UID)) {
@@ -103,11 +112,13 @@ export async function GET(req: NextRequest) {
                 continue
             }
 
-            // Check if user has opted into trending notifications AND email
-            const trendingEnabled = userData.notifications?.types?.trending_update ?? false
-            const emailEnabled = userData.notifications?.email ?? false
+            const prefs = prefsMap.get(userId)
 
-            if (!trendingEnabled || !emailEnabled || !userData.email) {
+            // Check if user has opted into trending notifications AND email
+            const trendingEnabled = prefs?.notifications?.types?.trending_update ?? false
+            const emailEnabled = prefs?.notifications?.email ?? false
+
+            if (!trendingEnabled || !emailEnabled || !user.email) {
                 skippedUsers++
                 continue
             }
@@ -116,10 +127,10 @@ export async function GET(req: NextRequest) {
                 // Generate unsubscribe token for this user
                 let unsubscribeToken: string | undefined
                 try {
-                    unsubscribeToken = await generateUnsubscribeToken(userDoc.id)
+                    unsubscribeToken = await generateUnsubscribeToken(userId)
                 } catch (tokenError) {
                     console.warn(
-                        `⚠️  [Trending] Failed to generate unsubscribe token for ${userDoc.id}:`,
+                        `⚠️  [Trending] Failed to generate unsubscribe token for ${userId}:`,
                         tokenError
                     )
                     // Continue without token - email will link to settings page instead
@@ -135,20 +146,19 @@ export async function GET(req: NextRequest) {
                     media_type: 'tv' as const,
                 }))
 
+                const displayName = user.name || user.email.split('@')[0]
+
                 await EmailService.sendTrendingContent({
-                    to: userData.email,
-                    userName: userData.displayName || userData.email.split('@')[0],
+                    to: user.email,
+                    userName: displayName,
                     movies: trendingMovies as Content[],
                     tvShows: trendingShows as Content[],
                     unsubscribeToken,
                 })
                 emailsSent++
-                console.log(`📧 [Trending] Sent email to ${userData.email}`)
+                console.log(`📧 [Trending] Sent email to ${user.email}`)
             } catch (emailError) {
-                console.error(
-                    `📧 ❌ [Trending] Failed to send email to ${userData.email}:`,
-                    emailError
-                )
+                console.error(`📧 ❌ [Trending] Failed to send email to ${user.email}:`, emailError)
             }
         }
 
@@ -160,9 +170,6 @@ export async function GET(req: NextRequest) {
         let notificationsCreated = 0
         let notificationsSkipped = 0
 
-        // Import notification utilities
-        const { createNotification } = await import('@/utils/firestore/notifications')
-
         // Prepare top trending items (top 3 movies + top 3 TV shows)
         const topMovies = moviesData.results.slice(0, 3)
         const topShows = tvData.results.slice(0, 3)
@@ -173,17 +180,18 @@ export async function GET(req: NextRequest) {
 
         console.log(`🔔 [Trending] Will notify about ${allTrendingItems.length} trending items`)
 
-        for (const userDoc of usersSnapshot.docs) {
-            const userData = userDoc.data()
-            const userId = userDoc.id
+        for (const user of allUsers) {
+            const userId = user.id
 
             // ADMIN ONLY MODE: Skip all users except admin
             if (adminOnly && (!ADMIN_UID || userId !== ADMIN_UID)) {
                 continue
             }
 
+            const prefs = prefsMap.get(userId)
+
             // Check if user has in-app trending notifications enabled
-            const trendingEnabled = userData.notifications?.types?.trending_update ?? false
+            const trendingEnabled = prefs?.notifications?.types?.trending_update ?? false
 
             if (!trendingEnabled) {
                 notificationsSkipped++
@@ -191,7 +199,8 @@ export async function GET(req: NextRequest) {
             }
 
             try {
-                // Create individual notification for each trending item
+                // Create individual notification for each trending item using the
+                // Drizzle-backed createNotification (direct DB write, not an HTTP call)
                 for (const item of allTrendingItems) {
                     const title = item.title || item.name
                     const mediaType = item.media_type === 'movie' ? 'movie' : 'tv'
@@ -233,7 +242,7 @@ export async function GET(req: NextRequest) {
             success: true,
             emailsSent,
             notificationsCreated,
-            totalUsers: usersSnapshot.size,
+            totalUsers: allUsers.length,
             skippedUsers,
         })
     } catch (error) {
