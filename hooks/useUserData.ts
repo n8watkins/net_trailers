@@ -436,13 +436,13 @@ export default function useUserData() {
                     throw new Error('No authenticated user found')
                 }
 
-                // Delete all of the user's data (Turso) via the server.
+                // Permanently delete the user row + all their data (Turso).
                 const { authenticatedFetch } = await import('../lib/authenticatedFetch')
-                const response = await authenticatedFetch('/api/user/clear-data', {
-                    method: 'POST',
+                const response = await authenticatedFetch('/api/user/delete-account', {
+                    method: 'DELETE',
                 })
                 if (!response.ok) {
-                    throw new Error('Failed to delete account data')
+                    throw new Error('Failed to delete account')
                 }
 
                 // Sign the user out of the Auth.js session.
