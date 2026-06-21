@@ -1,4 +1,3 @@
-import DOMPurify from 'isomorphic-dompurify'
 import {
     UserList,
     CreateListRequest,
@@ -24,10 +23,14 @@ export class UserListsService {
      * @returns Sanitized text with no HTML tags
      */
     private static sanitizeText(text: string): string {
-        return DOMPurify.sanitize(text.trim(), {
-            ALLOWED_TAGS: [], // No HTML tags allowed
-            ALLOWED_ATTR: [], // No HTML attributes allowed
-        })
+        // Strip ALL HTML tags/attributes → plain text. Dependency-free (no
+        // isomorphic-dompurify/jsdom, which crashes the serverless runtime),
+        // synchronous, and identical in effect to DOMPurify with empty
+        // ALLOWED_TAGS/ALLOWED_ATTR. React additionally escapes on render.
+        return text
+            .trim()
+            .replace(/<[^>]*>/g, '') // remove anything tag-shaped
+            .replace(/[<>]/g, '') // drop any stray angle brackets
     }
 
     /**
