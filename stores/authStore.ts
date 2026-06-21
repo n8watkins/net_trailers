@@ -1,5 +1,5 @@
 import { createUserStore, UserState, UserActions } from './createUserStore'
-import { FirebaseStorageAdapter } from '../services/firebaseStorageAdapter'
+import { ApiStorageAdapter } from '../services/apiStorageAdapter'
 import { authLog, authError, authWarn } from '../utils/debugLogger'
 
 // Export types for backward compatibility
@@ -15,8 +15,8 @@ export interface AuthActions
 
 export type AuthStore = AuthState & AuthActions
 
-// Create the auth store using the factory with Firebase adapter
-const adapter = new FirebaseStorageAdapter({
+// Create the auth store using the factory with the Turso API adapter
+const adapter = new ApiStorageAdapter({
     log: authLog,
     error: authError,
     warn: authWarn,

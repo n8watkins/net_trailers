@@ -193,22 +193,17 @@ export function useAuthData(userId: string) {
 
     const softDeleteAccount = async () => {
         if (!authStore.userId) {
-            throw new Error('No authenticated user to soft delete account for')
+            throw new Error('No authenticated user to delete account for')
         }
+        // Soft-delete/restore (30-day recovery) was Firestore-specific; with the
+        // Turso backend this clears the user's data immediately.
         const { AuthStorageService } = await import('../services/authStorageService')
-        await AuthStorageService.softDeleteUserData(authStore.userId)
+        await AuthStorageService.deleteUserData(authStore.userId)
     }
 
     const restoreAccount = async (): Promise<boolean> => {
-        if (!authStore.userId) {
-            return false
-        }
-        const { AuthStorageService } = await import('../services/authStorageService')
-        const restored = await AuthStorageService.restoreUserData(authStore.userId)
-        if (restored) {
-            await authStore.syncWithFirebase!(authStore.userId)
-        }
-        return restored
+        // Not supported with the Turso backend (no soft-delete window).
+        return false
     }
 
     return {

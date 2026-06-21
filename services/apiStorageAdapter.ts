@@ -3,15 +3,15 @@ import { UserPreferences } from '../types/shared'
 import { AuthStorageService } from './authStorageService'
 
 /**
- * Firebase storage adapter for authenticated users
+ * API-backed storage adapter for authenticated users.
  *
- * Wraps AuthStorageService to conform to the StorageAdapter interface.
- * This enables a unified store implementation that works with both
- * Firebase (async) and localStorage (sync) backends.
+ * Wraps AuthStorageService (which talks to /api/user/preferences → Turso) to
+ * conform to the StorageAdapter interface, mirroring the guest LocalStorageAdapter
+ * so the unified user store works for both backends.
  */
-export class FirebaseStorageAdapter implements StorageAdapter {
+export class ApiStorageAdapter implements StorageAdapter {
     readonly isAsync = true
-    readonly name = 'Firebase'
+    readonly name = 'Turso'
 
     constructor(private logger: StorageLogger) {}
 
