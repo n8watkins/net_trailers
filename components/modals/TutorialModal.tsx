@@ -447,8 +447,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartT
                                     <span className="font-semibold text-orange-400">
                                         Portfolio project showcasing:
                                     </span>{' '}
-                                    Next.js + TypeScript + Firebase + Real-time sync + AI
-                                    Integration
+                                    Next.js + TypeScript + Turso (libSQL) + Auth.js + AI Integration
                                 </p>
                             </div>
 
