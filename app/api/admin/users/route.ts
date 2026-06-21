@@ -1,20 +1,25 @@
 /**
  * Admin Users List API Route
  *
- * Get list of all users with signup dates and activity info
+ * Returns all registered users from the Turso/Drizzle `user` and `profiles`
+ * tables.  The response shape is intentionally kept close to what the old
+ * Firebase Admin SDK returned so the existing client components need no
+ * changes.
  */
 
+import { desc, eq } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
-import { getAdminAuth } from '@/lib/firebase-admin'
+
+import { db } from '@/db'
+import { profiles, users } from '@/db/schema'
 import {
-    validateAdminRequest,
-    createUnauthorizedResponse,
     createForbiddenResponse,
+    createUnauthorizedResponse,
+    validateAdminRequest,
 } from '@/utils/adminMiddleware'
 
 export async function GET(request: NextRequest) {
     try {
-        // Validate admin access via Firebase Auth
         const authResult = await validateAdminRequest(request)
         if (!authResult.authorized) {
             return authResult.error?.includes('not an administrator')
@@ -22,42 +27,67 @@ export async function GET(request: NextRequest) {
                 : createUnauthorizedResponse(authResult.error)
         }
 
-        const auth = getAdminAuth()
+        // Fetch all users from the Auth.js `user` table.
+        const userRows = await db
+            .select({
+                id: users.id,
+                name: users.name,
+                email: users.email,
+                image: users.image,
+                githubLogin: users.githubLogin,
+            })
+            .from(users)
 
-        // Get pagination params
-        const url = new URL(request.url)
-        const pageSize = parseInt(url.searchParams.get('pageSize') || '100')
-        const pageToken = url.searchParams.get('pageToken') || undefined
+        // Fetch all profiles (one per user when created).
+        const profileRows = await db
+            .select({
+                userId: profiles.userId,
+                displayName: profiles.displayName,
+                avatarUrl: profiles.avatarUrl,
+                createdAt: profiles.createdAt,
+                lastLoginAt: profiles.lastLoginAt,
+            })
+            .from(profiles)
 
-        // List users
-        const listUsersResult = await auth.listUsers(pageSize, pageToken)
+        // Build a lookup map: userId -> profile.
+        const profileMap = new Map(profileRows.map((p) => [p.userId, p]))
 
-        // Transform user data
-        const users = listUsersResult.users.map((user) => ({
-            uid: user.uid,
-            email: user.email || 'No email',
-            displayName: user.displayName || user.email?.split('@')[0] || 'Anonymous',
-            photoURL: user.photoURL,
-            emailVerified: user.emailVerified,
-            disabled: user.disabled,
-            createdAt: user.metadata.creationTime,
-            lastSignInAt: user.metadata.lastSignInTime,
-            providerData: user.providerData.map((p) => ({
-                providerId: p.providerId,
-                uid: p.uid,
-            })),
-        }))
-
-        // Sort by creation date (newest first)
-        users.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        const userList = userRows
+            .map((u) => {
+                const profile = profileMap.get(u.id)
+                const createdAtMs = profile?.createdAt ?? 0
+                const lastLoginMs = profile?.lastLoginAt ?? createdAtMs
+                return {
+                    uid: u.id,
+                    email: u.email ?? 'No email',
+                    displayName:
+                        profile?.displayName ?? u.name ?? u.email?.split('@')[0] ?? 'Anonymous',
+                    photoURL: profile?.avatarUrl ?? u.image ?? null,
+                    // GitHub OAuth always verifies the email; we don't store
+                    // emailVerified separately in the new schema.
+                    emailVerified: true,
+                    disabled: false,
+                    // Keep ISO-string shape expected by the UI.
+                    createdAt: createdAtMs
+                        ? new Date(createdAtMs).toISOString()
+                        : new Date(0).toISOString(),
+                    lastSignInAt: lastLoginMs
+                        ? new Date(lastLoginMs).toISOString()
+                        : new Date(createdAtMs).toISOString(),
+                    providerData: u.githubLogin
+                        ? [{ providerId: 'github.com', uid: u.githubLogin }]
+                        : [{ providerId: 'unknown', uid: u.id }],
+                }
+            })
+            // Newest first.
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
         return NextResponse.json({
-            users,
-            nextPageToken: listUsersResult.pageToken,
-            totalCount: users.length,
+            users: userList,
+            totalCount: userList.length,
         })
     } catch (error) {
-        console.error('👑 ❌ Error fetching users:', error)
+        console.error('Admin users list error:', error)
         return NextResponse.json(
             {
                 error: 'Failed to fetch users',

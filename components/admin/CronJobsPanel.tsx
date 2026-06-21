@@ -12,7 +12,6 @@ import {
     CheckCircle2,
 } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
-import { auth } from '@/firebase'
 
 interface CronJobStatus {
     running: boolean
@@ -44,14 +43,6 @@ export default function CronJobsPanel() {
         }))
 
         try {
-            const user = auth.currentUser
-            if (!user) {
-                showError('Authentication required')
-                return
-            }
-
-            const idToken = await user.getIdToken()
-
             let endpoint = ''
             const params = new URLSearchParams()
 
@@ -72,11 +63,9 @@ export default function CronJobsPanel() {
                     break
             }
 
+            // Session cookie sent automatically — no Authorization header needed
             const response = await fetch(endpoint, {
                 method: 'GET',
-                headers: {
-                    Authorization: `Bearer ${idToken}`,
-                },
             })
 
             const result = await response.json()

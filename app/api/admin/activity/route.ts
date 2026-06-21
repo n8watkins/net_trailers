@@ -1,20 +1,24 @@
 /**
  * Activity Tracking API Route
  *
- * Get login activity and page view statistics
+ * GET  – returns activity events from the `user_activity` table (admin only).
+ * POST – records a new activity event. Accepts both authenticated and guest
+ *        events; the userId FK is null for guests.
  */
 
+import { and, desc, eq, gte } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
-import { getAdminDb } from '@/lib/firebase-admin'
+
+import { db } from '@/db'
+import { userActivity, users } from '@/db/schema'
 import {
-    validateAdminRequest,
-    createUnauthorizedResponse,
     createForbiddenResponse,
+    createUnauthorizedResponse,
+    validateAdminRequest,
 } from '@/utils/adminMiddleware'
 
 export async function GET(request: NextRequest) {
     try {
-        // Validate admin access via Firebase Auth
         const authResult = await validateAdminRequest(request)
         if (!authResult.authorized) {
             return authResult.error?.includes('not an administrator')
@@ -22,13 +26,11 @@ export async function GET(request: NextRequest) {
                 : createUnauthorizedResponse(authResult.error)
         }
 
-        const db = getAdminDb()
         const url = new URL(request.url)
-        const type = url.searchParams.get('type') || 'all' // 'logins', 'views', 'all'
-        const period = url.searchParams.get('period') || 'month' // 'week', 'month'
-        const userId = url.searchParams.get('userId') // Optional user filter
+        const type = url.searchParams.get('type') || 'all'
+        const period = url.searchParams.get('period') || 'month'
+        const filterUserId = url.searchParams.get('userId') ?? undefined
 
-        // Calculate period boundaries
         const now = Date.now()
         let periodStart: number
 
@@ -46,65 +48,61 @@ export async function GET(request: NextRequest) {
             periodStart = date.getTime()
         }
 
-        // Fetch activity data
-        const activityRef = db.collection('activity')
-        const snapshot = await activityRef
-            .where('timestamp', '>=', periodStart)
-            .orderBy('timestamp', 'desc')
-            .limit(1000)
-            .get()
+        const conditions = [gte(userActivity.timestamp, periodStart)]
+        if (type !== 'all') conditions.push(eq(userActivity.type, type))
+        if (filterUserId) conditions.push(eq(userActivity.userId, filterUserId))
 
-        const activities = snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
+        const rows = await db
+            .select()
+            .from(userActivity)
+            .where(and(...conditions))
+            .orderBy(desc(userActivity.timestamp))
+            .limit(1000)
+
+        // Build email lookup for display.
+        const uniqueUserIds = [...new Set(rows.map((r) => r.userId).filter(Boolean))] as string[]
+        const emailMap = new Map<string, string>()
+        if (uniqueUserIds.length > 0) {
+            const userRows = await db.select({ id: users.id, email: users.email }).from(users)
+            userRows.forEach((u) => {
+                if (u.email) emailMap.set(u.id, u.email)
+            })
+        }
+
+        const activities = rows.map((row) => ({
+            id: row.id,
+            type: row.type,
+            userId: row.userId ?? null,
+            guestId: row.userId ? null : (row.referenceId ?? null),
+            userEmail: row.userId ? (emailMap.get(row.userId) ?? null) : null,
+            page: row.referenceType === 'page' ? (row.referenceId ?? null) : null,
+            timestamp: row.timestamp,
         }))
 
-        // Filter by type if specified
-        let filteredActivities = activities
-        if (type !== 'all') {
-            filteredActivities = activities.filter((a: any) => a.type === type)
-        }
-
-        // Filter by userId if specified
-        if (userId) {
-            filteredActivities = filteredActivities.filter((a: any) => a.userId === userId)
-        }
-
-        // Group by day for statistics
-        const activityByDay: Record<string, any[]> = {}
-        filteredActivities.forEach((activity: any) => {
+        const activityByDay: Record<string, typeof activities> = {}
+        activities.forEach((activity) => {
             const day = new Date(activity.timestamp).toLocaleDateString()
-            if (!activityByDay[day]) {
-                activityByDay[day] = []
-            }
+            if (!activityByDay[day]) activityByDay[day] = []
             activityByDay[day].push(activity)
         })
 
-        // Count unique users
-        const uniqueUsers = new Set(
-            filteredActivities.filter((a: any) => a.userId).map((a: any) => a.userId)
-        ).size
-
-        const uniqueGuests = new Set(
-            filteredActivities.filter((a: any) => a.guestId).map((a: any) => a.guestId)
-        ).size
+        const uniqueUsers = new Set(activities.filter((a) => a.userId).map((a) => a.userId)).size
+        const uniqueGuests = new Set(activities.filter((a) => a.guestId).map((a) => a.guestId)).size
+        const activeDays = Object.keys(activityByDay).length
 
         return NextResponse.json({
-            activities: filteredActivities,
+            activities,
             activityByDay,
             stats: {
-                total: filteredActivities.length,
+                total: activities.length,
                 uniqueUsers,
                 uniqueGuests,
-                activeDays: Object.keys(activityByDay).length,
-                avgPerDay:
-                    Object.keys(activityByDay).length > 0
-                        ? filteredActivities.length / Object.keys(activityByDay).length
-                        : 0,
+                activeDays,
+                avgPerDay: activeDays > 0 ? activities.length / activeDays : 0,
             },
         })
     } catch (error) {
-        console.error('👑 ❌ Error fetching activity:', error)
+        console.error('Admin activity GET error:', error)
         return NextResponse.json(
             {
                 error: 'Failed to fetch activity',
@@ -116,61 +114,50 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * Record activity (login or page view)
+ * Record activity (login or page view).
  *
- * NOTE: This endpoint is intentionally public to allow client-side activity tracking.
- * However, it includes validation and sanitization to prevent abuse.
+ * Intentionally public — no admin check needed. Includes validation and
+ * in-memory rate limiting to prevent abuse.
  */
+
+// Global declaration so the rate-limit map survives hot-reloads in dev.
+declare global {
+    var activityRateLimits: Map<string, { count: number; windowStart: number }> | undefined
+}
+
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json()
         const { type, userId, guestId, userEmail, page, userAgent } = body
 
-        // Validate required fields
         if (!type || (!userId && !guestId)) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
         }
-
-        // Validate activity type (only allow 'login' or 'view')
         if (type !== 'login' && type !== 'view') {
             return NextResponse.json({ error: 'Invalid activity type' }, { status: 400 })
         }
-
-        // Validate and sanitize userId/guestId format (prevent injection)
         if (userId && typeof userId !== 'string') {
             return NextResponse.json({ error: 'Invalid userId format' }, { status: 400 })
         }
         if (guestId && typeof guestId !== 'string') {
             return NextResponse.json({ error: 'Invalid guestId format' }, { status: 400 })
         }
-
-        // Validate email format if provided
         if (userEmail) {
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
             if (typeof userEmail !== 'string' || !emailRegex.test(userEmail)) {
                 return NextResponse.json({ error: 'Invalid email format' }, { status: 400 })
             }
         }
-
-        // Validate page URL (must start with /)
         if (page && (typeof page !== 'string' || !page.startsWith('/'))) {
             return NextResponse.json({ error: 'Invalid page format' }, { status: 400 })
         }
 
-        // Sanitize and truncate user agent (prevent large payloads)
-        const sanitizedUserAgent = userAgent
-            ? String(userAgent).slice(0, 500) // Limit to 500 chars
-            : null
-
-        // Rate limiting check: prevent spam from same IP
+        const sanitizedUserAgent = userAgent ? String(userAgent).slice(0, 500) : null
         const ip =
             request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
-
-        // Simple in-memory rate limiting (per IP)
         const rateLimitKey = `activity:${ip}`
         const now = Date.now()
 
-        // Allow max 30 requests per minute per IP
         if (!global.activityRateLimits) {
             global.activityRateLimits = new Map()
         }
@@ -178,82 +165,48 @@ export async function POST(request: NextRequest) {
         const ipData = global.activityRateLimits.get(rateLimitKey)
         if (ipData) {
             const { count, windowStart } = ipData
-            const windowDuration = 60 * 1000 // 1 minute
-
-            if (now - windowStart < windowDuration) {
+            if (now - windowStart < 60_000) {
                 if (count >= 30) {
                     return NextResponse.json(
                         { error: 'Rate limit exceeded. Please try again later.' },
                         { status: 429 }
                     )
                 }
-                global.activityRateLimits.set(rateLimitKey, { count: count + 1, windowStart })
+                global.activityRateLimits.set(rateLimitKey, {
+                    count: count + 1,
+                    windowStart,
+                })
             } else {
-                // Reset window
                 global.activityRateLimits.set(rateLimitKey, { count: 1, windowStart: now })
             }
         } else {
             global.activityRateLimits.set(rateLimitKey, { count: 1, windowStart: now })
         }
 
-        // Cleanup old entries every 100 requests
         if (global.activityRateLimits.size > 100) {
             for (const [key, value] of global.activityRateLimits.entries()) {
-                if (now - value.windowStart > 60 * 1000) {
-                    global.activityRateLimits.delete(key)
-                }
+                if (now - value.windowStart > 60_000) global.activityRateLimits.delete(key)
             }
         }
 
-        // Try to initialize Firebase Admin DB
-        let db
-        try {
-            db = getAdminDb()
-        } catch (dbError) {
-            // Log the specific Firebase Admin initialization error
-            console.error(
-                '🔥 ❌ [Activity Tracking] Firebase Admin initialization failed:',
-                dbError
-            )
-            console.error(
-                '🔥 ❌ [Activity Tracking] Check FIREBASE_ADMIN_PRIVATE_KEY and FIREBASE_ADMIN_CLIENT_EMAIL environment variables'
-            )
-
-            // Return 503 Service Unavailable (not 500) - this is a configuration issue, not a code bug
-            return NextResponse.json(
-                {
-                    error: 'Activity tracking service unavailable',
-                    details:
-                        'Firebase Admin credentials not configured. Contact administrator to set FIREBASE_ADMIN_PRIVATE_KEY and FIREBASE_ADMIN_CLIENT_EMAIL in deployment settings.',
-                },
-                { status: 503 }
-            )
-        }
-
-        const activityRef = db.collection('activity')
-
-        // Write sanitized data
-        await activityRef.add({
-            type, // 'login' or 'view'
-            userId: userId || null,
-            guestId: guestId || null,
-            userEmail: userEmail || null,
-            page: page || null,
-            userAgent: sanitizedUserAgent,
+        // Store in user_activity.
+        // For authenticated users: referenceId = page, referenceType = 'page'.
+        // For guests: referenceId = guestId, referenceType = 'guest'.
+        await db.insert(userActivity).values({
+            userId: userId ?? null,
+            type,
             timestamp: now,
+            referenceId: userId ? (page ?? null) : (guestId ?? null),
+            referenceType: userId ? 'page' : 'guest',
+            preview:
+                sanitizedUserAgent || userEmail
+                    ? { userAgent: sanitizedUserAgent, userEmail: userEmail ?? null }
+                    : null,
         })
 
         return NextResponse.json({ success: true })
     } catch (error) {
-        console.error('🔥 ❌ [Activity Tracking] Error recording activity:', error)
-
-        // Log additional context for debugging
-        if (error instanceof Error) {
-            console.error('🔥 ❌ [Activity Tracking] Error name:', error.name)
-            console.error('🔥 ❌ [Activity Tracking] Error message:', error.message)
-            console.error('🔥 ❌ [Activity Tracking] Error stack:', error.stack)
-        }
-
+        console.error('Activity POST error:', error)
         return NextResponse.json(
             {
                 error: 'Failed to record activity',

@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Search, Download } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
-import { auth } from '@/firebase'
 
 interface UserInfo {
     uid: string
@@ -47,26 +46,8 @@ export default function AccountsPage() {
     const loadUsers = async () => {
         setLoading(true)
         try {
-            // Get Firebase user and ID token
-            const user = auth.currentUser
-            if (!user) {
-                showError('Authentication required - please refresh the page')
-                setLoading(false)
-                return
-            }
-
-            const idToken = await user.getIdToken()
-            if (!idToken) {
-                showError('Failed to get authentication token')
-                setLoading(false)
-                return
-            }
-
-            const response = await fetch('/api/admin/users', {
-                headers: {
-                    Authorization: `Bearer ${idToken}`,
-                },
-            })
+            // Session cookie sent automatically — no Authorization header needed
+            const response = await fetch('/api/admin/users')
 
             if (response.ok) {
                 const data = await response.json()

@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, LogIn, Eye, TrendingUp, Users } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
-import { auth } from '@/firebase'
 
 interface Activity {
     id: string
@@ -64,21 +63,6 @@ function ActivityPageContent() {
     const loadActivity = async () => {
         setLoading(true)
         try {
-            // Get Firebase user and ID token
-            const user = auth.currentUser
-            if (!user) {
-                showError('Authentication required - please refresh the page')
-                setLoading(false)
-                return
-            }
-
-            const idToken = await user.getIdToken()
-            if (!idToken) {
-                showError('Failed to get authentication token')
-                setLoading(false)
-                return
-            }
-
             const params = new URLSearchParams({
                 type: activeTab,
                 period: timeframe,
@@ -87,11 +71,8 @@ function ActivityPageContent() {
                 params.append('userId', filterUserId)
             }
 
-            const response = await fetch(`/api/admin/activity?${params.toString()}`, {
-                headers: {
-                    Authorization: `Bearer ${idToken}`,
-                },
-            })
+            // Session cookie sent automatically — no Authorization header needed
+            const response = await fetch(`/api/admin/activity?${params.toString()}`)
 
             if (response.ok) {
                 const data = await response.json()

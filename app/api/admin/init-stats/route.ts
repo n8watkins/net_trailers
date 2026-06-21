@@ -1,32 +1,31 @@
 /**
  * Initialize Account Statistics API Route
  *
- * Admin-only endpoint to count existing users and initialize system/stats
+ * Admin-only endpoint that counts existing users from the `user` and
+ * `signup_log` tables (Drizzle/Turso).  No longer writes to a Firestore
+ * `system/stats` document — statistics are derived on-the-fly from the DB.
  */
 
+import { count, gte } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
-import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin'
+
+import { db } from '@/db'
+import { signupLog, users } from '@/db/schema'
 import {
-    validateAdminRequest,
-    createUnauthorizedResponse,
     createForbiddenResponse,
+    createUnauthorizedResponse,
+    validateAdminRequest,
 } from '@/utils/adminMiddleware'
 
-/**
- * Get the start of the current week (Monday at 00:00:00)
- */
 function getWeekStart(timestamp: number): number {
     const date = new Date(timestamp)
     const day = date.getUTCDay()
-    const diff = date.getUTCDate() - day + (day === 0 ? -6 : 1) // Adjust when day is Sunday
+    const diff = date.getUTCDate() - day + (day === 0 ? -6 : 1)
     date.setUTCDate(diff)
     date.setUTCHours(0, 0, 0, 0)
     return date.getTime()
 }
 
-/**
- * Get the start of the current month (1st at 00:00:00)
- */
 function getMonthStart(timestamp: number): number {
     const date = new Date(timestamp)
     date.setUTCDate(1)
@@ -34,16 +33,8 @@ function getMonthStart(timestamp: number): number {
     return date.getTime()
 }
 
-/**
- * Count users created within a time period
- */
-function countUsersInPeriod(users: Array<{ createdAt: string }>, periodStart: number): number {
-    return users.filter((user) => new Date(user.createdAt).getTime() >= periodStart).length
-}
-
 export async function POST(request: NextRequest) {
     try {
-        // Validate admin access via Firebase Auth
         const authResult = await validateAdminRequest(request)
         if (!authResult.authorized) {
             return authResult.error?.includes('not an administrator')
@@ -51,90 +42,39 @@ export async function POST(request: NextRequest) {
                 : createUnauthorizedResponse(authResult.error)
         }
 
-        console.log('👑 🔍 Counting existing Firebase Auth users...')
-
-        // Get Firebase Admin instances
-        const auth = getAdminAuth()
-        const db = getAdminDb()
-
-        // List all users
-        let userCount = 0
-        let pageToken: string | undefined
-        const users: Array<{ uid: string; email: string | undefined; createdAt: string }> = []
-
-        do {
-            const listUsersResult = await auth.listUsers(1000, pageToken)
-            userCount += listUsersResult.users.length
-
-            // Collect user info
-            listUsersResult.users.forEach((user) => {
-                users.push({
-                    uid: user.uid,
-                    email: user.email,
-                    createdAt: user.metadata.creationTime,
-                })
-            })
-
-            pageToken = listUsersResult.pageToken
-            console.log(`👑    Found ${listUsersResult.users.length} users in this batch...`)
-        } while (pageToken)
-
-        console.log(`👑 ✅ Total users in Firebase Auth: ${userCount}`)
-
-        // Update system/stats document
-        console.log('👑 🔥 Updating system/stats document in Firestore...')
-
-        const systemStatsRef = db.doc('system/stats')
-        const existingDoc = await systemStatsRef.get()
-
-        const previousCount = existingDoc.exists ? existingDoc.data()?.totalAccounts || 0 : 0
-
-        // Calculate time periods
         const now = Date.now()
         const currentWeekStart = getWeekStart(now)
         const currentMonthStart = getMonthStart(now)
 
-        // Count signups in current week and month
-        const signupsThisWeek = countUsersInPeriod(users, currentWeekStart)
-        const signupsThisMonth = countUsersInPeriod(users, currentMonthStart)
+        // Total registered users.
+        const [{ userCount }] = await db.select({ userCount: count(users.id) }).from(users)
 
-        // Find the most recent signup
-        const sortedUsers = users.sort(
-            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        // Weekly / monthly signups from the signup_log table.
+        const [{ signupsThisWeek }] = await db
+            .select({ signupsThisWeek: count(signupLog.id) })
+            .from(signupLog)
+            .where(gte(signupLog.timestamp, currentWeekStart))
+
+        const [{ signupsThisMonth }] = await db
+            .select({ signupsThisMonth: count(signupLog.id) })
+            .from(signupLog)
+            .where(gte(signupLog.timestamp, currentMonthStart))
+
+        console.log(
+            `Admin init-stats: ${userCount} users, ${signupsThisWeek} this week, ${signupsThisMonth} this month`
         )
-        const lastSignup =
-            sortedUsers.length > 0 ? new Date(sortedUsers[0].createdAt).getTime() : null
-
-        await systemStatsRef.set(
-            {
-                totalAccounts: userCount,
-                signupsThisWeek,
-                signupsThisMonth,
-                lastSignup,
-                lastReset: now,
-                updatedAt: now,
-                currentWeekStart,
-                currentMonthStart,
-            },
-            { merge: true }
-        )
-
-        console.log(`👑 ✅ Updated system/stats:`)
-        console.log(`👑    Total accounts: ${userCount}`)
-        console.log(`👑    Signups this week: ${signupsThisWeek}`)
-        console.log(`👑    Signups this month: ${signupsThisMonth}`)
 
         return NextResponse.json({
             success: true,
             userCount,
-            previousCount,
+            previousCount: userCount, // no delta tracking in the new schema
             signupsThisWeek,
             signupsThisMonth,
-            lastSignup: lastSignup ? new Date(lastSignup).toISOString() : null,
-            message: `Account statistics initialized. Found ${userCount} users (${signupsThisWeek} this week, ${signupsThisMonth} this month).`,
+            lastSignup: null, // not surfaced from signup_log to avoid PII
+            message: `Account statistics computed. Found ${userCount} users (${signupsThisWeek} this week, ${signupsThisMonth} this month).`,
         })
     } catch (error) {
-        console.error('👑 ❌ Error initializing account stats:', error)
+        console.error('Admin init-stats error:', error)
         return NextResponse.json(
             {
                 error: 'Failed to initialize account stats',

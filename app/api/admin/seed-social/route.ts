@@ -7,53 +7,58 @@
  * This is an admin-only endpoint that can seed social notifications for:
  * - Admin user only (default)
  * - All users (when adminOnly=false)
+ *
+ * NOTE: getDemoProfileIds() still uses the client-side Firebase SDK to query
+ * Firestore profiles with a `demo_` prefix pattern.  Until seedProfiles.ts is
+ * migrated to Drizzle (out of scope here), this route returns an early error
+ * if no demo profiles are found, which is the same behaviour as before.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { validateAdminRequest } from '@/utils/adminMiddleware'
-import { getAdminDb } from '@/lib/firebase-admin'
-import { seedSocialNotifications } from '@/utils/seed/seedSocialNotifications'
-import { getDemoProfileIds } from '@/utils/seed/seedProfiles'
 
-const ADMIN_UID = process.env.ADMIN_UID
+import { db } from '@/db'
+import { profiles } from '@/db/schema'
+import { validateAdminRequest } from '@/utils/adminMiddleware'
+import { seedSocialNotifications } from '@/utils/seed/seedSocialNotifications'
 
 export async function POST(req: NextRequest) {
     try {
-        // Validate admin request
         const authResult = await validateAdminRequest(req)
         if (!authResult.authorized) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        console.log('🔔 [Seed Social] Starting social notification seeding')
+        console.log('[Seed Social] Starting social notification seeding')
 
-        // Check if admin-only mode is enabled via query parameter
         const { searchParams } = new URL(req.url)
-        const adminOnlyParam = searchParams.get('adminOnly')
-        const adminOnly = adminOnlyParam !== 'false' // Default to true
+        const adminOnly = searchParams.get('adminOnly') !== 'false'
 
-        if (adminOnly) {
-            console.log('🔔 [Seed Social] Running in ADMIN-ONLY mode')
-        } else {
-            console.log('🔔 [Seed Social] Running in ALL USERS mode')
-        }
+        // Identify demo profiles from the Drizzle profiles table.
+        // Demo profiles were created with a userId that starts with 'demo_'.
+        const allProfiles = await db
+            .select({
+                userId: profiles.userId,
+                displayName: profiles.displayName,
+                avatarUrl: profiles.avatarUrl,
+            })
+            .from(profiles)
 
-        // Ensure demo profiles exist
-        console.log('🔔 [Seed Social] Checking for demo profiles...')
-        const demoProfileIds = await getDemoProfileIds()
+        const demoProfileIds = allProfiles
+            .filter((p) => p.userId.startsWith('demo_'))
+            .map((p) => p.userId)
+
         if (demoProfileIds.length === 0) {
             return NextResponse.json(
-                {
-                    error: 'No demo profiles found. Please seed demo profiles first.',
-                },
+                { error: 'No demo profiles found. Please seed demo profiles first.' },
                 { status: 400 }
             )
         }
-        console.log(`🔔 [Seed Social] Found ${demoProfileIds.length} demo profiles`)
+        console.log(`[Seed Social] Found ${demoProfileIds.length} demo profiles`)
 
-        // Get users to seed
-        const db = getAdminDb()
-        const usersSnapshot = await db.collection('users').get()
+        // Determine which users to seed for.
+        const targetProfiles = adminOnly
+            ? allProfiles.filter((p) => !p.userId.startsWith('demo_')).slice(0, 1) // admin user only
+            : allProfiles.filter((p) => !p.userId.startsWith('demo_'))
 
         let totalRankings = 0
         let totalComments = 0
@@ -62,32 +67,20 @@ export async function POST(req: NextRequest) {
         let usersProcessed = 0
         let usersSkipped = 0
 
-        for (const userDoc of usersSnapshot.docs) {
-            const userData = userDoc.data()
-            const userId = userDoc.id
+        const demoSet = new Set(demoProfileIds)
 
-            // ADMIN ONLY MODE: Skip all users except admin
-            if (adminOnly && (!ADMIN_UID || userId !== ADMIN_UID)) {
-                console.log(`🔔 [Seed Social] Skipping non-admin user: ${userId}`)
-                usersSkipped++
-                continue
-            }
-
-            // Skip demo profiles (they're commenters, not recipients)
-            if (demoProfileIds.includes(userId)) {
-                console.log(`🔔 [Seed Social] Skipping demo profile: ${userId}`)
+        for (const profile of targetProfiles) {
+            if (demoSet.has(profile.userId)) {
                 usersSkipped++
                 continue
             }
 
             try {
-                console.log(`🔔 [Seed Social] Seeding for user: ${userId}`)
-
                 const result = await seedSocialNotifications({
-                    userId,
-                    userName: userData.displayName || userData.username || 'User',
-                    userAvatar: userData.avatarUrl,
-                    targetNotificationCount: 7, // Create ~7 social notifications
+                    userId: profile.userId,
+                    userName: profile.displayName ?? 'User',
+                    userAvatar: profile.avatarUrl ?? undefined,
+                    targetNotificationCount: 7,
                 })
 
                 totalRankings += result.rankingsProcessed
@@ -95,20 +88,12 @@ export async function POST(req: NextRequest) {
                 totalLikes += result.likesCreated
                 totalNotifications += result.estimatedNotifications
                 usersProcessed++
-
-                console.log(`🔔 [Seed Social] ✅ Completed for ${userId}:`, result)
             } catch (error) {
-                console.error(`🔔 [Seed Social] ❌ Failed to seed for ${userId}:`, error)
+                console.error(`[Seed Social] Failed for ${profile.userId}:`, error)
             }
         }
 
-        console.log('🔔 [Seed Social] Complete!')
-        console.log(`   - Users processed: ${usersProcessed}`)
-        console.log(`   - Users skipped: ${usersSkipped}`)
-        console.log(`   - Rankings processed: ${totalRankings}`)
-        console.log(`   - Comments created: ${totalComments}`)
-        console.log(`   - Likes created: ${totalLikes}`)
-        console.log(`   - Notifications created: ~${totalNotifications}`)
+        console.log(`[Seed Social] Complete: ${usersProcessed} processed, ${usersSkipped} skipped`)
 
         return NextResponse.json({
             success: true,
@@ -120,7 +105,7 @@ export async function POST(req: NextRequest) {
             notificationsCreated: totalNotifications,
         })
     } catch (error) {
-        console.error('🔔 ❌ [Seed Social] Error:', error)
+        console.error('[Seed Social] Error:', error)
         return NextResponse.json(
             {
                 error: 'Failed to seed social notifications',

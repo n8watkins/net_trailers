@@ -3,21 +3,25 @@
  *
  * GET /api/email/unsubscribe?token=xxx
  *   - Redirects to confirmation page (does NOT perform unsubscribe)
- *   - This prevents email scanners/link previews from unsubscribing users
+ *   - Prevents email scanners from silently unsubscribing users.
  *
  * POST /api/email/unsubscribe
- *   - Performs actual unsubscribe (CSRF protected by proxy.ts)
+ *   - Performs actual unsubscribe (CSRF-protected by proxy.ts origin check).
  *   - Body: { token: string }
+ *
+ * Token lookup: tokens live in `userPreferences.data.unsubscribeToken` (stored
+ * there by lib/email/unsubscribe-token.ts — no schema column needed).
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getAdminDb } from '@/lib/firebase-admin'
-import { apiLog, apiError } from '@/utils/debugLogger'
-import crypto from 'crypto'
+
+import { db } from '@/db'
+import { userPreferences } from '@/db/schema'
+import { apiError, apiLog } from '@/utils/debugLogger'
 
 /**
- * GET: Redirect to confirmation page
- * This is safe from CSRF because it doesn't perform state changes
+ * GET: Redirect to confirmation page.
+ * Safe from CSRF because it performs no state change.
  */
 export async function GET(request: NextRequest) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
@@ -27,13 +31,12 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(`${appUrl}/unsubscribe?error=missing-token`)
     }
 
-    // Redirect to confirmation page - user must click button to unsubscribe
     return NextResponse.redirect(`${appUrl}/unsubscribe?token=${token}`)
 }
 
 /**
- * POST: Perform actual unsubscribe
- * Protected by proxy.ts CSRF validation (Origin/Referer header check)
+ * POST: Perform actual unsubscribe.
+ * Protected by proxy.ts CSRF validation (Origin/Referer header check).
  */
 export async function POST(request: NextRequest) {
     try {
@@ -44,31 +47,41 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Missing unsubscribe token' }, { status: 400 })
         }
 
-        const db = getAdminDb()
+        // Scan userPreferences.data JSON blobs for the matching token.
+        // SQLite doesn't support WHERE on JSON fields without a generated column,
+        // so we fetch all rows and find the match in JS.  The table is small
+        // (one row per user) so this is acceptable.
+        const rows = await db
+            .select({ userId: userPreferences.userId, data: userPreferences.data })
+            .from(userPreferences)
 
-        // Find user by unsubscribe token
-        const usersSnapshot = await db
-            .collection('users')
-            .where('unsubscribeToken', '==', token)
-            .limit(1)
-            .get()
+        const match = rows.find((r) => (r.data as any)?.unsubscribeToken === token)
 
-        if (usersSnapshot.empty) {
+        if (!match) {
             return NextResponse.json(
                 { error: 'Invalid or expired unsubscribe link' },
                 { status: 404 }
             )
         }
 
-        const userDoc = usersSnapshot.docs[0]
-        const userId = userDoc.id
+        const { userId, data: currentData } = match
+        const now = Date.now()
 
-        // Disable email notifications
-        await db.collection('users').doc(userId).update({
-            'notificationPreferences.email': false,
-            'notificationPreferences.emailDigest': 'never',
-            unsubscribedAt: Date.now(),
-        })
+        // Merge unsubscribe flags into the existing prefs blob.
+        const updatedData = {
+            ...(currentData as Record<string, unknown>),
+            notificationPreferences: {
+                ...((currentData as any)?.notificationPreferences ?? {}),
+                email: false,
+                emailDigest: 'never',
+            },
+            unsubscribedAt: now,
+        }
+
+        await db
+            .update(userPreferences)
+            .set({ data: updatedData as any, updatedAt: now })
+            .where((await import('drizzle-orm')).eq(userPreferences.userId, userId))
 
         apiLog(`[Unsubscribe] User ${userId} unsubscribed from email notifications`)
 
@@ -80,38 +93,7 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Generate unsubscribe token for a user
- * Call this when creating/updating user accounts
- */
-export async function generateUnsubscribeToken(userId: string): Promise<string> {
-    try {
-        const db = getAdminDb()
-
-        // Check if user already has a token
-        const userDoc = await db.collection('users').doc(userId).get()
-        const userData = userDoc.data()
-
-        if (userData?.unsubscribeToken) {
-            return userData.unsubscribeToken
-        }
-
-        // Generate new token
-        const token = crypto.randomBytes(32).toString('hex')
-
-        // Store token
-        await db.collection('users').doc(userId).update({
-            unsubscribeToken: token,
-        })
-
-        return token
-    } catch (error) {
-        apiError('[Unsubscribe] Error generating token:', error)
-        throw error
-    }
-}
-
-/**
- * Get unsubscribe URL for a user
+ * Get unsubscribe URL for a token.
  */
 export function getUnsubscribeUrl(token: string): string {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'

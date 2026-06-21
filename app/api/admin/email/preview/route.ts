@@ -1,34 +1,40 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { withAuth } from '../../../../../lib/auth-middleware'
-import { getAdminDb } from '../../../../../lib/firebase-admin'
-import {
-    validateEmailTemplate,
-    CUSTOM_HTML_SANITIZATION_CONFIG,
-} from '../../../../../lib/email/email-validation'
-import {
-    renderTrendingPreview,
-    renderSocialPreview,
-    renderAnnouncementPreview,
-    renderCustomPreview,
-} from '../../../../../lib/email/preview-renderer'
-import DOMPurify from 'isomorphic-dompurify'
-
 /**
  * POST /api/admin/email/preview
  *
- * Generate email preview HTML for selected template and user (ADMIN ONLY)
- * Requires authentication
+ * Generate email preview HTML for selected template and user. ADMIN ONLY.
+ * User data is fetched from Drizzle `user` + `profiles` tables.
+ * Auth via validateAdminRequest (session-based).
  */
-async function handlePreviewEmail(request: NextRequest, userId: string): Promise<NextResponse> {
+
+import DOMPurify from 'isomorphic-dompurify'
+import { eq } from 'drizzle-orm'
+import { NextRequest, NextResponse } from 'next/server'
+
+import { db } from '@/db'
+import { profiles, users } from '@/db/schema'
+import {
+    CUSTOM_HTML_SANITIZATION_CONFIG,
+    validateEmailTemplate,
+} from '@/lib/email/email-validation'
+import {
+    renderAnnouncementPreview,
+    renderCustomPreview,
+    renderSocialPreview,
+    renderTrendingPreview,
+} from '@/lib/email/preview-renderer'
+import {
+    createForbiddenResponse,
+    createUnauthorizedResponse,
+    validateAdminRequest,
+} from '@/utils/adminMiddleware'
+
+export async function POST(request: NextRequest) {
     try {
-        // ADMIN ONLY: Check if user is admin
-        const ADMIN_UID = process.env.ADMIN_UID
-        if (!ADMIN_UID || userId !== ADMIN_UID) {
-            console.error('[AdminEmailPreview] User is not admin:', userId)
-            return NextResponse.json(
-                { error: 'Forbidden - Admin access required' },
-                { status: 403 }
-            )
+        const authResult = await validateAdminRequest(request)
+        if (!authResult.authorized) {
+            return authResult.error?.includes('not an administrator')
+                ? createForbiddenResponse(authResult.error)
+                : createUnauthorizedResponse(authResult.error)
         }
 
         const body = await request.json()
@@ -53,7 +59,6 @@ async function handlePreviewEmail(request: NextRequest, userId: string): Promise
             )
         }
 
-        // Validate template-specific requirements
         const validation = validateEmailTemplate({
             template,
             subject,
@@ -64,79 +69,63 @@ async function handlePreviewEmail(request: NextRequest, userId: string): Promise
             return NextResponse.json({ error: validation.error }, { status: 400 })
         }
 
-        console.log(
-            `👁️ [AdminEmailPreview] Generating ${template} preview for user: ${targetUserId}`
-        )
+        console.log(`[AdminEmailPreview] Generating ${template} preview for user: ${targetUserId}`)
 
-        // Sanitize custom HTML content to prevent XSS attacks (defense-in-depth)
         const sanitizedHtmlContent =
             template === 'custom' && customHtmlContent
                 ? DOMPurify.sanitize(customHtmlContent, CUSTOM_HTML_SANITIZATION_CONFIG)
                 : customHtmlContent
 
-        const db = getAdminDb()
+        // Fetch target user data from Drizzle.
+        const userRows = await db
+            .select({ id: users.id, email: users.email })
+            .from(users)
+            .where(eq(users.id, targetUserId))
+            .limit(1)
 
-        // Fetch target user data
-        const userDoc = await db.collection('users').doc(targetUserId).get()
-        if (!userDoc.exists) {
+        if (userRows.length === 0) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 })
         }
 
-        const userData = userDoc.data()
-        const userName = userData?.displayName || 'there'
+        const profileRows = await db
+            .select({ displayName: profiles.displayName })
+            .from(profiles)
+            .where(eq(profiles.userId, targetUserId))
+            .limit(1)
+
+        const userEmail = userRows[0].email
+        const userName = profileRows[0]?.displayName ?? 'there'
 
         let html = ''
 
-        // Generate preview based on template
         switch (template) {
-            case 'trending': {
-                // For preview, use sample data or fetch actual trending content
-                // For now, use empty arrays (same as send endpoint)
-                const movies: any[] = []
-                const tvShows: any[] = []
-
-                html = await renderTrendingPreview({
-                    userName,
-                    movies,
-                    tvShows,
-                })
+            case 'trending':
+                html = await renderTrendingPreview({ userName, movies: [], tvShows: [] })
                 break
-            }
 
-            case 'social': {
-                // For preview, use sample data or fetch actual interactions
-                const interactions: any[] = []
-
-                html = await renderSocialPreview({
-                    userName,
-                    interactions,
-                })
+            case 'social':
+                html = await renderSocialPreview({ userName, interactions: [] })
                 break
-            }
 
-            case 'announcement': {
+            case 'announcement':
                 html = await renderAnnouncementPreview({
                     userName,
                     subject: subject!,
                     message: customMessage!,
                 })
                 break
-            }
 
-            case 'custom': {
+            case 'custom':
                 html = await renderCustomPreview({
                     userName,
                     subject: subject!,
                     htmlContent: sanitizedHtmlContent!,
                 })
                 break
-            }
 
             default:
                 return NextResponse.json({ error: 'Invalid template type' }, { status: 400 })
         }
-
-        console.log(`👁️ [AdminEmailPreview] Preview generated successfully`)
 
         return NextResponse.json({
             success: true,
@@ -144,7 +133,7 @@ async function handlePreviewEmail(request: NextRequest, userId: string): Promise
             previewUser: {
                 userId: targetUserId,
                 displayName: userName,
-                email: userData?.email,
+                email: userEmail,
             },
         })
     } catch (error) {
@@ -158,5 +147,3 @@ async function handlePreviewEmail(request: NextRequest, userId: string): Promise
         )
     }
 }
-
-export const POST = withAuth(handlePreviewEmail)

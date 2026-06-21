@@ -1,47 +1,54 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { withAuth } from '../../../../../lib/auth-middleware'
-import { getAdminDb } from '../../../../../lib/firebase-admin'
-
 /**
  * GET /api/admin/email/history
  *
- * Get email history records (ADMIN ONLY)
- * Requires authentication
+ * Returns the last 100 email send records from the `admin_emails` table.
+ * ADMIN ONLY. Session-based auth via validateAdminRequest.
  */
-async function handleGetEmailHistory(request: NextRequest, userId: string): Promise<NextResponse> {
+
+import { desc } from 'drizzle-orm'
+import { NextRequest, NextResponse } from 'next/server'
+
+import { db } from '@/db'
+import { adminEmails } from '@/db/schema'
+import {
+    createForbiddenResponse,
+    createUnauthorizedResponse,
+    validateAdminRequest,
+} from '@/utils/adminMiddleware'
+
+export async function GET(request: NextRequest) {
     try {
-        // ADMIN ONLY: Check if user is admin
-        const ADMIN_UID = process.env.ADMIN_UID
-        if (!ADMIN_UID || userId !== ADMIN_UID) {
-            console.error('[AdminEmailHistory] User is not admin:', userId)
-            return NextResponse.json(
-                { error: 'Forbidden - Admin access required' },
-                { status: 403 }
-            )
+        const authResult = await validateAdminRequest(request)
+        if (!authResult.authorized) {
+            return authResult.error?.includes('not an administrator')
+                ? createForbiddenResponse(authResult.error)
+                : createUnauthorizedResponse(authResult.error)
         }
 
-        console.log(`📧 [AdminEmailHistory] Fetching email history`)
+        console.log('[AdminEmailHistory] Fetching email history')
 
-        const db = getAdminDb()
+        const rows = await db
+            .select()
+            .from(adminEmails)
+            .orderBy(desc(adminEmails.sentAt))
+            .limit(100)
 
-        // Fetch email history, ordered by sentAt descending (most recent first)
-        const historySnapshot = await db
-            .collection('admin_emails')
-            .orderBy('sentAt', 'desc')
-            .limit(100) // Limit to last 100 emails
-            .get()
-
-        const history = historySnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
+        // Map new schema columns to the shape expected by EmailHistory.tsx.
+        // adminEmails: type (≈template), sentCount (≈successCount), failedCount
+        const history = rows.map((row) => ({
+            id: row.id,
+            template: row.type,
+            subject: row.subject ?? '',
+            recipientCount: row.sentCount + row.failedCount,
+            successCount: row.sentCount,
+            failureCount: row.failedCount,
+            sentAt: row.sentAt,
+            sentBy: row.sentBy ?? '',
         }))
 
-        console.log(`📧 [AdminEmailHistory] Returning ${history.length} records`)
+        console.log(`[AdminEmailHistory] Returning ${history.length} records`)
 
-        return NextResponse.json({
-            success: true,
-            history,
-        })
+        return NextResponse.json({ success: true, history })
     } catch (error) {
         console.error('[AdminEmailHistory] Error:', error)
         return NextResponse.json(
@@ -53,5 +60,3 @@ async function handleGetEmailHistory(request: NextRequest, userId: string): Prom
         )
     }
 }
-
-export const GET = withAuth(handleGetEmailHistory)
