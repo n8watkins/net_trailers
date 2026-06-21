@@ -1015,27 +1015,6 @@ export default function DebugControls() {
                                     </span>
                                 </button>
 
-                                {/* Admin-Only Social Digest */}
-                                <button
-                                    onClick={() =>
-                                        handleSendEmail(
-                                            'Social (Admin)',
-                                            '/api/email/test-social-interactions',
-                                            {}
-                                        )
-                                    }
-                                    disabled={sendingEmail !== null || !isAdmin}
-                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-purple-600/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    title="Test social digest - admin only (creates fake interactions for your rankings)"
-                                >
-                                    <ClockIcon className="w-3 h-3" />
-                                    <span className="text-xs">
-                                        {sendingEmail === 'Social (Admin)'
-                                            ? 'Testing...'
-                                            : 'Social'}
-                                    </span>
-                                </button>
-
                                 {/* ALL USERS TRIGGERS (Production) */}
                                 <div className="w-full flex items-center gap-2 pt-2">
                                     <div className="h-px flex-1 bg-gray-700" />

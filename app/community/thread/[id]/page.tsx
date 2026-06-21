@@ -18,7 +18,6 @@ import { getCategoryInfo } from '@/utils/forumCategories'
 import NetflixLoader from '@/components/common/NetflixLoader'
 import ImageUpload, { ImageUploadHandle } from '@/components/forum/ImageUpload'
 import { formatDistanceToNow } from 'date-fns'
-import { Timestamp } from 'firebase/firestore'
 import {
     ChatBubbleLeftIcon,
     HeartIcon,
@@ -29,14 +28,9 @@ import {
 } from '@heroicons/react/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid'
 
-// Helper to convert Firebase Timestamp to Date
-const toDate = (timestamp: Timestamp | Date | number): Date => {
-    if (timestamp instanceof Timestamp) {
-        return timestamp.toDate()
-    }
-    if (timestamp instanceof Date) {
-        return timestamp
-    }
+// Timestamps are epoch-ms numbers from the Turso/Drizzle backend.
+const toDate = (timestamp: Date | number): Date => {
+    if (timestamp instanceof Date) return timestamp
     return new Date(timestamp)
 }
 

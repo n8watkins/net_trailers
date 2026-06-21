@@ -15,19 +15,13 @@ import { getCategoryInfo } from '@/utils/forumCategories'
 import { ChatBubbleLeftIcon, EyeIcon, HeartIcon, ClockIcon } from '@heroicons/react/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid'
 import { formatDistanceToNow } from 'date-fns'
-import { Timestamp } from 'firebase/firestore'
 import { useSessionStore } from '@/stores/sessionStore'
 import { useForumStore } from '@/stores/forumStore'
 
-// Helper to convert Firebase Timestamp to Date
-const toDate = (timestamp: Timestamp | Date | number | null | undefined): Date => {
+// Timestamps are epoch-ms numbers from the Turso/Drizzle backend.
+const toDate = (timestamp: Date | number | null | undefined): Date => {
     if (!timestamp) return new Date()
-    if (timestamp instanceof Timestamp) {
-        return timestamp.toDate()
-    }
-    if (timestamp instanceof Date) {
-        return timestamp
-    }
+    if (timestamp instanceof Date) return timestamp
     return new Date(timestamp)
 }
 

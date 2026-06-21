@@ -16,7 +16,6 @@ import { useAuthStatus } from '@/hooks/useAuthStatus'
 import { getCategoryInfo } from '@/utils/forumCategories'
 import NetflixLoader from '@/components/common/NetflixLoader'
 import { formatDistanceToNow } from 'date-fns'
-import { Timestamp } from 'firebase/firestore'
 import {
     ChartBarIcon,
     ArrowLeftIcon,
@@ -29,14 +28,9 @@ import {
     EyeSlashIcon,
 } from '@heroicons/react/24/outline'
 
-// Helper to convert Firebase Timestamp to Date
-const toDate = (timestamp: Timestamp | Date | number): Date => {
-    if (timestamp instanceof Timestamp) {
-        return timestamp.toDate()
-    }
-    if (timestamp instanceof Date) {
-        return timestamp
-    }
+// Timestamps are epoch-ms numbers from the Turso/Drizzle backend.
+const toDate = (timestamp: Date | number): Date => {
+    if (timestamp instanceof Date) return timestamp
     return new Date(timestamp)
 }
 
@@ -103,14 +97,9 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
         if (!currentPoll) return
 
         const calculateTimeLeft = () => {
-            const createdAt =
-                currentPoll.createdAt instanceof Timestamp
-                    ? currentPoll.createdAt.toMillis()
-                    : typeof currentPoll.createdAt === 'number'
-                      ? currentPoll.createdAt
-                      : new Date(currentPoll.createdAt).getTime()
+            // createdAt is an epoch-ms number from the Turso/Drizzle backend
             const fiveMinutes = 5 * 60 * 1000
-            const timeLeft = createdAt + fiveMinutes - Date.now()
+            const timeLeft = currentPoll.createdAt + fiveMinutes - Date.now()
             return Math.max(0, timeLeft)
         }
 

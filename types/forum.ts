@@ -2,10 +2,12 @@
  * Forum Types
  *
  * Type definitions for community forum features including
- * discussion threads, polls, and enhanced user profiles
+ * discussion threads, polls, and enhanced user profiles.
+ *
+ * All timestamp fields use epoch-millisecond numbers (Date.now() compatible).
+ * The Firestore Timestamp type has been removed as part of the Firebase→Turso
+ * migration.
  */
-
-import { Timestamp } from 'firebase/firestore'
 
 // Forum Categories
 export type ForumCategory =
@@ -33,13 +35,13 @@ export interface Thread {
     userId: string
     userName: string
     userAvatar?: string
-    createdAt: Timestamp
-    updatedAt: Timestamp
+    createdAt: number
+    updatedAt: number
     isPinned: boolean
     isLocked: boolean
     views: number
     replyCount: number
-    lastReplyAt?: Timestamp
+    lastReplyAt?: number
     lastReplyBy?: {
         userId: string
         userName: string
@@ -57,8 +59,8 @@ export interface ThreadReply {
     userId: string
     userName: string
     userAvatar?: string
-    createdAt: Timestamp
-    updatedAt?: Timestamp
+    createdAt: number
+    updatedAt?: number
     isEdited: boolean
     likes: number
     // For nested replies
@@ -76,8 +78,8 @@ export interface Poll {
     userId: string
     userName: string
     userAvatar?: string
-    createdAt: Timestamp
-    expiresAt?: Timestamp // Legacy - no longer used in new polls
+    createdAt: number
+    expiresAt?: number // Legacy - no longer used in new polls
     options: PollOption[]
     totalVotes: number
     isMultipleChoice: boolean // Legacy - always false for new polls
@@ -98,10 +100,10 @@ export interface PollVote {
     pollId: string
     userId: string
     optionIds: string[] // Can be multiple if poll allows
-    votedAt: Timestamp
+    votedAt: number
 }
 
-// Thread summary for profile pages (without Firestore Timestamp dependencies)
+// Thread summary for profile pages
 export interface ThreadSummary {
     id: string
     title: string
@@ -125,7 +127,7 @@ export interface ThreadSummary {
     tags?: string[]
 }
 
-// Poll summary for profile pages (without Firestore Timestamp dependencies)
+// Poll summary for profile pages
 export interface PollSummary {
     id: string
     question: string
@@ -155,7 +157,7 @@ export interface UserActivity {
     id: string
     userId: string
     type: ActivityType
-    timestamp: Timestamp
+    timestamp: number
     // Reference to the activity item
     referenceId: string
     referenceType: 'thread' | 'reply' | 'poll' | 'ranking' | 'comment'
@@ -184,7 +186,7 @@ export interface UserBadge {
     description: string
     icon: string
     color: string
-    unlockedAt: Timestamp
+    unlockedAt: number
 }
 
 export type BadgeType =
@@ -201,7 +203,7 @@ export interface UserFollow {
     id: string
     followerId: string
     followingId: string
-    createdAt: Timestamp
+    createdAt: number
 }
 
 // Enhanced User Profile Stats
@@ -215,8 +217,8 @@ export interface UserStats {
     followersCount: number
     followingCount: number
     badges: BadgeType[]
-    joinedAt: Timestamp
-    lastActive: Timestamp
+    joinedAt: number
+    lastActive: number
 }
 
 // Thread Like
@@ -224,7 +226,7 @@ export interface ThreadLike {
     id: string
     threadId: string
     userId: string
-    createdAt: Timestamp
+    createdAt: number
 }
 
 // Reply Like
@@ -232,7 +234,7 @@ export interface ReplyLike {
     id: string
     replyId: string
     userId: string
-    createdAt: Timestamp
+    createdAt: number
 }
 
 // Forum Sorting Options
@@ -265,8 +267,8 @@ export interface ContentReport {
     reporterName: string
     reason: ReportReason
     details?: string
-    createdAt: Timestamp
+    createdAt: number
     status: 'pending' | 'reviewed' | 'resolved' | 'dismissed'
     reviewedBy?: string
-    reviewedAt?: Timestamp
+    reviewedAt?: number
 }

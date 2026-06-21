@@ -5,8 +5,8 @@
  * Following the same pattern as other Zustand stores in the app.
  *
  * THREADS & REPLIES — migrated to Turso/Drizzle via /api/threads/* routes.
- * POLLS             — migrated to Turso/Drizzle via /api/polls/* routes (polls agent).
- * CONTENT REPORTS   — still Firestore (admin domain, untouched).
+ * POLLS             — migrated to Turso/Drizzle via /api/polls/* routes.
+ * CONTENT REPORTS   — migrated to Turso/Drizzle via /api/reports (POST, withAuth).
  */
 
 import { create } from 'zustand'
@@ -20,8 +20,6 @@ import {
     ReportReason,
     ReportContentType,
 } from '@/types/forum'
-import { collection, addDoc, updateDoc, Timestamp, QueryDocumentSnapshot } from 'firebase/firestore'
-import { db } from '@/firebase'
 import { authenticatedFetch } from '@/lib/authenticatedFetch'
 
 /* -------------------------------------------------------------------------- */
@@ -67,9 +65,8 @@ function apiPollToStorePoll(apiPoll: Record<string, unknown>): Poll {
         userId: apiPoll.userId as string,
         userName: apiPoll.userName as string,
         userAvatar: apiPoll.userAvatar as string | undefined,
-        // Keep as number — components guard for both Timestamp and number
-        createdAt: apiPoll.createdAt as unknown as Timestamp,
-        expiresAt: apiPoll.expiresAt as unknown as Timestamp | undefined,
+        createdAt: apiPoll.createdAt as number,
+        expiresAt: apiPoll.expiresAt as number | undefined,
         options: apiPoll.options as Poll['options'],
         totalVotes: apiPoll.totalVotes as number,
         isMultipleChoice: Boolean(apiPoll.isMultipleChoice),
@@ -690,14 +687,8 @@ export const useForumStore = create<ForumState>((set, get) => ({
 
     // Check if poll can be edited (within 5 minutes of creation)
     canEditPoll: (poll: Poll) => {
-        const createdAt =
-            poll.createdAt instanceof Timestamp
-                ? poll.createdAt.toMillis()
-                : typeof poll.createdAt === 'number'
-                  ? poll.createdAt
-                  : new Date(poll.createdAt).getTime()
         const fiveMinutes = 5 * 60 * 1000
-        return Date.now() - createdAt < fiveMinutes
+        return Date.now() - poll.createdAt < fiveMinutes
     },
 
     // Update poll (only within 5 minutes of creation, resets all votes)
@@ -756,28 +747,20 @@ export const useForumStore = create<ForumState>((set, get) => ({
         }
     },
 
-    // Report content
+    // Report content — writes to Turso via /api/reports (withAuth)
     reportContent: async (userId, userName, contentId, contentType, reason, details) => {
-        try {
-            const reportsRef = collection(db, 'content_reports')
-            const now = Timestamp.now()
+        void userId // userId is derived server-side from the Auth.js session
+        const res = await authenticatedFetch('/api/reports', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contentId, contentType, reason, details, userName }),
+        })
 
-            const reportData = {
-                id: '',
-                contentId,
-                contentType,
-                reportedBy: userId,
-                reporterName: userName,
-                reason,
-                details: details || '',
-                createdAt: now,
-                status: 'pending' as const,
-            }
-
-            const docRef = await addDoc(reportsRef, reportData)
-            await updateDoc(docRef, { id: docRef.id })
-        } catch (error) {
-            throw new Error(error instanceof Error ? error.message : 'Failed to report content')
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}))
+            throw new Error(
+                (err as { error?: string }).error ?? `Failed to report content (${res.status})`
+            )
         }
     },
 

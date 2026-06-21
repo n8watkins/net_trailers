@@ -51,33 +51,18 @@ Top operations:
         category: 'Firebase & Data',
         color: 'blue',
         icon: '🔐',
-        description: 'Detailed logging of Firebase authentication flow and user state changes.',
-        whatItDoes: [
-            'Logs sign-in and sign-out events',
-            'Tracks authentication state changes',
-            'Shows token refresh operations',
-            'Logs user profile data loading',
-            'Displays auth errors with full context',
-            'Monitors session initialization',
-        ],
-        when: [
-            'Debugging login/logout issues',
-            'Tracking authentication state changes',
-            'Investigating token refresh problems',
-            'Verifying auth flow on page load',
-            'Troubleshooting Firebase Auth configuration',
-        ],
-        output: 'Console logs prefixed with auth-specific labels. Errors logged in red, warnings in yellow.',
-        relatedOptions: ['session', 'tracker', 'guest'],
-        file: 'components/auth/AuthFlowDebugger.tsx',
+        description:
+            'Removed. The Firebase-based AuthFlowDebugger was removed when auth migrated to Auth.js (GitHub OAuth). Auth flow logging is now handled via utils/debugLogger.ts (authLog, authError, authWarn).',
+        whatItDoes: ['This debug option has been removed.'],
+        when: ['N/A — option removed.'],
+        output: 'N/A',
+        relatedOptions: ['session'],
+        file: 'utils/debugLogger.ts',
         usedIn: ['utils/debugLogger.ts (authLog, authError, authWarn)'],
         keyboardShortcut: null,
-        note: undefined,
-        isCurrentlyActive: true,
-        example: `[Auth] User signed in: uid=abc123, email=user@example.com
-[Auth] Loading user profile from Firestore...
-[Auth] Profile loaded successfully
-[Auth] Token refresh scheduled for 55 minutes`,
+        note: 'AuthFlowDebugger.tsx was deleted as part of the Firebase→Turso migration (Auth.js replaces Firebase Auth).',
+        isCurrentlyActive: false,
+        example: '',
     },
     session: {
         title: 'Session Management Logs',
