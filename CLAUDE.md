@@ -498,7 +498,7 @@ const showModal = useModalStore((state) => state.modal.isOpen)
 - **TMDB API v3**: Uses query parameter authentication (`?api_key=...`), NOT Bearer tokens
 - Always clear build cache (`rm -rf .next`) if experiencing build issues
 - When working on state: Use Zustand stores directly (`useAppStore`, `useSessionStore`, etc.)
-- **Smart Search**: Requires NEXT_PUBLIC_GEMINI_API_KEY environment variable
+- **Smart Search**: Requires the server-side `GEMINI_API_KEY` environment variable (not `NEXT_PUBLIC_*` — the key is never exposed to the client)
 - **Auto-updating collections**: Requires CRON_SECRET environment variable
 - **Unified Genre System**: Collections use `string[]` (unified IDs) not `number[]` (TMDB IDs)
     - Always translate to TMDB IDs before making API calls

@@ -140,19 +140,18 @@ const AboutModal: React.FC<AboutModalProps> = ({
             ],
         },
         {
-            name: 'Firebase',
-            desc: 'Auth & database',
-            icon: '/icons/firebase.png',
-            bg: 'bg-orange-500/10',
-            border: 'border-orange-500/30',
-            activeBorder: 'border-orange-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(249,115,22,0.5)]',
-            version: '12.2.1',
+            name: 'Turso',
+            desc: 'Database & ORM',
+            emoji: '🐘',
+            bg: 'bg-teal-500/10',
+            border: 'border-teal-500/30',
+            activeBorder: 'border-teal-400',
+            activeGlow: 'shadow-[0_0_25px_rgba(20,184,166,0.5)]',
             details: [
-                'Firebase Auth with Google & Email/Password providers',
-                'Firestore for user data, rankings, threads, and polls',
-                'Real-time listeners for notifications and live updates',
-                'Comprehensive security rules with user isolation',
+                'Turso (libSQL/SQLite) with Drizzle ORM for all persistence',
+                'User data, rankings, threads, and polls live in Turso',
+                'Accessed only through Next.js API routes — never client-side',
+                'Server-side ownership checks enforce per-user data isolation',
             ],
         },
         {
@@ -166,7 +165,7 @@ const AboutModal: React.FC<AboutModalProps> = ({
             version: '5.0.8',
             details: [
                 '18 focused stores (auth, session, UI, notifications, etc.)',
-                'Storage adapters: Firebase for auth users, localStorage for guests',
+                'Storage adapters: ApiStorageAdapter (Turso) for auth users, LocalStorageAdapter for guests',
                 'Optimized selectors to prevent unnecessary re-renders',
                 'Devtools integration for debugging state changes',
             ],
@@ -352,7 +351,7 @@ const AboutModal: React.FC<AboutModalProps> = ({
                 'Daily cron job (2 AM UTC) compares trending snapshots',
                 'Detects new entries in top 20 trending movies/TV shows',
                 'Sends notifications for watchlist items newly trending',
-                'Firestore listeners deliver instant notification updates',
+                'Polls /api/notifications every 30s to deliver notification updates',
             ],
         },
     ]
@@ -372,13 +371,13 @@ const AboutModal: React.FC<AboutModalProps> = ({
         },
         {
             icon: LockClosedIcon,
-            title: 'Token Verification',
-            desc: 'Firebase ID token authentication',
+            title: 'Session Authentication',
+            desc: 'Auth.js (NextAuth v5) cookie sessions',
             details: [
-                'Server-side Firebase Admin SDK token validation',
-                'Prevents header spoofing and unauthorized access',
-                'Admin UID verification for privileged operations',
-                'Session expiry handling with user-friendly messages',
+                'GitHub OAuth + passwordless email magic-link sign-in',
+                'Database-backed sessions validated server-side via cookies',
+                'User ID derived from the session, never from request bodies',
+                'Admin access gated by ADMIN_GITHUB_LOGIN verification',
             ],
         },
         {
@@ -417,7 +416,7 @@ const AboutModal: React.FC<AboutModalProps> = ({
         {
             icon: UserIcon,
             title: 'Data Protection',
-            desc: 'Firestore rules and child safety',
+            desc: 'Server-side ownership checks and child safety',
             details: [
                 'User isolation prevents cross-user data access',
                 'Field-level validation for all database writes',
@@ -434,7 +433,7 @@ const AboutModal: React.FC<AboutModalProps> = ({
             title: 'Tech Stack',
             icon: CodeBracketIcon,
             itemCount: techStack.length,
-            blurb: 'Built with a modern, production-ready stack featuring Next.js 16, React 19, and TypeScript for type-safe development. State management is handled by Zustand with 18 focused stores, while Firebase provides authentication and real-time data sync.',
+            blurb: 'Built with a modern, production-ready stack featuring Next.js 16, React 19, and TypeScript for type-safe development. State management is handled by Zustand with 18 focused stores, with Turso (libSQL) + Drizzle ORM for data and Auth.js for authentication.',
         },
         {
             id: 'features',
@@ -455,7 +454,7 @@ const AboutModal: React.FC<AboutModalProps> = ({
             title: 'Security',
             icon: ShieldCheckIcon,
             itemCount: security.length,
-            blurb: 'Enterprise-grade security with Firebase security rules, XSS protection via input sanitization, security headers (CSP, HSTS), and PIN-protected child safety mode. All sensitive operations are validated server-side.',
+            blurb: 'Enterprise-grade security with server-side ownership checks, XSS protection via input sanitization, security headers (CSP, HSTS), and PIN-protected child safety mode. All sensitive operations are validated server-side.',
         },
     ]
 

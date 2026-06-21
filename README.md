@@ -8,11 +8,11 @@ A Netflix-inspired streaming discovery platform built with modern web technologi
 
 <div align="center">
 
-| Frontend          | Backend              | Database         | APIs             | Styling             | State Management | Monitoring              | Testing     |
-| ----------------- | -------------------- | ---------------- | ---------------- | ------------------- | ---------------- | ----------------------- | ----------- |
-| ▲ **Next.js 16**  | 🔥 **Firebase**      | 🔥 **Firestore** | 🎬 **TMDB**      | 🎨 **Tailwind CSS** | 🐻 **Zustand**   | 🛡️ **Sentry**           | 🧪 **Jest** |
-| **TS TypeScript** | 🔐 **Firebase Auth** | 📧 **Resend**    | 🤖 **Gemini AI** | 🎭 **Material-UI**  |                  | 📊 **GA4**              | 🧪 **RTL**  |
-| ⚛️ **React 19**   |                      |                  |                  | 🦸 **Heroicons**    |                  | 📈 **Vercel Analytics** |             |
+| Frontend          | Backend                              | Database           | APIs             | Styling             | State Management | Monitoring              | Testing     |
+| ----------------- | ------------------------------------ | ------------------ | ---------------- | ------------------- | ---------------- | ----------------------- | ----------- |
+| ▲ **Next.js 16**  | 🗄️ **Turso (libSQL)**                | 🌿 **Drizzle ORM** | 🎬 **TMDB**      | 🎨 **Tailwind CSS** | 🐻 **Zustand**   | 🛡️ **Sentry**           | 🧪 **Jest** |
+| **TS TypeScript** | 🔐 **Auth.js (GitHub + magic link)** | 📧 **Brevo**       | 🤖 **Gemini AI** | 🎭 **Material-UI**  |                  | 📊 **GA4**              | 🧪 **RTL**  |
+| ⚛️ **React 19**   |                                      |                    |                  | 🦸 **Heroicons**    |                  | 📈 **Vercel Analytics** |             |
 
 </div>
 
@@ -20,11 +20,11 @@ A Netflix-inspired streaming discovery platform built with modern web technologi
 
 ### 🔐 Authentication & User Management
 
-- **Multi-Provider Authentication**
-    - Email/Password signup & login with password reset
-    - Google OAuth integration
+- **Auth.js (NextAuth v5) Authentication**
+    - GitHub OAuth sign-in
+    - Passwordless email magic-link sign-in (delivered via Brevo by default, or Resend)
+    - Database sessions with secure, cookie-based session management
     - Guest mode for demo access (no registration required)
-    - Secure session management with localStorage persistence
     - Seamless user switching between authenticated and guest accounts
     - Public user profiles with customizable username, avatar, and bio
     - Public profiles display user's public rankings (collections remain private)
@@ -124,13 +124,13 @@ A Netflix-inspired streaming discovery platform built with modern web technologi
     - Optional expiration dates for time-limited polls
     - Real-time vote counting with percentages
     - Visual progress bars showing vote distribution
-    - One vote per user per poll (tracked via Firestore)
+    - One vote per user per poll (tracked in Turso)
     - Vote tracking prevents duplicate votes
     - Detail pages at `/community/polls/[id]`
 
 - **Image Upload Support**
     - Upload images to threads and forum posts
-    - Firebase Storage integration with security rules
+    - Vercel Blob integration for image hosting (uploads scoped per user)
     - Image preview and optimization
     - Automatic image resizing for performance
 
@@ -138,7 +138,7 @@ A Netflix-inspired streaming discovery platform built with modern web technologi
     - Report inappropriate content (threads, replies, polls)
     - Thread owners can delete replies
     - Authentication required for all forum features
-    - Comprehensive Firestore security rules
+    - Server-side ownership checks on all mutations (session-derived user id)
 
 - **Search & Discovery**
     - Global search across threads and polls
@@ -190,7 +190,7 @@ A Netflix-inspired streaming discovery platform built with modern web technologi
 - **In-App Notifications**
     - Bell icon in header with unread badge
     - Dropdown panel with recent notifications
-    - Real-time Firestore listeners
+    - Polling `/api/notifications` every 30s for updates
 
 - **Notification Types**
     - Collection updates (new content added via auto-update)
@@ -203,7 +203,7 @@ A Netflix-inspired streaming discovery platform built with modern web technologi
     - Mark as read (individual or bulk)
     - Auto-dismiss after 30 days
     - Click actions (navigate to content/collection)
-    - Future: Email notifications via Resend
+    - Future: Email digests via the configured email provider (Brevo/Resend)
 
 ### 👤 User Experience
 
@@ -245,25 +245,25 @@ A Netflix-inspired streaming discovery platform built with modern web technologi
     - `/admin/activity` - Activity analytics with login and page view tracking
     - `/admin/trending-stats` - Trending notification statistics
 
-- **Email System** (Resend Integration)
+- **Email System** (Brevo / Resend Integration)
     - **Announcement Emails** - Send plain text announcements with subject and message
     - **Custom HTML Emails** - Rich text editor with TipTap for formatted content
     - **User Filtering** - Send to all users, authenticated only, or guest users only
     - **Email Preview** - Preview emails before sending with live rendering
     - **Rate Limiting** - 100 emails/hour per admin, 3 emails/day per recipient
-    - **XSS Protection** - DOMPurify sanitization on all custom HTML content
+    - **XSS Protection** - `sanitize-html` sanitization on all custom HTML content
     - **HTTPS-Only Links** - Security enforced on all email links
     - **CAN-SPAM Compliance** - Automatic unsubscribe token generation
     - **Email History** - Track sent emails with counts and metadata (PII minimized)
 
 - **Security**
-    - Dual-layer authentication (client routing + server Firebase ID token validation)
-    - Admin UID-based authorization (server-side only, not exposed to client)
+    - Dual-layer authentication (client routing + server-side Auth.js session validation)
+    - Admin identified by GitHub login (`ADMIN_GITHUB_LOGIN`, server-side only, not exposed to client)
     - Rate limiting on public endpoints (30 requests/minute per IP)
     - Email rate limiting (100/hour admin, 3/day recipient)
     - Input validation and sanitization
     - CSRF protection via authenticatedFetch
-    - Firebase Admin SDK for secure server operations
+    - Server-side ownership checks on all admin API routes
 
 - **Analytics Tracking**
     - Automatic page view tracking (excludes admin routes)
@@ -273,8 +273,8 @@ A Netflix-inspired streaming discovery platform built with modern web technologi
     - Timeline visualization grouped by day
 
 - **Account Limits**
-    - Configurable account cap (default: 50 accounts)
-    - Real-time usage tracking via Firestore
+    - Configurable account cap (default: 50 accounts) enforced in the `auth.ts` `signIn` callback
+    - Usage tracking via Turso
     - Demo reset to 5 accounts for portfolio demos
     - Signup velocity monitoring (daily/weekly/monthly)
 
@@ -295,7 +295,7 @@ A Netflix-inspired streaming discovery platform built with modern web technologi
         - watchHistoryStore, rankingStore, notificationStore, profileStore
         - forumStore
     - Next.js 16 with React 19 and App Router patterns
-    - Firebase Firestore with optimistic updates and real-time sync
+    - Turso (libSQL/SQLite) via Drizzle ORM, accessed server-side through API routes
     - **49 API routes** organized by feature
     - Sentry error monitoring (client & server-side)
     - Google Analytics 4 integration
@@ -314,7 +314,9 @@ _Experience all features or continue as guest to explore the platform_
 
 - Node.js 18.x or higher
 - npm (project migrated from pnpm to npm)
-- Firebase project (free tier available)
+- Turso database (free tier available)
+- GitHub OAuth App (for sign-in)
+- Brevo account (free tier) for magic-link email delivery
 - TMDB API key (free from themoviedb.org)
 - Google Gemini API key (free from ai.google.dev)
 
@@ -338,15 +340,21 @@ _Experience all features or continue as guest to explore the platform_
     Create a `.env.local` file in the root directory with the following variables:
 
     ```env
-    # Firebase Configuration (Required)
-    # Get these from: https://console.firebase.google.com/
-    # Project Settings > General > Your apps > SDK setup and configuration
-    NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
-    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-    NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789
-    NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+    # Turso Database (Required)
+    # Create a database with the Turso CLI: `turso db create nettrailer`
+    # Then: `turso db show --url nettrailer` and `turso db tokens create nettrailer`
+    TURSO_DATABASE_URL=libsql://your-database.turso.io
+    TURSO_AUTH_TOKEN=your_turso_auth_token
+
+    # Auth.js / NextAuth v5 (Required)
+    # AUTH_SECRET: generate with `npx auth secret` (or `openssl rand -base64 32`)
+    AUTH_SECRET=your_auth_secret
+    # GitHub OAuth App (https://github.com/settings/developers)
+    # Callback URL: http://localhost:3000/api/auth/callback/github (and your prod URL)
+    AUTH_GITHUB_ID=your_github_oauth_client_id
+    AUTH_GITHUB_SECRET=your_github_oauth_client_secret
+    # Production URL (only needed in production behind a proxy, e.g. Vercel)
+    AUTH_URL=https://your-deployment-url.com
 
     # TMDB API (Required)
     # Get your free API key from: https://www.themoviedb.org/settings/api
@@ -354,22 +362,31 @@ _Experience all features or continue as guest to explore the platform_
 
     # Google Gemini AI (Required for Smart Search)
     # Get your free API key from: https://ai.google.dev/
-    NEXT_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
+    GEMINI_API_KEY=your_gemini_api_key
+
+    # Admin Portal (Required for admin access - SERVER-SIDE ONLY)
+    # The GitHub username (login) of the admin account. The signed-in user whose
+    # GitHub login matches this gets `session.user.isAdmin`.
+    # IMPORTANT: This is intentionally NOT prefixed with NEXT_PUBLIC_ to keep it server-side only.
+    ADMIN_GITHUB_LOGIN=your_github_username
+
+    # Magic-Link Email (Required for passwordless email sign-in)
+    # Brevo is the default provider — get an API key at https://app.brevo.com/
+    BREVO_API_KEY=your_brevo_api_key
+    # The "From" address — must be a sender you've verified in Brevo (no domain required)
+    EMAIL_FROM=noreply@yourdomain.com
+    # Optional: switch the email provider. Default is brevo; set to `resend` to use Resend.
+    EMAIL_PROVIDER=brevo
+    # Resend (only needed if EMAIL_PROVIDER=resend) — https://resend.com/
+    RESEND_API_KEY=your_resend_api_key
+    # RESEND_SENDER_EMAIL=noreply@yourdomain.com  # alternate "From" if EMAIL_FROM unset
 
     # Cron Job Security (Required for auto-updating collections)
     CRON_SECRET=your_random_secret_string
 
-    # Admin Portal (Required for admin access - SERVER-SIDE ONLY)
-    # Get your Firebase UID from: Firebase Console > Authentication > Users > Copy UID
-    # IMPORTANT: This is intentionally NOT prefixed with NEXT_PUBLIC_ to keep it server-side only
-    # Admin credentials are never exposed to client bundles for security
-    ADMIN_UID=your_firebase_uid_here
-
-    # Firebase Admin SDK (Required for admin API endpoints)
-    # Get from: Firebase Console > Project Settings > Service Accounts > Generate new private key
-    # These credentials allow server-side admin operations
-    FIREBASE_ADMIN_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-    FIREBASE_ADMIN_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
+    # Vercel Blob (Required for forum/thread image uploads)
+    # Create a Blob store in your Vercel project; token is provided automatically there.
+    BLOB_READ_WRITE_TOKEN=your_blob_read_write_token
 
     # Account Limits (Optional - defaults to 50)
     NEXT_PUBLIC_MAX_TOTAL_ACCOUNTS=50
@@ -388,53 +405,49 @@ _Experience all features or continue as guest to explore the platform_
     # Google Analytics 4 (Optional)
     # Get from: https://analytics.google.com/
     NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
-
-    # Email Notifications (Optional - for admin email system)
-    # Get from: https://resend.com/
-    RESEND_API_KEY=your_resend_api_key
-    # Sender email address (defaults to onboarding@resend.dev if not set)
-    RESEND_SENDER_EMAIL=noreply@yourdomain.com
     ```
 
-4. **Firebase Setup**
+4. **Database & Auth Setup**
 
-    Enable the following in your Firebase project:
-    - **Authentication > Sign-in method**:
-        - Email/Password
-        - Google
-    - **Firestore Database** (in production mode)
-    - **Firestore Security Rules**: Deploy the rules from `firestore.rules`
-    - **Firestore Indexes**: Create composite indexes as needed (Firebase will prompt)
+    a. **Create a Turso database** and apply the schema:
+
+    ```bash
+    # Create the database and grab its URL + auth token
+    turso db create nettrailer
+    turso db show --url nettrailer        # → TURSO_DATABASE_URL
+    turso db tokens create nettrailer     # → TURSO_AUTH_TOKEN
+
+    # Apply the Drizzle schema (migrations live in db/migrations)
+    npm run db:migrate                    # or `npm run db:push` for quick dev sync
+    ```
+
+    Inspect the database any time with `npm run db:studio`.
+
+    b. **Create a GitHub OAuth App** (https://github.com/settings/developers):
+    - Authorization callback URL: `http://localhost:3000/api/auth/callback/github`
+      (add your production URL's callback as well)
+    - Copy the Client ID and Client Secret into `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET`
+
+    c. **Set up magic-link email** (Brevo by default):
+    - Create a Brevo account, generate an API key → `BREVO_API_KEY`
+    - Verify a single sender email and set it as `EMAIL_FROM` (no domain required)
+    - To use Resend instead, set `EMAIL_PROVIDER=resend` and provide `RESEND_API_KEY`
+
+    > There is no Firebase project, Firestore rules deploy, or Firebase Admin SDK
+    > service account to configure — all data access is server-mediated through
+    > Next.js API routes with server-side ownership checks.
 
 5. **Admin Portal Setup** (Required for admin access)
 
-    a. **Get your Firebase Admin UID**:
-    - Go to Firebase Console > Authentication > Users
-    - Create your admin account (via Email/Password or Google)
-    - Copy your User UID from the user list
-    - Add to `.env.local` as `ADMIN_UID` (server-side only, not exposed to client)
+    a. **Set your admin GitHub login**:
+    - Add your GitHub username to `.env.local` as `ADMIN_GITHUB_LOGIN`
+      (server-side only, not exposed to the client)
+    - When you sign in via GitHub with that account, the session is granted
+      `session.user.isAdmin` and `/admin` becomes accessible
 
-    b. **Generate Firebase Admin SDK credentials**:
-    - Go to Firebase Console > Project Settings > Service Accounts
-    - Click "Generate new private key"
-    - Download the JSON file
-    - Extract the following fields to `.env.local`:
-        - `FIREBASE_ADMIN_PRIVATE_KEY` (include the full key with `\n` characters)
-        - `FIREBASE_ADMIN_CLIENT_EMAIL`
-
-    c. **Initialize account statistics** (first-time setup):
-
-    ```bash
-    # After starting the dev server, call the init endpoint
-    curl -X POST http://localhost:3000/api/admin/init-stats \
-      -H "Authorization: Bearer YOUR_FIREBASE_ID_TOKEN"
-    ```
-
-    Or access `/admin` in your browser after logging in with your admin account - it will auto-initialize.
-
-    d. **Access the admin dashboard**:
+    b. **Access the admin dashboard**:
     - Start the dev server: `npm run dev`
-    - Log in with your admin Firebase account
+    - Sign in with your admin GitHub account
     - Navigate to `/admin` in your browser
     - You should see the admin dashboard with statistics
 
@@ -516,15 +529,14 @@ npm run test:coverage # Run tests with coverage report
 npm run test:ci       # Run tests in CI mode (for GitHub Actions)
 ```
 
-### User Data Management (Development)
+### Database (Drizzle + Turso)
 
 ```bash
-npm run test:persistence        # Test data persistence flow
-npm run test:create-user        # Create test user in Firestore
-npm run test:verify-user        # Verify test user data
-npm run test:user-watchlist     # Test user watchlist functionality
-npm run test:clear-user         # Clear test user data
-npm run delete-all-user-data    # Delete all user data (DANGER)
+npm run db:generate   # Generate a migration from db/schema.ts
+npm run db:migrate    # Apply migrations to Turso
+npm run db:push       # Push schema directly to Turso (dev)
+npm run db:seed       # Seed the database with sample data
+npm run db:studio     # Open Drizzle Studio to inspect the database
 ```
 
 ### Git Hooks
@@ -582,7 +594,7 @@ net_trailers/
 │   ├── content/          # VideoPlayer, WatchLaterButton, MyListsDropdown
 │   ├── customRows/       # CustomRowWizard, SortableCustomRowCard
 │   │   └── smart/        # SmartRowBuilder, SmartInput, SmartStep3Preview
-│   ├── debug/            # DebugControls, WebVitalsHUD, FirebaseCallTracker
+│   ├── debug/            # DebugControls, WebVitalsHUD
 │   ├── layout/           # PortfolioBanner, Footer, Header, ClientLayout
 │   ├── modal/            # MoreLikeThisSection
 │   ├── modals/           # InfoModal, AuthModal, CollectionEditorModal
@@ -607,7 +619,7 @@ net_trailers/
 │
 ├── stores/               # 18 Focused Zustand Stores
 │   ├── appStore.ts       # Global UI state
-│   ├── authStore.ts      # Authenticated user data (Firestore sync)
+│   ├── authStore.ts      # Authenticated user data (synced to Turso via API)
 │   ├── guestStore.ts     # Guest user data (localStorage)
 │   ├── sessionStore.ts   # Session management & user switching
 │   ├── cacheStore.ts     # Client-side API response caching
@@ -680,8 +692,13 @@ net_trailers/
 │   ├── architecture/     # Architecture docs
 │   └── ...
 │
-├── firebase.ts           # Firebase initialization
-├── firestore.rules       # Firestore security rules
+├── db/                   # Turso + Drizzle data layer
+│   ├── index.ts          # libSQL/Drizzle client
+│   ├── schema.ts         # Drizzle schema (tables, indexes)
+│   ├── migrations/       # drizzle-kit generated SQL migrations
+│   └── queries/          # Typed query helpers (one module per domain)
+├── auth.ts               # Auth.js (NextAuth v5) config — GitHub + magic link
+├── drizzle.config.ts     # drizzle-kit configuration
 ├── sentry.client.config.ts   # Sentry client config
 ├── instrumentation.ts    # Sentry server config (Next.js 15+)
 ├── next.config.mjs       # Next.js configuration
@@ -695,11 +712,11 @@ net_trailers/
 
 ### State Management Architecture
 
-The app uses **17 focused Zustand stores** (migrated from monolithic "god store"):
+The app uses **18 focused Zustand stores** (migrated from monolithic "god store"):
 
 - **Store Factory Pattern**: `createUserStore.ts` - Shared factory for auth and guest stores
 - **Storage Adapters**:
-    - `FirebaseStorageAdapter` - Real-time Firestore sync for authenticated users
+    - `ApiStorageAdapter` - Persists authenticated user data to Turso via `/api/user/preferences`
     - `LocalStorageAdapter` - Browser localStorage for guest users
 - **Direct store access**: Components use Zustand hooks (`useAppStore()`, `useSessionStore()`, etc.)
 - **No provider wrapper**: Zustand works without root provider components
@@ -735,85 +752,36 @@ getReleaseDate(content)
 ### Authentication & User Data Isolation
 
 - **Critical**: User ID validation before all state updates prevents data mixing
-- **Storage**: Firestore for authenticated users, localStorage for guests
-- **Session persistence**: localStorage maintains auth state across refreshes
+- **Storage**: Turso (via API routes) for authenticated users, localStorage for guests
+- **Session persistence**: Auth.js session cookie (validated server-side) maintains auth state across refreshes
+- **User isolation**: API routes derive the user id from the session (`withAuth` / `currentUserId()`), never from the request body
 - **Auto-save**: `useSessionData` validates user ID match before persisting
-- **Timeout protection**: Firebase operations include 5-second timeout
 - **Race condition prevention**: Stores cleared when switching users
 
-### Firestore Data Structure
+### Database (Turso + Drizzle)
+
+All data lives in **Turso (libSQL/SQLite)**, accessed through **Drizzle ORM**. The
+schema is defined in `db/schema.ts`, typed queries in `db/queries/*`, and the client
+in `db/index.ts`. The browser never talks to Turso directly — every read/write goes
+through a Next.js API route with server-side ownership checks (the session-derived
+user id), which replace the old Firestore security rules.
 
 ```
-/users/{userId}
-  - Profile data, preferences, settings
-  - customRows (sub-collection)
-  - interactions (sub-collection, 90-day TTL)
-  - notifications (sub-collection, 30-day auto-dismiss)
-  - watchHistory (sub-collection)
-  - childSafetyPIN (sub-document)
-
-/rankings/{rankingId}
-  - Public and private rankings
-  - Indexed by userId, createdAt, likes, views
-
-/rankingComments/{commentId}
-  - Comments on rankings
-  - Indexed by rankingId, createdAt
-
-/rankingLikes/{likeId}
-  - User likes on rankings
-
-/threads/{threadId}
-  - Discussion threads with replies
-  - Indexed by category, createdAt, userId
-  - Image URLs stored in imageUrl field
-
-/thread_replies/{replyId}
-  - Replies to threads
-  - Indexed by threadId, createdAt
-  - Supports nested discussions
-
-/thread_likes/{likeId}
-  - User likes on threads
-  - One like per user per thread
-
-/reply_likes/{likeId}
-  - User likes on replies
-  - One like per user per reply
-
-/polls/{pollId}
-  - Polls with voting options
-  - Indexed by category, createdAt, userId
-  - Support for single/multiple choice
-
-/poll_votes/{voteId}
-  - User votes on polls
-  - One vote per user per poll
-  - Tracks selected options
-
-/sharedCollections/{linkId}
-  - Shared collection snapshots
-  - Public read access
-
-/activity/{activityId}
-  - User activity tracking (logins, page views)
-  - Used by admin portal analytics
-  - No automatic cleanup (manual management)
-
-/signupLog/{userId}
-  - Account creation audit log
-  - Tracks email and creation timestamp
-
-/system/stats
-  - Account limit tracking
-  - Signup velocity (daily/weekly/monthly)
-  - Last signup timestamp and email
-
-/system/trending
-  - Trending notification system state
-  - TMDB content snapshots
-  - Last run timestamp and statistics
+Auth.js adapter: user, account, session, verificationToken
+User data:       user_preferences (the per-user blob as one JSON column),
+                 profiles, interactions, interaction_summary, notifications,
+                 watch_history, child_safety_pins
+Rankings:        rankings, ranking_comments, ranking_likes, comment_likes
+Forum:           threads, thread_replies, thread_likes, reply_likes, polls, poll_votes
+Social & misc:   shares (collection snapshots), user_activity, user_badges,
+                 user_follows, content_reports, admin_emails (counts only), signup_log
 ```
+
+- Nested arrays/objects (`Content[]`, `rankedItems`, poll `options`, `advancedFilters`)
+  are stored as JSON text columns; timestamps are epoch-ms integers.
+- Interactions are retained ~90 days; notifications auto-dismiss after 30 days.
+- Migrations are managed with drizzle-kit (`npm run db:generate` →
+  `npm run db:migrate`); inspect the database with `npm run db:studio`.
 
 ### API Architecture
 
@@ -854,14 +822,14 @@ getReleaseDate(content)
 ```
 1. Vercel cron triggers /api/cron/update-collections
 2. Verify CRON_SECRET for security
-3. Query Firestore for collections with autoUpdateEnabled: true
+3. Query Turso for collections with autoUpdateEnabled: true
 4. For each collection:
    - Fetch TMDB Discover with collection filters
    - Filter to releases after lastCheckedAt
    - Append new content to collection.items
    - Update lastUpdateCount, lastCheckedAt
    - Create notification for user
-5. Batch commit to Firestore
+5. Persist updates to Turso
 ```
 
 **Visual Indicators**:
@@ -895,7 +863,7 @@ npm run test:ci       # CI mode (used in GitHub Actions)
 
 - **Environment**: jsdom for browser simulation
 - **Setup files**: Automatic React Testing Library configuration
-- **Mocking**: TMDB API responses, Firebase services, Gemini AI
+- **Mocking**: TMDB API responses, Turso/Drizzle queries (`db/queries/*` or in-memory libSQL), Gemini AI
 - **Coverage thresholds**: Configured in `jest.config.js`
 
 ## 📊 Monitoring & Analytics
@@ -956,7 +924,6 @@ showSuccess('Operation completed', 'Optional description')
 - **Code Splitting**: Dynamic imports for modals and heavy components
 - **Caching Strategy**:
     - Client-side cache for API responses (10-minute TTL)
-    - Firebase Firestore offline persistence
     - Recommendation cache (6-hour refresh)
     - Interaction summary cache (24-hour)
 - **Bundle Analysis**: `npm run analyze` to inspect bundle size
@@ -1027,11 +994,11 @@ NetTrailer implements comprehensive security measures. See the full [Security Do
 
 **Key Security Features:**
 
-- **Authentication**: Firebase Auth with server-side token verification
+- **Authentication**: Auth.js (NextAuth v5) database sessions, validated server-side via the session cookie (no bearer tokens)
 - **CSRF Protection**: Global CSRF protection on all state-changing API requests (POST/PUT/DELETE/PATCH)
-- **Input Sanitization**: DOMPurify, control character removal, length validation
-- **Rate Limiting**: Per-user limits on AI requests, password reset, email verification
-- **Data Protection**: 540+ lines of Firestore security rules, user data isolation
+- **Input Sanitization**: `sanitize-html` (admin emails) and `utils/inputSanitization.ts` (Gemini routes), control character removal, length validation
+- **Rate Limiting**: Per-user limits on AI requests; admin email rate limits (100/hour admin, 3/day recipient)
+- **Data Protection**: Server-side ownership checks on every API route (session-derived user id), user data isolation
 - **Child Safety**: PIN-protected content filtering with bcrypt encryption
 - **API Security**: Timing-safe secret comparison, request size limits
 
@@ -1048,8 +1015,11 @@ NetTrailer implements comprehensive security measures. See the full [Security Do
 ### Pre-deployment Checklist
 
 - [ ] Set all required environment variables
-- [ ] Configure Firebase authentication providers
-- [ ] Deploy Firestore security rules from `firestore.rules`
+- [ ] Create the Turso database and apply migrations (`npm run db:migrate`)
+- [ ] Configure the GitHub OAuth App callback URL for production
+- [ ] Set up the magic-link email provider (Brevo `BREVO_API_KEY` + verified `EMAIL_FROM`, or Resend)
+- [ ] Set `ADMIN_GITHUB_LOGIN` for admin access
+- [ ] Create a Vercel Blob store and set `BLOB_READ_WRITE_TOKEN` (for image uploads)
 - [ ] Enable Sentry error monitoring
 - [ ] Configure Google Analytics (optional)
 - [ ] Set CRON_SECRET for auto-updating collections
@@ -1057,7 +1027,6 @@ NetTrailer implements comprehensive security measures. See the full [Security Do
 - [ ] Verify TMDB API key and rate limits
 - [ ] Test smart search with Gemini API
 - [ ] Update CORS settings if needed
-- [ ] Configure Resend for email notifications (optional)
 
 ## 🎯 Key Metrics
 
@@ -1083,7 +1052,7 @@ NetTrailer implements comprehensive security measures. See the full [Security Do
 
 From roadmap and TODO.md:
 
-- [ ] Email notifications via Resend (setup required)
+- [ ] User-facing email digests (admin email system already shipped via Brevo/Resend)
 - [ ] PWA implementation (offline support)
 - [ ] Analytics dashboard (user-facing)
 - [ ] Advanced search facets and sorting
@@ -1110,7 +1079,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - [TMDB](https://www.themoviedb.org/) for the comprehensive movie database API
 - [Google Gemini AI](https://ai.google.dev/) for natural language processing
-- [Firebase](https://firebase.google.com/) for backend services
+- [Turso](https://turso.tech/) and [Drizzle ORM](https://orm.drizzle.team/) for the database layer
+- [Auth.js](https://authjs.dev/) for authentication
 - [Next.js](https://nextjs.org/) for the React framework
 - [Tailwind CSS](https://tailwindcss.com/) for utility-first styling
 - [Zustand](https://github.com/pmndrs/zustand) for state management
