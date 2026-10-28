@@ -208,7 +208,7 @@ Social & misc:   shares (collection snapshots), user_activity, user_badges,
 
 ### Smart Search (AI-Powered)
 
-- **Natural language query understanding** powered by Google Gemini 3.1 Flash Lite
+- **Natural language query understanding** powered by Google Gemini 3.5 Flash-Lite (`gemini-3.5-flash-lite`)
 - **Voice input** with live transcription using Web Speech API
 - **Semantic concept recognition** ("rainy day vibes", "mind-bending thrillers")
 - **Auto-detection** of media type preferences
