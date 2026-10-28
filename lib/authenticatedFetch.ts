@@ -26,7 +26,7 @@ export async function authenticatedFetch(
 
 /**
  * Kept for API compatibility. Behaves identically to `authenticatedFetch` now
- * that auth is cookie-based — the server decides what to do without a token.
+ * that auth is cookie-based - the server decides what to do without a token.
  */
 export async function fetchWithOptionalAuth(
     input: RequestInfo | URL,

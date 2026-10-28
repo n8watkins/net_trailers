@@ -6,7 +6,7 @@
  * complete results without joins.
  *
  * Invariants enforced here:
- *  - One PollVote row per (pollId, userId) — enforced by checking before insert.
+ *  - One PollVote row per (pollId, userId) - enforced by checking before insert.
  *  - Updating vote counts is done inside a db.transaction() so the options JSON
  *    and totalVotes counter are always consistent.
  *  - Owner OR admin may delete a poll (and all its votes).
@@ -128,7 +128,7 @@ export async function createPoll(opts: {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  READ — single poll                                                         */
+/*  READ - single poll                                                         */
 /* -------------------------------------------------------------------------- */
 
 /** Fetch a single poll by id.  Returns null when not found. */
@@ -141,7 +141,7 @@ export async function getPollById(pollId: string): Promise<PollRow | null> {
 /**
  * Fetch a single poll AND the viewer's existing vote in one round-trip.
  *
- * `viewerId` may be null (unauthenticated visitor) — in that case
+ * `viewerId` may be null (unauthenticated visitor) - in that case
  * `viewerVote` is always null.
  */
 export async function getPollByIdWithVote(
@@ -156,7 +156,7 @@ export async function getPollByIdWithVote(
 }
 
 /* -------------------------------------------------------------------------- */
-/*  READ — poll lists                                                          */
+/*  READ - poll lists                                                          */
 /* -------------------------------------------------------------------------- */
 
 export type PollListSort = 'recent' | 'most-voted'
@@ -234,7 +234,7 @@ export async function listPollsByUser(
 }
 
 /* -------------------------------------------------------------------------- */
-/*  READ — votes                                                               */
+/*  READ - votes                                                               */
 /* -------------------------------------------------------------------------- */
 
 /** Fetch the authenticated user's vote for a single poll. */
@@ -337,7 +337,7 @@ export async function listPollsVotedByUser(userId: string): Promise<PollRowWithV
  *
  * Rules:
  *  - One vote row per (pollId, userId).  If a row already exists the user is
- *    changing their vote — decrement the old selections, increment the new ones.
+ *    changing their vote - decrement the old selections, increment the new ones.
  *  - `totalVotes` increments only when the user has never voted before.
  *  - All mutations happen inside a single transaction so options JSON and
  *    totalVotes are always consistent.

@@ -529,7 +529,7 @@ export const contentReports = sqliteTable(
     (t) => [index('content_reports_reporter_idx').on(t.reportedBy)]
 )
 
-/** Admin email send history (counts only — PII minimised). */
+/** Admin email send history (counts only - PII minimised). */
 export const adminEmails = sqliteTable('admin_emails', {
     id: text('id').primaryKey().$defaultFn(uuid),
     type: text('type').notNull(),

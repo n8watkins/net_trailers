@@ -20,7 +20,7 @@ const API_KEY = process.env.TMDB_API_KEY
  *
  * Collections are stored in userPreferences.data.userCreatedWatchlists (JSON blob).
  * When the cache changes we load the full preferences, patch the specific collection,
- * and write the entire blob back via saveUserPreferences — matching the existing
+ * and write the entire blob back via saveUserPreferences - matching the existing
  * single-document storage model.
  */
 export async function GET(request: NextRequest) {
@@ -163,7 +163,7 @@ export async function GET(request: NextRequest) {
                                 notificationsCreated++
                             } catch (notifError) {
                                 apiWarn('Failed to create notification:', notifError)
-                                // Don't throw — notification failure should not stop cache refresh
+                                // Don't throw - notification failure should not stop cache refresh
                             }
                         }
                     }

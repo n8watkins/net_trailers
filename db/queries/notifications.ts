@@ -170,7 +170,7 @@ export async function deleteAllNotificationsForUser(userId: string): Promise<voi
  *
  * Intended to be called from server-side code only (cron jobs, forum reply
  * handlers, ranking comment handlers, etc.). The caller is responsible for
- * supplying a validated userId — this function does NOT derive it from a
+ * supplying a validated userId - this function does NOT derive it from a
  * session because it may be called on behalf of another user (e.g. cron
  * notifying every user whose watchlist item is trending).
  *
@@ -209,7 +209,7 @@ export async function createNotification(
         })
         .returning()
 
-    // Async cleanup — do not await so it doesn't slow down the caller
+    // Async cleanup - do not await so it doesn't slow down the caller
     pruneOldNotifications(userId).catch((err) =>
         console.error('[Notifications] Background cleanup failed:', err)
     )
@@ -227,7 +227,7 @@ export async function createNotification(
  *
  * `emailSent` lives inside the JSON `data` column, so we use SQLite's
  * `json_extract` to filter it.  A missing key (NULL) is treated the same as
- * false — both mean "not yet sent".
+ * false - both mean "not yet sent".
  *
  * Used by the social-digest cron to find pending digest candidates.
  *

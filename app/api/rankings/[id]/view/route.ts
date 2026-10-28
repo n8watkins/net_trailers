@@ -1,7 +1,7 @@
 /**
  * /api/rankings/[id]/view
  *
- * POST — Increment the view counter for a ranking.
+ * POST - Increment the view counter for a ranking.
  *         No auth required. The viewer's user ID may be sent in the body so the
  *         server can skip incrementing when the viewer is the ranking owner
  *         (matching the old Firestore behaviour).

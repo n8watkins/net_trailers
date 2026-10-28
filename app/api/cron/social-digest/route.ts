@@ -105,7 +105,7 @@ export async function GET(req: NextRequest) {
                 userNotifications.set(userId, [])
             }
 
-            // Only include the two social types — the query already filters this
+            // Only include the two social types - the query already filters this
             // but we narrow the type here for type-safety
             const notifType = notification.type as 'ranking_comment' | 'ranking_like'
 
@@ -126,7 +126,7 @@ export async function GET(req: NextRequest) {
         console.log(`📧 [Social Digest] Processing ${userNotifications.size} users`)
 
         // Check if admin-only mode is enabled via query parameter.
-        // Default to ALL eligible users — the scheduled weekly run must actually
+        // Default to ALL eligible users - the scheduled weekly run must actually
         // deliver digests. `?adminOnly=true` is an opt-in test mode that targets
         // only the admin account.
         const { searchParams } = new URL(req.url)

@@ -8,7 +8,7 @@
  * /api/child-safety/pin REST endpoints, which perform bcrypt hashing and
  * comparison server-side.
  *
- * Guest users cannot set PINs (no server session) — the store skips API calls
+ * Guest users cannot set PINs (no server session) - the store skips API calls
  * when isGuest === true and returns appropriate errors.
  */
 

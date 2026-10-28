@@ -1,5 +1,5 @@
 /**
- * Account deletion — permanently removes a user and ALL of their data.
+ * Account deletion - permanently removes a user and ALL of their data.
  *
  * Deletes are explicit (in a transaction) rather than relying on SQLite foreign
  * key cascade, which may not be enabled on libSQL connections.
@@ -46,7 +46,7 @@ function unique(...lists: string[][]): string[] {
  * Permanently delete a user and every row they own.
  *
  * libSQL doesn't reliably run FK cascade per-request, so deletes are explicit.
- * Crucially, deleting the user's own threads/polls/rankings is NOT enough — it
+ * Crucially, deleting the user's own threads/polls/rankings is NOT enough - it
  * would orphan *other* users' replies/likes/votes/comments that reference those
  * parents. We therefore collect the user's parent ids first and delete every
  * dependent row by parent id (regardless of who authored it), in one

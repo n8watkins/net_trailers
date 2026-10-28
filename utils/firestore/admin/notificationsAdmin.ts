@@ -1,5 +1,5 @@
 /**
- * Server-side notification creator — Turso/Drizzle edition.
+ * Server-side notification creator - Turso/Drizzle edition.
  *
  * Previously this module used the Firebase Admin SDK to write directly to
  * Firestore. It now delegates to the shared Drizzle query in

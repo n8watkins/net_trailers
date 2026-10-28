@@ -3,7 +3,7 @@
  *
  * Covers: profiles, user_follows, user_badges, user_activity.
  * All writes derive the acting user from the Auth.js session (via currentUserId
- * from _helpers) — client-supplied user IDs are never trusted for ownership.
+ * from _helpers) - client-supplied user IDs are never trusted for ownership.
  *
  * Counter increments use sql`${col} + 1` / `- 1` so they are atomic at the
  * database level rather than read-modify-write.
@@ -166,7 +166,7 @@ export async function ensureProfile(
 /**
  * Apply a partial `UpdateProfileRequest` to an existing profile row.
  * When `username` is included the uniqueness constraint (enforced by the
- * `username UNIQUE` index in the schema) will surface as a conflict error —
+ * `username UNIQUE` index in the schema) will surface as a conflict error -
  * callers should check availability first with `checkUsernameAvailability`.
  *
  * @throws When the profile row does not exist.
@@ -225,7 +225,7 @@ export async function updateProfileAvatar(
  * Returns `{ available: true }` when:
  *   - The username passes format + content-moderation validation, AND
  *   - No other user owns the same slug (the requesting user can keep their
- *     current slug — checked against `currentUserId`).
+ *     current slug - checked against `currentUserId`).
  */
 export async function checkUsernameAvailability(
     username: string,
@@ -237,7 +237,7 @@ export async function checkUsernameAvailability(
         return { available: false, error: validation.error }
     }
 
-    // 2. Uniqueness check — find any row with this username.
+    // 2. Uniqueness check - find any row with this username.
     const rows = await db
         .select({ userId: profiles.userId })
         .from(profiles)
@@ -248,7 +248,7 @@ export async function checkUsernameAvailability(
         return { available: true }
     }
 
-    // The existing owner is the requesting user — allow them to keep it.
+    // The existing owner is the requesting user - allow them to keep it.
     if (currentUserId && rows[0].userId === currentUserId) {
         return { available: true }
     }
@@ -451,7 +451,7 @@ export async function listBadges(userId: string): Promise<Badge[]> {
 }
 
 /**
- * Award a badge. Idempotent — if the user already has a badge with the same
+ * Award a badge. Idempotent - if the user already has a badge with the same
  * `name`, the existing row is returned unchanged.
  */
 export async function awardBadge(
@@ -540,7 +540,7 @@ export async function listActivity(userId: string, limit = 50): Promise<Activity
 }
 
 /**
- * Append an activity event. No deduplication — each call appends a new row.
+ * Append an activity event. No deduplication - each call appends a new row.
  * Use `referenceId` + `referenceType` to link to ranked items, threads, etc.
  */
 export async function addActivity(

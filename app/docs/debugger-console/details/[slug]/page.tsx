@@ -13,7 +13,7 @@ const debugOptions = {
         description:
             'Removed. The Firebase Call Tracker was deleted as part of the Firebase→Turso migration. Data is now stored in Turso/SQLite via Drizzle ORM and served through Next.js API routes.',
         whatItDoes: ['This debug option has been removed.'],
-        when: ['N/A — option removed.'],
+        when: ['N/A - option removed.'],
         output: 'N/A',
         relatedOptions: ['auth', 'session'],
         file: 'N/A (deleted)',
@@ -31,7 +31,7 @@ const debugOptions = {
         description:
             'Removed. The Firebase-based AuthFlowDebugger was removed when auth migrated to Auth.js (GitHub OAuth). Auth flow logging is now handled via utils/debugLogger.ts (authLog, authError, authWarn).',
         whatItDoes: ['This debug option has been removed.'],
-        when: ['N/A — option removed.'],
+        when: ['N/A - option removed.'],
         output: 'N/A',
         relatedOptions: ['session'],
         file: 'utils/debugLogger.ts',

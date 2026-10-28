@@ -1,8 +1,8 @@
 /**
  * /api/rankings/[id]/like
  *
- * POST   — Like a ranking (authenticated users only).
- * DELETE — Unlike a ranking (authenticated users only).
+ * POST   - Like a ranking (authenticated users only).
+ * DELETE - Unlike a ranking (authenticated users only).
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -80,7 +80,7 @@ export const DELETE = withAuth(
 
 /**
  * Check whether the current user has liked the ranking.
- * Returns { liked: boolean } — unauthenticated callers always get liked: false.
+ * Returns { liked: boolean } - unauthenticated callers always get liked: false.
  */
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {

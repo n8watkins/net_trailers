@@ -6,7 +6,7 @@
  * Body: { optionIds: string[] }
  *
  * One-vote-per-user is enforced server-side in castVote() which runs inside a
- * db.transaction(); the client-supplied userId is NEVER trusted — the id comes
+ * db.transaction(); the client-supplied userId is NEVER trusted - the id comes
  * from the Auth.js session via withAuth.
  *
  * Returns the updated poll row (options + totalVotes recomputed).

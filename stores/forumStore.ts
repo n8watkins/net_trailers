@@ -4,9 +4,9 @@
  * Manages forum state including threads, polls, and user interactions.
  * Following the same pattern as other Zustand stores in the app.
  *
- * THREADS & REPLIES — migrated to Turso/Drizzle via /api/threads/* routes.
- * POLLS             — migrated to Turso/Drizzle via /api/polls/* routes.
- * CONTENT REPORTS   — migrated to Turso/Drizzle via /api/reports (POST, withAuth).
+ * THREADS & REPLIES - migrated to Turso/Drizzle via /api/threads/* routes.
+ * POLLS             - migrated to Turso/Drizzle via /api/polls/* routes.
+ * CONTENT REPORTS   - migrated to Turso/Drizzle via /api/reports (POST, withAuth).
  */
 
 import { create } from 'zustand'
@@ -28,7 +28,7 @@ import { authenticatedFetch } from '@/lib/authenticatedFetch'
 
 /**
  * Thin wrapper around fetch for poll API calls that mutate data.
- * Auth is handled by the Auth.js session cookie — no explicit token needed.
+ * Auth is handled by the Auth.js session cookie - no explicit token needed.
  */
 async function pollMutate(
     url: string,
@@ -87,7 +87,7 @@ interface ForumState {
     threadOffset: number
     hasMoreThreads: boolean
 
-    // Polls (migrated to Turso/Drizzle — Firestore cursors removed)
+    // Polls (migrated to Turso/Drizzle - Firestore cursors removed)
     polls: Poll[]
     currentPoll: Poll | null
     isLoadingPolls: boolean
@@ -199,7 +199,7 @@ export const useForumStore = create<ForumState>((set, get) => ({
     filters: initialFilters,
 
     // -------------------------------------------------------------------------
-    // Thread actions — Turso/Drizzle via /api/threads/*
+    // Thread actions - Turso/Drizzle via /api/threads/*
     // -------------------------------------------------------------------------
 
     loadThreads: async (category, limit = 20) => {
@@ -509,7 +509,7 @@ export const useForumStore = create<ForumState>((set, get) => ({
     },
 
     // -------------------------------------------------------------------------
-    // Poll actions — migrated to Turso/Drizzle via /api/polls/*
+    // Poll actions - migrated to Turso/Drizzle via /api/polls/*
     // -------------------------------------------------------------------------
 
     loadPolls: async (category, limit = 20) => {
@@ -620,7 +620,7 @@ export const useForumStore = create<ForumState>((set, get) => ({
     },
 
     createPoll: async (_userId, userName, userAvatar, question, options, category) => {
-        // Note: _userId is ignored — the server derives the real user id from
+        // Note: _userId is ignored - the server derives the real user id from
         // the Auth.js session so the client cannot spoof it.
         try {
             const json = await pollMutate('/api/polls', 'POST', {
@@ -668,7 +668,7 @@ export const useForumStore = create<ForumState>((set, get) => ({
         const { knownVotes } = get()
         if (knownVotes[pollId]) return knownVotes[pollId]
 
-        // Fall back to API — the session cookie identifies the user
+        // Fall back to API - the session cookie identifies the user
         try {
             const res = await fetch(`/api/polls/${pollId}`, { credentials: 'include' })
             if (!res.ok) return null
@@ -747,7 +747,7 @@ export const useForumStore = create<ForumState>((set, get) => ({
         }
     },
 
-    // Report content — writes to Turso via /api/reports (withAuth)
+    // Report content - writes to Turso via /api/reports (withAuth)
     reportContent: async (userId, userName, contentId, contentType, reason, details) => {
         void userId // userId is derived server-side from the Auth.js session
         const res = await authenticatedFetch('/api/reports', {

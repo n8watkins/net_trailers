@@ -7,16 +7,16 @@
  *   - runTransaction() → db.transaction()
  *
  * The Firestore module embedded replies as a `replies?: RankingComment[]` array
- * inside the parent comment document. This module preserves that exact shape —
+ * inside the parent comment document. This module preserves that exact shape -
  * replies are stored in the same `ranking_comments` row's JSON `text` column
  * via the `parentCommentId` FK pattern, and the parent row also carries an
- * embedded `replies` array (stored in the `text` column's JSON — see note
+ * embedded `replies` array (stored in the `text` column's JSON - see note
  * below).
  *
  * NOTE ON REPLIES EMBEDDING
  * The schema stores each reply as its own `ranking_comments` row (parentCommentId
  * non-null), but the parent row does NOT have a dedicated JSON column for
- * embedded replies — that was a Firestore-only trick. In SQLite we reconstruct
+ * embedded replies - that was a Firestore-only trick. In SQLite we reconstruct
  * the `replies` array at query time by joining child rows.
  *
  * getRankingComments() therefore returns top-level comments only and attaches
@@ -144,7 +144,7 @@ export async function createComment(
 /**
  * Fetch top-level comments for a ranking with their replies attached.
  *
- * Mirrors getRankingComments() — fetches `limit` top-level comments ordered
+ * Mirrors getRankingComments() - fetches `limit` top-level comments ordered
  * newest-first, then fetches all replies for those comments in a second query
  * and attaches them (oldest-first to match chronological reply order).
  *
@@ -258,7 +258,7 @@ export async function deleteComment(userId: string, commentId: string): Promise<
 
         const comment = commentRows[0]
 
-        // The ranking owner may also delete comments — look up the REAL owner
+        // The ranking owner may also delete comments - look up the REAL owner
         // server-side (never trust a client-supplied id).
         const rankingRows = await tx
             .select({ userId: rankings.userId })
@@ -314,7 +314,7 @@ export async function deleteComment(userId: string, commentId: string): Promise<
  */
 export async function likeComment(userId: string, commentId: string): Promise<boolean> {
     return await db.transaction(async (tx) => {
-        // Insert-or-noop on the unique (commentId, userId) index — race-safe;
+        // Insert-or-noop on the unique (commentId, userId) index - race-safe;
         // the counter is bumped only when a new like row was inserted.
         const inserted = await tx
             .insert(commentLikes)

@@ -10,7 +10,7 @@
  *   - Body: { token: string }
  *
  * Token lookup: tokens live in `userPreferences.data.unsubscribeToken` (stored
- * there by lib/email/unsubscribe-token.ts — no schema column needed).
+ * there by lib/email/unsubscribe-token.ts - no schema column needed).
  */
 
 import { NextRequest, NextResponse } from 'next/server'

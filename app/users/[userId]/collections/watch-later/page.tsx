@@ -2,7 +2,7 @@
  * Public User Watch Later Page
  *
  * Shows watch later items for a specific user's public profile.
- * Watch later is a private list — it is not exposed via the public profile API.
+ * Watch later is a private list - it is not exposed via the public profile API.
  * This page only resolves the display name and always shows an empty list for
  * visitors. The display name is fetched from /api/public-profile/[userId].
  */
@@ -24,7 +24,7 @@ export default function UserWatchLaterPage() {
     const params = useParams()
     const userId = params?.userId as string
 
-    // Watch later is private — no content is shown for public viewers.
+    // Watch later is private - no content is shown for public viewers.
     const watchLaterContent: (Movie | TVShow)[] = []
     const [displayName, setDisplayName] = useState<string>('User')
     const [isLoading, setIsLoading] = useState(true)

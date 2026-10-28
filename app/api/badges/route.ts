@@ -18,7 +18,7 @@ import { withAuth } from '@/lib/auth-middleware'
 import { awardBadge, listBadges } from '@/db/queries/profiles'
 
 /* -------------------------------------------------------------------------- */
-/*  GET — list badges for a user                                               */
+/*  GET - list badges for a user                                               */
 /* -------------------------------------------------------------------------- */
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  POST — award a badge                                                       */
+/*  POST - award a badge                                                       */
 /* -------------------------------------------------------------------------- */
 
 export const POST = withAuth(async (request: NextRequest, sessionUserId: string) => {

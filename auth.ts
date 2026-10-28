@@ -22,7 +22,7 @@ import { accounts, sessions, users, verificationTokens } from '@/db/schema'
 
 const adminLogin = process.env.ADMIN_GITHUB_LOGIN?.toLowerCase()
 
-// Hard cap on total accounts — a cost guard for this portfolio project. The
+// Hard cap on total accounts - a cost guard for this portfolio project. The
 // signIn callback blocks brand-new signups once the cap is hit; existing users
 // always sign in. 0 / unset disables the cap.
 const maxTotalAccounts = parseInt(process.env.NEXT_PUBLIC_MAX_TOTAL_ACCOUNTS || '50', 10)
@@ -33,7 +33,7 @@ const emailFrom =
     process.env.EMAIL_FROM || process.env.RESEND_SENDER_EMAIL || 'onboarding@resend.dev'
 
 /**
- * Brevo magic-link provider — delivers the sign-in link via Brevo's
+ * Brevo magic-link provider - delivers the sign-in link via Brevo's
  * transactional email HTTP API. Needs only BREVO_API_KEY + a verified sender
  * (no domain required). Tokens live in the verificationToken table (adapter).
  */
@@ -77,7 +77,7 @@ function BrevoEmail(): Provider {
 
 // Email magic-link provider, selectable via EMAIL_PROVIDER without code changes.
 // Both providers use the same verificationToken table, so switching is seamless.
-// Default: Brevo (single API key, verify a single sender — no domain needed).
+// Default: Brevo (single API key, verify a single sender - no domain needed).
 // Set EMAIL_PROVIDER=resend to switch to Resend (requires a verified domain).
 // Both expose the stable provider id "email" so the client never changes.
 const emailProvider =
@@ -110,7 +110,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 }
             },
         }),
-        // Passwordless email magic links (SendGrid or Resend — see emailProvider above).
+        // Passwordless email magic links (SendGrid or Resend - see emailProvider above).
         emailProvider,
     ],
     callbacks: {
@@ -150,10 +150,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 if (existing.length > 0) return true
             }
 
-            // Brand-new signup — enforce the hard cap.
+            // Brand-new signup - enforce the hard cap.
             const [row] = await db.select({ count: sql<number>`count(*)` }).from(users)
             if (Number(row?.count ?? 0) >= maxTotalAccounts) {
-                console.warn('[auth] Signup blocked — account cap reached:', maxTotalAccounts)
+                console.warn('[auth] Signup blocked - account cap reached:', maxTotalAccounts)
                 return false
             }
 

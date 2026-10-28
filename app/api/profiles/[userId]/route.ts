@@ -1,11 +1,11 @@
 /**
  * /api/profiles/[userId]
  *
- * GET  — Public profile read. No authentication required.
+ * GET  - Public profile read. No authentication required.
  *         Respects ProfileVisibility.enablePublicProfile; returns a sanitised
  *         subset of the UserProfile (omits private `email` field).
  *
- * PATCH — Authenticated profile update. Only the session-authenticated user
+ * PATCH - Authenticated profile update. Only the session-authenticated user
  *          may update their own profile (or an admin may update any profile).
  *          User id is always taken from the session, never from the URL.
  */
@@ -21,7 +21,7 @@ import { PROFILE_CONSTRAINTS } from '@/types/profile'
 type RouteContext = { params: Promise<{ userId: string }> }
 
 /* -------------------------------------------------------------------------- */
-/*  GET — public profile                                                       */
+/*  GET - public profile                                                       */
 /* -------------------------------------------------------------------------- */
 
 export async function GET(_request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
@@ -48,7 +48,7 @@ export async function GET(_request: NextRequest, { params }: RouteContext): Prom
 
         if (!isOwner) {
             // Respect the public-profile master toggle. When a user has disabled
-            // their public profile we treat it as non-existent to anyone else —
+            // their public profile we treat it as non-existent to anyone else -
             // avoids leaking name/avatar/bio/stats of a profile meant to be private.
             const isPubliclyVisible =
                 profile.isPublic !== false && profile.visibility?.enablePublicProfile !== false
@@ -76,7 +76,7 @@ export async function GET(_request: NextRequest, { params }: RouteContext): Prom
 }
 
 /* -------------------------------------------------------------------------- */
-/*  PATCH — authenticated update (own profile or admin)                       */
+/*  PATCH - authenticated update (own profile or admin)                       */
 /* -------------------------------------------------------------------------- */
 
 export const PATCH = withAuth(
@@ -88,7 +88,7 @@ export const PATCH = withAuth(
             return NextResponse.json({ success: false, error: 'Missing userId' }, { status: 400 })
         }
 
-        // Ownership check — only the owner or an admin may update a profile.
+        // Ownership check - only the owner or an admin may update a profile.
         if (targetUserId !== sessionUserId) {
             const admin = await isCurrentUserAdmin()
             if (!admin) {

@@ -27,7 +27,7 @@ import { authenticatedFetch } from '../../../lib/authenticatedFetch'
  *
  * Duplication ("Save to My Collections") requires an Auth.js session and
  * calls the authenticated /api/collections/duplicate endpoint via
- * authenticatedFetch (cookie-based — no Firebase token).
+ * authenticatedFetch (cookie-based - no Firebase token).
  */
 export default function SharedCollectionViewPage() {
     const params = useParams()
@@ -56,7 +56,7 @@ export default function SharedCollectionViewPage() {
             setIsLoading(true)
             setError(null)
 
-            // Public GET — no auth required.
+            // Public GET - no auth required.
             const response = await fetch(`/api/shares/${shareId}`)
             const data = await response.json()
 

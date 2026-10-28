@@ -1,11 +1,11 @@
 /**
  * /api/watch-history
  *
- * GET    — Authenticated: own history.
+ * GET    - Authenticated: own history.
  *          Unauthenticated with ?userId=: public history (only when the owner
  *          has enabled showWatchHistory in their profile visibility settings).
- * POST   — Add / upsert a watch history entry (authenticated only).
- * DELETE — Clear all watch history for the current user (authenticated only).
+ * POST   - Add / upsert a watch history entry (authenticated only).
+ * DELETE - Clear all watch history for the current user (authenticated only).
  *
  * The authenticated user's ID always comes from the Auth.js session.
  * A client must never be able to write another user's history.

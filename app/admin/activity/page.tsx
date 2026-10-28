@@ -71,7 +71,7 @@ function ActivityPageContent() {
                 params.append('userId', filterUserId)
             }
 
-            // Session cookie sent automatically — no Authorization header needed
+            // Session cookie sent automatically - no Authorization header needed
             const response = await fetch(`/api/admin/activity?${params.toString()}`)
 
             if (response.ok) {

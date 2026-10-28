@@ -2,14 +2,14 @@
  * POST /api/reports
  *
  * Creates a content report (thread, reply, or poll).
- * Auth.js session is required — the reporter identity is derived server-side.
+ * Auth.js session is required - the reporter identity is derived server-side.
  *
  * Request body:
- *   contentId   string             — id of the reported thread/reply/poll
- *   contentType ReportContentType  — 'thread' | 'reply' | 'poll'
- *   reason      ReportReason       — one of the enum values from types/forum.ts
- *   details?    string             — optional free-text elaboration
- *   userName?   string             — display name (used as reporterName)
+ *   contentId   string             - id of the reported thread/reply/poll
+ *   contentType ReportContentType  - 'thread' | 'reply' | 'poll'
+ *   reason      ReportReason       - one of the enum values from types/forum.ts
+ *   details?    string             - optional free-text elaboration
+ *   userName?   string             - display name (used as reporterName)
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -61,7 +61,7 @@ async function handleCreateReport(request: NextRequest, userId: string): Promise
     const reportId = await createContentReport({
         contentId: contentId.trim(),
         contentType: contentType as ReportContentType,
-        // userId comes from the session — never from the request body
+        // userId comes from the session - never from the request body
         reportedBy: userId,
         reporterName: typeof userName === 'string' && userName.trim() ? userName.trim() : 'User',
         reason: reason as ReportReason,

@@ -19,7 +19,7 @@ import { withAuth } from '@/lib/auth-middleware'
 import { followUser, getFollowCounts, isFollowing, unfollowUser } from '@/db/queries/profiles'
 
 /* -------------------------------------------------------------------------- */
-/*  GET — check follow status + counts                                         */
+/*  GET - check follow status + counts                                         */
 /* -------------------------------------------------------------------------- */
 
 export const GET = withAuth(async (request: NextRequest, sessionUserId: string) => {
@@ -55,7 +55,7 @@ export const GET = withAuth(async (request: NextRequest, sessionUserId: string) 
 })
 
 /* -------------------------------------------------------------------------- */
-/*  POST — follow                                                              */
+/*  POST - follow                                                              */
 /* -------------------------------------------------------------------------- */
 
 export const POST = withAuth(async (request: NextRequest, sessionUserId: string) => {
@@ -100,7 +100,7 @@ export const POST = withAuth(async (request: NextRequest, sessionUserId: string)
 })
 
 /* -------------------------------------------------------------------------- */
-/*  DELETE — unfollow                                                          */
+/*  DELETE - unfollow                                                          */
 /* -------------------------------------------------------------------------- */
 
 export const DELETE = withAuth(async (request: NextRequest, sessionUserId: string) => {

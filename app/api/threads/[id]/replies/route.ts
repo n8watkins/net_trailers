@@ -1,8 +1,8 @@
 /**
  * /api/threads/[id]/replies
  *
- * GET  — list all replies for a thread (public, ordered oldest-first)
- * POST — create a reply (requires auth)
+ * GET  - list all replies for a thread (public, ordered oldest-first)
+ * POST - create a reply (requires auth)
  *
  * Creating a reply also atomically bumps the thread's replyCount / lastReply
  * (handled inside createReply in the query layer).
@@ -97,7 +97,7 @@ export const POST = withAuth(
             }
         }
 
-        // Fire-and-forget email notification (owned by notifications agent — leave route as-is)
+        // Fire-and-forget email notification (owned by notifications agent - leave route as-is)
         if (recipientUserId !== userId) {
             fetch('/api/forum/send-reply-notification', {
                 method: 'POST',

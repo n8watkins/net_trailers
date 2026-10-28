@@ -2,7 +2,7 @@
  * Server-Side User Data Clearing API
  *
  * Clears ALL user data owned by the authenticated user.
- * Auth is derived from the Auth.js session via withAuth — no Bearer tokens.
+ * Auth is derived from the Auth.js session via withAuth - no Bearer tokens.
  *
  * Clears (in dependency order):
  *  1. userPreferences (reset to defaults)
@@ -51,7 +51,7 @@ async function handleClearData(_request: NextRequest, userId: string): Promise<N
         console.log('[ClearData] notifications cleared')
 
         // -----------------------------------------------------------------------
-        // 3. Rankings — delete comment-likes, comments, ranking-likes, then rankings
+        // 3. Rankings - delete comment-likes, comments, ranking-likes, then rankings
         //    All in a single transaction to stay consistent.
         // -----------------------------------------------------------------------
         const rankingsDeleted = await db.transaction(async (tx) => {
@@ -102,7 +102,7 @@ async function handleClearData(_request: NextRequest, userId: string): Promise<N
         console.log(`[ClearData] rankings cleared: ${rankingsDeleted}`)
 
         // -----------------------------------------------------------------------
-        // 4. Threads — delete reply-likes, replies, thread-likes, then threads
+        // 4. Threads - delete reply-likes, replies, thread-likes, then threads
         // -----------------------------------------------------------------------
         const threadsDeleted = await db.transaction(async (tx) => {
             const userThreads = await tx
@@ -139,7 +139,7 @@ async function handleClearData(_request: NextRequest, userId: string): Promise<N
         console.log(`[ClearData] threads cleared: ${threadsDeleted}`)
 
         // -----------------------------------------------------------------------
-        // 5. Polls — delete votes then polls
+        // 5. Polls - delete votes then polls
         // -----------------------------------------------------------------------
         const pollsDeleted = await db.transaction(async (tx) => {
             const userPolls = await tx

@@ -1,8 +1,8 @@
 /**
  * /api/threads
  *
- * GET  — list threads (public, optional ?category= and ?sortBy= and ?limit= / ?offset=)
- * POST — create a thread (requires auth)
+ * GET  - list threads (public, optional ?category= and ?sortBy= and ?limit= / ?offset=)
+ * POST - create a thread (requires auth)
  *
  * The current user's like-status for each thread is injected when a session is present.
  */

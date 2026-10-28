@@ -7,7 +7,7 @@ import { useAuthStatus } from '../../../hooks/useAuthStatus'
 
 /**
  * Account page. With GitHub-only auth there is no email/password to change and
- * no email verification — accounts are managed entirely through GitHub. This
+ * no email verification - accounts are managed entirely through GitHub. This
  * page shows the connected account and a sign-out action. Guests are redirected.
  */
 const AccountManagementPage: React.FC = () => {

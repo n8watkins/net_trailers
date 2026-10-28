@@ -19,14 +19,14 @@ const MAX_MESSAGE_LENGTH = 10000
 const MAX_HTML_LENGTH = 50000
 
 /**
- * Custom-HTML email sanitizer (serverless-safe — uses sanitize-html, no jsdom).
+ * Custom-HTML email sanitizer (serverless-safe - uses sanitize-html, no jsdom).
  * Used by both the send and preview endpoints to prevent XSS. Allows a small
  * formatting allowlist + href/title, and HTTPS-only links; everything else is
  * discarded (scripts, styles, event handlers, data attrs, etc.).
  */
 const CUSTOM_HTML_SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
     allowedTags: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'a'],
-    // Minimal surface — only links carry attributes (href + title). No global
+    // Minimal surface - only links carry attributes (href + title). No global
     // `*` allowance, matching the old DOMPurify allowlist (href, title).
     allowedAttributes: { a: ['href', 'title'] },
     allowedSchemes: ['https'], // HTTPS only, no HTTP/javascript/data

@@ -1,7 +1,7 @@
 /**
  * /api/threads/replies/[replyId]
  *
- * DELETE — delete a reply (reply owner, thread owner, or admin)
+ * DELETE - delete a reply (reply owner, thread owner, or admin)
  *
  * Ownership rules (matching original Firestore behaviour):
  *   1. The reply's own author may delete their reply.

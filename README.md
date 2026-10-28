@@ -371,13 +371,13 @@ _Experience all features or continue as guest to explore the platform_
     ADMIN_GITHUB_LOGIN=your_github_username
 
     # Magic-Link Email (Required for passwordless email sign-in)
-    # Brevo is the default provider — get an API key at https://app.brevo.com/
+    # Brevo is the default provider - get an API key at https://app.brevo.com/
     BREVO_API_KEY=your_brevo_api_key
-    # The "From" address — must be a sender you've verified in Brevo (no domain required)
+    # The "From" address - must be a sender you've verified in Brevo (no domain required)
     EMAIL_FROM=noreply@yourdomain.com
     # Optional: switch the email provider. Default is brevo; set to `resend` to use Resend.
     EMAIL_PROVIDER=brevo
-    # Resend (only needed if EMAIL_PROVIDER=resend) — https://resend.com/
+    # Resend (only needed if EMAIL_PROVIDER=resend) - https://resend.com/
     RESEND_API_KEY=your_resend_api_key
     # RESEND_SENDER_EMAIL=noreply@yourdomain.com  # alternate "From" if EMAIL_FROM unset
 
@@ -434,7 +434,7 @@ _Experience all features or continue as guest to explore the platform_
     - To use Resend instead, set `EMAIL_PROVIDER=resend` and provide `RESEND_API_KEY`
 
     > There is no Firebase project, Firestore rules deploy, or Firebase Admin SDK
-    > service account to configure — all data access is server-mediated through
+    > service account to configure - all data access is server-mediated through
     > Next.js API routes with server-side ownership checks.
 
 5. **Admin Portal Setup** (Required for admin access)
@@ -697,7 +697,7 @@ net_trailers/
 │   ├── schema.ts         # Drizzle schema (tables, indexes)
 │   ├── migrations/       # drizzle-kit generated SQL migrations
 │   └── queries/          # Typed query helpers (one module per domain)
-├── auth.ts               # Auth.js (NextAuth v5) config — GitHub + magic link
+├── auth.ts               # Auth.js (NextAuth v5) config - GitHub + magic link
 ├── drizzle.config.ts     # drizzle-kit configuration
 ├── sentry.client.config.ts   # Sentry client config
 ├── instrumentation.ts    # Sentry server config (Next.js 15+)
@@ -762,7 +762,7 @@ getReleaseDate(content)
 
 All data lives in **Turso (libSQL/SQLite)**, accessed through **Drizzle ORM**. The
 schema is defined in `db/schema.ts`, typed queries in `db/queries/*`, and the client
-in `db/index.ts`. The browser never talks to Turso directly — every read/write goes
+in `db/index.ts`. The browser never talks to Turso directly - every read/write goes
 through a Next.js API route with server-side ownership checks (the session-derived
 user id), which replace the old Firestore security rules.
 

@@ -30,7 +30,7 @@ export default function EmailHistory() {
     const loadHistory = async () => {
         setLoading(true)
         try {
-            // Session cookie sent automatically — no Authorization header needed
+            // Session cookie sent automatically - no Authorization header needed
             const response = await fetch('/api/admin/email/history')
 
             const result = await response.json()

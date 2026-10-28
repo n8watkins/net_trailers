@@ -1,10 +1,10 @@
 /**
  * /api/rankings/[id]
  *
- * GET    — Fetch a single ranking by ID (public rankings need no auth; private
+ * GET    - Fetch a single ranking by ID (public rankings need no auth; private
  *           rankings are only returned to their owner).
- * PATCH  — Update an existing ranking (owner only).
- * DELETE — Delete a ranking and all its associated data (owner or admin).
+ * PATCH  - Update an existing ranking (owner only).
+ * DELETE - Delete a ranking and all its associated data (owner or admin).
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -121,7 +121,7 @@ export const DELETE = withAuth(
             )
         }
 
-        // Ownership check — admins may also delete
+        // Ownership check - admins may also delete
         const ranking = await getRanking(rankingId)
         if (!ranking) {
             return NextResponse.json(

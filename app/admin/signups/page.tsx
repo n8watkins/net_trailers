@@ -44,7 +44,7 @@ export default function SignupsPage() {
     const loadUsers = async () => {
         setLoading(true)
         try {
-            // Session cookie sent automatically — no Authorization header needed
+            // Session cookie sent automatically - no Authorization header needed
             const response = await fetch('/api/admin/users')
 
             if (response.ok) {

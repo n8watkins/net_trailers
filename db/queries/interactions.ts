@@ -1,5 +1,5 @@
 /**
- * Drizzle query layer — interactions + interaction_summary.
+ * Drizzle query layer - interactions + interaction_summary.
  *
  * Rules enforced here:
  * - userId is always taken from the Auth.js session (via currentUserId) by
@@ -58,7 +58,7 @@ export async function recordInteraction(
         source: payload.source ?? null,
     })
 
-    // Kick off summary refresh asynchronously — never block the caller.
+    // Kick off summary refresh asynchronously - never block the caller.
     refreshInteractionSummaryIfNeeded(userId).catch((err) =>
         console.error('[interactions] background summary refresh failed:', err)
     )

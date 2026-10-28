@@ -1,7 +1,7 @@
 /**
  * /api/rankings/comments/[commentId]
  *
- * DELETE — Delete a comment (comment owner or ranking owner only).
+ * DELETE - Delete a comment (comment owner or ranking owner only).
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -26,7 +26,7 @@ export const DELETE = withAuth(
 
         try {
             // Authorization (comment author OR ranking owner) is verified
-            // server-side inside deleteComment — no client-supplied owner id.
+            // server-side inside deleteComment - no client-supplied owner id.
             await deleteComment(userId, commentId)
             return NextResponse.json({ success: true })
         } catch (error) {

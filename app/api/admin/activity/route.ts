@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
 /**
  * Record activity (login or page view).
  *
- * Intentionally public — no admin check needed. Includes validation and
+ * Intentionally public - no admin check needed. Includes validation and
  * in-memory rate limiting to prevent abuse.
  */
 
