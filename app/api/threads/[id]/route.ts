@@ -1,9 +1,9 @@
 /**
  * /api/threads/[id]
  *
- * GET    — fetch a single thread (public); also increments view count
- * PATCH  — update a thread (owner or admin only)
- * DELETE — delete a thread and its replies (owner or admin only)
+ * GET    - fetch a single thread (public); also increments view count
+ * PATCH  - update a thread (owner or admin only)
+ * DELETE - delete a thread and its replies (owner or admin only)
  */
 
 import { NextRequest, NextResponse } from 'next/server'

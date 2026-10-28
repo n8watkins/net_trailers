@@ -149,7 +149,7 @@ export default function ProfilePage() {
     }, [currentUserId, isGuest])
 
     // Fetch threads the user has liked (voted on).
-    // The public-profile API aggregates these in forum.threadsVoted — use it for
+    // The public-profile API aggregates these in forum.threadsVoted - use it for
     // the own-profile view too, since it already reads from Turso (thread_likes join).
     useEffect(() => {
         if (!currentUserId || isGuest) {

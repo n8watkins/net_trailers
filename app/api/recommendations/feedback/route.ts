@@ -13,7 +13,7 @@
  *   liked         → like               (strong positive signal)
  *   watchlisted   → add_to_watchlist   (strong positive signal)
  *   hidden        → hide_content       (strong negative signal)
- *   dismissed     → hide_content       (strong negative signal — same intent)
+ *   dismissed     → hide_content       (strong negative signal - same intent)
  *   scrolled_past → view_modal         (neutral; light signal, lowest weight)
  *
  * GET returns interactions filtered to the recent window using the already-
@@ -49,7 +49,7 @@ function feedbackActionToInteractionType(action: FeedbackAction): InteractionTyp
         case 'hidden':
             return 'hide_content'
         case 'dismissed':
-            // Treated as a hide signal — user explicitly did not want this content.
+            // Treated as a hide signal - user explicitly did not want this content.
             return 'hide_content'
         case 'viewed':
         case 'scrolled_past':
@@ -67,11 +67,11 @@ function feedbackActionToInteractionType(action: FeedbackAction): InteractionTyp
  * Log user feedback on recommended content.
  *
  * Body:
- *   contentId  — number (TMDB content ID)
- *   mediaType  — 'movie' | 'tv'
- *   action     — FeedbackAction
- *   page       — number (1-indexed recommendation page)
- *   genreIds?  — number[] (TMDB genre IDs; optional but improves summary quality)
+ *   contentId  - number (TMDB content ID)
+ *   mediaType  - 'movie' | 'tv'
+ *   action     - FeedbackAction
+ *   page       - number (1-indexed recommendation page)
+ *   genreIds?  - number[] (TMDB genre IDs; optional but improves summary quality)
  */
 async function handlePostFeedback(request: NextRequest, userId: string): Promise<NextResponse> {
     try {
@@ -148,7 +148,7 @@ async function handlePostFeedback(request: NextRequest, userId: string): Promise
         }
 
         console.log(
-            `[Feedback] ${userId} — ${action} content ${contentId} (${mediaType}) on page ${page}`
+            `[Feedback] ${userId} - ${action} content ${contentId} (${mediaType}) on page ${page}`
         )
 
         return NextResponse.json({ success: true, feedback })

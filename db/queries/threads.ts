@@ -279,7 +279,7 @@ export async function deleteThread(
 
 export async function likeThread(userId: string, threadId: string): Promise<void> {
     await db.transaction(async (tx) => {
-        // Insert only if the (threadId, userId) like doesn't already exist — the
+        // Insert only if the (threadId, userId) like doesn't already exist - the
         // unique index makes this a no-op conflict on a double-like. Bump the
         // denormalised counter ONLY when a row was actually inserted, so a
         // concurrent double-POST can never inflate it past the real like count.

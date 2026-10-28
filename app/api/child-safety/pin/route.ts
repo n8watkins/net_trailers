@@ -2,17 +2,17 @@
  * /api/child-safety/pin
  *
  * All operations require authentication. The userId always comes from the
- * Auth.js session — clients cannot target another user's PIN.
+ * Auth.js session - clients cannot target another user's PIN.
  *
  * Supported:
- *   GET    /api/child-safety/pin           — hasPIN status (never returns the hash).
- *   POST   /api/child-safety/pin           — Set / replace PIN.
+ *   GET    /api/child-safety/pin           - hasPIN status (never returns the hash).
+ *   POST   /api/child-safety/pin           - Set / replace PIN.
  *                                           Body: { pin: string }
- *   POST   /api/child-safety/pin?action=verify — Verify a PIN.
+ *   POST   /api/child-safety/pin?action=verify - Verify a PIN.
  *                                           Body: { pin: string }
- *   POST   /api/child-safety/pin?action=change — Change PIN (requires current + new).
+ *   POST   /api/child-safety/pin?action=change - Change PIN (requires current + new).
  *                                           Body: { currentPin: string, newPin: string }
- *   DELETE /api/child-safety/pin           — Remove PIN (requires current PIN).
+ *   DELETE /api/child-safety/pin           - Remove PIN (requires current PIN).
  *                                           Body: { pin: string }
  *
  * bcryptjs runs entirely server-side in this route (and in db/queries/childSafety.ts).
@@ -48,7 +48,7 @@ function checkRateLimit(userId: string): { limited: boolean; retryAfterSeconds?:
     const entry = rateLimitMap.get(userId)
 
     if (!entry || now >= entry.resetAt) {
-        // No entry or window expired — start fresh.
+        // No entry or window expired - start fresh.
         rateLimitMap.set(userId, { count: 0, resetAt: now + RATE_WINDOW_MS })
         return { limited: false }
     }
@@ -210,7 +210,7 @@ export const POST = withAuth(async (request: NextRequest, userId: string) => {
                 )
             }
 
-            // Current PIN verified — set the new one.
+            // Current PIN verified - set the new one.
             await setPIN(userId, newPin)
             resetRateLimit(userId)
             return NextResponse.json({ success: true })

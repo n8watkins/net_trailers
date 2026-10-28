@@ -1,7 +1,7 @@
 /**
  * Ranking Store (Zustand)
  *
- * Manages ranking state — previously backed by Firestore, now backed by the
+ * Manages ranking state - previously backed by Firestore, now backed by the
  * Turso/Drizzle API routes under /api/rankings/**.
  *
  * All mutating calls use authenticatedFetch() (cookie-based Auth.js session).

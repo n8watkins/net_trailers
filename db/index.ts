@@ -1,7 +1,7 @@
 /**
  * Drizzle database client (Turso / libSQL).
  *
- * Server-only. All database access must go through API routes / server code —
+ * Server-only. All database access must go through API routes / server code -
  * unlike Firestore, the client cannot talk to Turso directly.
  */
 

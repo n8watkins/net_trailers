@@ -64,7 +64,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
         // ----------------------------------------------------------------
         // Optional authentication: derive userId from Auth.js session.
-        // This is NOT enforced — guests and unauthenticated callers still
+        // This is NOT enforced - guests and unauthenticated callers still
         // get genre-based results without personal filtering.
         // ----------------------------------------------------------------
         let userId: string | null = null
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                 userId = authResult.userId
             }
         } catch {
-            // Session read failure is non-fatal — continue as guest
+            // Session read failure is non-fatal - continue as guest
         }
 
         // Load user preferences once (both for hiddenMovies and collection lookup)
@@ -372,7 +372,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             )
         }
 
-        // Unified genre IDs (e.g. "action,fantasy,scifi") — translation to TMDB
+        // Unified genre IDs (e.g. "action,fantasy,scifi") - translation to TMDB
         // numeric IDs is handled inside fetchWithPrioritizedGenres /
         // fetchWithUnifiedCascading (utils/genreMapping.ts).  We never modify
         // those utilities here.

@@ -2,7 +2,7 @@
  * POST /api/shares/create
  *
  * Create a shareable link for a collection. Auth.js session is used for
- * identity — no Firebase token is required.
+ * identity - no Firebase token is required.
  *
  * Request body:
  * {
@@ -50,7 +50,7 @@ async function handleCreateShare(request: NextRequest, userId: string): Promise<
         }
 
         // Load the user's preferences so we can find the collection and build
-        // the snapshot. This is the only cross-domain read — the collection
+        // the snapshot. This is the only cross-domain read - the collection
         // lives inside userPreferences.userCreatedWatchlists.
         const preferences = await loadUserPreferences(userId)
         const collections: UserList[] = preferences.userCreatedWatchlists ?? []

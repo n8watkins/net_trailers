@@ -4,7 +4,7 @@
  * Duplicate a shared collection into the authenticated user's account.
  *
  * Auth: Auth.js session cookie (withAuth). The session userId is always used as
- * the target — no client-supplied userId is trusted.
+ * the target - no client-supplied userId is trusted.
  *
  * Request body:
  * {

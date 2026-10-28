@@ -63,7 +63,7 @@ export default function CronJobsPanel() {
                     break
             }
 
-            // Session cookie sent automatically — no Authorization header needed
+            // Session cookie sent automatically - no Authorization header needed
             const response = await fetch(endpoint, {
                 method: 'GET',
             })

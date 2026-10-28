@@ -1,8 +1,8 @@
 /**
  * /api/threads/replies/[replyId]/like
  *
- * POST   — like a reply (requires auth, idempotent)
- * DELETE — unlike a reply (requires auth)
+ * POST   - like a reply (requires auth, idempotent)
+ * DELETE - unlike a reply (requires auth)
  */
 
 import { NextRequest, NextResponse } from 'next/server'

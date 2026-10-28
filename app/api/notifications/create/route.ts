@@ -7,7 +7,7 @@
  * the legacy store action `notificationStore.createNotification()` which
  * lets a user create a notification for themselves (e.g. for testing / demo).
  *
- * The userId is ALWAYS taken from the Auth.js session — the body's `userId`
+ * The userId is ALWAYS taken from the Auth.js session - the body's `userId`
  * field is ignored. A user can only create notifications for themselves.
  *
  * Request body: CreateNotificationRequest fields (type, title, message, etc.)
@@ -82,7 +82,7 @@ export const POST = withAuth(async (request: NextRequest, userId: string) => {
         ...(typeof b.expiresIn === 'number' && { expiresIn: b.expiresIn }),
     }
 
-    // userId from session — never from body
+    // userId from session - never from body
     const notification = await createNotification(userId, notificationRequest)
 
     return NextResponse.json({ success: true, notification }, { status: 201 })

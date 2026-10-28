@@ -39,7 +39,7 @@ async function handleGenerateRow(request: NextRequest, userId: string): Promise<
             hiddenMovieIds = (prefs.hiddenMovies ?? []).map((m) => m.id)
         } catch (error) {
             apiWarn('Error fetching hidden movies:', error)
-            // Continue without filtering — not critical for functionality
+            // Continue without filtering - not critical for functionality
         }
 
         const apiKey = process.env.GEMINI_API_KEY

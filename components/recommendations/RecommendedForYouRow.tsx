@@ -480,7 +480,7 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
                                 now - serverSummary.lastUpdated < 24 * 60 * 60 * 1000
 
                             if (isCacheFresh) {
-                                // Summary is fresh — fetch raw interactions to build the
+                                // Summary is fresh - fetch raw interactions to build the
                                 // client-side InteractionSummary (aggregateUserInteractions).
                                 const ixRes = await authenticatedFetch(
                                     '/api/interactions?limit=1000'
@@ -505,7 +505,7 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
                                 }
                             } else {
                                 console.log(
-                                    '[V2] Server summary stale — skipping, will refresh server-side on next interaction'
+                                    '[V2] Server summary stale - skipping, will refresh server-side on next interaction'
                                 )
                             }
                         }
@@ -515,7 +515,7 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
                         'Failed to generate interaction summary, falling back to V1:',
                         error
                     )
-                    // Continue without summary — API will use V1 logic
+                    // Continue without summary - API will use V1 logic
                 }
 
                 // Use POST with body instead of GET with URL params to avoid 431 header size error.

@@ -83,7 +83,7 @@ export default function UserPollsPage() {
     }, [userId])
 
     const formatDate = (timestamp: number | null | undefined) => {
-        if (!timestamp) return '—'
+        if (!timestamp) return '-'
         const ms = typeof timestamp === 'number' ? timestamp : Number(timestamp)
         const date = new Date(ms)
         return date.toLocaleDateString('en-US', {

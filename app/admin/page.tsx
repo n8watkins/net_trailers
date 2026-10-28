@@ -66,7 +66,7 @@ export default function AdminDashboard() {
 
             try {
                 console.log('🔍 Calling /api/admin/check...')
-                // Session cookie is sent automatically — no Bearer token needed
+                // Session cookie is sent automatically - no Bearer token needed
                 const response = await fetch('/api/admin/check')
 
                 console.log('🔍 Admin check response:', response.status)
@@ -111,7 +111,7 @@ export default function AdminDashboard() {
 
             // Load trending stats
             try {
-                // Session cookie sent automatically — no Authorization header needed
+                // Session cookie sent automatically - no Authorization header needed
                 const trendingResponse = await fetch('/api/admin/trending-stats')
                 if (trendingResponse.ok) {
                     const trendingData = await trendingResponse.json()
@@ -176,7 +176,7 @@ export default function AdminDashboard() {
     const runTrendingCheck = async (demoMode = false) => {
         setLoading(true)
         try {
-            // Session cookie sent automatically — no Authorization header needed
+            // Session cookie sent automatically - no Authorization header needed
             const response = await fetch(`/api/cron/update-trending${demoMode ? '?demo=true' : ''}`)
             const result = await response.json()
 

@@ -20,7 +20,7 @@ const MAX_LIMIT = 200
 const DEFAULT_LIMIT = 50
 
 /* -------------------------------------------------------------------------- */
-/*  GET — list activity                                                        */
+/*  GET - list activity                                                        */
 /* -------------------------------------------------------------------------- */
 
 export const GET = withAuth(async (request: NextRequest, sessionUserId: string) => {
@@ -41,7 +41,7 @@ export const GET = withAuth(async (request: NextRequest, sessionUserId: string) 
 })
 
 /* -------------------------------------------------------------------------- */
-/*  POST — record activity event                                               */
+/*  POST - record activity event                                               */
 /* -------------------------------------------------------------------------- */
 
 export const POST = withAuth(async (request: NextRequest, sessionUserId: string) => {

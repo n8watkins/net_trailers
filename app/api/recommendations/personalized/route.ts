@@ -1,16 +1,16 @@
 /**
  * Personalized Recommendations API
  *
- * POST /api/recommendations/personalized — Initial fetch with full user data
+ * POST /api/recommendations/personalized - Initial fetch with full user data
  *   supplied by the client (liked movies, watchlist, etc.) in the request body.
  *   Phase 2 feedback signals are now read from the Drizzle interaction_summary
  *   table via db/queries/interactions.ts instead of Firestore.
  *
- * GET /api/recommendations/personalized?page=N — Pagination for infinite scroll.
+ * GET /api/recommendations/personalized?page=N - Pagination for infinite scroll.
  *   User preferences are loaded from the Drizzle user_preferences table via
  *   db/queries/userPreferences.ts instead of Firestore.
  *
- * Auth: Auth.js session cookie via withAuth() — no Firebase ID token needed.
+ * Auth: Auth.js session cookie via withAuth() - no Firebase ID token needed.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -119,7 +119,7 @@ async function loadFeedbackSignals(
 }
 
 /* -------------------------------------------------------------------------- */
-/*  POST handler — client supplies full user data in request body             */
+/*  POST handler - client supplies full user data in request body             */
 /* -------------------------------------------------------------------------- */
 
 async function handlePersonalizedRecommendations(
@@ -352,7 +352,7 @@ async function handlePersonalizedRecommendations(
 }
 
 /* -------------------------------------------------------------------------- */
-/*  GET handler — pagination; loads user data from Drizzle                    */
+/*  GET handler - pagination; loads user data from Drizzle                    */
 /* -------------------------------------------------------------------------- */
 
 /**
@@ -395,7 +395,7 @@ async function handlePersonalizedRecommendationsGet(
             likedMovies = myRatings.filter((r) => r.rating === 'like').map((r) => r.content)
             hiddenMovies = myRatings.filter((r) => r.rating === 'dislike').map((r) => r.content)
         } else {
-            // Legacy fields — typed directly on UserPreferences
+            // Legacy fields - typed directly on UserPreferences
             likedMovies = preferences.likedMovies || []
             hiddenMovies = preferences.hiddenMovies || []
         }

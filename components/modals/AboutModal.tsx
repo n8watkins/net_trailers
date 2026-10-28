@@ -150,7 +150,7 @@ const AboutModal: React.FC<AboutModalProps> = ({
             details: [
                 'Turso (libSQL/SQLite) with Drizzle ORM for all persistence',
                 'User data, rankings, threads, and polls live in Turso',
-                'Accessed only through Next.js API routes — never client-side',
+                'Accessed only through Next.js API routes - never client-side',
                 'Server-side ownership checks enforce per-user data isolation',
             ],
         },
@@ -947,10 +947,10 @@ const AboutModal: React.FC<AboutModalProps> = ({
                             </h2>
                             <p className="text-sm text-gray-300 leading-relaxed mb-2">
                                 The future of content discovery isn&apos;t endless scrolling through
-                                algorithmic feeds—it&apos;s giving people tools to curate their own
-                                experience. Search by vibe instead of keywords. Build collections
-                                that match exactly what you want. Hide what you&apos;re not
-                                interested in so your feed gets better. Share your taste through
+                                algorithmic feeds - it&apos;s giving people tools to curate their
+                                own experience. Search by vibe instead of keywords. Build
+                                collections that match exactly what you want. Hide what you&apos;re
+                                not interested in so your feed gets better. Share your taste through
                                 rankings and let others pull your recommendations into their
                                 collections. AI should help you find and organize what you care
                                 about, not decide for you.

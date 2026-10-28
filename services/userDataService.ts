@@ -185,7 +185,7 @@ export class UserDataService {
         return preferences.defaultWatchlist.some((item) => item.id === contentId)
     }
 
-    // Load user data for authenticated users — delegates to AuthStorageService (API-backed)
+    // Load user data for authenticated users - delegates to AuthStorageService (API-backed)
     static async loadUserData(userId: string): Promise<UserPreferences> {
         try {
             const { AuthStorageService } = await import('./authStorageService')
@@ -212,7 +212,7 @@ export class UserDataService {
         }
     }
 
-    // Save user data for authenticated users — delegates to AuthStorageService (API-backed)
+    // Save user data for authenticated users - delegates to AuthStorageService (API-backed)
     static async saveUserData(userId: string, preferences: UserPreferences): Promise<void> {
         try {
             const { AuthStorageService } = await import('./authStorageService')

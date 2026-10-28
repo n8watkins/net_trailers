@@ -1,8 +1,8 @@
 /**
  * /api/threads/[id]/like
  *
- * POST   — like a thread (requires auth, idempotent)
- * DELETE — unlike a thread (requires auth)
+ * POST   - like a thread (requires auth, idempotent)
+ * DELETE - unlike a thread (requires auth)
  *
  * The like counter on the threads table is maintained atomically in the
  * query layer alongside the thread_likes junction row.

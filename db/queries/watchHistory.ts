@@ -1,5 +1,5 @@
 /**
- * Drizzle query layer — watch_history table.
+ * Drizzle query layer - watch_history table.
  *
  * Column reference (db/schema.ts):
  *   watch_history: id, userId, contentId(int), mediaType, watchedAt(int),

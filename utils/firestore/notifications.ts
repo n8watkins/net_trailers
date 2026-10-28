@@ -1,5 +1,5 @@
 /**
- * Notification client utilities — Turso/Drizzle edition.
+ * Notification client utilities - Turso/Drizzle edition.
  *
  * Previously this module wrapped Firestore client SDK calls. It now calls the
  * REST API routes under /api/notifications/*, which in turn hit the Turso DB
@@ -45,13 +45,13 @@ async function apiPost(path: string, body: unknown): Promise<Response> {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Public API — mirroring the old Firestore module exactly                   */
+/*  Public API - mirroring the old Firestore module exactly                   */
 /* -------------------------------------------------------------------------- */
 
 /**
  * Create a notification (client-side path, used by the store's
  * createNotification action). The actual DB write is done server-side via the
- * API — this function posts to a dedicated route.
+ * API - this function posts to a dedicated route.
  *
  * NOTE: In the Turso architecture, notifications are typically created by
  * server-side code (cron jobs, ranking comment handlers, etc.) via
@@ -77,7 +77,7 @@ export async function createNotification(
 /**
  * Fetch all notifications for the authenticated user (paginated).
  *
- * The `startAfterDoc` parameter was a Firestore cursor — it is no longer used;
+ * The `startAfterDoc` parameter was a Firestore cursor - it is no longer used;
  * callers that passed it will simply get the first page. For true pagination use
  * the offset-based parameters of listNotifications in the query layer.
  */
@@ -222,14 +222,14 @@ export async function getNotificationStats(userId: string): Promise<Notification
  *                   actual session cookie is what the API trusts).
  * @param onUpdate - Called immediately with the first poll result, then on
  *                   every subsequent interval tick.
- * @returns Unsubscribe function — call it to stop polling.
+ * @returns Unsubscribe function - call it to stop polling.
  */
 export function subscribeToNotifications(
     userId: string,
     onUpdate: (notifications: Notification[]) => void
 ): () => void {
     if (!userId) {
-        // No user — return a no-op immediately, same as old Firestore path
+        // No user - return a no-op immediately, same as old Firestore path
         return () => {}
     }
 
@@ -246,7 +246,7 @@ export function subscribeToNotifications(
             if (cancelled) return // Guard against late response after unsubscribe
 
             if (!res.ok) {
-                // Non-fatal — keep polling; the store will retain stale data
+                // Non-fatal - keep polling; the store will retain stale data
                 console.error('[Notifications] Poll failed:', res.status)
                 return
             }
@@ -262,7 +262,7 @@ export function subscribeToNotifications(
         } catch (error) {
             if (!cancelled) {
                 console.error('[Notifications] Poll error:', error)
-                // Do not invoke onUpdate([]) — keep showing stale data rather
+                // Do not invoke onUpdate([]) - keep showing stale data rather
                 // than wiping the notification list on a transient network error.
             }
         }
@@ -294,5 +294,5 @@ export async function cleanupOldNotifications(
     _userId: string,
     _olderThanDays?: number
 ): Promise<void> {
-    // No-op on the client — pruning is handled by the server query layer.
+    // No-op on the client - pruning is handled by the server query layer.
 }

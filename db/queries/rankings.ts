@@ -232,7 +232,7 @@ export async function updateRanking(
  *
  * SQLite foreign-key cascades handle the child rows automatically when the
  * schema `onDelete: 'cascade'` is set, but our ranking_likes / ranking_comments /
- * comment_likes tables reference `users.id` — not `rankings.id` — so we must
+ * comment_likes tables reference `users.id` - not `rankings.id` - so we must
  * delete child rows manually in a transaction.
  *
  * Ownership is verified by the caller (API route) before calling this.
@@ -314,7 +314,7 @@ export async function likeRanking(userId: string, rankingId: string): Promise<bo
             return false // Already liked
         }
 
-        // Increment counter — sql`` prevents read-modify-write race
+        // Increment counter - sql`` prevents read-modify-write race
         await tx
             .update(rankings)
             .set({ likes: sql`${rankings.likes} + 1` })
@@ -390,7 +390,7 @@ export async function incrementRankingView(
             .limit(1)
 
         if (row.length > 0 && row[0].userId === viewerId) {
-            return // Owner viewing their own ranking — don't count
+            return // Owner viewing their own ranking - don't count
         }
     }
 

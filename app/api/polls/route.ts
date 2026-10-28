@@ -19,7 +19,7 @@ import { createPoll, listPolls, type PollListSort } from '@/db/queries/polls'
 import type { ForumCategory } from '@/types/forum'
 
 /* -------------------------------------------------------------------------- */
-/*  GET — list polls (public read, optional viewer vote)                       */
+/*  GET - list polls (public read, optional viewer vote)                       */
 /* -------------------------------------------------------------------------- */
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  POST — create poll (auth required)                                         */
+/*  POST - create poll (auth required)                                         */
 /* -------------------------------------------------------------------------- */
 
 export const POST = withAuth(async (request: NextRequest, userId: string) => {

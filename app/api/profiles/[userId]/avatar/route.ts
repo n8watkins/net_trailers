@@ -5,7 +5,7 @@
  *
  * Authenticated. Stores an avatar URL (data URL or any HTTPS URL) directly in
  * the `profiles.avatarUrl` column. Ownership is verified via the Auth.js
- * session — only the profile owner (or an admin) may update.
+ * session - only the profile owner (or an admin) may update.
  *
  * NOTE: This stub stores the URL string as-is. Firebase Storage has been
  * removed. To support binary uploads, add an S3/Cloudinary step here that

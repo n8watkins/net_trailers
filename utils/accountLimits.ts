@@ -4,7 +4,7 @@
  * Simple count-based limiting for portfolio projects.
  * Prevents runaway costs by enforcing a hard limit on total accounts.
  *
- * Backed by Turso/Drizzle — replaced former Firestore system/stats document.
+ * Backed by Turso/Drizzle - replaced former Firestore system/stats document.
  */
 
 import { sql } from 'drizzle-orm'
@@ -37,8 +37,8 @@ export async function getAccountStats(): Promise<AccountStats> {
             totalAccounts,
             maxAccounts,
             lastSignup: null, // Not tracked in Turso (no separate signupLog)
-            signupsThisWeek: 0, // Not tracked — simplification noted
-            signupsThisMonth: 0, // Not tracked — simplification noted
+            signupsThisWeek: 0, // Not tracked - simplification noted
+            signupsThisMonth: 0, // Not tracked - simplification noted
         }
     } catch (error) {
         console.error('Error getting account stats:', error)

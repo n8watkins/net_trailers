@@ -1,5 +1,5 @@
 /**
- * /api/upload — image uploads to Vercel Blob.
+ * /api/upload - image uploads to Vercel Blob.
  *
  * Authenticated users upload images (avatars, forum/thread images). Files are
  * stored under `uploads/{userId}/...` and served from the Blob CDN. Requires
@@ -51,7 +51,7 @@ export const DELETE = withAuth(async (request: NextRequest, userId: string) => {
         return NextResponse.json({ error: 'Missing url' }, { status: 400 })
     }
     // Only allow deleting blobs the user owns (path is scoped to their userId).
-    // Match on the parsed pathname prefix — a substring check would pass for a
+    // Match on the parsed pathname prefix - a substring check would pass for a
     // crafted query string like `?x=/uploads/<myId>/` appended to a victim URL.
     let pathname: string
     try {

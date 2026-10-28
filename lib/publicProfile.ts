@@ -1,5 +1,5 @@
 /**
- * Public profile payload builder — Drizzle / Turso edition.
+ * Public profile payload builder - Drizzle / Turso edition.
  *
  * Replaces the former firebase-admin implementation. All data is fetched from
  * the Turso database via Drizzle. The `PublicProfilePayload` shape and the two
@@ -13,7 +13,7 @@
  * NOTES ON DATA MIGRATION
  * -----------------------
  * `likedMovies` (liked content) and `userCreatedWatchlists` (collections) are
- * stored inside the `user_preferences.data` JSON blob — they are not separate
+ * stored inside the `user_preferences.data` JSON blob - they are not separate
  * Drizzle tables. We extract them from the preferences row here. If those
  * fields have not yet been migrated for a given user the sections are returned
  * empty (same graceful-degradation behaviour as before).

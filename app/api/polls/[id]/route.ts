@@ -9,7 +9,7 @@
  *   { question?: string; options?: string[]; category?: ForumCategory;
  *     hidden?: boolean }
  *
- * `hidden` is handled separately from the edit-window check — visibility
+ * `hidden` is handled separately from the edit-window check - visibility
  * can be toggled by the owner at any time.  If `hidden` is the only field
  * supplied, only the visibility is changed without checking the edit window.
  */
@@ -24,7 +24,7 @@ import type { ForumCategory } from '@/types/forum'
 type RouteContext = { params: Promise<{ id: string }> }
 
 /* -------------------------------------------------------------------------- */
-/*  GET — single poll (public, viewer vote included)                           */
+/*  GET - single poll (public, viewer vote included)                           */
 /* -------------------------------------------------------------------------- */
 
 export async function GET(request: NextRequest, context: RouteContext): Promise<NextResponse> {
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
 }
 
 /* -------------------------------------------------------------------------- */
-/*  PATCH — update poll (auth required, owner only)                            */
+/*  PATCH - update poll (auth required, owner only)                            */
 /* -------------------------------------------------------------------------- */
 
 export const PATCH = withAuth(
@@ -89,12 +89,12 @@ export const PATCH = withAuth(
 
         try {
             if (isVisibilityOnly) {
-                // Visibility toggle — no edit-window restriction
+                // Visibility toggle - no edit-window restriction
                 const poll = await setPollVisibility(pollId, userId, Boolean(hidden))
                 return NextResponse.json({ success: true, poll })
             }
 
-            // Content edits — subject to 5-minute edit window
+            // Content edits - subject to 5-minute edit window
             const updates: Parameters<typeof updatePoll>[2] = {}
 
             if (hidden !== undefined) {
@@ -167,7 +167,7 @@ export const PATCH = withAuth(
 )
 
 /* -------------------------------------------------------------------------- */
-/*  DELETE — delete poll (auth required, owner or admin)                       */
+/*  DELETE - delete poll (auth required, owner or admin)                       */
 /* -------------------------------------------------------------------------- */
 
 export const DELETE = withAuth(

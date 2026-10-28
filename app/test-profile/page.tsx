@@ -8,7 +8,7 @@ import type { PublicProfilePayload } from '@/lib/publicProfile'
  * Test Profile Page
  *
  * Debug page that exercises the Turso-backed profile API routes.
- * All data is fetched via fetch() — no direct Firestore reads.
+ * All data is fetched via fetch() - no direct Firestore reads.
  */
 
 export default function TestProfilePage() {
@@ -30,7 +30,7 @@ export default function TestProfilePage() {
                 return
             }
 
-            // Test 1: /api/profiles/[userId] — basic profile row
+            // Test 1: /api/profiles/[userId] - basic profile row
             try {
                 const res = await fetch(`/api/profiles/${userId}`)
                 testResults.profileStatus = res.status
@@ -41,7 +41,7 @@ export default function TestProfilePage() {
                 testResults.profileError = (err as Error).message
             }
 
-            // Test 2: /api/public-profile/[userId] — full aggregated payload
+            // Test 2: /api/public-profile/[userId] - full aggregated payload
             try {
                 const res = await fetch(`/api/public-profile/${userId}`)
                 testResults.publicProfileStatus = res.status
@@ -60,7 +60,7 @@ export default function TestProfilePage() {
                 testResults.publicProfileError = (err as Error).message
             }
 
-            // Test 3: /api/rankings?scope=mine — own rankings (requires auth)
+            // Test 3: /api/rankings?scope=mine - own rankings (requires auth)
             try {
                 const res = await fetch('/api/rankings?scope=mine', { credentials: 'same-origin' })
                 testResults.rankingsStatus = res.status
@@ -71,7 +71,7 @@ export default function TestProfilePage() {
                 testResults.rankingsError = (err as Error).message
             }
 
-            // Test 4: /api/polls/user/[userId] — created polls
+            // Test 4: /api/polls/user/[userId] - created polls
             try {
                 const res = await fetch(`/api/polls/user/${userId}`)
                 testResults.pollsStatus = res.status

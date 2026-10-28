@@ -8,7 +8,7 @@
  * Storage rationale: db/schema.ts cannot be modified (project constraint).
  * The `userPreferences.data` column is an open JSON blob keyed by userId.
  * Storing the token there avoids adding a new column while keeping all
- * user-preference data in one document — the same mental model as the former
+ * user-preference data in one document - the same mental model as the former
  * Firestore approach.
  */
 

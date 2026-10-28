@@ -43,7 +43,7 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
             return NextResponse.json({ success: true, polls })
         }
 
-        // Created polls — public read
+        // Created polls - public read
         const polls = await listPollsByUser(targetUserId, viewerId)
         return NextResponse.json({ success: true, polls })
     } catch (error) {

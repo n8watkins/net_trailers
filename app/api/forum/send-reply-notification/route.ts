@@ -5,7 +5,7 @@
  * Auth.js/Turso replacement: recipient lookup uses db/queries/profiles (Drizzle)
  * instead of Firebase Admin Auth.
  *
- * This route is called fire-and-forget from /api/threads/[id]/replies — the
+ * This route is called fire-and-forget from /api/threads/[id]/replies - the
  * reply itself succeeds even if this notification fails.
  */
 

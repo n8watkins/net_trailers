@@ -48,7 +48,7 @@ export async function compressImage(file: File): Promise<File> {
 }
 
 /**
- * Upload an image — compresses it client-side, then uploads to Vercel Blob via
+ * Upload an image - compresses it client-side, then uploads to Vercel Blob via
  * `/api/upload`. Returns the public CDN URL. The `path` parameter is used as a
  * grouping hint for the blob key.
  */
@@ -81,7 +81,7 @@ export async function uploadImage(file: File, path: string): Promise<string> {
 }
 
 /**
- * "Upload" multiple images — returns an array of base64 data URLs.
+ * "Upload" multiple images - returns an array of base64 data URLs.
  */
 export async function uploadImages(files: File[], path: string): Promise<string[]> {
     try {

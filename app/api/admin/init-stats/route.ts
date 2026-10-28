@@ -3,7 +3,7 @@
  *
  * Admin-only endpoint that counts existing users from the `user` and
  * `signup_log` tables (Drizzle/Turso).  No longer writes to a Firestore
- * `system/stats` document — statistics are derived on-the-fly from the DB.
+ * `system/stats` document - statistics are derived on-the-fly from the DB.
  */
 
 import { count, gte } from 'drizzle-orm'

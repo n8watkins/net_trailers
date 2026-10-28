@@ -5,12 +5,12 @@
  * models. The retry/backoff logic remains so rate-limit errors are retried
  * against the same model. Tracks timing and metadata for each attempt.
  *
- * Model: gemini-3.1-flash-lite (only — no fallbacks)
+ * Model: gemini-3.1-flash-lite (only - no fallbacks)
  */
 
 import { apiLog, apiWarn, apiError } from '@/utils/debugLogger'
 
-// Standardized on a single model — no fallbacks.
+// Standardized on a single model - no fallbacks.
 const DEFAULT_MODEL_PRIORITY = ['gemini-3.1-flash-lite'] as const
 
 // Kept as a separate export for endpoints that import it; same single model.
@@ -155,7 +155,7 @@ async function tryModels(
 
         if (wasRateLimited) {
             apiWarn(
-                `[Gemini Router] ✗ Rate limit hit on ${model} (${durationMs}ms) — falling back to next model`
+                `[Gemini Router] ✗ Rate limit hit on ${model} (${durationMs}ms) - falling back to next model`
             )
             // Continue to next model
         } else {
@@ -238,7 +238,7 @@ export async function routeGeminiRequest<T = any>(
     }
 
     // All models rate-limited - wait and retry
-    apiWarn('[Gemini Router] All models rate-limited — waiting 7 seconds before retry')
+    apiWarn('[Gemini Router] All models rate-limited - waiting 7 seconds before retry')
     await new Promise((resolve) => setTimeout(resolve, 7000)) // Wait 7 seconds
 
     // Second pass

@@ -1,8 +1,8 @@
 /**
  * /api/rankings/comments/[commentId]/like
  *
- * POST   — Like a comment (authenticated users only).
- * DELETE — Unlike a comment (authenticated users only).
+ * POST   - Like a comment (authenticated users only).
+ * DELETE - Unlike a comment (authenticated users only).
  */
 
 import { NextRequest, NextResponse } from 'next/server'

@@ -1,5 +1,5 @@
 /**
- * /api/user/delete-account — permanently delete the current user and all data.
+ * /api/user/delete-account - permanently delete the current user and all data.
  *
  * The user id comes from the Auth.js session (never the request body). After
  * this returns the client should sign out (the session row is already deleted).

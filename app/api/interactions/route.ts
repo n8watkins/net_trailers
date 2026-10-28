@@ -1,8 +1,8 @@
 /**
  * /api/interactions
  *
- * POST — Record a single interaction for the authenticated user.
- * GET  — Return the authenticated user's recent interactions (+ optional summary).
+ * POST - Record a single interaction for the authenticated user.
+ * GET  - Return the authenticated user's recent interactions (+ optional summary).
  *
  * The userId is always read from the Auth.js session; clients MUST NOT send
  * a userId in the request body or query string.

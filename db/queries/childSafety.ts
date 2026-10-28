@@ -1,5 +1,5 @@
 /**
- * Drizzle query layer — child_safety_pins table.
+ * Drizzle query layer - child_safety_pins table.
  *
  * Column reference (db/schema.ts):
  *   child_safety_pins: userId(pk), pinHash(text), updatedAt(int)
@@ -10,7 +10,7 @@
  * - A user can only read/write their own row (userId comes from the Auth.js
  *   session in the calling API route).
  * - Rate-limiting (failed attempts, lockout timestamp) is stored in the
- *   childSafetyPins row via a JSON blob column `meta` — but the schema has no
+ *   childSafetyPins row via a JSON blob column `meta` - but the schema has no
  *   such column. The schema only has (userId, pinHash, updatedAt). Rate-limit
  *   state is therefore tracked in-memory per-request and exposed via the
  *   returned VerifyResult so the API route can respond appropriately. Persistent
@@ -51,7 +51,7 @@ function validatePIN(pin: string): { valid: boolean; error?: string } {
 
 export interface PinVerifyResult {
     success: boolean
-    /** Human-readable error — safe to return to client. */
+    /** Human-readable error - safe to return to client. */
     error?: string
 }
 
@@ -70,7 +70,7 @@ export async function hasPIN(userId: string): Promise<boolean> {
 
 /**
  * Return the PINSettings shape for the API response.
- * The pinHash column is excluded — it is never returned.
+ * The pinHash column is excluded - it is never returned.
  */
 export async function getPINStatus(userId: string): Promise<PINSettings> {
     const rows = await db

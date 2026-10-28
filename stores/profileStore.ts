@@ -4,7 +4,7 @@
  * Manages user profile state and syncs with the Drizzle-backed API routes.
  * All writes go through /api/profiles/[userId] (PATCH) or
  * /api/profiles/username-availability (GET) so the server always derives the
- * acting user from the Auth.js session — the userId parameter in URLs is used
+ * acting user from the Auth.js session - the userId parameter in URLs is used
  * for routing only; the server re-validates ownership.
  *
  * Avatar upload: Firebase Storage has been removed. The `uploadAvatar` action
@@ -40,7 +40,7 @@ interface ProfileState {
     isLoading: boolean
     error: string | null
 
-    // Actions — Profile CRUD
+    // Actions - Profile CRUD
     loadProfile: (userId: string | null) => Promise<void>
     loadUserProfileByUsername: (username: string) => Promise<void>
     createProfile: (
@@ -53,11 +53,11 @@ interface ProfileState {
     uploadAvatar: (userId: string | null, dataUrlOrUrl: string) => Promise<string | null>
     deleteAvatar: (userId: string | null) => Promise<void>
 
-    // Actions — Username
+    // Actions - Username
     checkUsernameAvailability: (username: string) => Promise<UsernameAvailability>
     updateUsername: (userId: string | null, newUsername: string) => Promise<void>
 
-    // Actions — Visibility
+    // Actions - Visibility
     getVisibility: (userId: string | null) => Promise<ProfileVisibility>
     updateVisibility: (
         userId: string | null,
@@ -181,7 +181,7 @@ export const useProfileStore = create<ProfileState>()(
                         googlePhotoUrl
                     )
 
-                    // PATCH upserts — the server will insert if the row is absent.
+                    // PATCH upserts - the server will insert if the row is absent.
                     const patchPayload: UpdateProfileRequest = {
                         displayName: defaultProfile.displayName,
                         description: defaultProfile.description,

@@ -1,8 +1,8 @@
 /**
  * /api/rankings/[id]/comments
  *
- * GET  — List comments for a ranking (no auth; replies are embedded in the response).
- * POST — Create a new comment or reply (authenticated users only).
+ * GET  - List comments for a ranking (no auth; replies are embedded in the response).
+ * POST - Create a new comment or reply (authenticated users only).
  */
 
 import { NextRequest, NextResponse } from 'next/server'

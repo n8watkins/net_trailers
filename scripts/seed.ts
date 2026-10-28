@@ -31,7 +31,7 @@ function movie(id: number, title: string, poster: string): Content {
         name: title,
         poster_path: poster,
         backdrop_path: poster,
-        overview: `${title} — seeded demo content.`,
+        overview: `${title} - seeded demo content.`,
         vote_average: 8,
         genre_ids: [28, 12],
         release_date: '2014-11-05',
@@ -100,7 +100,7 @@ async function seed() {
     ]) {
         await db.insert(threads).values({
             title: t.title,
-            content: 'Seeded demo thread — start the discussion!',
+            content: 'Seeded demo thread - start the discussion!',
             category: t.category,
             userId: DEMO_USER_ID,
             userName: 'Demo User',

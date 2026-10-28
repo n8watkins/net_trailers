@@ -1,10 +1,10 @@
 /**
  * /api/rankings
  *
- * GET  — List public rankings (no auth) or the current user's own rankings when
+ * GET  - List public rankings (no auth) or the current user's own rankings when
  *         ?scope=mine is passed.  Public listings are sorted by the `sort` query
  *         param (recent | popular | most-liked | most-viewed).
- * POST — Create a new ranking (authenticated users only).
+ * POST - Create a new ranking (authenticated users only).
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
         const offset = Number(searchParams.get('offset') || '0')
 
         if (scope === 'mine') {
-            // Authenticated — return the caller's own rankings
+            // Authenticated - return the caller's own rankings
             const userId = await currentUserId()
             if (!userId) {
                 return NextResponse.json(
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
         }
 
         if (scope === 'liked') {
-            // Authenticated — return rankings liked by the caller
+            // Authenticated - return rankings liked by the caller
             const userId = await currentUserId()
             if (!userId) {
                 return NextResponse.json(
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ success: true, ...result })
         }
 
-        // Public feed — no auth required
+        // Public feed - no auth required
         const result = await getPublicRankings(sort, limit, offset)
         return NextResponse.json({ success: true, ...result })
     } catch (error) {

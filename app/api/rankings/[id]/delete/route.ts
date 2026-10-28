@@ -1,7 +1,7 @@
 /**
  * /api/rankings/[id]/delete
  *
- * DEPRECATED — This route previously used Firebase Admin SDK to delete rankings.
+ * DEPRECATED - This route previously used Firebase Admin SDK to delete rankings.
  * It is superseded by DELETE /api/rankings/[id] which uses the Turso/Drizzle
  * backend and Auth.js session authentication.
  *

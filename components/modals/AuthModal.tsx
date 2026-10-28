@@ -125,7 +125,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                                 <ExclamationTriangleIcon className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
                                 <p className="text-amber-200 text-sm">
                                     You&apos;re in an in-app browser. For sign-in to work, open this
-                                    page in your default browser (Safari/Chrome) — use the menu
+                                    page in your default browser (Safari/Chrome) - use the menu
                                     (&hellip;) and choose{' '}
                                     <span className="font-semibold">Open in browser</span>.
                                 </p>
@@ -190,7 +190,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                                 </form>
 
                                 <p className="text-center text-gray-500 text-sm mt-6">
-                                    You can keep browsing as a guest — your data stays in this
+                                    You can keep browsing as a guest - your data stays in this
                                     browser until you sign in.
                                 </p>
                             </>

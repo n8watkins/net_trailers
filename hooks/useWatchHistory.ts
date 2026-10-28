@@ -29,7 +29,7 @@ export function useWatchHistory() {
     // For guest sessions, activeSessionId is the guest ID
     const guestId = sessionType === 'guest' ? activeSessionId : null
 
-    // Auth.js session — replaces the old Firebase auth.onAuthStateChanged listener.
+    // Auth.js session - replaces the old Firebase auth.onAuthStateChanged listener.
     const { user: authUser, loading: authLoading } = useAuth()
 
     const {

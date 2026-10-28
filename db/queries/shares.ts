@@ -112,9 +112,9 @@ function isShareExpired(share: ShareableLink): boolean {
  *
  * The caller MUST pass the collection object (so we can build the snapshot
  * at write time). The route layer fetches the collection from userPreferences
- * before calling here — this function is pure persistence.
+ * before calling here - this function is pure persistence.
  *
- * @param userId       Authenticated user id (from session — never trusted from client).
+ * @param userId       Authenticated user id (from session - never trusted from client).
  * @param collectionId The collection being shared.
  * @param collection   The live UserList object (used to build snapshot + metadata).
  * @param request      CreateShareRequest body from the API caller.
@@ -193,7 +193,7 @@ export async function createShare(
 }
 
 /**
- * Validate and return a share by ID (public — no auth required).
+ * Validate and return a share by ID (public - no auth required).
  *
  * Enforces isActive and expiry server-side.
  */
@@ -296,7 +296,7 @@ export async function getSharedCollectionData(
  * Increment viewCount and stamp lastViewedAt for a share.
  *
  * Fire-and-forget from the client (POST to the shareId route).
- * Does NOT validate isActive/expiry — that check happens in the POST handler
+ * Does NOT validate isActive/expiry - that check happens in the POST handler
  * before this is called.
  */
 export async function incrementViewCount(shareId: string): Promise<void> {

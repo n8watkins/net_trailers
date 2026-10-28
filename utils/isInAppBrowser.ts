@@ -3,7 +3,7 @@
  *
  * These embedded webviews are where OAuth often gets blocked and where
  * magic-link sign-in lands the session in the webview instead of the user's
- * real browser — so we warn the user to open the page in their default browser
+ * real browser - so we warn the user to open the page in their default browser
  * before signing in. SSR-safe (returns false when navigator is unavailable).
  */
 
