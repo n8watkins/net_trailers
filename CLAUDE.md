@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+**Start with `docs/HANDOFF.md`**: it has the current status, open problems, owner blockers and next steps.
+
 ## Development Commands
 
 ```bash
@@ -548,7 +550,7 @@ const showModal = useModalStore((state) => state.modal.isOpen)
 ## API Security
 
 - **TMDB API Key**: Never exposed to client (server-side only)
-- **Gemini API Key**: Public key (rate-limited by Google)
+- **Gemini API Key**: Server-side only (`GEMINI_API_KEY`, never `NEXT_PUBLIC_*`)
 - **CRON_SECRET**: Protects cron job endpoints from unauthorized access
 - **Input sanitization**: Gemini API routes sanitize input via `utils/inputSanitization.ts` (control-char removal, length limits, prompt-injection guards); admin custom-HTML emails use `sanitize-html` (serverless-safe; replaced isomorphic-dompurify)
 - **Data access control**: Server-side ownership checks in API routes (session-derived user id) — replaces Firestore security rules
