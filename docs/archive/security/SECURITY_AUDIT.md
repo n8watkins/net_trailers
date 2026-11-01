@@ -26,12 +26,12 @@ The application has **MODERATE TO CRITICAL** security concerns. Most concerning 
 
 **Details:**
 
-- Firebase API Key: `AIzaSyAUnk_RlyFa7BzLuhiadzy32iyBDKCcYSE` (EXPOSED)
-- Firebase Project ID: `netflix-clone-15862` (EXPOSED)
-- TMDB API Key: `96fa23e76f0d41cb36975d635d344e2a` (EXPOSED)
-- Google Gemini API Key: `AIzaSyBGRbgpIwkE1x6BB-NJcMamJ380Ob05f_4` (EXPOSED - file explicitly warns key is compromised)
-- Sentry DSN: `https://e8ff08283b0f2f9db0042fd4d186acfe@o4507767562371072.ingest.us.sentry.io/4510041561759744` (EXPOSED)
-- Google Analytics ID: `G-ZJ89Z1VW2M` (EXPOSED)
+- Firebase API Key: `<redacted: public web key>` (EXPOSED)
+- Firebase Project ID: `<redacted>` (EXPOSED)
+- TMDB API Key: `<redacted 2026-11-01: regenerate>` (EXPOSED)
+- Google Gemini API Key: `<redacted: revoked>` (EXPOSED - file explicitly warns key is compromised)
+- Sentry DSN: `<redacted: public DSN>` (EXPOSED)
+- Google Analytics ID: `<redacted: public ID>` (EXPOSED)
 
 **Risk Impact:**
 
