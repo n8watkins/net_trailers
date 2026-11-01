@@ -6,7 +6,6 @@
 
 import { ImageResponse } from 'next/og'
 
-export const runtime = 'edge'
 export const alt = 'Shared Collection'
 export const size = {
     width: 1200,
@@ -15,13 +14,13 @@ export const size = {
 export const contentType = 'image/png'
 
 interface Props {
-    params: {
+    params: Promise<{
         shareId: string
-    }
+    }>
 }
 
 export default async function Image({ params }: Props) {
-    const { shareId } = params
+    const { shareId } = await params
 
     // Fetch share data
     let collectionName = 'Shared Collection'
@@ -30,7 +29,8 @@ export default async function Image({ params }: Props) {
 
     try {
         const baseUrl =
-            process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL || 'http://localhost:3000'
+            process.env.NEXT_PUBLIC_BASE_URL ||
+            (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
         const response = await fetch(`${baseUrl}/api/shares/${shareId}`, {
             next: { revalidate: 3600 }, // Cache for 1 hour
         })
