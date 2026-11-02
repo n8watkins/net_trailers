@@ -11,14 +11,11 @@ export interface TMDBError extends Error {
 export class TMDBApiClient {
     private static instance: TMDBApiClient
     private baseUrl: string
-    private apiKey: string
 
+    // The API key is checked when a request is built, not here, so modules that
+    // create the client at import time can load during `next build` without it.
     private constructor() {
-        if (!API_KEY) {
-            throw new Error('TMDB API key not configured')
-        }
         this.baseUrl = BASE_URL
-        this.apiKey = API_KEY
     }
 
     public static getInstance(): TMDBApiClient {
@@ -29,9 +26,12 @@ export class TMDBApiClient {
     }
 
     private buildUrl(endpoint: string, params: Record<string, string | number> = {}): string {
+        if (!API_KEY) {
+            throw new Error('TMDB API key not configured')
+        }
         const url = new URL(`${this.baseUrl}${endpoint}`)
         // TMDB API v3 requires api_key as query parameter
-        url.searchParams.set('api_key', this.apiKey)
+        url.searchParams.set('api_key', API_KEY)
         url.searchParams.set('language', 'en-US')
 
         Object.entries(params).forEach(([key, value]) => {
