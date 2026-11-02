@@ -5,6 +5,8 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    // Next 16.4 `next dev` writes agent rules into AGENTS.md when a coding agent runs it; keep the tree clean.
+    agentRules: false,
     reactStrictMode: true,
     typescript: {
         ignoreBuildErrors: false,
