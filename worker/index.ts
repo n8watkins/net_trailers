@@ -8,6 +8,7 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import openNext from '../.open-next/worker.js'
+import { errorSummary, logError, pathOf } from '../lib/log'
 import { runCron, type FetchHandler, type WorkerEnv } from './crons'
 import { assetsWithUploads, isUploadPath, serveUpload } from './uploads'
 
@@ -38,8 +39,23 @@ function withUploads(env: WorkerEnv): WorkerEnv {
 
 export default {
     async fetch(request, env, ctx) {
-        if (isUploadPath(new URL(request.url).pathname)) return serveUpload(request, env.UPLOADS)
-        return forBrowsers(await app.fetch(request, withUploads(env), ctx))
+        try {
+            if (isUploadPath(new URL(request.url).pathname))
+                return await serveUpload(request, env.UPLOADS)
+            return forBrowsers(await app.fetch(request, withUploads(env), ctx))
+        } catch (err) {
+            // Next reports its own errors (instrumentation.ts onRequestError);
+            // this is for a throw that escapes OpenNext or the uploads handler.
+            logError({
+                event: 'unhandled_exception',
+                reason: 'worker_fetch_threw',
+                route: pathOf(request.url),
+                method: request.method,
+                status: 500,
+                error: errorSummary(err),
+            })
+            throw err
+        }
     },
 
     async scheduled(controller, env, ctx) {

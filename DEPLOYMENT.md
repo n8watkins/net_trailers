@@ -72,6 +72,15 @@ Log in once with `npx wrangler login`, export the build-time values, then run `n
 To check the Worker locally, run `npm run preview` and open http://localhost:8787.
 To try the crons locally, run `npx wrangler dev --test-scheduled --var CRONS_ENABLED:true` after a build and open `http://localhost:8787/__scheduled?cron=0+2+*+*+MON`.
 
+## Reading the logs
+
+Workers Logs keeps every request (`observability` in `wrangler.jsonc`, `head_sampling_rate: 1`).
+In the Cloudflare dashboard, open Workers & Pages, then the `net-trailers` Worker, then Logs.
+To stream them live, run `npx wrangler tail net-trailers --format pretty`.
+`--search` matches log messages only, not request URLs, so use `--status error` or no filter to see requests.
+Failures log one JSON line with `event`, `reason` and `route`: Auth.js errors (GitHub and magic-link sign-in) as `auth_error` with the error type (such as `CallbackRouteError` or `EmailSignInError`), a masked message and the provider's OAuth error code, and errors thrown in pages, route handlers or the proxy as `unhandled_exception` with the route (`instrumentation.ts`).
+They never carry secrets, tokens, OAuth codes or state values, cookies, emails or other personal data.
+
 ## Testing a deployment
 
 The deployed Worker uses the production database, so only read-only checks run against it: pages, the TMDB-backed API routes, the changelog, and the locked routes (`/api/cron/*` answers 401 without the secret).
