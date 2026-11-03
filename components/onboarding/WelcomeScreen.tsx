@@ -64,7 +64,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 
     return (
         <div
-            className="fixed inset-0 z-modal flex items-center justify-center p-4"
+            className="fixed inset-0 z-modal flex justify-center overflow-y-auto p-4"
             role="dialog"
             aria-modal="true"
             aria-labelledby="welcome-title"
@@ -83,7 +83,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
             </div>
 
             {/* Modal panel with cinematic styling */}
-            <div className="relative w-full max-w-3xl px-8 pt-8 pb-6 overflow-hidden text-left transition-all transform bg-zinc-900/95 backdrop-blur-xl border border-orange-500/40 rounded-2xl shadow-2xl shadow-orange-500/20">
+            <div className="relative my-auto w-full max-w-3xl px-8 pt-8 pb-6 overflow-hidden text-left transition-all transform bg-zinc-900/95 backdrop-blur-xl border border-orange-500/40 rounded-2xl shadow-2xl shadow-orange-500/20">
                 {/* Animated background gradients */}
                 <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900/80 to-black -z-10" />
                 <div

@@ -4,6 +4,7 @@
  */
 
 import { Content } from '../typings'
+import { selfFetch } from './selfFetch'
 import { getChildSafetyMode } from './childSafetyCookieServer'
 import {
     deduplicateContent,
@@ -12,24 +13,6 @@ import {
 } from '../utils/contentDeduplication'
 
 const API_KEY = process.env.TMDB_API_KEY
-
-/**
- * Get the base URL for internal API calls
- * Uses Vercel URL in production, localhost in development
- */
-function getBaseUrl(): string {
-    // In production on Vercel, use the deployment URL
-    // VERCEL_PROJECT_PRODUCTION_URL is more stable for production deployments
-    // VERCEL_URL works for both production and preview deployments
-    if (process.env.VERCEL_ENV === 'production' && process.env.VERCEL_PROJECT_PRODUCTION_URL) {
-        return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-    }
-    if (process.env.VERCEL_URL) {
-        return `https://${process.env.VERCEL_URL}`
-    }
-    const port = process.env.PORT || '3000'
-    return process.env.NEXT_PUBLIC_BASE_URL || `http://localhost:${port}`
-}
 
 export interface HomeData {
     trending: Content[]
@@ -53,56 +36,55 @@ export async function fetchHomeData(): Promise<HomeData> {
 
     const childSafetyEnabled = await getChildSafetyMode()
     const childSafetyParam = childSafetyEnabled ? 'childSafetyMode=true' : ''
-    const baseUrl = getBaseUrl()
 
     // Always fetch mixed content (both movies and TV shows)
     // In child safety mode, use family-friendly genres only
     const fetchPromises: Promise<Response>[] = childSafetyEnabled
         ? [
               // Fetch both movie and TV trending
-              fetch(`${baseUrl}/api/movies/trending?${childSafetyParam}`),
-              fetch(`${baseUrl}/api/tv/trending?${childSafetyParam}`),
+              selfFetch(`/api/movies/trending?${childSafetyParam}`),
+              selfFetch(`/api/tv/trending?${childSafetyParam}`),
               // Fetch both movie and TV top rated
-              fetch(`${baseUrl}/api/movies/top-rated?page=1&${childSafetyParam}`),
-              fetch(`${baseUrl}/api/tv/top-rated?page=1&${childSafetyParam}`),
+              selfFetch(`/api/movies/top-rated?page=1&${childSafetyParam}`),
+              selfFetch(`/api/tv/top-rated?page=1&${childSafetyParam}`),
               // Mixed genres - Animation (movies + TV)
-              fetch(`${baseUrl}/api/genres/movie/16?${childSafetyParam}`),
-              fetch(`${baseUrl}/api/genres/tv/16?${childSafetyParam}`),
+              selfFetch(`/api/genres/movie/16?${childSafetyParam}`),
+              selfFetch(`/api/genres/tv/16?${childSafetyParam}`),
               // Mixed genres - Family/Comedy (movies + TV)
-              fetch(`${baseUrl}/api/genres/movie/10751?${childSafetyParam}`),
-              fetch(`${baseUrl}/api/genres/tv/35?${childSafetyParam}`),
+              selfFetch(`/api/genres/movie/10751?${childSafetyParam}`),
+              selfFetch(`/api/genres/tv/35?${childSafetyParam}`),
               // Mixed genres - Adventure (movies + TV Action & Adventure)
-              fetch(`${baseUrl}/api/genres/movie/12?${childSafetyParam}`),
-              fetch(`${baseUrl}/api/genres/tv/10759?${childSafetyParam}`),
+              selfFetch(`/api/genres/movie/12?${childSafetyParam}`),
+              selfFetch(`/api/genres/tv/10759?${childSafetyParam}`),
               // Mixed genres - Romance+Drama (movies) + Sci-Fi & Fantasy (TV)
-              fetch(`${baseUrl}/api/genres/movie/10749,18?${childSafetyParam}`),
-              fetch(`${baseUrl}/api/genres/tv/10765?${childSafetyParam}`),
+              selfFetch(`/api/genres/movie/10749,18?${childSafetyParam}`),
+              selfFetch(`/api/genres/tv/10765?${childSafetyParam}`),
               // Documentary (both)
-              fetch(`${baseUrl}/api/genres/movie/99?${childSafetyParam}`),
-              fetch(`${baseUrl}/api/genres/tv/99?${childSafetyParam}`),
+              selfFetch(`/api/genres/movie/99?${childSafetyParam}`),
+              selfFetch(`/api/genres/tv/99?${childSafetyParam}`),
           ]
         : [
               // Fetch both movie and TV trending
-              fetch(`${baseUrl}/api/movies/trending?${childSafetyParam}`),
-              fetch(`${baseUrl}/api/tv/trending?${childSafetyParam}`),
+              selfFetch(`/api/movies/trending?${childSafetyParam}`),
+              selfFetch(`/api/tv/trending?${childSafetyParam}`),
               // Fetch both movie and TV top rated
-              fetch(`${baseUrl}/api/movies/top-rated?page=1&${childSafetyParam}`),
-              fetch(`${baseUrl}/api/tv/top-rated?page=1&${childSafetyParam}`),
+              selfFetch(`/api/movies/top-rated?page=1&${childSafetyParam}`),
+              selfFetch(`/api/tv/top-rated?page=1&${childSafetyParam}`),
               // Mixed genres - Action (movies + TV Action & Adventure)
-              fetch(`${baseUrl}/api/genres/movie/28?${childSafetyParam}`),
-              fetch(`${baseUrl}/api/genres/tv/10759?${childSafetyParam}`),
+              selfFetch(`/api/genres/movie/28?${childSafetyParam}`),
+              selfFetch(`/api/genres/tv/10759?${childSafetyParam}`),
               // Mixed genres - Comedy (both)
-              fetch(`${baseUrl}/api/genres/movie/35?${childSafetyParam}`),
-              fetch(`${baseUrl}/api/genres/tv/35?${childSafetyParam}`),
+              selfFetch(`/api/genres/movie/35?${childSafetyParam}`),
+              selfFetch(`/api/genres/tv/35?${childSafetyParam}`),
               // Mixed genres - Horror (movies) + Sci-Fi & Fantasy (TV)
-              fetch(`${baseUrl}/api/genres/movie/27?${childSafetyParam}`),
-              fetch(`${baseUrl}/api/genres/tv/10765?${childSafetyParam}`),
+              selfFetch(`/api/genres/movie/27?${childSafetyParam}`),
+              selfFetch(`/api/genres/tv/10765?${childSafetyParam}`),
               // Mixed genres - Romance+Drama (movies) + Animation (TV)
-              fetch(`${baseUrl}/api/genres/movie/10749,18?${childSafetyParam}`),
-              fetch(`${baseUrl}/api/genres/tv/16?${childSafetyParam}`),
+              selfFetch(`/api/genres/movie/10749,18?${childSafetyParam}`),
+              selfFetch(`/api/genres/tv/16?${childSafetyParam}`),
               // Documentary (both)
-              fetch(`${baseUrl}/api/genres/movie/99?${childSafetyParam}`),
-              fetch(`${baseUrl}/api/genres/tv/99?${childSafetyParam}`),
+              selfFetch(`/api/genres/movie/99?${childSafetyParam}`),
+              selfFetch(`/api/genres/tv/99?${childSafetyParam}`),
           ]
 
     const responses = await Promise.all(fetchPromises)

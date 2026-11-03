@@ -10,6 +10,8 @@ Where older docs disagree with it, this section wins.
 Net Trailers is a Netflix-style movie and TV discovery app: TMDB browsing and trailers, Gemini-powered smart search, collections, rankings, polls and notifications.
 Stack: Next.js 16, React 19, Turso (libSQL) with Drizzle, Auth.js (GitHub and magic link), Sentry, Tailwind 4 plus MUI.
 Live at https://net-trailers.vercel.app (Vercel; every push to `main` deploys to production).
+2026-11-03: the app also runs on Cloudflare Workers at https://net-trailers.nathancwatkins23.workers.dev (DEPLOYMENT.md), on the same Turso database; uploads are in R2, the crons are Cron Triggers (off until Vercel is turned off), and Cloudflare Web Analytics replaces Vercel Analytics.
+The owner's remaining steps for the move are in DEPLOYMENT.md, "Moving off Vercel".
 The planned address is `trailers.n8builds.dev`; that DNS step belongs to the owner and is not done.
 Setup and features: `README.md`; architecture and conventions for agents: `CLAUDE.md`; deploy and env vars: `DEPLOYMENT.md`; AI endpoints: `docs/gemini-api-usage.md`.
 
@@ -26,7 +28,7 @@ Setup and features: `README.md`; architecture and conventions for agents: `CLAUD
 - Two stray hosting integrations report failures on every push, and neither serves the app:
   GitHub Pages (`pages-build-deployment`, failing its build) and a Netlify site (`silly-palmier-862249`, "Deploy Preview failed").
   The owner should switch both off; agents must not change hosting settings.
-- Analytics go to a separate GA4 property (`NEXT_PUBLIC_GA_MEASUREMENT_ID`, loaded in `components/utility/Analytics.tsx`) plus Vercel Analytics.
+- Analytics go to a separate GA4 property (`NEXT_PUBLIC_GA_MEASUREMENT_ID`, loaded in `components/utility/Analytics.tsx`) plus Cloudflare Web Analytics (`components/utility/WebAnalytics.tsx`, once its token is set).
   The owner may later unify it with the other n8builds properties.
 
 ### Open problems, highest first

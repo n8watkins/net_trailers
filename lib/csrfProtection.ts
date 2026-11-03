@@ -7,20 +7,14 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 
-// Allowed origins for CSRF protection
+// Allowed origins for CSRF protection, besides the request's own origin
+// (same-origin requests are always allowed, on whatever address serves the
+// app: the workers.dev address, a custom domain, Vercel).
 const ALLOWED_ORIGINS = [
     process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
     'http://localhost:3000',
     'http://localhost:3001',
 ]
-
-// Add production URLs if they exist
-if (process.env.VERCEL_URL) {
-    ALLOWED_ORIGINS.push(`https://${process.env.VERCEL_URL}`)
-}
-if (process.env.NEXT_PUBLIC_VERCEL_URL) {
-    ALLOWED_ORIGINS.push(`https://${process.env.NEXT_PUBLIC_VERCEL_URL}`)
-}
 
 /**
  * Parse and extract origin from a URL string
@@ -48,9 +42,9 @@ export function validateOrigin(request: NextRequest): boolean {
     const referer = request.headers.get('referer')
 
     // Normalize allowed origins for comparison
-    const normalizedAllowedOrigins = ALLOWED_ORIGINS.map((o) => parseOrigin(o)).filter(
-        (o): o is string => o !== null
-    )
+    const normalizedAllowedOrigins = [...ALLOWED_ORIGINS, request.url]
+        .map((o) => parseOrigin(o))
+        .filter((o): o is string => o !== null)
 
     // Check Origin header (preferred)
     if (origin) {
@@ -156,9 +150,14 @@ export function validateServerActionOrigin(headersList: Headers): boolean {
     const referer = headersList.get('referer')
 
     // Normalize allowed origins for comparison
-    const normalizedAllowedOrigins = ALLOWED_ORIGINS.map((o) => parseOrigin(o)).filter(
-        (o): o is string => o !== null
-    )
+    // The server action's own origin, from the Host header the platform routed by.
+    const host = headersList.get('host')
+    const ownOrigin = host
+        ? `${/^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host) ? 'http' : 'https'}://${host}`
+        : null
+    const normalizedAllowedOrigins = [...ALLOWED_ORIGINS, ...(ownOrigin ? [ownOrigin] : [])]
+        .map((o) => parseOrigin(o))
+        .filter((o): o is string => o !== null)
 
     // Check Origin header (preferred)
     if (origin) {

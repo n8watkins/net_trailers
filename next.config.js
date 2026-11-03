@@ -11,6 +11,12 @@ const nextConfig = {
     typescript: {
         ignoreBuildErrors: false,
     },
+    // Markdown imports are their text, read at build time (app/api/changelog).
+    turbopack: {
+        rules: {
+            '*.md': { type: 'raw' },
+        },
+    },
     // Exclude packages from server bundling optimization
     serverExternalPackages: ['@libsql/client'],
     compiler: {
@@ -43,10 +49,6 @@ const nextConfig = {
             {
                 protocol: 'https',
                 hostname: 'avatars.githubusercontent.com',
-            },
-            {
-                protocol: 'https',
-                hostname: '*.public.blob.vercel-storage.com',
             },
             {
                 protocol: 'https',
@@ -107,12 +109,12 @@ const nextConfig = {
                         key: 'Content-Security-Policy',
                         value: [
                             "default-src 'self'",
-                            "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://www.youtube.com https://www.gstatic.com https://vercel.live https://va.vercel-scripts.com",
-                            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://vercel.live",
+                            "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://www.youtube.com https://www.gstatic.com https://static.cloudflareinsights.com",
+                            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
                             "img-src 'self' data: https: blob:",
-                            "font-src 'self' data: https://fonts.gstatic.com https://vercel.live https://assets.vercel.com",
-                            "connect-src 'self' https://api.themoviedb.org https://www.google-analytics.com https://*.sentry.io https://vercel.live https://va.vercel-scripts.com https://vitals.vercel-insights.com https://www.youtube.com https://youtubei.googleapis.com https://*.pusher.com wss://*.pusher.com",
-                            "frame-src 'self' https://www.youtube.com https://vercel.live",
+                            "font-src 'self' data: https://fonts.gstatic.com",
+                            "connect-src 'self' https://api.themoviedb.org https://www.google-analytics.com https://*.sentry.io https://cloudflareinsights.com https://www.youtube.com https://youtubei.googleapis.com https://*.pusher.com wss://*.pusher.com",
+                            "frame-src 'self' https://www.youtube.com",
                             "media-src 'self' https:",
                             "object-src 'none'",
                             "base-uri 'self'",
@@ -139,7 +141,6 @@ const sentryWebpackPluginOptions = {
     widenClientFileUpload: true,
     hideSourceMaps: true,
     disableLogger: true,
-    automaticVercelMonitors: true,
 }
 
 module.exports = withSentryConfig(withBundleAnalyzer(nextConfig), sentryWebpackPluginOptions)

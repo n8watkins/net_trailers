@@ -189,15 +189,20 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // Store in user_activity.
-        // For authenticated users: referenceId = page, referenceType = 'page'.
-        // For guests: referenceId = guestId, referenceType = 'guest'.
+        // user_activity rows belong to a user (userId is NOT NULL and references
+        // users), so a guest's page view has nowhere to go: accept it without
+        // storing it, instead of failing the insert with a 500 on every page.
+        if (!userId) {
+            return NextResponse.json({ success: true, stored: false })
+        }
+
+        // Store in user_activity: referenceId = page, referenceType = 'page'.
         await db.insert(userActivity).values({
-            userId: userId ?? null,
+            userId,
             type,
             timestamp: now,
-            referenceId: userId ? (page ?? null) : (guestId ?? null),
-            referenceType: userId ? 'page' : 'guest',
+            referenceId: page ?? null,
+            referenceType: 'page',
             preview:
                 sanitizedUserAgent || userEmail
                     ? { userAgent: sanitizedUserAgent, userEmail: userEmail ?? null }

@@ -1,17 +1,20 @@
 /**
- * /api/upload - image uploads to Vercel Blob.
+ * /api/upload - image uploads to the R2 bucket bound as UPLOADS (lib/uploads.ts).
  *
  * Authenticated users upload images (avatars, forum/thread images). Files are
- * stored under `uploads/{userId}/...` and served from the Blob CDN. Requires
- * BLOB_READ_WRITE_TOKEN (read automatically by @vercel/blob).
+ * stored under `uploads/{userId}/...` and served by the Worker at the returned
+ * site-relative path.
  */
 
-import { del, put } from '@vercel/blob'
 import { NextRequest, NextResponse } from 'next/server'
 
 import { withAuth } from '@/lib/auth-middleware'
+import { cloudflareEnv } from '@/lib/cloudflare/env'
+import { UPLOAD_MAX_BYTES, UPLOAD_TYPES, newUploadKey, ownedUploadKey } from '@/lib/uploads'
 
-const MAX_BYTES = 5 * 1024 * 1024 // 5MB
+function bucket() {
+    return cloudflareEnv()?.UPLOADS
+}
 
 export const POST = withAuth(async (request: NextRequest, userId: string) => {
     let form: FormData
@@ -25,48 +28,52 @@ export const POST = withAuth(async (request: NextRequest, userId: string) => {
     if (!(file instanceof File)) {
         return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
-    if (!file.type.startsWith('image/')) {
-        return NextResponse.json({ error: 'File must be an image' }, { status: 400 })
+    if (!UPLOAD_TYPES[file.type]) {
+        return NextResponse.json(
+            { error: 'Image must be a JPEG, PNG, WebP, GIF or AVIF file' },
+            { status: 400 }
+        )
     }
-    if (file.size > MAX_BYTES) {
+    if (file.size > UPLOAD_MAX_BYTES) {
         return NextResponse.json({ error: 'Image must be less than 5MB' }, { status: 400 })
     }
 
-    const ext = (file.name.split('.').pop() || 'webp').toLowerCase().replace(/[^a-z0-9]/g, '')
-    const pathname = `uploads/${userId}/${crypto.randomUUID()}.${ext}`
+    const uploads = bucket()
+    if (!uploads) {
+        return NextResponse.json({ error: 'Uploads are not available here' }, { status: 503 })
+    }
 
+    const { key, path } = newUploadKey(userId, file.type)
     try {
-        const blob = await put(pathname, file, { access: 'public' })
-        return NextResponse.json({ url: blob.url })
+        await uploads.put(key, await file.arrayBuffer(), {
+            httpMetadata: { contentType: file.type },
+        })
+        return NextResponse.json({ url: path })
     } catch (error) {
-        console.error('[upload] Vercel Blob put failed:', error)
+        console.error('[upload] R2 put failed:', error)
         return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
     }
 })
 
 export const DELETE = withAuth(async (request: NextRequest, userId: string) => {
-    const { searchParams } = new URL(request.url)
-    const url = searchParams.get('url')
+    const url = new URL(request.url).searchParams.get('url')
     if (!url) {
         return NextResponse.json({ error: 'Missing url' }, { status: 400 })
     }
-    // Only allow deleting blobs the user owns (path is scoped to their userId).
-    // Match on the parsed pathname prefix - a substring check would pass for a
-    // crafted query string like `?x=/uploads/<myId>/` appended to a victim URL.
-    let pathname: string
-    try {
-        pathname = new URL(url).pathname
-    } catch {
-        return NextResponse.json({ error: 'Invalid url' }, { status: 400 })
-    }
-    if (!pathname.startsWith(`/uploads/${userId}/`)) {
+    // Only the user's own uploads (the path is scoped to their userId).
+    const key = ownedUploadKey(url, userId)
+    if (!key) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+    const uploads = bucket()
+    if (!uploads) {
+        return NextResponse.json({ error: 'Uploads are not available here' }, { status: 503 })
+    }
     try {
-        await del(url)
+        await uploads.delete(key)
         return NextResponse.json({ success: true })
     } catch (error) {
-        console.error('[upload] Vercel Blob del failed:', error)
+        console.error('[upload] R2 delete failed:', error)
         return NextResponse.json({ error: 'Delete failed' }, { status: 500 })
     }
 })

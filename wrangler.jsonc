@@ -1,0 +1,48 @@
+{
+    "$schema": "node_modules/wrangler/config-schema.json",
+    // NetTrailers as a Cloudflare Worker, built by OpenNext (see DEPLOY.md).
+    // worker/index.ts wraps the generated .open-next/worker.js.
+    "name": "net-trailers",
+    "account_id": "b2c564cf83cb9184dd6d7cc4ff8b38bf",
+    "main": "worker/index.ts",
+    "compatibility_date": "2026-11-01",
+    // nodejs_compat is required by OpenNext; global_fetch_strictly_public keeps
+    // the server's own fetches (TMDB, Turso, Gemini, Resend) on the public internet.
+    "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+    "assets": {
+        "directory": ".open-next/assets",
+        "binding": "ASSETS",
+    },
+    // next/image (posters, backdrops, avatars, uploads) resizes through Cloudflare Images.
+    "images": { "binding": "IMAGES" },
+    "r2_buckets": [
+        // ISR and the data cache (open-next.config.ts).
+        { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "net-trailers-opennext-cache" },
+        // Uploaded images, which replaced Vercel Blob (lib/uploads.ts, worker/uploads.ts).
+        { "binding": "UPLOADS", "bucket_name": "net-trailers-uploads" },
+    ],
+    "durable_objects": {
+        "bindings": [{ "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" }],
+    },
+    "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DOQueueHandler"] }],
+    // The revalidation queue, and the server's calls to its own API
+    // (lib/selfFetch.ts), reach the Worker through this binding.
+    "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "net-trailers" }],
+    // The three Vercel crons, same schedules (worker/crons.ts), 02:00 UTC on
+    // Monday, Sunday and Wednesday. Weekdays are named because Cloudflare
+    // counts them from 1 = Sunday, unlike Vercel's 0 = Sunday.
+    "triggers": { "crons": ["0 2 * * MON", "0 2 * * SUN", "0 2 * * WED"] },
+    "vars": {
+        // Replaces VERCEL_ENV: "production" here; unset locally and in tests.
+        "APP_ENV": "production",
+        // "false" while Vercel still runs the same crons on the same database;
+        // set it to "true" when the Vercel project is turned off (DEPLOY.md).
+        "CRONS_ENABLED": "false",
+    },
+    // Secrets (npx wrangler secret put <NAME>, see DEPLOY.md): TURSO_DATABASE_URL,
+    // TURSO_AUTH_TOKEN, AUTH_SECRET, AUTH_GITHUB_ID, AUTH_GITHUB_SECRET,
+    // TMDB_API_KEY, GEMINI_API_KEY, RESEND_API_KEY, BREVO_API_KEY, CRON_SECRET.
+    "observability": { "enabled": true, "head_sampling_rate": 1 },
+    "workers_dev": true,
+    "preview_urls": false,
+}

@@ -6,6 +6,8 @@
 
 import { ImageResponse } from 'next/og'
 
+import { selfFetch } from '@/lib/selfFetch'
+
 export const alt = 'Shared Collection'
 export const size = {
     width: 1200,
@@ -28,10 +30,7 @@ export default async function Image({ params }: Props) {
     let ownerName = ''
 
     try {
-        const baseUrl =
-            process.env.NEXT_PUBLIC_BASE_URL ||
-            (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
-        const response = await fetch(`${baseUrl}/api/shares/${shareId}`, {
+        const response = await selfFetch(`/api/shares/${encodeURIComponent(shareId)}`, {
             next: { revalidate: 3600 }, // Cache for 1 hour
         })
 

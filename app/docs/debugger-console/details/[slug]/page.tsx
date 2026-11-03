@@ -282,7 +282,7 @@ Multiple toasts appear:
         output: 'Floating HUD (bottom right) showing all Web Vitals with color-coded ratings. Updates in real-time.',
         relatedOptions: ['ui-logs', 'api-server', 'next-server'],
         file: 'components/debug/WebVitalsHUD.tsx',
-        usedIn: ['utils/performance.ts', 'components/utility/VercelAnalyticsWrapper.tsx'],
+        usedIn: ['utils/performance.ts'],
         keyboardShortcut: 'Alt+Shift+V',
         isCurrentlyActive: true,
         note: undefined,
