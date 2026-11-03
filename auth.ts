@@ -19,6 +19,7 @@ import type { Provider } from 'next-auth/providers'
 
 import { db } from '@/db'
 import { accounts, sessions, users, verificationTokens } from '@/db/schema'
+import { authLogger } from '@/lib/log'
 
 const adminLogin = process.env.ADMIN_GITHUB_LOGIN?.toLowerCase()
 
@@ -96,6 +97,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     // Required when running behind a proxy (Vercel) so Auth.js trusts the
     // X-Forwarded-Host header for callback URL construction.
     trustHost: true,
+    // Error type and a masked message only; see lib/log.ts.
+    logger: authLogger,
     providers: [
         GitHub({
             // AUTH_GITHUB_ID / AUTH_GITHUB_SECRET are read from env automatically.
