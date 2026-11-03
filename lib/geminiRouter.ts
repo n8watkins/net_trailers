@@ -1,20 +1,21 @@
 /**
  * Gemini Model Router
  *
- * Standardized on a single model: gemini-3.1-flash-lite. There are no fallback
+ * Standardized on a single model: gemini-3.5-flash-lite. There are no fallback
  * models. The retry/backoff logic remains so rate-limit errors are retried
  * against the same model. Tracks timing and metadata for each attempt.
  *
- * Model: gemini-3.1-flash-lite (only - no fallbacks)
+ * Model: gemini-3.5-flash-lite (only, no fallbacks). Owner's choice on
+ * 2026-10-27; stable ID per https://ai.google.dev/gemini-api/docs/models.
  */
 
 import { apiLog, apiWarn, apiError } from '@/utils/debugLogger'
 
 // Standardized on a single model - no fallbacks.
-const DEFAULT_MODEL_PRIORITY = ['gemini-3.1-flash-lite'] as const
+const DEFAULT_MODEL_PRIORITY = ['gemini-3.5-flash-lite'] as const
 
 // Kept as a separate export for endpoints that import it; same single model.
-const FLASH_LITE_PRIORITY = ['gemini-3.1-flash-lite'] as const
+const FLASH_LITE_PRIORITY = ['gemini-3.5-flash-lite'] as const
 
 type GeminiModel = (typeof DEFAULT_MODEL_PRIORITY)[number]
 
