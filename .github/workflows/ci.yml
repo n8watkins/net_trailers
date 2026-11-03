@@ -39,5 +39,14 @@ jobs:
       - name: Test
         run: npm test
 
+      # cloudflare-env.d.ts and worker/runtime.d.ts must match wrangler.jsonc.
+      - name: Cloudflare types
+        run: npm run check:cf-types
+
+      # next build, turned into the Worker bundle by OpenNext, then a dry-run
+      # deploy, so a change that breaks the Cloudflare build fails here.
       - name: Build
-        run: npm run build
+        run: npm run build:worker
+
+      - name: Deploy dry run
+        run: npm run check:deploy

@@ -33,5 +33,14 @@
         ".next/types/**/*.ts",
         ".next/dev/types/**/*.ts"
     ],
-    "exclude": ["node_modules", "**/*.test.ts", "**/*.test.tsx", "__tests__/**/*", "scripts/**/*"]
+    "exclude": [
+        "node_modules",
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "__tests__/**/*",
+        "scripts/**/*",
+        ".open-next",
+        "worker",
+        "cloudflare-env.d.ts"
+    ]
 }

@@ -9,9 +9,15 @@
         "dev:turbo": "CHOKIDAR_USEPOLLING=1 WATCHPACK_POLLING=true next dev --turbo -p 3000",
         "build": "next build",
         "start": "next start",
+        "build:worker": "opennextjs-cloudflare build",
+        "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+        "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+        "check:deploy": "wrangler deploy --dry-run",
+        "cf-typegen": "wrangler types --env-interface CloudflareEnv --strict-vars=false --include-runtime=false cloudflare-env.d.ts && wrangler types --include-env=false worker/runtime.d.ts",
+        "check:cf-types": "wrangler types --env-interface CloudflareEnv --strict-vars=false --include-runtime=false cloudflare-env.d.ts --check && wrangler types --include-env=false worker/runtime.d.ts --check",
         "lint": "eslint .",
         "lint:fix": "eslint . --fix",
-        "type-check": "tsc --noEmit",
+        "type-check": "tsc --noEmit && tsc --noEmit -p tsconfig.worker.json",
         "test": "jest",
         "test:watch": "jest --watch",
         "test:coverage": "jest --coverage",
@@ -40,6 +46,7 @@
         "@libsql/client": "^0.17.4",
         "@mui/material": "^5.11.7",
         "@next/third-parties": "^16.4.3",
+        "@opennextjs/cloudflare": "1.20.15",
         "@react-email/components": "^1.0.1",
         "@sentry/nextjs": "^10.56.0",
         "@tiptap/extension-link": "^3.12.0",
@@ -48,8 +55,6 @@
         "@tiptap/react": "^3.12.0",
         "@tiptap/starter-kit": "^3.12.0",
         "@types/bcryptjs": "^2.4.6",
-        "@vercel/analytics": "^1.5.0",
-        "@vercel/blob": "^2.4.1",
         "bcryptjs": "^3.0.3",
         "browser-image-compression": "^2.0.2",
         "date-fns": "^4.1.0",
@@ -102,7 +107,8 @@
         "tailwind-scrollbar": "^4.0.2",
         "tailwindcss": "^4.3.0",
         "typescript": "^5.9.3",
-        "typescript-eslint": "^8.46.2"
+        "typescript-eslint": "^8.46.2",
+        "wrangler": "4.157.0"
     },
     "lint-staged": {
         "*.{js,jsx,ts,tsx}": [

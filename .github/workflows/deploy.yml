@@ -1,0 +1,56 @@
+# Builds the app with OpenNext and deploys it to Cloudflare Workers (see
+# DEPLOYMENT.md). The build always runs; the deploy step skips with a notice
+# until the CLOUDFLARE_API_TOKEN repository secret exists.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['docs/**', '**/*.md', 'LICENSE']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy
+    # Only the upstream repo deploys; a fork has no Worker to deploy to.
+    if: github.repository == 'n8watkins/net_trailers'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NEXT_TELEMETRY_DISABLED: 1
+      HUSKY: 0
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      # Inlined into the pages at build time; all public (they ship in every page).
+      # The app's canonical address until the domain moves (DEPLOYMENT.md).
+      NEXT_PUBLIC_APP_URL: https://net-trailers.vercel.app
+      NEXT_PUBLIC_GA_MEASUREMENT_ID: G-ZJ89Z1VW2M
+      NEXT_PUBLIC_SENTRY_DSN: https://e8ff08283b0f2f9db0042fd4d186acfe@o4507767562371072.ingest.us.sentry.io/4510041561759744
+      NEXT_PUBLIC_CF_WEB_ANALYTICS_TOKEN: ${{ vars.NEXT_PUBLIC_CF_WEB_ANALYTICS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build:worker
+
+      - name: Waiting for setup
+        if: env.CLOUDFLARE_API_TOKEN == ''
+        run: echo "::notice::Built, but skipping the deploy until the CLOUDFLARE_API_TOKEN secret is added (DEPLOYMENT.md)."
+
+      - name: Deploy
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        run: npx opennextjs-cloudflare deploy
