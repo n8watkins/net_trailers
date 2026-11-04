@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     openGraph: {
         title: 'NetTrailers - Movie & TV Show Trailers',
         description: 'Browse and watch trailers for the latest movies and TV shows',
-        url: 'https://net-trailers.vercel.app',
+        url: 'https://nettrailers.n8builds.dev',
         siteName: 'NetTrailers',
         locale: 'en_US',
         type: 'website',

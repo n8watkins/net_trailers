@@ -1,7 +1,7 @@
 # Deploying NetTrailers
 
 NetTrailers runs on Cloudflare Workers as the `net-trailers` Worker in the owner's Cloudflare account, built by the OpenNext adapter (`@opennextjs/cloudflare`).
-Until a custom domain is attached, it is served at https://net-trailers.nathancwatkins23.workers.dev, and https://net-trailers.vercel.app keeps serving the Vercel deployment.
+It is served at https://nettrailers.n8builds.dev (a Workers custom domain in `wrangler.jsonc`) and at https://net-trailers.nathancwatkins23.workers.dev.
 
 ## How it fits together
 
@@ -35,8 +35,8 @@ The three Vercel crons are Cron Triggers with the same times (`worker/crons.ts`)
 | `/api/cron/social-digest`            | `0 2 * * 3` | `0 2 * * WED` |
 
 Weekdays are named because Cloudflare counts them from 1 = Sunday, so Vercel's numbers would run a day early or be refused.
-They do nothing while the `CRONS_ENABLED` var is `"false"`: Vercel still runs the same crons against the same database, and two social digests at once could email people twice.
-Set it to `"true"` in `wrangler.jsonc` in the same change that turns off the Vercel project.
+They run only while the `CRONS_ENABLED` var is `"true"`.
+Never let another host run the same crons against the same database: two social digests at once would email people twice.
 
 ## Configuration
 
@@ -48,7 +48,6 @@ Secrets are set with `npx wrangler secret put <NAME>` (it reads the value from s
 | `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`                                         | the database (`turso db show net-trailers --url`, `turso db tokens create net-trailers`) |
 | `AUTH_SECRET`                                                                    | Auth.js                                                                                  |
 | `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`                                           | GitHub sign-in (the OAuth App's callback must be `<app-url>/api/auth/callback/github`)   |
-| `ADMIN_GITHUB_LOGIN`                                                             | the admin's GitHub login                                                                 |
 | `BREVO_API_KEY`, `EMAIL_FROM` (or `EMAIL_PROVIDER=resend` with `RESEND_API_KEY`) | magic-link and notification email                                                        |
 | `TMDB_API_KEY`                                                                   | every movie and TV page                                                                  |
 | `GEMINI_API_KEY`                                                                 | smart search and the other AI features                                                   |
@@ -93,11 +92,15 @@ Fix forward afterwards by reverting the commit and deploying again.
 
 ## Moving off Vercel
 
-1. Set the remaining secrets (the table above).
-2. Pick the domain (the planned `trailers.n8builds.dev`), add it as a Workers custom domain in `wrangler.jsonc`, and point the GitHub OAuth App's callback at it.
-3. Set `NEXT_PUBLIC_APP_URL` in the deploy workflow to the new address, and `CRONS_ENABLED` to `"true"`.
-4. Turn off the Vercel project (its crons stop with it), leaving a redirect from net-trailers.vercel.app if people use that address.
-5. Remove `vercel.json` afterwards; `__tests__/worker/crons.test.ts` compares against it, so move the schedules into the test then.
+The cutover change sets the address to nettrailers.n8builds.dev (custom domain, `NEXT_PUBLIC_APP_URL`, sitemap and robots), moves `ADMIN_GITHUB_LOGIN` into `vars`, and turns the crons on.
+Merge it only when all of these hold, in this order:
+
+1. Every secret in the table above is set on the Worker.
+2. The GitHub OAuth App lists `https://nettrailers.n8builds.dev/api/auth/callback/github` as its callback URL (GitHub allows several, so the Vercel one can stay until the end).
+3. The Vercel project is deleted or paused, so its crons stop.
+4. Right after that, rotate the database token: `turso db tokens invalidate net-trailers` (this revokes every token, including Vercel's), then `turso db tokens create net-trailers | npx wrangler secret put TURSO_AUTH_TOKEN --name net-trailers`, never printing it.
+
+Afterwards, remove `vercel.json`; `__tests__/worker/crons.test.ts` compares against it, so move the schedules into the test then.
 
 ## Taking it down
 
