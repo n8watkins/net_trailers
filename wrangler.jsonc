@@ -35,13 +35,16 @@
     "vars": {
         // Replaces VERCEL_ENV: "production" here; unset locally and in tests.
         "APP_ENV": "production",
-        // "false" while Vercel still runs the same crons on the same database;
-        // set it to "true" when the Vercel project is turned off (DEPLOY.md).
-        "CRONS_ENABLED": "false",
+        // The Vercel project is off, so the Worker alone runs the three crons.
+        "CRONS_ENABLED": "true",
+        // The admin's GitHub login (public, so a var rather than a secret).
+        "ADMIN_GITHUB_LOGIN": "n8watkins",
     },
+    // The site's address; the record is created when this deploys.
+    "routes": [{ "pattern": "nettrailers.n8builds.dev", "custom_domain": true }],
     // Secrets (npx wrangler secret put <NAME>, see DEPLOY.md): TURSO_DATABASE_URL,
     // TURSO_AUTH_TOKEN, AUTH_SECRET, AUTH_GITHUB_ID, AUTH_GITHUB_SECRET,
-    // TMDB_API_KEY, GEMINI_API_KEY, RESEND_API_KEY, BREVO_API_KEY, CRON_SECRET.
+    // TMDB_API_KEY, GEMINI_API_KEY, RESEND_API_KEY, BREVO_API_KEY, EMAIL_FROM, CRON_SECRET.
     "observability": { "enabled": true, "head_sampling_rate": 1 },
     "workers_dev": true,
     "preview_urls": false,

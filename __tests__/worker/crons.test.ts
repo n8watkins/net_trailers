@@ -64,8 +64,8 @@ describe('Cron Triggers', () => {
         expect([...wrangler().triggers.crons].sort()).toEqual(Object.keys(CRON_ROUTES).sort())
     })
 
-    it('stay off until Vercel stops running them (CRONS_ENABLED)', async () => {
-        expect(wrangler().vars.CRONS_ENABLED).toBe('false')
+    it('run on the Worker, and stay off whenever CRONS_ENABLED is not "true"', async () => {
+        expect(wrangler().vars.CRONS_ENABLED).toBe('true')
         const next = app()
         expect(
             await runCron(next, '0 2 * * WED', env({ CRONS_ENABLED: 'false' }), ctx)
