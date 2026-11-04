@@ -124,6 +124,12 @@
         "glob": "^14.0.2",
         "@esbuild-kit/core-utils": {
             "esbuild": "^0.25.12"
+        },
+        "@typescript-eslint/typescript-estree": {
+            "minimatch": "^11.0.1"
+        },
+        "test-exclude": {
+            "minimatch": "^11.0.1"
         }
     }
 }
