@@ -144,7 +144,7 @@ export function validateDisplayNameWithZod(displayName: string): {
         if (error instanceof z.ZodError) {
             return {
                 isValid: false,
-                error: error.errors[0]?.message || 'Invalid display name',
+                error: error.issues[0]?.message || 'Invalid display name',
             }
         }
         return { isValid: false, error: 'Invalid display name' }
@@ -165,7 +165,7 @@ export function validateUsernameWithZod(username: string): {
         if (error instanceof z.ZodError) {
             return {
                 isValid: false,
-                error: error.errors[0]?.message || 'Invalid username',
+                error: error.issues[0]?.message || 'Invalid username',
             }
         }
         return { isValid: false, error: 'Invalid username' }
