@@ -23,6 +23,8 @@ interface SearchBarProps {
     onBlur?: () => void
     inputId?: string
     voiceSourceId?: string
+    /** Show the microphone button (off in the desktop header, where space is tight) */
+    showVoice?: boolean
 }
 
 export default function SearchBar({
@@ -32,6 +34,7 @@ export default function SearchBar({
     onBlur,
     inputId,
     voiceSourceId,
+    showVoice = true,
 }: SearchBarProps) {
     // Search mode (titles or people) drives the placeholder
     const searchMode = useSearchStore((state) => state.searchMode)
@@ -465,7 +468,7 @@ export default function SearchBar({
                         }
                         aria-expanded={showSuggestions && quickResults.length > 0}
                         className={`
-                            block w-full pl-10 ${query ? 'pr-32' : 'pr-24'} py-2.5
+                            block w-full pl-10 ${showVoice ? (query ? 'pr-32' : 'pr-24') : query ? 'pr-20' : 'pr-12'} py-2.5
                             bg-[#0a0a0a] border-[0.5px] border-gray-600/30 rounded-lg
                             text-white placeholder-gray-400
                             focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-transparent
@@ -481,7 +484,7 @@ export default function SearchBar({
                     {/* Voice, Filter, and Clear Buttons (Titles/People lives in the filter menu) */}
                     <div className="absolute inset-y-0 right-0 flex items-center">
                         {/* Voice Input Button - only render after mount to prevent hydration mismatch */}
-                        {isMounted && isSupported && (
+                        {showVoice && isMounted && isSupported && (
                             <button
                                 onClick={handleVoiceToggle}
                                 className={`px-3 py-2 transition-all duration-200 ${

@@ -471,10 +471,11 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                         <div className="flex flex-1 min-w-[18rem] items-center search-container">
                             <div className="w-full max-w-xl">
                                 <SearchBar
-                                    placeholder="Search movies and shows..."
+                                    placeholder="Search movies & TV..."
                                     className="w-full"
                                     inputId="navbar-search-input"
                                     voiceSourceId="header-desktop-search"
+                                    showVoice={false}
                                 />
                             </div>
                         </div>

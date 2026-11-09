@@ -96,9 +96,20 @@ export function SmartInput({
     const [isGeneratingSurprise, setIsGeneratingSurprise] = useState(false)
     const [isMounted, setIsMounted] = useState(false)
 
-    // A static example reads better than an animated one and never shifts the layout
+    // A static example reads better than an animated one and never shifts the layout.
+    // Phones get a shorter example so the placeholder stays on one line.
+    const [isNarrow, setIsNarrow] = useState(false)
+    useEffect(() => {
+        const query = window.matchMedia('(max-width: 639px)')
+        const update = () => setIsNarrow(query.matches)
+        update()
+        query.addEventListener('change', update)
+        return () => query.removeEventListener('change', update)
+    }, [])
     const placeholderText = showExamplePlaceholder
-        ? 'Describe a mood, e.g. "cozy rainy-day mysteries"'
+        ? isNarrow
+            ? 'Try "cozy mysteries"'
+            : 'Describe a mood, e.g. "cozy rainy-day mysteries"'
         : placeholder || 'Describe what you want to watch...'
 
     // Voice input

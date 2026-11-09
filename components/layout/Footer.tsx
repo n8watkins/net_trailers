@@ -39,7 +39,7 @@ function Footer({
     return (
         <>
             <footer className="bg-[#0a0a0a] border-t border-gray-800">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-24">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
                         {/* Navigate Section */}
                         <div>
@@ -172,7 +172,7 @@ function Footer({
                                             className="group hover:text-white transition-colors duration-200 flex items-center gap-2"
                                         >
                                             <svg
-                                                className="w-7 h-7 group-hover:text-red-500 transition-colors duration-200"
+                                                className="w-6 h-6 group-hover:text-red-500 transition-colors duration-200"
                                                 fill="none"
                                                 stroke="currentColor"
                                                 viewBox="0 0 24 24"

@@ -716,9 +716,9 @@ function Modal() {
                                     )}
 
                                     {/* Control Buttons Row */}
-                                    <div className="flex flex-wrap gap-4 sm:gap-8 items-center justify-between pb-5">
+                                    <div className="flex flex-wrap gap-x-4 gap-y-8 sm:gap-8 items-center justify-between pb-5">
                                         {/* Left side buttons */}
-                                        <div className="flex gap-2 sm:gap-4 items-center">
+                                        <div className="flex gap-4 items-center">
                                             {/* Play/Pause button - always show to prevent layout shift */}
                                             <button
                                                 className="flex items-center gap-1 sm:gap-2 px-3 py-1.5 sm:px-6 sm:py-2 bg-white text-black hover:bg-white/80 rounded text-sm sm:text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"

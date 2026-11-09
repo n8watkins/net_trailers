@@ -236,13 +236,14 @@ export default function HomeClient({ data }: HomeClientProps) {
                 <Header />
 
                 <main id="content" className="relative">
-                    <div className="relative h-screen w-full">
+                    {/* Phones get a shorter hero so the first row peeks above the fold */}
+                    <div className="relative h-[36rem] sm:h-screen w-full">
                         <Banner
                             trending={trending}
                             onHeroImageLoaded={() => setHeroImageLoaded(true)}
                         />
                     </div>
-                    <section className="relative z-10 pb-52 space-y-8">
+                    <section className="relative z-10 pb-16 space-y-8">
                         {/* Manage Page Button - signed-in users only (guests get the default layout) */}
                         {sessionType === 'authenticated' && (
                             <div className="sticky top-20 z-20 flex justify-end px-4 sm:px-6 md:px-8 lg:px-16">
