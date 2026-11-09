@@ -3,11 +3,8 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react'
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
 import { usePageViewTracking } from '../../hooks/useActivityTracking'
-import KeyboardShortcutsModal from '../modals/KeyboardShortcutsModal'
-import TutorialModal from '../modals/TutorialModal'
-import InteractiveTour from '../onboarding/InteractiveTour'
+import dynamic from 'next/dynamic'
 import Footer from './Footer'
-import AboutModal from '../modals/AboutModal'
 import ScrollToTopButton from '../common/ScrollToTopButton'
 import CustomScrollbar from '../common/CustomScrollbar'
 import { useModalStore } from '../../stores/modalStore'
@@ -15,6 +12,14 @@ import { LayoutProvider } from '../../contexts/LayoutContext'
 import { useOnboardingStore } from '../../stores/onboardingStore'
 import { useOnboardingPersistence } from '../../hooks/useOnboardingPersistence'
 import { useToast } from '../../hooks/useToast'
+
+// Opened on request only, so they load on first open instead of with every page
+const KeyboardShortcutsModal = dynamic(() => import('../modals/KeyboardShortcutsModal'), {
+    ssr: false,
+})
+const TutorialModal = dynamic(() => import('../modals/TutorialModal'), { ssr: false })
+const InteractiveTour = dynamic(() => import('../onboarding/InteractiveTour'), { ssr: false })
+const AboutModal = dynamic(() => import('../modals/AboutModal'), { ssr: false })
 
 interface ClientLayoutProps {
     children: React.ReactNode
@@ -145,26 +150,34 @@ function ClientLayout({ children }: ClientLayoutProps) {
                 onOpenKeyboardShortcuts={handleOpenShortcuts}
                 onOpenTutorial={handleOpenTutorial}
             />
-            <AboutModal
-                isOpen={showAboutModal}
-                onClose={handleCloseAboutModal}
-                onOpenTutorial={handleOpenTutorial}
-                onStartTour={handleStartTour}
-            />
-            <TutorialModal
-                isOpen={showTutorial}
-                onClose={handleCloseTutorial}
-                onStartTour={handleStartTour}
-            />
-            <KeyboardShortcutsModal
-                isOpen={showKeyboardShortcuts}
-                onClose={() => setShowKeyboardShortcuts(false)}
-            />
-            <InteractiveTour
-                isActive={isTourActive}
-                onComplete={handleCompleteTour}
-                onSkip={handleSkipTour}
-            />
+            {showAboutModal && (
+                <AboutModal
+                    isOpen={showAboutModal}
+                    onClose={handleCloseAboutModal}
+                    onOpenTutorial={handleOpenTutorial}
+                    onStartTour={handleStartTour}
+                />
+            )}
+            {showTutorial && (
+                <TutorialModal
+                    isOpen={showTutorial}
+                    onClose={handleCloseTutorial}
+                    onStartTour={handleStartTour}
+                />
+            )}
+            {showKeyboardShortcuts && (
+                <KeyboardShortcutsModal
+                    isOpen={showKeyboardShortcuts}
+                    onClose={() => setShowKeyboardShortcuts(false)}
+                />
+            )}
+            {isTourActive && (
+                <InteractiveTour
+                    isActive={isTourActive}
+                    onComplete={handleCompleteTour}
+                    onSkip={handleSkipTour}
+                />
+            )}
             <ScrollToTopButton />
             <CustomScrollbar />
         </LayoutProvider>

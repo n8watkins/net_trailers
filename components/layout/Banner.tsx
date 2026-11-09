@@ -1,13 +1,11 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Content, getTitle, getYear, getContentType } from '../../typings'
 import Image from 'next/image'
-import { BASE_URL } from '../../constants/movie'
 import { PlayIcon } from '@heroicons/react/24/solid'
 import { InformationCircleIcon } from '@heroicons/react/24/outline'
 import { useModalStore } from '../../stores/modalStore'
 import { filterDislikedContent } from '../../utils/contentFilter'
 import SmartSearchInput from '../smartSearch/SmartSearchInput'
-import { bannerLog } from '../../utils/debugLogger'
 import { useSessionStore } from '@/stores/sessionStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useGuestStore } from '@/stores/guestStore'
@@ -15,11 +13,15 @@ import { useGuestStore } from '@/stores/guestStore'
 interface Props {
     trending: Content[]
     variant?: 'default' | 'compact'
-    onHeroImageLoaded?: () => void // Callback when the first hero image is loaded
 }
 
+// TMDB's own sizes: next/image resizes from these instead of the multi-megabyte originals
+const BACKDROP_BASE = 'https://image.tmdb.org/t/p/w1280'
+const POSTER_BASE = 'https://image.tmdb.org/t/p/w342'
+const CAROUSEL_SIZE = 5
+
 //pass props to Banner component
-function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
+function Banner({ trending, variant = 'default' }: Props) {
     const { openModal } = useModalStore()
     const sessionType = useSessionStore((state) => state.sessionType)
     const authHiddenMovies = useAuthStore((state) => state.hiddenMovies)
@@ -27,50 +29,22 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
     const hiddenMovies = sessionType === 'authenticated' ? authHiddenMovies : guestHiddenMovies
 
     const [currentIndex, setCurrentIndex] = useState(0)
-    const [carouselContent, setCarouselContent] = useState<Content[]>([])
     const [isTransitioning, setIsTransitioning] = useState(false)
-    const [imagesLoaded, setImagesLoaded] = useState<Set<number>>(new Set())
 
     // Ref to store the interval ID for auto-advance
     const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
-    // Select 5 random items for carousel and preload images
+    // The top trending titles, in order: the same list on the server and the client,
+    // so the hero is in the server-rendered HTML and paints without waiting for JS.
+    // (A random pick after hydration made the largest paint wait for the whole app.)
+    const carouselContent = useMemo(
+        () => filterDislikedContent(trending, hiddenMovies).slice(0, CAROUSEL_SIZE),
+        [trending, hiddenMovies]
+    )
+
     useEffect(() => {
-        if (trending.length > 0) {
-            // Filter out disliked content first
-            const filteredTrending = filterDislikedContent(trending, hiddenMovies)
-
-            if (filteredTrending.length > 0) {
-                // Fisher-Yates shuffle algorithm for unbiased randomization
-                const shuffled = [...filteredTrending]
-                for (let i = shuffled.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1))
-                    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-                }
-                const selected = shuffled.slice(0, Math.min(5, filteredTrending.length))
-                setCarouselContent(selected)
-
-                // Preload all carousel images
-                selected.forEach((content, index) => {
-                    const imgUrl = content.backdrop_path || content.poster_path
-                    if (!imgUrl) return
-
-                    const img = new window.Image()
-                    img.onload = () => {
-                        setImagesLoaded((prev) => new Set(prev).add(index))
-                    }
-                    img.onerror = () => {
-                        console.warn(`Failed to preload image: ${imgUrl}`)
-                        setImagesLoaded((prev) => new Set(prev).add(index))
-                    }
-                    img.src = `${BASE_URL}/${imgUrl}`
-                })
-            } else {
-                // No content available after filtering
-                setCarouselContent([])
-            }
-        }
-    }, [trending, hiddenMovies])
+        if (currentIndex >= carouselContent.length) setCurrentIndex(0)
+    }, [carouselContent.length, currentIndex])
 
     // Helper function to start the auto-advance timer
     const startAutoAdvance = useCallback(() => {
@@ -121,48 +95,30 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
     )
 
     const featuredContent = carouselContent[currentIndex] || null
-    const isCurrentImageLoaded = imagesLoaded.has(currentIndex)
 
     const contentImgUrl = featuredContent?.backdrop_path || featuredContent?.poster_path
-
-    // If hero slide has no image at all, don't block the rest of the page
-    useEffect(() => {
-        if (currentIndex === 0 && !contentImgUrl && onHeroImageLoaded) {
-            onHeroImageLoaded()
-        }
-    }, [contentImgUrl, currentIndex, onHeroImageLoaded])
-
-    // Debug logging
-    if (featuredContent) {
-        bannerLog('Banner Debug:', {
-            hasContent: !!featuredContent,
-            contentImgUrl,
-            isCurrentImageLoaded,
-            currentIndex,
-            carouselLength: carouselContent.length,
-            imagesLoadedSet: Array.from(imagesLoaded),
-        })
-    }
 
     return (
         <>
             {/* AI-Powered Smart Search Overlay - Position varies by variant */}
             {/* background image with mobile-responsive container */}
             <div className="absolute inset-0 z-0 font-sans overflow-hidden">
-                {contentImgUrl && isCurrentImageLoaded && (
+                {contentImgUrl && (
                     <div className="relative w-full h-full">
                         <Image
-                            src={`${BASE_URL}/${
-                                featuredContent?.backdrop_path || featuredContent?.poster_path
-                            }`}
+                            src={
+                                featuredContent?.backdrop_path
+                                    ? `${BACKDROP_BASE}${featuredContent.backdrop_path}`
+                                    : `${POSTER_BASE}${featuredContent?.poster_path}`
+                            }
                             alt={
                                 featuredContent
                                     ? `${getTitle(featuredContent)} backdrop`
                                     : 'Content backdrop'
                             }
                             fill
-                            quality={100}
-                            priority
+                            priority={currentIndex === 0}
+                            fetchPriority={currentIndex === 0 ? 'high' : 'auto'}
                             sizes="100vw"
                             style={{
                                 objectFit: 'cover',
@@ -170,18 +126,6 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
                             className={`select-none transition-opacity duration-300 object-[10%_center] sm:object-[15%_center] md:object-center ${
                                 isTransitioning ? 'opacity-0' : 'opacity-100'
                             }`}
-                            onLoad={() => {
-                                // Ensure callback is called when Next.js Image actually renders
-                                if (currentIndex === 0 && onHeroImageLoaded) {
-                                    onHeroImageLoaded()
-                                }
-                            }}
-                            onError={() => {
-                                console.warn('Failed to load banner hero image')
-                                if (currentIndex === 0 && onHeroImageLoaded) {
-                                    onHeroImageLoaded()
-                                }
-                            }}
                         />
                     </div>
                 )}
@@ -311,12 +255,15 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
                             >
                                 {/* Movie poster image */}
                                 <Image
-                                    src={`${BASE_URL}/${content.poster_path || content.backdrop_path}`}
+                                    src={
+                                        content.poster_path
+                                            ? `${POSTER_BASE}${content.poster_path}`
+                                            : `${BACKDROP_BASE}${content.backdrop_path}`
+                                    }
                                     alt={`${getTitle(content)} poster`}
                                     fill
-                                    quality={100}
                                     className="object-cover select-none"
-                                    sizes="(max-width: 640px) 200px, (max-width: 768px) 200px, 200px"
+                                    sizes="96px"
                                 />
 
                                 {/* Overlay for non-selected items */}

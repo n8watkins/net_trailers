@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Header from '../layout/Header'
 import Banner from '../layout/Banner'
@@ -16,7 +16,6 @@ import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
 import { useCacheStore } from '../../stores/cacheStore'
 import { processTrendingUpdates } from '../../utils/trendingNotifications'
-import PageLoader from '../common/PageLoader'
 import { Cog6ToothIcon, PlusIcon } from '@heroicons/react/24/solid'
 
 interface HomeClientProps {
@@ -74,39 +73,8 @@ export default function HomeClient({ data }: HomeClientProps) {
     }, [searchParams, openModal])
 
     // Track hero image loading state
-    const [heroImageLoaded, setHeroImageLoaded] = useState(false)
 
     // Track system recommendation rows loading state
-    // We need to wait for all enabled rows to load before showing the page
-    const [rowsLoadingState, setRowsLoadingState] = useState<Record<string, boolean>>({
-        trending: false,
-        'top-rated': false,
-        'recommended-for-you': false,
-        'trending-actors': false,
-        'trending-directors': false,
-    })
-
-    // Create stable callback handlers for each row
-    const handleTrendingLoaded = useCallback(() => {
-        setRowsLoadingState((prev) => ({ ...prev, trending: true }))
-    }, [])
-
-    const handleTopRatedLoaded = useCallback(() => {
-        setRowsLoadingState((prev) => ({ ...prev, 'top-rated': true }))
-    }, [])
-
-    const handleRecommendedLoaded = useCallback(() => {
-        setRowsLoadingState((prev) => ({ ...prev, 'recommended-for-you': true }))
-    }, [])
-
-    const handleTrendingActorsLoaded = useCallback(() => {
-        setRowsLoadingState((prev) => ({ ...prev, 'trending-actors': true }))
-    }, [])
-
-    const handleTrendingDirectorsLoaded = useCallback(() => {
-        setRowsLoadingState((prev) => ({ ...prev, 'trending-directors': true }))
-    }, [])
-
     // Get collections from appropriate store
     // After unification, all collections (including defaults) are in userCreatedWatchlists
     const authCollections = useAuthStore((state) => state.userCreatedWatchlists)
@@ -122,19 +90,6 @@ export default function HomeClient({ data }: HomeClientProps) {
     const sortedSystemRecommendations = useMemo(() => {
         return [...systemRecommendations].sort((a, b) => a.order - b.order)
     }, [systemRecommendations])
-
-    // Check if all enabled system rows have finished loading
-    const allSystemRowsLoaded = useMemo(() => {
-        return sortedSystemRecommendations.every((rec) => {
-            // If disabled, consider it "loaded"
-            if (!rec.enabled) return true
-            // Otherwise check the loading state
-            return rowsLoadingState[rec.id] === true
-        })
-    }, [sortedSystemRecommendations, rowsLoadingState])
-
-    // Page is ready when hero image is loaded AND all system rows are loaded
-    const pageReady = heroImageLoaded && allSystemRowsLoaded
 
     const { trending } = data
     const trendingSignature = useMemo(
@@ -225,23 +180,19 @@ export default function HomeClient({ data }: HomeClientProps) {
 
     return (
         <>
-            {/* Show loader until page is fully ready (hero + all system rows loaded) */}
-            {!pageReady && <PageLoader message="Loading NetTrailers..." />}
-
+            {/* The page shows as soon as it renders: the hero is server-rendered and
+                each row fills in on its own. (It used to stay hidden behind a full-screen
+                loader until the hero image and every row had loaded, which made the
+                largest paint wait for all of them.) */}
             <div
-                className={`relative min-h-screen overflow-x-clip ${showModal && `overflow-y-hidden`} ${
-                    !pageReady ? 'opacity-0' : 'opacity-100'
-                }`}
+                className={`relative min-h-screen overflow-x-clip ${showModal && `overflow-y-hidden`}`}
             >
                 <Header />
 
                 <main id="content" className="relative">
                     {/* Phones get a shorter hero so the first row peeks above the fold */}
                     <div className="relative h-[30rem] sm:h-screen w-full">
-                        <Banner
-                            trending={trending}
-                            onHeroImageLoaded={() => setHeroImageLoaded(true)}
-                        />
+                        <Banner trending={trending} />
                     </div>
                     <section className="relative z-10 pb-16 space-y-8">
                         {/* Manage Page Button - signed-in users only (guests get the default layout) */}
@@ -264,40 +215,15 @@ export default function HomeClient({ data }: HomeClientProps) {
                             if (!rec.enabled) return null
                             switch (rec.id) {
                                 case 'trending':
-                                    return (
-                                        <TrendingRow
-                                            key="trending"
-                                            onLoadComplete={handleTrendingLoaded}
-                                        />
-                                    )
+                                    return <TrendingRow key="trending" />
                                 case 'top-rated':
-                                    return (
-                                        <TopRatedRow
-                                            key="top-rated"
-                                            onLoadComplete={handleTopRatedLoaded}
-                                        />
-                                    )
+                                    return <TopRatedRow key="top-rated" />
                                 case 'recommended-for-you':
-                                    return (
-                                        <RecommendedForYouRow
-                                            key="recommended-for-you"
-                                            onLoadComplete={handleRecommendedLoaded}
-                                        />
-                                    )
+                                    return <RecommendedForYouRow key="recommended-for-you" />
                                 case 'trending-actors':
-                                    return (
-                                        <TrendingActorsRow
-                                            key="trending-actors"
-                                            onLoadComplete={handleTrendingActorsLoaded}
-                                        />
-                                    )
+                                    return <TrendingActorsRow key="trending-actors" />
                                 case 'trending-directors':
-                                    return (
-                                        <TrendingDirectorsRow
-                                            key="trending-directors"
-                                            onLoadComplete={handleTrendingDirectorsLoaded}
-                                        />
-                                    )
+                                    return <TrendingDirectorsRow key="trending-directors" />
                                 default:
                                     return null
                             }

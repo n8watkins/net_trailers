@@ -22,7 +22,8 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
         // Fetch person details from TMDB
         const url = `${BASE_URL}/person/${personId}?api_key=${API_KEY}&language=en-US`
 
-        const response = await fetch(url)
+        // TMDB data changes slowly: keep it in the data cache (R2 on the Worker) for an hour
+        const response = await fetch(url, { next: { revalidate: 3600 } })
 
         if (!response.ok) {
             throw new Error(`TMDB API error: ${response.status}`)

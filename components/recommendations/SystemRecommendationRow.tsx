@@ -19,6 +19,7 @@ import {
     generateSystemRecommendationName,
     getSystemRecommendationEmoji,
 } from '../../utils/systemRecommendationNames'
+import RowSkeleton from '../content/RowSkeleton'
 
 interface SystemRecommendationRowProps {
     /** The type of system recommendation */
@@ -228,9 +229,9 @@ export default function SystemRecommendationRow({
         return null
     }
 
-    // Don't render while loading
+    // While loading, hold the row's space so the rows below it don't jump
     if (isLoading) {
-        return null
+        return <RowSkeleton />
     }
 
     // Don't render if error or no content
