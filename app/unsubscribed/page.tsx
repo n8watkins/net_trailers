@@ -4,7 +4,7 @@ import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
-import NetflixLoader from '../../components/common/NetflixLoader'
+import PageLoader from '../../components/common/PageLoader'
 
 function UnsubscribedContent() {
     const searchParams = useSearchParams()
@@ -22,7 +22,7 @@ function UnsubscribedContent() {
                             </h1>
                             <p className="text-[#b3b3b3] mb-6">
                                 You've been unsubscribed from all email notifications. You will no
-                                longer receive emails from Net Trailers.
+                                longer receive emails from NetTrailers.
                             </p>
                             <p className="text-sm text-[#808080] mb-6">
                                 You can re-enable email notifications anytime in your account
@@ -77,7 +77,7 @@ function UnsubscribedContent() {
 
                 <div className="mt-6 text-center">
                     <p className="text-xs text-[#808080]">
-                        © {new Date().getFullYear()} Net Trailers. All rights reserved.
+                        © {new Date().getFullYear()} NetTrailers. All rights reserved.
                     </p>
                 </div>
             </div>
@@ -87,7 +87,7 @@ function UnsubscribedContent() {
 
 export default function UnsubscribedPage() {
     return (
-        <Suspense fallback={<NetflixLoader message="Loading preference update..." />}>
+        <Suspense fallback={<PageLoader message="Loading preference update..." />}>
             <UnsubscribedContent />
         </Suspense>
     )

@@ -108,7 +108,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                         className="font-black text-4xl text-white text-center mb-2"
                     >
                         <span className="bg-gradient-to-r from-orange-200 via-red-100 to-orange-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
-                            Welcome to Net Trailers!
+                            Welcome to NetTrailers!
                         </span>
                     </h1>
                     <p id="welcome-description" className="text-center text-gray-300 text-lg">

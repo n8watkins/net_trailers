@@ -19,7 +19,7 @@ import {
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import SubPageLayout from '../../components/layout/SubPageLayout'
-import NetflixLoader from '../../components/common/NetflixLoader'
+import PageLoader from '../../components/common/PageLoader'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useVoiceInput } from '../../hooks/useVoiceInput'
 import { useToast } from '../../hooks/useToast'
@@ -399,7 +399,7 @@ const SettingsLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
                         {/* Loading state */}
                         {isLoading ? (
                             <div className="py-16">
-                                <NetflixLoader inline={true} message="Loading settings..." />
+                                <PageLoader inline={true} message="Loading settings..." />
                             </div>
                         ) : (
                             /* Unified Settings Container */

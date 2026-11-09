@@ -87,7 +87,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartT
                         </div>
                         <h3 className="font-black text-2xl text-white">
                             <span className="bg-gradient-to-r from-orange-200 via-red-100 to-orange-200 bg-clip-text text-transparent drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
-                                How to Use Net Trailers
+                                How to Use NetTrailers
                             </span>
                         </h3>
                     </div>

@@ -519,7 +519,7 @@ Toast/
   ToastManager.tsx
   index.ts (barrel export)
 Loading/
-  NetflixLoader.tsx
+  PageLoader.tsx
   ContentMetadataSkeleton.tsx
   index.ts
 Modal/

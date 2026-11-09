@@ -2,7 +2,7 @@
  * ThreadCard Component
  *
  * Displays a discussion thread in card format
- * Premium Netflix-inspired cinematic design with glow effects
+ * Premium cinematic design with glow effects
  */
 
 'use client'

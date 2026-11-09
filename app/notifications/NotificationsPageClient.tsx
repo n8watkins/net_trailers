@@ -13,7 +13,7 @@ import { useNotificationStore } from '../../stores/notificationStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import NotificationItem from '../../components/notifications/NotificationItem'
 import SubPageLayout from '../../components/layout/SubPageLayout'
-import NetflixLoader from '../../components/common/NetflixLoader'
+import PageLoader from '../../components/common/PageLoader'
 import { useRouter } from 'next/navigation'
 import { useVoiceInput } from '../../hooks/useVoiceInput'
 import { useToast } from '../../hooks/useToast'
@@ -306,10 +306,7 @@ export default function NotificationsPageClient() {
                             {/* Loading state */}
                             {isLoading && (
                                 <div className="py-16">
-                                    <NetflixLoader
-                                        inline={true}
-                                        message="Loading notifications..."
-                                    />
+                                    <PageLoader inline={true} message="Loading notifications..." />
                                 </div>
                             )}
 

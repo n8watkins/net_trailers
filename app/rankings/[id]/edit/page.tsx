@@ -14,7 +14,7 @@ import { RankingCreator } from '../../../../components/rankings/RankingCreator'
 import { useRankingStore } from '../../../../stores/rankingStore'
 import { useSessionStore } from '../../../../stores/sessionStore'
 import { useAuthStatus } from '../../../../hooks/useAuthStatus'
-import NetflixLoader from '../../../../components/common/NetflixLoader'
+import PageLoader from '../../../../components/common/PageLoader'
 import { TrophyIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
 import { useToast } from '../../../../hooks/useToast'
 
@@ -72,7 +72,7 @@ export default function EditRankingPage() {
                 icon={<TrophyIcon className="w-8 h-8" />}
                 iconColor="text-yellow-500"
             >
-                <NetflixLoader />
+                <PageLoader />
             </SubPageLayout>
         )
     }

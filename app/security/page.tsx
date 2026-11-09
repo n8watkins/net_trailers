@@ -189,7 +189,7 @@ export default function SecurityPage() {
 
                             {/* Subtitle */}
                             <p className="text-base sm:text-lg text-gray-300 mb-6 text-center max-w-2xl">
-                                NetTrailer is built with security as a core principle. Learn about
+                                NetTrailers is built with security as a core principle. Learn about
                                 the measures we&apos;ve implemented to protect your data and ensure
                                 a safe experience.
                             </p>
@@ -413,7 +413,7 @@ export default function SecurityPage() {
                                 About This Project
                             </h2>
                             <p className="text-gray-400">
-                                NetTrailer is a portfolio project demonstrating modern web security
+                                NetTrailers is a portfolio project demonstrating modern web security
                                 practices in a Next.js application. The security measures documented
                                 here represent real implementations used throughout the codebase,
                                 showcasing production-grade security patterns for authentication,

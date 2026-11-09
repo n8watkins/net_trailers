@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-    title: 'Page Not Found - NetTrailer',
+    title: 'Page Not Found - NetTrailers',
     description: 'This page could not be found.',
 }
 
@@ -58,7 +58,7 @@ export default function NotFound() {
 
                 {/* Fun message */}
                 <div className="mt-12 text-gray-500 text-sm">
-                    <p>🎭 Meanwhile, somewhere in the NetTrailer universe...</p>
+                    <p>🎭 Meanwhile, somewhere in the NetTrailers universe...</p>
                     <p className="mt-2 italic">
                         &quot;The page you&apos;re looking for is probably binge-watching something
                         else.&quot;

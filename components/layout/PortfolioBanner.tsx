@@ -61,7 +61,7 @@ export default function PortfolioBanner() {
                     <div className="flex items-center justify-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
                         <span className="text-3xl sm:text-4xl">🎬</span>
                         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-red-600/90 tracking-wide">
-                            NetTrailer
+                            NetTrailers
                         </h1>
                     </div>
                     <div className="grid grid-cols-3 gap-3 sm:gap-4 text-gray-300 mb-4 sm:mb-6 max-w-lg mx-auto">

@@ -21,7 +21,7 @@ import { Content } from '../../../typings'
 import { getTitle } from '../../../typings'
 import ContentCard from '../../../components/common/ContentCard'
 import ContentGridSpacer from '../../../components/common/ContentGridSpacer'
-import NetflixLoader from '../../../components/common/NetflixLoader'
+import PageLoader from '../../../components/common/PageLoader'
 import { UserList } from '../../../types/collections'
 import CollectionEditorModal from '../../../components/modals/CollectionEditorModal'
 import { useChildSafety } from '../../../hooks/useChildSafety'
@@ -665,7 +665,7 @@ const CollectionPage = () => {
                             {/* Loading state */}
                             {isLoading && (
                                 <div className="py-16">
-                                    <NetflixLoader inline={true} message="Loading collection..." />
+                                    <PageLoader inline={true} message="Loading collection..." />
                                 </div>
                             )}
 

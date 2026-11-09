@@ -6,7 +6,7 @@ import Header from '../../../../components/layout/Header'
 import Modal from '../../../../components/modals/Modal'
 import ContentCard from '../../../../components/common/ContentCard'
 import ContentGridSpacer from '../../../../components/common/ContentGridSpacer'
-import NetflixLoader from '../../../../components/common/NetflixLoader'
+import PageLoader from '../../../../components/common/PageLoader'
 import { Content } from '../../../../typings'
 import { useSessionData } from '../../../../hooks/useSessionData'
 import { filterDislikedContent } from '../../../../utils/contentFilter'
@@ -219,7 +219,7 @@ function GenrePageContent() {
     }, [hasMore, loadMore])
 
     if (loading && page === 1) {
-        return <NetflixLoader message={`Loading ${genreName} content`} />
+        return <PageLoader message={`Loading ${genreName} content`} />
     }
 
     if (error) {
@@ -346,7 +346,7 @@ function GenrePageContent() {
 
 export default function GenrePage() {
     return (
-        <Suspense fallback={<NetflixLoader message="Loading genre..." />}>
+        <Suspense fallback={<PageLoader message="Loading genre..." />}>
             <GenrePageContent />
         </Suspense>
     )

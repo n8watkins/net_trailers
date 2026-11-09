@@ -16,7 +16,7 @@ import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
 import { useCacheStore } from '../../stores/cacheStore'
 import { processTrendingUpdates } from '../../utils/trendingNotifications'
-import NetflixLoader from '../common/NetflixLoader'
+import PageLoader from '../common/PageLoader'
 import { Cog6ToothIcon, PlusIcon } from '@heroicons/react/24/solid'
 
 interface HomeClientProps {
@@ -226,7 +226,7 @@ export default function HomeClient({ data }: HomeClientProps) {
     return (
         <>
             {/* Show loader until page is fully ready (hero + all system rows loaded) */}
-            {!pageReady && <NetflixLoader message="Loading NetTrailer..." />}
+            {!pageReady && <PageLoader message="Loading NetTrailers..." />}
 
             <div
                 className={`relative min-h-screen overflow-x-clip ${showModal && `overflow-y-hidden`} ${

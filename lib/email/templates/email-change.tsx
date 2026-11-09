@@ -29,7 +29,7 @@ export const EmailChangeEmail = ({
             }}
         >
             <p style={{ marginBottom: '20px' }}>
-                We received a request to change the email address associated with your Net Trailers
+                We received a request to change the email address associated with your NetTrailers
                 account.
             </p>
 
@@ -65,7 +65,7 @@ export const EmailChangeEmail = ({
                     >
                         New Email
                     </p>
-                    <p style={{ margin: 0, fontSize: '16px', color: '#e50914', fontWeight: '600' }}>
+                    <p style={{ margin: 0, fontSize: '16px', color: '#dc2626', fontWeight: '600' }}>
                         {newEmail}
                     </p>
                 </div>

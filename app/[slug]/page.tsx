@@ -10,7 +10,7 @@ import { getTitle } from '../../typings'
 import ContentCard from '../../components/common/ContentCard'
 import ContentGridSpacer from '../../components/common/ContentGridSpacer'
 import EmptyState from '../../components/common/EmptyState'
-import NetflixLoader from '../../components/common/NetflixLoader'
+import PageLoader from '../../components/common/PageLoader'
 import SearchBar from '../../components/common/SearchBar'
 import { UserList } from '../../types/collections'
 import CollectionEditorModal from '../../components/modals/CollectionEditorModal'
@@ -390,7 +390,7 @@ const CollectionPage = ({ params }: CollectionPageProps) => {
                 icon={<RectangleStackIcon />}
                 iconColor="text-blue-400"
             >
-                <NetflixLoader message="Loading collection..." inline />
+                <PageLoader message="Loading collection..." inline />
             </SubPageLayout>
         )
     }

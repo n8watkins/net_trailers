@@ -30,7 +30,7 @@ export interface TourStructure {
 // Welcome screen (not a feature)
 const WELCOME_PANE: TourPane = {
     id: 'welcome',
-    title: '👋 Welcome to Net Trailers!',
+    title: '👋 Welcome to NetTrailers!',
     description:
         "Let's explore the key features that make discovering movies and TV shows easy and fun. Navigate with arrow keys or the buttons below.",
     targetSelector: 'body',

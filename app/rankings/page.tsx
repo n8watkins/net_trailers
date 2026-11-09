@@ -14,7 +14,7 @@ import { RankingGrid } from '../../components/rankings/RankingGrid'
 import { useRankingStore } from '../../stores/rankingStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
-import NetflixLoader from '../../components/common/NetflixLoader'
+import PageLoader from '../../components/common/PageLoader'
 import { Ranking, RankingComment } from '../../types/rankings'
 import { authenticatedFetch } from '../../lib/authenticatedFetch'
 import { formatDistanceToNow } from 'date-fns'
@@ -290,9 +290,7 @@ export default function RankingsPage() {
                                                         !tab.disabled &&
                                                         setActiveTab(
                                                             tab.value as
-                                                                | 'rankings'
-                                                                | 'comments'
-                                                                | 'liked'
+                                                                'rankings' | 'comments' | 'liked'
                                                         )
                                                     }
                                                     disabled={tab.disabled}
@@ -468,10 +466,7 @@ export default function RankingsPage() {
                             <>
                                 {isLoadingComments ? (
                                     <div className="py-16">
-                                        <NetflixLoader
-                                            inline={true}
-                                            message="Loading comments..."
-                                        />
+                                        <PageLoader inline={true} message="Loading comments..." />
                                     </div>
                                 ) : filteredComments.length === 0 ? (
                                     <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -544,7 +539,7 @@ export default function RankingsPage() {
                             <>
                                 {isLoadingLiked ? (
                                     <div className="py-16">
-                                        <NetflixLoader
+                                        <PageLoader
                                             inline={true}
                                             message="Loading liked rankings..."
                                         />

@@ -10,7 +10,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import SubPageLayout from '../../../../components/layout/SubPageLayout'
-import NetflixLoader from '../../../../components/common/NetflixLoader'
+import PageLoader from '../../../../components/common/PageLoader'
 import { ChartBarIcon, UserIcon, CheckCircleIcon, ClockIcon } from '@heroicons/react/24/outline'
 import type { Poll } from '../../../../types/forum'
 import type { PublicProfilePayload } from '@/lib/publicProfile'
@@ -121,7 +121,7 @@ export default function UserPollsPage() {
                 icon={<ChartBarIcon className="w-8 h-8" />}
                 iconColor="text-green-400"
             >
-                <NetflixLoader />
+                <PageLoader />
             </SubPageLayout>
         )
     }

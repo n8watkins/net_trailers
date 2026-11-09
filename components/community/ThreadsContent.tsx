@@ -8,7 +8,7 @@ import { useAuthStatus } from '@/hooks/useAuthStatus'
 import { useVoiceInput } from '@/hooks/useVoiceInput'
 import { useToast } from '@/hooks/useToast'
 import useAuth from '@/hooks/useAuth'
-import NetflixLoader from '@/components/common/NetflixLoader'
+import PageLoader from '@/components/common/PageLoader'
 import { FORUM_CATEGORIES } from '@/utils/forumCategories'
 import { ThreadCard } from '@/components/forum/ThreadCard'
 import { CreateThreadModal } from '@/components/forum/CreateThreadModal'
@@ -295,7 +295,7 @@ export default function ThreadsContent() {
                     {/* Loading state */}
                     {isLoadingThreads && (
                         <div className="py-16">
-                            <NetflixLoader inline={true} message="Loading threads..." />
+                            <PageLoader inline={true} message="Loading threads..." />
                         </div>
                     )}
 

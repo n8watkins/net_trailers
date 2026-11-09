@@ -8,7 +8,7 @@ import SearchFilters from '../../components/search/SearchFilters'
 import { useSearch } from '../../hooks/useSearch'
 import { useAppStore } from '../../stores/appStore'
 import { useToast } from '../../hooks/useToast'
-import NetflixLoader from '../../components/common/NetflixLoader'
+import PageLoader from '../../components/common/PageLoader'
 
 function SearchPageContent() {
     const router = useRouter()
@@ -202,7 +202,7 @@ function SearchPageContent() {
 
 export default function SearchPage() {
     return (
-        <Suspense fallback={<NetflixLoader message="Loading search..." />}>
+        <Suspense fallback={<PageLoader message="Loading search..." />}>
             <SearchPageContent />
         </Suspense>
     )

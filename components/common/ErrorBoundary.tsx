@@ -1,5 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react'
-import NetflixError from './NetflixError'
+import PageError from './PageError'
 
 interface Props {
     children: ReactNode
@@ -37,12 +37,12 @@ class ErrorBoundary extends Component<Props, State> {
 
     render() {
         if (this.state.hasError) {
-            // Render custom fallback UI or default NetflixError
+            // Render custom fallback UI or default PageError
             if (this.props.fallback) {
                 return this.props.fallback
             }
 
-            return <NetflixError onRetry={this.handleRetry} />
+            return <PageError onRetry={this.handleRetry} />
         }
 
         return this.props.children

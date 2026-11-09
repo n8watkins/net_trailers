@@ -24,7 +24,7 @@ const LOADING_MESSAGES = [
 
 const getRandomMessage = () => LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)]
 
-const NetflixLoader: React.FC<Props> = ({
+const PageLoader: React.FC<Props> = ({
     message = 'Loading your movies...',
     inline = false,
     slowCounter = false,
@@ -130,4 +130,4 @@ const NetflixLoader: React.FC<Props> = ({
     )
 }
 
-export default NetflixLoader
+export default PageLoader

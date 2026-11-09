@@ -12,7 +12,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import SubPageLayout from '../../../../components/layout/SubPageLayout'
-import NetflixLoader from '../../../../components/common/NetflixLoader'
+import PageLoader from '../../../../components/common/PageLoader'
 import { ChatBubbleLeftRightIcon, UserIcon, HeartIcon, EyeIcon } from '@heroicons/react/24/outline'
 import type { ThreadSummary } from '../../../../types/forum'
 import type { PublicProfilePayload } from '@/lib/publicProfile'
@@ -100,7 +100,7 @@ export default function UserThreadsPage() {
                 icon={<ChatBubbleLeftRightIcon className="w-8 h-8" />}
                 iconColor="text-blue-400"
             >
-                <NetflixLoader />
+                <PageLoader />
             </SubPageLayout>
         )
     }

@@ -123,7 +123,7 @@ export function WizardStep3NamePreview({
             onChange({ name: data.name })
         } catch (error) {
             if (error instanceof AuthRequiredError) {
-                showError('Please sign in', 'AI naming requires a Net Trailers account.')
+                showError('Please sign in', 'AI naming requires a NetTrailers account.')
                 onSignIn()
             } else {
                 console.error('Error generating name:', error)

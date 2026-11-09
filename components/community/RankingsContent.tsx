@@ -6,7 +6,7 @@ import { useRankingStore } from '@/stores/rankingStore'
 import { useAuthStatus } from '@/hooks/useAuthStatus'
 import { useVoiceInput } from '@/hooks/useVoiceInput'
 import { useToast } from '@/hooks/useToast'
-import NetflixLoader from '@/components/common/NetflixLoader'
+import PageLoader from '@/components/common/PageLoader'
 import { RankingCard } from '@/components/rankings/RankingCard'
 import {
     TrophyIcon,
@@ -285,7 +285,7 @@ export default function RankingsContent() {
                     {/* Loading state */}
                     {isLoading && (
                         <div className="py-16">
-                            <NetflixLoader inline={true} message="Loading rankings..." />
+                            <PageLoader inline={true} message="Loading rankings..." />
                         </div>
                     )}
 

@@ -398,14 +398,10 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
             >
                 {/* Main Navigation Bar */}
                 <div className="flex w-full items-center justify-between space-x-2 md:space-x-6 px-4 py-4">
-                    <Image
-                        src="/nettrailers-logo.png"
-                        width={140}
-                        height={70}
-                        alt="NetTrailers Logo"
-                        style={{ height: 'auto' }}
-                        className="cursor-pointer object-contain select-none w-[100px] sm:w-[120px] md:w-[140px]"
-                        priority
+                    <button
+                        type="button"
+                        aria-label="NetTrailers home"
+                        className="shrink-0 select-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
                         onClick={() => {
                             if (pathname === '/') {
                                 // Already on home page - smooth scroll to top
@@ -415,7 +411,17 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                 router.push('/')
                             }
                         }}
-                    />
+                    >
+                        <Image
+                            src="/nettrailers-logo.svg"
+                            width={274}
+                            height={52}
+                            alt="NetTrailers"
+                            unoptimized
+                            priority
+                            className="h-6 w-auto sm:h-7 xl:h-8"
+                        />
+                    </button>
                     <div className="hidden lg:flex items-center space-x-8 flex-1">
                         <ul className="flex space-x-6 items-center">
                             <li

@@ -1,7 +1,7 @@
 /**
  * Profile Page - Cinematic Edition
  *
- * Premium Netflix-style user profile with:
+ * Premium streaming-style user profile with:
  * - Cinematic hero header with atmospheric gradients
  * - Glassmorphic panels and cards
  * - Neon accent glows (blue for profile theme)
@@ -17,7 +17,7 @@ import Image from 'next/image'
 import { UserIcon, EyeIcon, PencilIcon, SparklesIcon } from '@heroicons/react/24/outline'
 import useAuth from '../../hooks/useAuth'
 import useUserData from '../../hooks/useUserData'
-import NetflixLoader from '../../components/common/NetflixLoader'
+import PageLoader from '../../components/common/PageLoader'
 import Header from '../../components/layout/Header'
 import { GuestModeNotification } from '../../components/auth/GuestModeNotification'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
@@ -269,7 +269,7 @@ export default function ProfilePage() {
         return (
             <div className="min-h-screen bg-black">
                 <div className="flex items-center justify-center min-h-screen">
-                    <NetflixLoader inline message="Loading your profile data..." />
+                    <PageLoader inline message="Loading your profile data..." />
                 </div>
             </div>
         )

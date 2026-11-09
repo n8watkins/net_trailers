@@ -1,11 +1,10 @@
 import React, { useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
     CommandLineIcon,
     HomeIcon,
     MagnifyingGlassIcon,
-    TvIcon,
-    FilmIcon,
     RectangleStackIcon,
     AcademicCapIcon,
 } from '@heroicons/react/24/outline'
@@ -204,7 +203,7 @@ function Footer({
                                     </p>
                                     <p className="text-gray-300 text-sm">
                                         <a
-                                            href="https://github.com/n8watkins/net_trailer"
+                                            href="https://github.com/n8watkins/net_trailers"
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="group hover:text-white transition-colors duration-200 flex items-center gap-2"
@@ -230,12 +229,14 @@ function Footer({
                             </h3>
                             <div className="space-y-3">
                                 <p className="text-gray-300 text-sm">
-                                    <Link
-                                        href="/support"
+                                    <a
+                                        href="https://github.com/n8watkins/net_trailers/issues"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
                                         className="hover:text-white transition-colors duration-200"
                                     >
                                         Contact Us
-                                    </Link>
+                                    </a>
                                 </p>
                                 <p className="text-gray-300 text-sm">
                                     <Link
@@ -305,9 +306,16 @@ function Footer({
                     <div className="border-t border-gray-800 mt-8 pt-8">
                         <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
                             <div className="flex items-center space-x-2">
-                                <span className="text-red-600 font-bold text-xl">NetTrailer</span>
+                                <Image
+                                    src="/nettrailers-logo.svg"
+                                    alt="NetTrailers"
+                                    width={274}
+                                    height={52}
+                                    unoptimized
+                                    className="h-6 w-auto"
+                                />
                                 <span className="text-gray-400 text-sm">
-                                    © 2025 All rights reserved.
+                                    © {new Date().getFullYear()} All rights reserved.
                                 </span>
                             </div>
                             <div className="text-gray-400 text-sm">

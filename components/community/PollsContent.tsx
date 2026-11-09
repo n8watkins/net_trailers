@@ -7,7 +7,7 @@ import { useSessionStore } from '@/stores/sessionStore'
 import { useAuthStatus } from '@/hooks/useAuthStatus'
 import { useVoiceInput } from '@/hooks/useVoiceInput'
 import { useToast } from '@/hooks/useToast'
-import NetflixLoader from '@/components/common/NetflixLoader'
+import PageLoader from '@/components/common/PageLoader'
 import SearchBar from '@/components/common/SearchBar'
 import { FORUM_CATEGORIES } from '@/utils/forumCategories'
 import { PollCard } from '@/components/forum/PollCard'
@@ -351,7 +351,7 @@ export default function PollsContent() {
                     {/* Loading state */}
                     {isLoadingPolls && (
                         <div className="py-16">
-                            <NetflixLoader inline={true} message="Loading polls..." />
+                            <PageLoader inline={true} message="Loading polls..." />
                         </div>
                     )}
 

@@ -15,7 +15,7 @@ import { useRouter } from 'next/navigation'
 import { useForumStore } from '@/stores/forumStore'
 import { useSessionStore } from '@/stores/sessionStore'
 import { useAuthStatus } from '@/hooks/useAuthStatus'
-import NetflixLoader from '@/components/common/NetflixLoader'
+import PageLoader from '@/components/common/PageLoader'
 import Header from '@/components/layout/Header'
 import { PollCard } from '@/components/forum/PollCard'
 import { CreatePollModal } from '@/components/forum/CreatePollModal'
@@ -232,7 +232,7 @@ export default function UserPollsPage() {
             <div className="min-h-screen bg-black">
                 <Header />
                 <div className="flex items-center justify-center min-h-screen">
-                    <NetflixLoader inline message="Loading your polls..." />
+                    <PageLoader inline message="Loading your polls..." />
                 </div>
             </div>
         )
@@ -364,7 +364,7 @@ export default function UserPollsPage() {
                         {/* Loading state */}
                         {isLoadingActivePolls && (
                             <div className="py-16">
-                                <NetflixLoader inline={true} message="Loading polls..." />
+                                <PageLoader inline={true} message="Loading polls..." />
                             </div>
                         )}
 

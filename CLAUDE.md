@@ -398,7 +398,7 @@ Required environment variables are documented in the file with setup instruction
 
 ### Next.js Configuration
 
-- **Image optimization** configured for TMDB and Netflix CDN domains
+- **Image optimization** configured for TMDB image domains
 - **Sentry integration** with webpack plugin for error monitoring
 - **Security headers**: X-Frame-Options, CSP, HSTS, etc.
 - **Performance optimizations** with package import optimization (disabled for @heroicons/react due to runtime errors)

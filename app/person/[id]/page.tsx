@@ -6,13 +6,17 @@ import Header from '../../../components/layout/Header'
 import Modal from '../../../components/modals/Modal'
 import ContentCard from '../../../components/common/ContentCard'
 import ContentGridSpacer from '../../../components/common/ContentGridSpacer'
-import NetflixLoader from '../../../components/common/NetflixLoader'
+import PageLoader from '../../../components/common/PageLoader'
 import Image from 'next/image'
 import { Content } from '../../../typings'
 import { useSessionData } from '../../../hooks/useSessionData'
 import { filterDislikedContent } from '../../../utils/contentFilter'
 import { useChildSafety } from '../../../hooks/useChildSafety'
-import { UNIFIED_GENRES, getUnifiedGenreFromTMDBId, UnifiedGenre } from '../../../constants/unifiedGenres'
+import {
+    UNIFIED_GENRES,
+    getUnifiedGenreFromTMDBId,
+    UnifiedGenre,
+} from '../../../constants/unifiedGenres'
 
 interface PersonCreditsResponse {
     id: number
@@ -53,7 +57,14 @@ function PersonPageContent() {
     // Get initial role and genre from URL (will be cleaned up after)
     const urlRole = searchParams?.get('role') as RoleFilter | null
     const urlGenre = searchParams?.get('genre')
-    const validRoles: RoleFilter[] = ['all', 'acting', 'directing', 'writing', 'production', 'other_crew']
+    const validRoles: RoleFilter[] = [
+        'all',
+        'acting',
+        'directing',
+        'writing',
+        'production',
+        'other_crew',
+    ]
     const initialRole = urlRole && validRoles.includes(urlRole) ? urlRole : 'all'
     const initialGenre = urlGenre || 'all'
     const hasCleanedUrl = useRef(false)
@@ -75,7 +86,10 @@ function PersonPageContent() {
     type JobEntry = { job?: string; department?: string }
 
     // Helper function to check if any job matches a role
-    const hasRole = (item: Content, checkFn: (job: string, department: string) => boolean): boolean => {
+    const hasRole = (
+        item: Content,
+        checkFn: (job: string, department: string) => boolean
+    ): boolean => {
         const jobs = (item as Content & { jobs?: JobEntry[] }).jobs || []
         // Check the jobs array first (comprehensive)
         if (jobs.length > 0) {
@@ -87,7 +101,8 @@ function PersonPageContent() {
         }
         // Fallback to single job/department fields for backward compatibility
         const job = (item as Content & { job?: string }).job?.toLowerCase() || ''
-        const department = (item as Content & { department?: string }).department?.toLowerCase() || ''
+        const department =
+            (item as Content & { department?: string }).department?.toLowerCase() || ''
         return checkFn(job, department)
     }
 
@@ -104,7 +119,13 @@ function PersonPageContent() {
             if (hasRole(credit, (job, dept) => dept === 'directing' || job.includes('director'))) {
                 roles.add('directing')
             }
-            if (hasRole(credit, (job, dept) => dept === 'writing' || job.includes('writer') || job.includes('screenplay'))) {
+            if (
+                hasRole(
+                    credit,
+                    (job, dept) =>
+                        dept === 'writing' || job.includes('writer') || job.includes('screenplay')
+                )
+            ) {
                 roles.add('writing')
             }
             if (hasRole(credit, (job, dept) => dept === 'production' || job.includes('producer'))) {
@@ -113,20 +134,29 @@ function PersonPageContent() {
             // Check for other crew roles
             const jobs = (credit as Content & { jobs?: JobEntry[] }).jobs || []
             const job = (credit as Content & { job?: string }).job?.toLowerCase() || ''
-            const department = (credit as Content & { department?: string }).department?.toLowerCase() || ''
-            const hasOtherJob = jobs.length > 0
-                ? jobs.some((j) => {
-                    const jJob = j.job?.toLowerCase() || ''
-                    const jDept = j.department?.toLowerCase() || ''
-                    const isDirecting = jDept === 'directing' || jJob.includes('director')
-                    const isWriting = jDept === 'writing' || jJob.includes('writer') || jJob.includes('screenplay')
-                    const isProduction = jDept === 'production' || jJob.includes('producer')
-                    return !isDirecting && !isWriting && !isProduction && (jDept || jJob)
-                })
-                : (!hasRole(credit, (j, d) => d === 'directing' || j.includes('director')) &&
-                   !hasRole(credit, (j, d) => d === 'writing' || j.includes('writer') || j.includes('screenplay')) &&
-                   !hasRole(credit, (j, d) => d === 'production' || j.includes('producer')) &&
-                   (department || job))
+            const department =
+                (credit as Content & { department?: string }).department?.toLowerCase() || ''
+            const hasOtherJob =
+                jobs.length > 0
+                    ? jobs.some((j) => {
+                          const jJob = j.job?.toLowerCase() || ''
+                          const jDept = j.department?.toLowerCase() || ''
+                          const isDirecting = jDept === 'directing' || jJob.includes('director')
+                          const isWriting =
+                              jDept === 'writing' ||
+                              jJob.includes('writer') ||
+                              jJob.includes('screenplay')
+                          const isProduction = jDept === 'production' || jJob.includes('producer')
+                          return !isDirecting && !isWriting && !isProduction && (jDept || jJob)
+                      })
+                    : !hasRole(credit, (j, d) => d === 'directing' || j.includes('director')) &&
+                      !hasRole(
+                          credit,
+                          (j, d) =>
+                              d === 'writing' || j.includes('writer') || j.includes('screenplay')
+                      ) &&
+                      !hasRole(credit, (j, d) => d === 'production' || j.includes('producer')) &&
+                      (department || job)
             if (hasOtherJob) {
                 roles.add('other_crew')
             }
@@ -154,7 +184,7 @@ function PersonPageContent() {
 
         // Return sorted array of unified genres that this person has content in
         return Array.from(genreSet)
-            .map(id => UNIFIED_GENRES.find(g => g.id === id))
+            .map((id) => UNIFIED_GENRES.find((g) => g.id === id))
             .filter((g): g is UnifiedGenre => g !== undefined)
             .sort((a, b) => a.name.localeCompare(b.name))
     }, [credits])
@@ -172,21 +202,42 @@ function PersonPageContent() {
         if (roleFilter === 'acting') {
             filtered = filtered.filter((item) => 'character' in item && item.character)
         } else if (roleFilter === 'directing') {
-            filtered = filtered.filter((item) => hasRole(item, (job, dept) => dept === 'directing' || job.includes('director')))
+            filtered = filtered.filter((item) =>
+                hasRole(item, (job, dept) => dept === 'directing' || job.includes('director'))
+            )
         } else if (roleFilter === 'writing') {
-            filtered = filtered.filter((item) => hasRole(item, (job, dept) => dept === 'writing' || job.includes('writer') || job.includes('screenplay')))
+            filtered = filtered.filter((item) =>
+                hasRole(
+                    item,
+                    (job, dept) =>
+                        dept === 'writing' || job.includes('writer') || job.includes('screenplay')
+                )
+            )
         } else if (roleFilter === 'production') {
-            filtered = filtered.filter((item) => hasRole(item, (job, dept) => dept === 'production' || job.includes('producer')))
+            filtered = filtered.filter((item) =>
+                hasRole(item, (job, dept) => dept === 'production' || job.includes('producer'))
+            )
         } else if (roleFilter === 'other_crew') {
             filtered = filtered.filter((item) => {
                 const isActing = 'character' in item && item.character
-                const isDirecting = hasRole(item, (job, dept) => dept === 'directing' || job.includes('director'))
-                const isWriting = hasRole(item, (job, dept) => dept === 'writing' || job.includes('writer') || job.includes('screenplay'))
-                const isProduction = hasRole(item, (job, dept) => dept === 'production' || job.includes('producer'))
+                const isDirecting = hasRole(
+                    item,
+                    (job, dept) => dept === 'directing' || job.includes('director')
+                )
+                const isWriting = hasRole(
+                    item,
+                    (job, dept) =>
+                        dept === 'writing' || job.includes('writer') || job.includes('screenplay')
+                )
+                const isProduction = hasRole(
+                    item,
+                    (job, dept) => dept === 'production' || job.includes('producer')
+                )
                 // Check if has any job
                 const jobs = (item as Content & { jobs?: JobEntry[] }).jobs || []
                 const job = (item as Content & { job?: string }).job?.toLowerCase() || ''
-                const department = (item as Content & { department?: string }).department?.toLowerCase() || ''
+                const department =
+                    (item as Content & { department?: string }).department?.toLowerCase() || ''
                 const hasAnyJob = jobs.length > 0 || department || job
                 return !isActing && !isDirecting && !isWriting && !isProduction && hasAnyJob
             })
@@ -194,13 +245,13 @@ function PersonPageContent() {
 
         // Apply genre filter
         if (genreFilter !== 'all') {
-            const selectedGenre = UNIFIED_GENRES.find(g => g.id === genreFilter)
+            const selectedGenre = UNIFIED_GENRES.find((g) => g.id === genreFilter)
             if (selectedGenre) {
                 // Get all TMDB IDs for this unified genre (both movie and TV)
                 const tmdbIds = [...selectedGenre.movieIds, ...selectedGenre.tvIds]
                 filtered = filtered.filter((item) => {
                     const genreIds = (item as Content & { genre_ids?: number[] }).genre_ids || []
-                    return genreIds.some(gid => tmdbIds.includes(gid))
+                    return genreIds.some((gid) => tmdbIds.includes(gid))
                 })
             }
         }
@@ -222,7 +273,7 @@ function PersonPageContent() {
             // Fetch person credits and details in parallel
             const [creditsResponse, personResponse] = await Promise.all([
                 fetch(`/api/people/${personId}/credits?childSafetyMode=${childSafetyEnabled}`),
-                fetch(`/api/people/${personId}`)
+                fetch(`/api/people/${personId}`),
             ])
 
             if (!creditsResponse.ok) {
@@ -254,7 +305,7 @@ function PersonPageContent() {
     }, [personId, loadPersonCredits])
 
     if (loading) {
-        return <NetflixLoader message="Loading filmography..." />
+        return <PageLoader message="Loading filmography..." />
     }
 
     if (error) {
@@ -279,25 +330,38 @@ function PersonPageContent() {
     // Helper to get role label
     const getRoleLabel = (role: string): string => {
         switch (role) {
-            case 'acting': return 'Actor'
-            case 'directing': return 'Director'
-            case 'writing': return 'Writer'
-            case 'production': return 'Producer'
-            case 'other_crew': return 'Crew'
-            default: return role
+            case 'acting':
+                return 'Actor'
+            case 'directing':
+                return 'Director'
+            case 'writing':
+                return 'Writer'
+            case 'production':
+                return 'Producer'
+            case 'other_crew':
+                return 'Crew'
+            default:
+                return role
         }
     }
 
     // Helper to get role filter label
     const getRoleFilterLabel = (role: RoleFilter): string => {
         switch (role) {
-            case 'all': return 'All Roles'
-            case 'acting': return 'Acting'
-            case 'directing': return 'Directing'
-            case 'writing': return 'Writing'
-            case 'production': return 'Producing'
-            case 'other_crew': return 'Other Crew'
-            default: return role
+            case 'all':
+                return 'All Roles'
+            case 'acting':
+                return 'Acting'
+            case 'directing':
+                return 'Directing'
+            case 'writing':
+                return 'Writing'
+            case 'production':
+                return 'Producing'
+            case 'other_crew':
+                return 'Other Crew'
+            default:
+                return role
         }
     }
 
@@ -357,9 +421,9 @@ function PersonPageContent() {
                                     href={`https://www.imdb.com/name/${personDetails.imdb_id}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1.5 px-3 py-1 mt-1 text-sm font-medium text-black bg-yellow-400 hover:bg-yellow-300 rounded transition-colors"
+                                    className="inline-block mt-1 text-sm text-gray-200 underline decoration-gray-500 underline-offset-4 hover:text-white hover:decoration-white transition-colors"
                                 >
-                                    <span className="font-bold">IMDb</span>
+                                    IMDb profile
                                 </a>
                             )}
                         </div>
@@ -543,7 +607,7 @@ function PersonPageContent() {
 
 export default function PersonPage() {
     return (
-        <Suspense fallback={<NetflixLoader message="Loading person..." />}>
+        <Suspense fallback={<PageLoader message="Loading person..." />}>
             <PersonPageContent />
         </Suspense>
     )

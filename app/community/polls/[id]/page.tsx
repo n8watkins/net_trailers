@@ -14,7 +14,7 @@ import { useForumStore } from '@/stores/forumStore'
 import { useSessionStore } from '@/stores/sessionStore'
 import { useAuthStatus } from '@/hooks/useAuthStatus'
 import { getCategoryInfo } from '@/utils/forumCategories'
-import NetflixLoader from '@/components/common/NetflixLoader'
+import PageLoader from '@/components/common/PageLoader'
 import { formatDistanceToNow } from 'date-fns'
 import {
     ChartBarIcon,
@@ -241,7 +241,7 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
     if (isLoadingPolls || !currentPoll) {
         return (
             <SubPageLayout title="Loading..." icon={<ChartBarIcon className="w-8 h-8" />}>
-                <NetflixLoader />
+                <PageLoader />
             </SubPageLayout>
         )
     }

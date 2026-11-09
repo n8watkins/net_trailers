@@ -312,11 +312,12 @@ className =
 **File:** `components/layout/Header.tsx`
 
 **Issues & Fixes:**
-| Line | Current | Fix |
-|------|---------|-----|
-| 389 | `w-96` search bar | `w-full max-w-96` |
-| 486 | `gap-8` nav items | `gap-4 sm:gap-6 md:gap-8` |
-| 541 | `max-w-sm` mobile menu | `max-w-[90vw] sm:max-w-sm` |
+
+| Line | Current                | Fix                        |
+| ---- | ---------------------- | -------------------------- |
+| 389  | `w-96` search bar      | `w-full max-w-96`          |
+| 486  | `gap-8` nav items      | `gap-4 sm:gap-6 md:gap-8`  |
+| 541  | `max-w-sm` mobile menu | `max-w-[90vw] sm:max-w-sm` |
 
 #### Sub-Navigation (User Pages) - ✅ COMPLETED
 
@@ -488,9 +489,9 @@ className =
 - Ensure link text doesn't truncate on 320px
 - Add `text-sm sm:text-base` for readability
 
-#### NetflixLoader.tsx
+#### PageLoader.tsx
 
-**File:** `components/common/NetflixLoader.tsx:116`
+**File:** `components/common/PageLoader.tsx:116`
 
 ```tsx
 // Current: max-w-md px-6
@@ -563,7 +564,7 @@ className =
 - [ ] SimpleLikeButton.tsx - Touch target size
 - [ ] SubPageLayout.tsx - Responsive top padding
 - [ ] Footer.tsx - Text sizing
-- [ ] NetflixLoader.tsx - Responsive max-width
+- [ ] PageLoader.tsx - Responsive max-width
 
 ### Phase 4 - Low Priority
 

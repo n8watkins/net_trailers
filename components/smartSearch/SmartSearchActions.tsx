@@ -10,7 +10,7 @@ import { getTitle, getYear } from '../../typings'
 import { fetchWithOptionalAuth } from '@/lib/authenticatedFetch'
 import IconPickerModal from '../modals/IconPickerModal'
 import ColorPickerModal from '../modals/ColorPickerModal'
-import NetflixLoader from '../common/NetflixLoader'
+import PageLoader from '../common/PageLoader'
 
 interface SmartSearchActionsProps {
     showAskForMore?: boolean
@@ -238,9 +238,9 @@ export default function SmartSearchActions({
                     </button>
                 )}
 
-                {/* Netflix loader when loading more */}
+                {/* Page loader when loading more */}
                 {isAskingMore && (
-                    <NetflixLoader
+                    <PageLoader
                         message="Finding more suggestions with AI..."
                         inline={true}
                         slowCounter={true}

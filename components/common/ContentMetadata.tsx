@@ -83,8 +83,12 @@ export default function ContentMetadata({
                 {content.vote_average > 0 && (
                     <>
                         <span className="text-gray-300">•</span>
-                        <span className="text-xs sm:text-sm md:text-base text-yellow-400">
-                            ⭐ {content.vote_average.toFixed(1)}
+                        <span
+                            className="text-xs sm:text-sm md:text-base"
+                            title="Average rating on TMDB"
+                        >
+                            <span className="text-gray-300">TMDB</span>{' '}
+                            {content.vote_average.toFixed(1)}
                         </span>
                     </>
                 )}
@@ -96,10 +100,10 @@ export default function ContentMetadata({
                             href={getIMDbRating(content).url!}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="bg-yellow-400 text-black hover:bg-yellow-500 px-2 py-0.5 rounded text-xs sm:text-sm md:text-base font-semibold transition-colors"
-                            style={{ textShadow: 'none' }}
+                            className="text-xs sm:text-sm md:text-base text-gray-200 underline decoration-gray-500 underline-offset-4 hover:text-white hover:decoration-white transition-colors"
                         >
                             IMDb
+                            <span className="sr-only"> (opens in a new tab)</span>
                         </a>
                     </>
                 )}

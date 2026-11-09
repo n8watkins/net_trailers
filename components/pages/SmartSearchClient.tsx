@@ -6,7 +6,7 @@ import { SparklesIcon, PencilIcon, CheckIcon } from '@heroicons/react/24/outline
 import Header from '../layout/Header'
 import SmartSearchResults from '../smartSearch/SmartSearchResults'
 import SmartSearchActions from '../smartSearch/SmartSearchActions'
-import NetflixLoader from '../common/NetflixLoader'
+import PageLoader from '../common/PageLoader'
 import { useSmartSearchStore } from '../../stores/smartSearchStore'
 import { useToast } from '@/hooks/useToast'
 import { fetchWithOptionalAuth } from '@/lib/authenticatedFetch'
@@ -271,7 +271,7 @@ export default function SmartSearchClient() {
                     {/* Show loader when: loading OR (have queryParam but search hasn't completed yet) */}
                     {(isLoading ||
                         (queryParam && results.length === 0 && query !== queryParam)) && (
-                        <NetflixLoader
+                        <PageLoader
                             message="Our AI is analyzing your request"
                             inline={true}
                             slowCounter={true}

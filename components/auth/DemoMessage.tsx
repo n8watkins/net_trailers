@@ -41,7 +41,7 @@ export default function DemoMessage() {
                 visible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'
             }`}
         >
-            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#222] to-[#181818] text-white p-8 rounded-2xl shadow-2xl border-2 border-[#e50914]/40 backdrop-blur-md relative">
+            <div className="bg-gradient-to-br from-[#1a1a1a] via-[#222] to-[#181818] text-white p-8 rounded-2xl shadow-2xl border-2 border-[#dc2626]/40 backdrop-blur-md relative">
                 {/* Close button in top right corner */}
                 <button
                     onClick={() => {
@@ -56,10 +56,10 @@ export default function DemoMessage() {
                 <div className="flex items-start justify-between pr-8">
                     <div className="flex-1">
                         <div className="flex items-center space-x-4 mb-6">
-                            <div className="w-10 h-10 bg-[#e50914] rounded-full flex items-center justify-center shadow-lg">
+                            <div className="w-10 h-10 bg-[#dc2626] rounded-full flex items-center justify-center shadow-lg">
                                 <span className="text-white text-xl font-bold">N</span>
                             </div>
-                            <h3 className="font-bold text-xl text-white">Net Trailers</h3>
+                            <h3 className="font-bold text-xl text-white">NetTrailers</h3>
                         </div>
 
                         {isGuest ? (
@@ -82,7 +82,7 @@ export default function DemoMessage() {
                         ) : (
                             <div className="text-base space-y-3">
                                 <p className="text-[#ff6b6b] font-bold text-lg">
-                                    🎯 Welcome to Net Trailers!
+                                    🎯 Welcome to NetTrailers!
                                 </p>
                                 <p className="text-gray-100 text-sm font-medium">
                                     Portfolio project showcasing:

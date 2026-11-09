@@ -96,7 +96,7 @@ npm install framer-motion  # For smooth animations
 ```
 ┌──────────────────────────────────────────────┐
 │                                               │
-│         🎬 Welcome to Net Trailers!          │
+│         🎬 Welcome to NetTrailers!          │
 │                                               │
 │     Discover movies and TV shows you'll love │
 │                                               │

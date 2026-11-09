@@ -117,7 +117,7 @@ async function handleGenerateRowName(request: NextRequest, userId: string): Prom
                   ? 'movies'
                   : 'TV shows'
 
-        const prompt = `You are a Netflix content curator who creates SHOCKINGLY cool, witty row names that surprise and delight members.
+        const prompt = `You are a streaming service content curator who creates SHOCKINGLY cool, witty row names that surprise and delight members.
 
 The row shows ${mediaTypeText} ${logicText} these genres: ${genreNames}.
 

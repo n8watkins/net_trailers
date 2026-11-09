@@ -93,7 +93,7 @@ export const Z_INDEX = {
     /** Firebase call tracker badge */
     DEBUG_BADGE: 9998,
 
-    /** Debug controls, Web Vitals HUD, Netflix loader */
+    /** Debug controls, Web Vitals HUD, page loader */
     DEBUG_PANEL: 9999,
 
     // ========================================

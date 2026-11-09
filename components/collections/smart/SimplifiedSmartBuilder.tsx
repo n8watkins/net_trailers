@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import Image from 'next/image'
 import { XMarkIcon, SparklesIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline'
 import { WizardStep4Confirmation } from '../WizardStep4Confirmation'
-import NetflixLoader from '../../common/NetflixLoader'
+import PageLoader from '../../common/PageLoader'
 import { SmartInput } from '../../common/SmartInput'
 import type { CustomRowFormData } from '@/types/collections'
 import { Content } from '@/typings'
@@ -553,7 +553,7 @@ export function SimplifiedSmartBuilder({
                 {/* Loading state */}
                 {isGenerating && (
                     <div className="absolute top-20 left-0 right-0 flex justify-center">
-                        <NetflixLoader inline slowCounter message="Building your collection..." />
+                        <PageLoader inline slowCounter message="Building your collection..." />
                     </div>
                 )}
             </div>

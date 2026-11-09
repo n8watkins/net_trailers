@@ -107,7 +107,7 @@ export function SmartStep2Suggestions({
             setMediaType(data.mediaType || 'both')
         } catch (error) {
             if (error instanceof AuthRequiredError) {
-                showError('Please sign in', 'Smart suggestions require a Net Trailers account.')
+                showError('Please sign in', 'Smart suggestions require a NetTrailers account.')
             } else {
                 console.error('Load error:', error)
             }
@@ -148,7 +148,7 @@ export function SmartStep2Suggestions({
             setRowName(data.rowNames?.[0] || rowName)
         } catch (error) {
             if (error instanceof AuthRequiredError) {
-                showError('Please sign in', 'Smart suggestions require a Net Trailers account.')
+                showError('Please sign in', 'Smart suggestions require a NetTrailers account.')
             } else {
                 console.error('Name refresh error:', error)
             }
@@ -263,7 +263,7 @@ export function SmartStep2Suggestions({
 
         return (
             <div className="flex flex-col items-center justify-center py-20">
-                {/* Netflix-style animated logo */}
+                {/* Animated logo */}
                 <div className="relative mb-8">
                     <div className="text-9xl animate-pulse">{randomMessage.emoji}</div>
                     <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2">

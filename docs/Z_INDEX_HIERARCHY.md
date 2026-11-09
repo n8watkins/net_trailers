@@ -147,17 +147,17 @@ Authentication requires high priority to ensure users can always sign in.
 
 Development and debugging overlays (production: hidden or minimal).
 
-| Constant      | Value | Components                                 |
-| ------------- | ----- | ------------------------------------------ |
-| `DEBUG_BADGE` | 9998  | FirebaseCallTracker badge                  |
-| `DEBUG_PANEL` | 9999  | DebugControls, WebVitalsHUD, NetflixLoader |
+| Constant      | Value | Components                              |
+| ------------- | ----- | --------------------------------------- |
+| `DEBUG_BADGE` | 9998  | FirebaseCallTracker badge               |
+| `DEBUG_PANEL` | 9999  | DebugControls, WebVitalsHUD, PageLoader |
 
 **Files:**
 
 - `components/debug/FirebaseCallTracker.tsx`
 - `components/debug/DebugControls.tsx`
 - `components/debug/WebVitalsHUD.tsx`
-- `components/common/NetflixLoader.tsx`
+- `components/common/PageLoader.tsx`
 
 ---
 

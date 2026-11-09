@@ -11,7 +11,7 @@ import {
 import { Content } from '../../typings'
 
 const SENDER_EMAIL = process.env.RESEND_SENDER_EMAIL || 'onboarding@resend.dev'
-const APP_NAME = 'Net Trailers'
+const APP_NAME = 'NetTrailers'
 
 /**
  * Unified email service for sending all types of emails
@@ -45,7 +45,7 @@ export class EmailService {
         return await resend!.emails.send({
             from: `${APP_NAME} <${SENDER_EMAIL}>`,
             to: params.to,
-            subject: 'Reset Your Password - Net Trailers',
+            subject: 'Reset Your Password - NetTrailers',
             react: PasswordResetEmail({
                 userName: params.userName,
                 resetUrl: params.resetUrl,
@@ -66,7 +66,7 @@ export class EmailService {
         return await resend!.emails.send({
             from: `${APP_NAME} <${SENDER_EMAIL}>`,
             to: params.to,
-            subject: 'Verify Your Email Address - Net Trailers',
+            subject: 'Verify Your Email Address - NetTrailers',
             react: EmailVerificationEmail({
                 userName: params.userName,
                 verificationUrl: params.verificationUrl,
@@ -89,7 +89,7 @@ export class EmailService {
         return await resend!.emails.send({
             from: `${APP_NAME} <${SENDER_EMAIL}>`,
             to: params.to,
-            subject: 'Confirm Your Email Change - Net Trailers',
+            subject: 'Confirm Your Email Change - NetTrailers',
             react: EmailChangeEmail({
                 userName: params.userName,
                 oldEmail: params.oldEmail,
@@ -122,7 +122,7 @@ export class EmailService {
         return await resend!.emails.send({
             from: `${APP_NAME} <${SENDER_EMAIL}>`,
             to: params.to,
-            subject: 'Your Rankings Got Some Action! - Net Trailers',
+            subject: 'Your Rankings Got Some Action! - NetTrailers',
             react: SocialDigestEmail({
                 userName: params.userName,
                 interactions: params.interactions,
@@ -145,7 +145,7 @@ export class EmailService {
         return await resend!.emails.send({
             from: `${APP_NAME} <${SENDER_EMAIL}>`,
             to: params.to,
-            subject: 'Trending This Week - Net Trailers [Demo]',
+            subject: 'Trending This Week - NetTrailers [Demo]',
             react: TrendingContentEmail({
                 userName: params.userName,
                 movies: params.movies,

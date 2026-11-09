@@ -1068,7 +1068,7 @@ export const CACHE_CONFIG = {
 } as const
 
 export const THEME_COLORS = {
-    NETFLIX_RED: '#E50914',
+    BRAND_RED: '#E50914',
     PRIMARY_BLUE: '#3B82F6',
     SUCCESS_GREEN: '#10B981',
     WARNING_YELLOW: '#F59E0B',

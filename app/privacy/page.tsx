@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-    title: 'Privacy Policy - NetTrailer',
+    title: 'Privacy Policy - NetTrailers',
     description:
-        'NetTrailer privacy policy - Learn how we collect, use, and protect your personal information',
+        'NetTrailers privacy policy - Learn how we collect, use, and protect your personal information',
     keywords: ['privacy', 'policy', 'data protection', 'GDPR'],
 }
 
@@ -29,7 +29,7 @@ export default function PrivacyPage() {
                                     1. Introduction
                                 </h2>
                                 <p className="mb-4">
-                                    NetTrailer (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;)
+                                    NetTrailers (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;)
                                     is committed to protecting your privacy. This Privacy Policy
                                     explains how we collect, use, disclose, and safeguard your
                                     information when you use our movie and TV show discovery
@@ -300,7 +300,7 @@ export default function PrivacyPage() {
                             <div className="bg-gray-800/50 rounded-lg p-6 mt-8">
                                 <h3 className="text-lg font-semibold text-white mb-2">Summary</h3>
                                 <p className="text-sm text-gray-400">
-                                    This policy covers how NetTrailer collects, uses, and protects
+                                    This policy covers how NetTrailers collects, uses, and protects
                                     your personal information when using our movie and TV discovery
                                     platform. We use industry-standard security practices and only
                                     collect data necessary to provide and improve our services.

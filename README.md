@@ -1,8 +1,10 @@
-# 🎬 NetTrailer
+<p align="center"><img src="public/nettrailers-logo.svg" alt="NetTrailers" height="52"></p>
+
+# NetTrailers
 
 **Full-Stack Movie & TV Show Discovery Platform with AI-Powered Search**
 
-A Netflix-inspired streaming discovery platform built with modern web technologies, featuring user authentication, AI-powered smart search, custom collections, community rankings, personalized recommendations, and child safety controls.
+A streaming-style trailer browser and discovery platform built with modern web technologies, featuring user authentication, AI-powered smart search, custom collections, community rankings, personalized recommendations, and child safety controls.
 
 ## 🚀 Tech Stack
 
@@ -209,7 +211,7 @@ A Netflix-inspired streaming discovery platform built with modern web technologi
 
 - **Interface & Design**
     - Responsive design for all devices (mobile, tablet, desktop)
-    - Netflix-inspired UI/UX with smooth animations and cinematic styling
+    - Streaming-style UI/UX with smooth animations and cinematic styling
     - Consistent atmospheric hero sections across major pages with theme-specific gradients:
         - Notifications (red/rose), Ratings (purple/violet), Rankings (yellow/amber)
         - Collections (blue/cyan), Settings (gray/slate), Security (green), Changelog (blue)
@@ -304,7 +306,7 @@ A Netflix-inspired streaming discovery platform built with modern web technologi
 
 ## 🎯 Live Demo
 
-[🚀 **Try NetTrailer Live**](https://your-deployment-url.com)
+[🚀 **Try NetTrailers Live**](https://your-deployment-url.com)
 
 _Experience all features or continue as guest to explore the platform_
 
@@ -392,7 +394,7 @@ _Experience all features or continue as guest to explore the platform_
     NEXT_PUBLIC_MAX_TOTAL_ACCOUNTS=50
 
     # App Configuration (Optional)
-    NEXT_PUBLIC_APP_NAME=NetTrailer
+    NEXT_PUBLIC_APP_NAME=NetTrailers
     NEXT_PUBLIC_APP_URL=http://localhost:3000
     NODE_ENV=development
 
@@ -990,7 +992,7 @@ The app is a standard Next.js application and can be deployed to:
 
 ### Security
 
-NetTrailer implements comprehensive security measures. See the full [Security Documentation](/security) for details.
+NetTrailers implements comprehensive security measures. See the full [Security Documentation](/security) for details.
 
 **Key Security Features:**
 

@@ -97,7 +97,7 @@ export function CustomRowForm({ initialData, onSubmit, onCancel, isLoading }: Cu
             setFormData({ ...formData, name: data.name })
         } catch (error) {
             if (error instanceof AuthRequiredError) {
-                showError('Please sign in', 'AI naming requires a Net Trailers account.')
+                showError('Please sign in', 'AI naming requires a NetTrailers account.')
             } else {
                 console.error('Error generating name:', error)
                 setErrors({

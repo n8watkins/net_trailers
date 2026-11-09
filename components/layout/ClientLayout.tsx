@@ -104,7 +104,7 @@ function ClientLayout({ children }: ClientLayoutProps) {
     const handleCompleteTour = useCallback(() => {
         completeTour()
         setIsTourActive(false)
-        showSuccess('Tour Complete!', "You're all set to explore Net Trailers!")
+        showSuccess('Tour Complete!', "You're all set to explore NetTrailers!")
     }, [completeTour, showSuccess])
 
     const handleSkipTour = useCallback(() => {

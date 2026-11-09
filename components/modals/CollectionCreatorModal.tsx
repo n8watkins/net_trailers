@@ -630,7 +630,7 @@ export default function CollectionCreatorModal() {
             } else {
                 // Production error handling
                 if (error instanceof AuthRequiredError) {
-                    showError('Please sign in', 'Smart Search requires a Net Trailers account.')
+                    showError('Please sign in', 'Smart Search requires a NetTrailers account.')
                 } else if (error instanceof TypeError && error.message.includes('fetch')) {
                     showError(
                         'Network error',
