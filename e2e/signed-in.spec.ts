@@ -75,8 +75,8 @@ test('adds a title to My List and removes it', async () => {
         .getByRole('button', { name: 'Add to lists' })
         .first()
         .click()
-    // Signed-in users call the default list "Watchlist", guests "Watch Later"
-    const watchlist = page.getByRole('button', { name: /^(Watchlist|Watch Later)/ })
+    // The default list is called "Watch Later" for everyone
+    const watchlist = page.getByRole('button', { name: /^Watch Later/ })
     await watchlist.click()
     await expect(page.getByText(`Added ${heroTitle} to`).first()).toBeVisible()
 
