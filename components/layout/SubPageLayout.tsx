@@ -63,7 +63,7 @@ export default function SubPageLayout({
             <Header />
 
             {/* Main content with top padding to account for taller fixed header (includes sub-nav) */}
-            <main className="relative pb-24 px-4 sm:px-6 lg:px-8 pt-28 sm:pt-36 md:pt-44">
+            <main className="relative pb-24 px-4 sm:px-6 lg:px-8 pt-36 sm:pt-40 md:pt-48">
                 <div className="max-w-[1800px] mx-auto flex flex-col space-y-6 py-8">
                     {/* Page Header */}
                     {!hideHeader &&

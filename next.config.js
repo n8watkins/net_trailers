@@ -64,6 +64,13 @@ const nextConfig = {
                 destination: '/',
                 permanent: true, // 301 redirect
             },
+            {
+                // An HTTP redirect lands at the top of the page; an in-app redirect
+                // scrolled phones down to the nested settings panel
+                source: '/settings',
+                destination: '/settings/preferences',
+                permanent: false,
+            },
         ]
     },
     // Security headers

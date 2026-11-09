@@ -1,16 +1,7 @@
-'use client'
+import { redirect } from 'next/navigation'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-
-const SettingsRedirect: React.FC = () => {
-    const router = useRouter()
-
-    useEffect(() => {
-        router.replace('/settings/preferences')
-    }, [router])
-
-    return null
+// next.config.js redirects /settings before it reaches this page; this is a
+// fallback for in-app navigation to /settings.
+export default function SettingsPage() {
+    redirect('/settings/preferences')
 }
-
-export default SettingsRedirect

@@ -66,7 +66,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
 
     const handleSettingsClick = () => {
         setIsOpen(false)
-        router.push('/settings')
+        router.push('/settings/preferences')
     }
 
     const handleAboutClick = () => {
