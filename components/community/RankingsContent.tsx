@@ -277,7 +277,7 @@ export default function RankingsContent() {
                 <div className="px-6 sm:px-8 lg:px-12 py-8 space-y-6">
                     {/* Error State */}
                     {error && (
-                        <div className="bg-amber-800/20 border border-amber-700 rounded-lg p-4">
+                        <div className="bg-red-900/20 border border-red-700/60 rounded-lg p-4">
                             <p className="text-red-400">{error}</p>
                         </div>
                     )}

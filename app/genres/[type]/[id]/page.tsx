@@ -1,5 +1,6 @@
 'use client'
 
+import { MOVIE_GENRES, TV_GENRES } from '../../../../constants/genres'
 import { useState, useEffect, useCallback, useRef, useMemo, Suspense } from 'react'
 import { useRouter, useSearchParams, useParams } from 'next/navigation'
 import Header from '../../../../components/layout/Header'
@@ -39,7 +40,12 @@ function GenrePageContent() {
     const genreId = params?.id
     const mediaType = params?.type
     const tvGenres = searchParams?.get('tvGenres') // For "both" type, TV genre IDs
-    const genreName = name
+    // Links without ?name= (footer, shared URLs) fall back to the TMDB genre list
+    const genreName =
+        name ||
+        (mediaType === 'tv' ? TV_GENRES : MOVIE_GENRES).find((g) => String(g.id) === genreId)
+            ?.name ||
+        'Genre'
     const pageTitle = title
     const { isEnabled: childSafetyEnabled } = useChildSafety()
 
@@ -291,16 +297,6 @@ function GenrePageContent() {
                                     <div className="text-center">
                                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mb-2"></div>
                                         <p className="text-gray-400 text-sm">Loading more...</p>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Spacer with clear messaging about footer */}
-                            {hasMore && !loading && !loadingMore && (
-                                <div className="h-32 flex items-center justify-center">
-                                    <div className="text-gray-500 text-sm text-center">
-                                        <div className="mb-2">📖 Footer content below</div>
-                                        <div>Keep scrolling for more movies...</div>
                                     </div>
                                 </div>
                             )}

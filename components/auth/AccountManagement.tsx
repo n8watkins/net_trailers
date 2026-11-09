@@ -359,7 +359,7 @@ export default function AccountManagement() {
                             <div className="p-6 bg-[#141414] border border-red-600/50 rounded-xl shadow-lg">
                                 <div className="flex items-center gap-3 mb-4">
                                     <ExclamationTriangleIcon className="w-6 h-6 text-red-500" />
-                                    <h4 className="text-xl font-semibold text-amber-400">
+                                    <h4 className="text-xl font-semibold text-red-500">
                                         ⚠️ DANGER ZONE
                                     </h4>
                                 </div>
@@ -375,7 +375,7 @@ export default function AccountManagement() {
                                         type="text"
                                         value={confirmText}
                                         onChange={(e) => setConfirmText(e.target.value)}
-                                        className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+                                        className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                                         placeholder="DELETE MY ACCOUNT"
                                     />
                                 </div>

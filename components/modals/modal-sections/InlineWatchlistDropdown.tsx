@@ -50,7 +50,7 @@ function InlineWatchlistDropdown({
             name: 'Watchlist',
             items: defaultWatchlist,
             emoji: '📺',
-            color: '#DC2626',
+            color: '#F59E0B',
             isPublic: false,
             createdAt: Date.now(),
             updatedAt: Date.now(),

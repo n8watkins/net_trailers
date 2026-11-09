@@ -297,7 +297,7 @@ export default function ChildSafetyPINModal({
 
                     {/* Error Display */}
                     {error && (
-                        <div className="rounded-md bg-amber-500/20 px-4 py-3 text-sm text-amber-400">
+                        <div className="rounded-md bg-red-500/20 px-4 py-3 text-sm text-red-400">
                             {error}
                         </div>
                     )}

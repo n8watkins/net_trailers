@@ -120,7 +120,7 @@ export default function EmailHistory() {
                                             </div>
                                         )}
                                         {record.failureCount > 0 && (
-                                            <div className="flex items-center gap-1 text-sm text-amber-300">
+                                            <div className="flex items-center gap-1 text-sm text-red-400">
                                                 <XCircleIcon className="h-4 w-4" />
                                                 <span>{record.failureCount} failed</span>
                                             </div>

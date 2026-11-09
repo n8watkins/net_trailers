@@ -128,7 +128,7 @@ const Toast: React.FC<ToastProps> = React.memo(
         const getToastStyles = () => {
             switch (toast.type) {
                 case 'error':
-                    return 'bg-gradient-to-r from-red-900/40 to-red-800/40 border-red-500/70 shadow-red-500/20'
+                    return 'bg-[#2a1212] border-red-500/70 shadow-red-500/20'
                 case 'success':
                     return 'bg-[#181818] border-gray-600/50'
                 case 'watchlist-add':

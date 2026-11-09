@@ -25,6 +25,7 @@ import { UserList } from '../../../types/collections'
 import CollectionEditorModal from '../../../components/modals/CollectionEditorModal'
 import { useChildSafety } from '../../../hooks/useChildSafety'
 import Link from 'next/link'
+import { readableTextOn } from '../../../utils/readableText'
 
 interface CollectionPageProps {
     params: Promise<{
@@ -504,7 +505,7 @@ const CollectionPage = ({ params }: CollectionPageProps) => {
                                                                       listColor,
                                                                       0.85
                                                                   ),
-                                                                  color: 'white',
+                                                                  color: readableTextOn(listColor),
                                                               }
                                                             : {
                                                                   borderColor: hexToRgba(

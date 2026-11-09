@@ -328,7 +328,7 @@ export default function NotificationsPageClient() {
                                     </p>
                                     <button
                                         onClick={() => router.push('/auth')}
-                                        className="group relative px-8 py-4 font-bold rounded-xl transition-all duration-300 bg-gradient-to-r from-amber-400 to-rose-500 hover:from-amber-500 hover:to-rose-600 text-zinc-950 shadow-[0_0_30px_rgba(251,191,36,0.4)] hover:shadow-[0_0_40px_rgba(251,191,36,0.6)] scale-100 hover:scale-105"
+                                        className="group relative px-8 py-4 font-bold rounded-xl transition-all duration-300 bg-amber-500 hover:bg-amber-400 text-zinc-950 shadow-[0_0_30px_rgba(251,191,36,0.4)] hover:shadow-[0_0_40px_rgba(251,191,36,0.6)] scale-100 hover:scale-105"
                                     >
                                         Create Account
                                     </button>

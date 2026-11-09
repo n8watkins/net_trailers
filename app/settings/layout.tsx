@@ -269,7 +269,7 @@ const SettingsLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
         switch (priority) {
             case 'danger':
-                return 'border-l-amber-500'
+                return 'border-l-red-500'
             case 'high':
                 return 'border-l-orange-500'
             case 'medium':
@@ -284,7 +284,7 @@ const SettingsLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
         switch (priority) {
             case 'danger':
-                return 'text-amber-400'
+                return 'text-red-400'
             case 'high':
                 return 'text-orange-500'
             case 'medium':

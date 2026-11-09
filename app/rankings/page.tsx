@@ -426,9 +426,9 @@ export default function RankingsPage() {
                             </div>
                         )}
 
-                        {/* Error State */}
-                        {error && (
-                            <div className="bg-amber-800/20 border border-amber-700 rounded-xl p-4 max-w-2xl mx-auto">
+                        {/* Error State (guests already see the sign-in prompt above) */}
+                        {error && !isGuest && (
+                            <div className="bg-red-900/20 border border-red-700/60 rounded-xl p-4 max-w-2xl mx-auto">
                                 <p className="text-red-400 text-center">{error}</p>
                             </div>
                         )}

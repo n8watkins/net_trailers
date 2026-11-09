@@ -27,6 +27,7 @@ import CollectionEditorModal from '../../../components/modals/CollectionEditorMo
 import { useChildSafety } from '../../../hooks/useChildSafety'
 import Link from 'next/link'
 import { useModalStore } from '../../../stores/modalStore'
+import { readableTextOn } from '../../../utils/readableText'
 
 const CollectionPage = () => {
     // Fixed collection ID for Watch Later
@@ -505,7 +506,7 @@ const CollectionPage = () => {
                                                                       listColor,
                                                                       0.85
                                                                   ),
-                                                                  color: 'white',
+                                                                  color: readableTextOn(listColor),
                                                               }
                                                             : {
                                                                   borderColor: hexToRgba(

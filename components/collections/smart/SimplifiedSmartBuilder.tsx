@@ -359,7 +359,7 @@ export function SimplifiedSmartBuilder({
                     />
 
                     {error && (
-                        <p className="mt-3 text-center text-sm text-amber-300 flex items-center justify-center gap-1">
+                        <p className="mt-3 text-center text-sm text-red-400 flex items-center justify-center gap-1">
                             <span>⚠️</span>
                             {error}
                         </p>

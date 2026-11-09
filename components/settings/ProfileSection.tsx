@@ -253,7 +253,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                                             placeholder="Enter your display name"
                                             className={`inputClass w-full pr-10 ${
                                                 displayNameError
-                                                    ? 'border-amber-400 focus:border-amber-400'
+                                                    ? 'border-red-500 focus:border-red-500'
                                                     : ''
                                             }`}
                                             disabled={isSavingProfile}
@@ -270,7 +270,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                                         </div>
                                     </div>
                                     {displayNameError && (
-                                        <p className="text-xs text-amber-300 mt-1.5">
+                                        <p className="text-xs text-red-400 mt-1.5">
                                             {displayNameError}
                                         </p>
                                     )}
@@ -394,7 +394,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                                             placeholder="your_username"
                                             className={`inputClass w-full pr-10 ${
                                                 usernameError
-                                                    ? 'border-amber-400 focus:border-amber-400'
+                                                    ? 'border-red-500 focus:border-red-500'
                                                     : usernameAvailable
                                                       ? 'border-green-500 focus:border-green-500'
                                                       : ''
@@ -412,7 +412,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                                         </div>
                                     </div>
                                     {usernameError && (
-                                        <p className="text-xs text-amber-300 mt-1.5">
+                                        <p className="text-xs text-red-400 mt-1.5">
                                             {usernameError}
                                         </p>
                                     )}
