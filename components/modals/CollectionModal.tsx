@@ -11,6 +11,7 @@ import { SimplifiedSmartBuilder } from '../collections/smart/SimplifiedSmartBuil
 import { CollectionFormData, CreateListRequest } from '../../types/collections'
 import { useToast } from '../../hooks/useToast'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 type CreationMode = 'traditional' | 'smart'
 
@@ -42,6 +43,8 @@ function CollectionModal() {
     const userId = getUserId()
     const isOpen = collectionModal.isOpen
     const isAuthenticated = sessionType === 'authenticated'
+
+    useEscapeKey(isOpen, closeCollectionModal)
 
     if (!isOpen) return null
 

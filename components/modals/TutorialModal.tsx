@@ -17,6 +17,7 @@ import { HandThumbUpIcon, RectangleStackIcon } from '@heroicons/react/24/solid'
 import { useRouter, usePathname } from 'next/navigation'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import { useModalStore } from '../../stores/modalStore'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 interface TutorialModalProps {
     isOpen: boolean
@@ -47,6 +48,8 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartT
             }, 300)
         }
     }, [pathname, onStartTour])
+
+    useEscapeKey(isOpen, onClose)
 
     if (!isOpen) return null
 

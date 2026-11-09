@@ -1,5 +1,6 @@
 import React from 'react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 interface InfoModalProps {
     isOpen: boolean
@@ -22,6 +23,8 @@ const InfoModal: React.FC<InfoModalProps> = ({
     cancelButtonText = 'Maybe Later',
     emoji = '🔒',
 }) => {
+    useEscapeKey(isOpen, onClose)
+
     if (!isOpen) return null
 
     return (

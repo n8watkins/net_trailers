@@ -6,6 +6,7 @@ import { XMarkIcon, PlusIcon } from '@heroicons/react/24/outline'
 import Image from 'next/image'
 import { AdvancedFilters } from '../../types/collections'
 import { YearPicker } from './YearPicker'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 interface Person {
     id: number
@@ -78,6 +79,8 @@ export function AdvancedFiltersModal({
     }, [isOpen, filters])
 
     const mouseDownTargetRef = React.useRef<EventTarget | null>(null)
+
+    useEscapeKey(isOpen, onClose)
 
     if (!isOpen || !mounted || typeof window === 'undefined') return null
 

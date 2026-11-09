@@ -37,6 +37,7 @@ import {
     LockClosedIcon,
     Bars3Icon,
 } from '@heroicons/react/24/outline'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 interface RankingCreatorProps {
     existingRanking?: Ranking
@@ -53,6 +54,7 @@ interface LocalRankedItem {
 export function RankingCreator({ existingRanking, onComplete, onCancel }: RankingCreatorProps) {
     const isEditMode = !!existingRanking
     const [mouseDownOnBackdrop, setMouseDownOnBackdrop] = useState(false)
+    useEscapeKey(Boolean(onCancel), () => onCancel?.())
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
     const { user } = useAuth()

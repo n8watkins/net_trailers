@@ -915,6 +915,7 @@ const AboutModal: React.FC<AboutModalProps> = ({
                 {/* Close Button */}
                 <button
                     onClick={onClose}
+                    aria-label="Close"
                     className="absolute top-4 right-4 z-20 p-2 rounded-full bg-zinc-800/60 text-gray-400 hover:text-white hover:bg-zinc-700/80 transition-all duration-300 hover:scale-110"
                 >
                     <XMarkIcon className="w-5 h-5" />
@@ -922,9 +923,8 @@ const AboutModal: React.FC<AboutModalProps> = ({
 
                 {/* About Section (Always Visible) */}
                 <div className="relative z-10 p-6 border-b border-zinc-800/50 flex-shrink-0">
-                    {/* Welcome Heading */}
                     <h1 className="text-2xl font-bold text-white mb-4 text-center">
-                        Welcome to <span className="text-red-500">NetTrailers</span>
+                        About this project
                     </h1>
 
                     <div className="flex items-start gap-4">

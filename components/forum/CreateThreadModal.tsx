@@ -12,6 +12,7 @@ import { XMarkIcon } from '@heroicons/react/24/outline'
 import { FORUM_CATEGORIES } from '@/utils/forumCategories'
 import { ForumCategory } from '@/types/forum'
 import ImageUpload from './ImageUpload'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 interface CreateThreadModalProps {
     isOpen: boolean
@@ -60,6 +61,8 @@ export function CreateThreadModal({ isOpen, onClose, onCreate }: CreateThreadMod
         setImageUrls([])
         onClose()
     }
+
+    useEscapeKey(isOpen, onClose)
 
     if (!isOpen) return null
 

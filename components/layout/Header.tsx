@@ -52,6 +52,7 @@ import NotificationBell from '../notifications/NotificationBell'
 import NotificationPanel from '../notifications/NotificationPanel'
 import { useChildSafety } from '../../hooks/useChildSafety'
 import type { Content } from '../../typings'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 interface HeaderProps {
     onOpenAboutModal?: () => void
@@ -121,6 +122,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
     const [isScrolled, setIsScrolled] = useState(false)
     const [showSearch, setShowSearch] = useState(false)
     const [showMobileMenu, setShowMobileMenu] = useState(false)
+    useEscapeKey(showMobileMenu, () => setShowMobileMenu(false))
     const [isSearchExpanded, setIsSearchExpanded] = useState(false)
     const [isRandomLoading, setIsRandomLoading] = useState(false)
     const { authModal, openAuthModal, closeAuthModal, openModal } = useModalStore()

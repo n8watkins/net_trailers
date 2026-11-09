@@ -6,6 +6,7 @@ import { useChildSafetyPINStore } from '../../stores/childSafetyStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { PIN_CONSTRAINTS } from '../../types/childSafety'
 import { useToast } from '../../hooks/useToast'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 interface ChildSafetyPINModalProps {
     /** Modal mode: 'create', 'verify', or 'change' */
@@ -148,6 +149,8 @@ export default function ChildSafetyPINModal({
         }
         return false
     }
+
+    useEscapeKey(isOpen, onClose)
 
     if (!isOpen) return null
 

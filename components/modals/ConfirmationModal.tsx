@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { XMarkIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 interface ConfirmationModalProps {
     isOpen: boolean
@@ -71,6 +72,8 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     }
 
     const colorScheme = colors[dangerLevel]
+
+    useEscapeKey(isOpen, onClose)
 
     if (!isOpen) return null
 

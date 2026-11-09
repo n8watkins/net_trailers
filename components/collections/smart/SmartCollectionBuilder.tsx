@@ -8,6 +8,7 @@ import { SmartStep3Preview } from './SmartStep3Preview'
 import { WizardStep4Confirmation } from '../WizardStep4Confirmation'
 import type { Suggestion } from '@/utils/smartRowSuggestions'
 import type { CustomRowFormData } from '@/types/collections'
+import { useEscapeKey } from '../../../hooks/useEscapeKey'
 
 interface SmartCollectionBuilderProps {
     onClose: () => void
@@ -33,6 +34,7 @@ export function SmartCollectionBuilder({
     isAuthenticated,
     onSignIn,
 }: SmartCollectionBuilderProps) {
+    useEscapeKey(true, onClose)
     const [currentStep, setCurrentStep] = useState<WizardStep>(1)
     const [isLoading, setIsLoading] = useState(false)
 

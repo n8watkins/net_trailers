@@ -2,6 +2,7 @@ import React from 'react'
 import { XMarkIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 import useAuth from '../../hooks/useAuth'
 import { isInAppBrowser } from '../../utils/isInAppBrowser'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 interface AuthModalProps {
     isOpen: boolean
@@ -64,6 +65,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             setIsWorking(false)
         }
     }
+
+    useEscapeKey(isOpen, onClose)
 
     if (!isOpen) return null
 

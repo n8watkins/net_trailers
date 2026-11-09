@@ -11,6 +11,7 @@ import {
 import { useToast } from '../../hooks/useToast'
 import { useSessionStore } from '../../stores/sessionStore'
 import { authenticatedFetch } from '../../lib/authenticatedFetch'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 interface ShareModalProps {
     /** Whether modal is open */
@@ -211,6 +212,8 @@ export default function ShareModal({
             year: 'numeric',
         })
     }
+
+    useEscapeKey(isOpen, onClose)
 
     if (!isOpen) return null
 

@@ -11,6 +11,7 @@ import {
 } from '@heroicons/react/24/outline'
 import useAuth from '../../hooks/useAuth'
 import AccountManagement from '../auth/AccountManagement'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 interface UserSettingsModalProps {
     isOpen: boolean
@@ -22,6 +23,8 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, onClose }
         'main' | 'email' | 'password' | 'upload' | 'share' | 'account'
     >('main')
     const { user } = useAuth()
+
+    useEscapeKey(isOpen, onClose)
 
     if (!isOpen) return null
 
