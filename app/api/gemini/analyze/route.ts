@@ -53,7 +53,11 @@ export async function POST(request: NextRequest) {
         )
 
         if (!result.success) {
-            throw new Error(result.error || 'Gemini request failed')
+            apiError('Gemini analysis router error:', result.error)
+            return NextResponse.json(
+                { error: 'AI analysis unavailable', code: 'AI_UNAVAILABLE' },
+                { status: 503 }
+            )
         }
 
         const analysisText = extractGeminiText(result.data)
@@ -82,10 +86,7 @@ export async function POST(request: NextRequest) {
         })
     } catch (error) {
         apiError('Gemini analysis error:', error)
-        return NextResponse.json(
-            { error: 'Failed to analyze text', details: (error as Error).message },
-            { status: 500 }
-        )
+        return NextResponse.json({ error: 'Failed to analyze text' }, { status: 500 })
     }
 }
 

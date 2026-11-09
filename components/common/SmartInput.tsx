@@ -7,7 +7,6 @@ import {
     MagnifyingGlassIcon,
     SparklesIcon,
 } from '@heroicons/react/24/outline'
-import { useTypewriter } from '../../hooks/useTypewriter'
 import { useVoiceInput } from '../../hooks/useVoiceInput'
 import { useToast } from '../../hooks/useToast'
 import { getRandomQuery } from '../../constants/surpriseQueries'
@@ -43,20 +42,12 @@ interface SmartInputProps {
     onFocus?: () => void
     onBlur?: () => void
     disabled?: boolean
-    showTypewriter?: boolean
+    showExamplePlaceholder?: boolean
     size?: 'default' | 'large'
     className?: string
     variant?: 'solid' | 'transparent'
     shimmer?:
-        | 'none'
-        | 'subtle'
-        | 'bold'
-        | 'border'
-        | 'pulse'
-        | 'wave'
-        | 'rainbow'
-        | 'fast'
-        | 'double'
+        'none' | 'subtle' | 'bold' | 'border' | 'pulse' | 'wave' | 'rainbow' | 'fast' | 'double'
     showSurpriseMe?: boolean
     onSurpriseMe?: () => void
     surpriseIcon?: 'dice' | 'sparkles' // Icon to use for surprise button (default: dice)
@@ -69,7 +60,7 @@ interface SmartInputProps {
  *
  * Features:
  * - Voice input support
- * - Typewriter placeholder animation
+ * - Static example placeholder
  * - Clear button
  * - Sparkles icon
  * - Responsive box shadows (natural, hover, active states)
@@ -87,7 +78,7 @@ export function SmartInput({
     onFocus,
     onBlur,
     disabled = false,
-    showTypewriter = false,
+    showExamplePlaceholder = false,
     size = 'default',
     className = '',
     variant = 'solid',
@@ -105,53 +96,9 @@ export function SmartInput({
     const [isGeneratingSurprise, setIsGeneratingSurprise] = useState(false)
     const [isMounted, setIsMounted] = useState(false)
 
-    // Search examples for typewriter
-    const searchExamples = [
-        'neo-like characters',
-        'Keanu Reeves comedies',
-        'dark superheroes finding redemption',
-        'mind-bending time travel',
-        'strong female leads kicking ass',
-        'quirky indie rom-coms',
-        'clever heist movies',
-        'dystopian futures with hope',
-        'gripping true crime',
-        'Denzel Washington action',
-        'psychological thrillers',
-        'epic space battles',
-        'underdog sports comebacks',
-        'animated films that hit deep',
-        'detective stories with wit',
-        'found footage scares',
-        'royal family drama',
-        'revenge with consequences',
-        'buddy cop banter',
-        'dragons and fantasy worlds',
-        'controversial biopics',
-        'romantic escapes to Paris',
-        'survival against all odds',
-        'AI taking over',
-        'feel-good second chances',
-        'classic noir vibes',
-        'music biopics',
-        'trippy art films',
-        '80s nostalgia',
-        'mysterious islands',
-    ]
-
-    // Typing animation
-    const typewriterText = useTypewriter({
-        words: searchExamples,
-        typeSpeed: 60,
-        deleteSpeed: 30,
-        delayBetweenWords: 2500,
-        loop: true,
-    })
-
-    const placeholderText = showTypewriter
-        ? localValue
-            ? 'Describe what you want to watch...'
-            : typewriterText || 'Describe what you want to watch...'
+    // A static example reads better than an animated one and never shifts the layout
+    const placeholderText = showExamplePlaceholder
+        ? 'Describe a mood, e.g. "cozy rainy-day mysteries"'
         : placeholder || 'Describe what you want to watch...'
 
     // Voice input

@@ -353,7 +353,7 @@ export function SimplifiedSmartBuilder({
                         size="large"
                         variant="solid"
                         showSurpriseMe={true}
-                        showTypewriter={true}
+                        showExamplePlaceholder={true}
                         shimmer="wave"
                         surpriseQueryType="collection"
                     />

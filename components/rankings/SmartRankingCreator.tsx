@@ -716,7 +716,7 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                                     onChange={setQuery}
                                     onSubmit={() => handleSmartSearch()}
                                     isActive={true}
-                                    showTypewriter={true}
+                                    showExamplePlaceholder={true}
                                     size="large"
                                     variant="transparent"
                                     shimmer="wave"

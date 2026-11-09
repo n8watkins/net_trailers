@@ -52,7 +52,7 @@ export function SmartStep1Input({ onContinue, initialData }: SmartStep1InputProp
                 size="large"
                 variant="solid"
                 shimmer="rainbow"
-                showTypewriter={true}
+                showExamplePlaceholder={true}
             />
 
             {/* Tips */}

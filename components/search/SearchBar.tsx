@@ -10,7 +10,6 @@ import { useRouter, usePathname } from 'next/navigation'
 import { useModalStore } from '../../stores/modalStore'
 import { useSearchStore } from '../../stores/searchStore'
 import { useSearch } from '../../hooks/useSearch'
-import { useTypewriter } from '../../hooks/useTypewriter'
 import { useVoiceInput } from '../../hooks/useVoiceInput'
 import { useToast } from '../../hooks/useToast'
 import { Content, TrendingPerson } from '../../typings'
@@ -39,52 +38,6 @@ export default function SearchBar({
     const searchMode = useSearchStore((state) => state.searchMode)
     const setSearchMode = useSearchStore((state) => state.setSearchMode)
 
-    // Popular titles for typewriter effect - updated with current popular content
-    const popularTitles = [
-        'Oppenheimer',
-        'Dune: Part Two',
-        'The Bear',
-        'Shogun',
-        'House of the Dragon',
-        'The Last of Us',
-        'Succession',
-        'Barbie',
-        'Poor Things',
-        'Fallout',
-        'Baby Reindeer',
-        'Ripley',
-        'The Gentlemen',
-        '3 Body Problem',
-        'Saltburn',
-    ]
-
-    // Popular people for typewriter effect when in people mode
-    const popularPeople = [
-        'Timothée Chalamet',
-        'Zendaya',
-        'Florence Pugh',
-        'Pedro Pascal',
-        'Sydney Sweeney',
-        'Austin Butler',
-        'Margot Robbie',
-        'Christopher Nolan',
-        'Denis Villeneuve',
-        'Greta Gerwig',
-        'Martin Scorsese',
-        'Cillian Murphy',
-        'Emma Stone',
-        'Ryan Gosling',
-        'Ana de Armas',
-    ]
-
-    const typewriterText = useTypewriter({
-        words: searchMode === 'people' ? popularPeople : popularTitles,
-        typeSpeed: 80,
-        deleteSpeed: 40,
-        delayBetweenWords: 2000,
-        loop: true,
-        maxLength: 20, // Limit for cleaner display on larger devices
-    })
     const router = useRouter()
     const pathname = usePathname()
     const isOnSearchPage = pathname === '/search'
@@ -501,7 +454,9 @@ export default function SearchBar({
                         onFocus={handleInputFocus}
                         onBlur={handleInputBlur}
                         onKeyDown={handleKeyDown}
-                        placeholder={!isFocused && !query ? typewriterText : placeholder}
+                        placeholder={
+                            searchMode === 'people' ? 'Search actors and directors...' : placeholder
+                        }
                         autoComplete="off"
                         aria-label="Search for movies and TV shows"
                         aria-autocomplete="list"
