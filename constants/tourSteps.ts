@@ -53,19 +53,10 @@ const SEARCH_FEATURE: TourFeature = {
             spotlightPadding: 12,
         },
         {
-            id: 'search-people-titles',
-            title: '🔍 People vs Titles',
-            description:
-                'Toggle between searching for people (actors, directors) or titles (movies, TV shows) using the selector in the navbar. This helps narrow down your results.',
-            targetSelector: '[data-tour="search-type-toggle"]',
-            position: 'bottom',
-            spotlightPadding: 12,
-        },
-        {
             id: 'search-filters',
             title: '🔍 Advanced Filters',
             description:
-                "Use the filter button to refine your search by genre, year, rating, and more. Perfect for finding exactly what you're looking for.",
+                'Use the filter button to switch between titles and people, or refine by genre, year, rating and more.',
             targetSelector: '[data-tour="filter-button"]',
             position: 'bottom',
             spotlightPadding: 12,

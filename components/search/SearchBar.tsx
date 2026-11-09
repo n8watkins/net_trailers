@@ -5,7 +5,6 @@ import {
     FunnelIcon,
     MicrophoneIcon,
 } from '@heroicons/react/24/outline'
-import { FilmIcon, UserGroupIcon } from '@heroicons/react/24/solid'
 import { useRouter, usePathname } from 'next/navigation'
 import { useModalStore } from '../../stores/modalStore'
 import { useSearchStore } from '../../stores/searchStore'
@@ -34,9 +33,8 @@ export default function SearchBar({
     inputId,
     voiceSourceId,
 }: SearchBarProps) {
-    // Get searchMode and setSearchMode from store for quick toggle and dynamic placeholders
+    // Search mode (titles or people) drives the placeholder
     const searchMode = useSearchStore((state) => state.searchMode)
-    const setSearchMode = useSearchStore((state) => state.setSearchMode)
 
     const router = useRouter()
     const pathname = usePathname()
@@ -467,7 +465,7 @@ export default function SearchBar({
                         }
                         aria-expanded={showSuggestions && quickResults.length > 0}
                         className={`
-                            block w-full pl-10 pr-12 sm:pr-36 py-2.5
+                            block w-full pl-10 ${query ? 'pr-32' : 'pr-24'} py-2.5
                             bg-[#0a0a0a] border-[0.5px] border-gray-600/30 rounded-lg
                             text-white placeholder-gray-400
                             focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-transparent
@@ -480,45 +478,8 @@ export default function SearchBar({
                         `}
                     />
 
-                    {/* Quick Mode Toggle, Voice, Filter, and Clear Buttons */}
+                    {/* Voice, Filter, and Clear Buttons (Titles/People lives in the filter menu) */}
                     <div className="absolute inset-y-0 right-0 flex items-center">
-                        {/* Quick Search Mode Toggle - hidden on mobile */}
-                        <div className="hidden sm:flex items-center border-r border-gray-600/30 mr-1 pr-1">
-                            <div
-                                className="flex items-center bg-gray-800/60 rounded-full p-0.5"
-                                data-tour="search-type-toggle"
-                            >
-                                <button
-                                    onClick={() => setSearchMode('content')}
-                                    className={`p-1.5 transition-all duration-200 ${
-                                        searchMode === 'content'
-                                            ? 'text-red-500'
-                                            : 'text-gray-500 hover:text-gray-300'
-                                    }`}
-                                    type="button"
-                                    title="Search Titles"
-                                    aria-label="Search for movies and TV shows"
-                                    aria-pressed={searchMode === 'content'}
-                                >
-                                    <FilmIcon className="h-4 w-4" aria-hidden="true" />
-                                </button>
-                                <button
-                                    onClick={() => setSearchMode('people')}
-                                    className={`p-1.5 transition-all duration-200 ${
-                                        searchMode === 'people'
-                                            ? 'text-red-500'
-                                            : 'text-gray-500 hover:text-gray-300'
-                                    }`}
-                                    type="button"
-                                    title="Search People"
-                                    aria-label="Search for actors, directors, and writers"
-                                    aria-pressed={searchMode === 'people'}
-                                >
-                                    <UserGroupIcon className="h-4 w-4" aria-hidden="true" />
-                                </button>
-                            </div>
-                        </div>
-
                         {/* Voice Input Button - only render after mount to prevent hydration mismatch */}
                         {isMounted && isSupported && (
                             <button

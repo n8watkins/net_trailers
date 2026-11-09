@@ -399,7 +399,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                 }`}
             >
                 {/* Main Navigation Bar */}
-                <div className="flex w-full items-center justify-between space-x-2 md:space-x-6 px-4 py-4">
+                <div className="flex w-full items-center justify-between gap-2 md:gap-6 px-4 py-4 lg:px-6">
                     <button
                         type="button"
                         aria-label="NetTrailers home"
@@ -421,13 +421,14 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                             alt="NetTrailers"
                             unoptimized
                             priority
-                            className="h-6 w-auto sm:h-7 xl:h-8"
+                            className="h-6 w-auto sm:h-7"
                         />
                     </button>
-                    <div className="hidden lg:flex items-center space-x-8 flex-1">
-                        <ul className="flex space-x-6 items-center">
+                    <div className="hidden lg:flex items-center gap-5 flex-1 min-w-0">
+                        <ul className="flex gap-5 items-center shrink-0 whitespace-nowrap">
+                            {/* The logo already links home, so the Home link only shows on wide screens */}
                             <li
-                                className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${pathname === '/' ? 'text-white hover:text-white font-semibold' : ''}`}
+                                className={`headerLink cursor-pointer hidden 2xl:flex items-center space-x-1 select-none ${pathname === '/' ? 'text-white hover:text-white font-semibold' : ''}`}
                                 onClick={() => router.push('/')}
                             >
                                 <HomeIcon className="h-5 w-5 relative z-10" />
@@ -467,8 +468,8 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                         </ul>
 
                         {/* Search Bar in Navigation */}
-                        <div className="flex items-center search-container">
-                            <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl">
+                        <div className="flex flex-1 min-w-[18rem] items-center search-container">
+                            <div className="w-full max-w-xl">
                                 <SearchBar
                                     placeholder="Search movies and shows..."
                                     className="w-full"
@@ -479,13 +480,13 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                         </div>
 
                         {/* Profile Dropdown - After Search Bar */}
-                        <div className="ml-4">
+                        <div className="shrink-0 whitespace-nowrap">
                             <ProfileDropdown />
                         </div>
 
                         {/* Community Link - After Profile */}
                         <div
-                            className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${
+                            className={`headerLink cursor-pointer flex shrink-0 items-center space-x-1 select-none whitespace-nowrap ${
                                 pathname?.startsWith('/community')
                                     ? 'text-white hover:text-white font-semibold'
                                     : ''
@@ -497,13 +498,13 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                         </div>
 
                         {/* Child Safety Indicator - After Community */}
-                        <div className="flex items-center ml-4">
+                        <div className="flex items-center empty:hidden">
                             <ChildSafetyIndicator />
                         </div>
                     </div>
 
                     {/* Right side: Mobile menu, Avatar, Notifications */}
-                    <div className="flex items-center space-x-4 text-sm font-light">
+                    <div className="flex shrink-0 items-center gap-3 lg:gap-4 text-sm font-light">
                         {/* Mobile Layout: Search + Hamburger + Avatar */}
                         <div className="lg:hidden flex items-center space-x-1">
                             {/* Mobile Search Icon */}
