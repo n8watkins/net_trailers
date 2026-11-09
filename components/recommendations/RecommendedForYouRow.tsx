@@ -11,6 +11,7 @@ import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { Content, getTitle as getContentTitle } from '../../typings'
 import { Recommendation } from '../../types/recommendations'
 import Row from '../content/Row'
+import { useHomeRowDedupe } from '../home/HomeRowDedupe'
 import { useSessionData } from '../../hooks/useSessionData'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useAuthStore } from '../../stores/authStore'
@@ -663,6 +664,24 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
         }
     }, [isLoading, onLoadComplete])
 
+    // Share this row's titles with the rows below it. The row only shows for signed-in
+    // users with recommendations; otherwise it reports nothing so it never holds up rows below.
+    const willShow =
+        isInitialized &&
+        !isDataSyncing &&
+        showRecommendations &&
+        !!userId &&
+        sessionType === 'authenticated' &&
+        !error
+    const recommendedContent = useMemo(
+        () => recommendations.map((rec) => rec.content),
+        [recommendations]
+    )
+    const dedupe = useHomeRowDedupe(
+        'recommended-for-you',
+        !willShow ? [] : isLoading ? undefined : recommendedContent
+    )
+
     // Don't render if session not initialized
     if (!isInitialized) {
         console.log('[Recommended For You] Hidden: Session not initialized')
@@ -708,14 +727,16 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
 
     console.log('[Recommended For You] Displaying', recommendations.length, 'recommendations')
 
-    // Convert recommendations to Content array
-    const content: Content[] = recommendations.map((rec) => rec.content)
+    if (!dedupe.ready) {
+        return null
+    }
 
     return (
         <>
             <Row
                 title="✨ Recommended For You"
-                content={content}
+                content={recommendedContent}
+                excludeKeys={dedupe.exclude}
                 apiEndpoint="/api/recommendations/personalized"
                 onInfoClick={() => setShowInsightsModal(true)}
             />

@@ -10,6 +10,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { Content } from '../../typings'
 import Row from '../content/Row'
+import { useHomeRowDedupe } from '../home/HomeRowDedupe'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
@@ -223,13 +224,19 @@ export default function SystemRecommendationRow({
         }
     }, [isLoading, onLoadComplete])
 
+    // Share this row's titles with the rows below it, and skip titles the rows above show
+    const dedupe = useHomeRowDedupe(
+        recommendationId,
+        !isEnabled || error ? [] : isLoading ? undefined : content
+    )
+
     // Don't render if disabled
     if (!isEnabled) {
         return null
     }
 
-    // Don't render while loading
-    if (isLoading) {
+    // Don't render while loading, or until the rows above have settled
+    if (isLoading || !dedupe.ready) {
         return null
     }
 
@@ -256,6 +263,7 @@ export default function SystemRecommendationRow({
             content={content}
             collection={collectionForEdit}
             apiEndpoint={apiEndpoint}
+            excludeKeys={dedupe.exclude}
         />
     )
 }
