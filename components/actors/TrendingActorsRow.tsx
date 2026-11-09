@@ -321,7 +321,7 @@ export default function TrendingActorsRow({
     const title = emoji ? `${emoji} ${displayName}` : displayName
 
     return (
-        <div className="mt-6 sm:mt-8 md:mt-10">
+        <div>
             {/* Section Title */}
             <div className="flex items-center gap-3 px-4 sm:px-6 md:px-8 lg:px-16 pt-0 group/header">
                 <h2 className="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold transition duration-200 hover:text-gray-300">
@@ -338,10 +338,10 @@ export default function TrendingActorsRow({
             </div>
 
             {/* Actors Row */}
-            <div className="relative h-[200px] sm:h-[220px] md:h-[250px] lg:h-[280px] group">
+            <div className="relative group">
                 {/* Left Arrow */}
                 <div
-                    className={`hidden sm:flex absolute top-0 left-[-1rem] z-50 rounded-lg w-12 sm:w-20 md:w-32 h-full items-center justify-center ${
+                    className={`hidden sm:flex absolute inset-y-0 left-[-1rem] z-50 rounded-lg w-12 sm:w-20 md:w-32 items-center justify-center ${
                         isMoved ? 'opacity-70 sm:opacity-0 sm:group-hover:opacity-100' : 'opacity-0'
                     } transition-all duration-300 cursor-pointer pointer-events-auto border border-transparent hover:shadow-[0_0_20px_rgba(107,114,128,0.5)] hover:backdrop-blur-sm group/chevron`}
                     onClick={() => handleClick('left')}
@@ -410,7 +410,7 @@ export default function TrendingActorsRow({
 
                 {/* Right Arrow */}
                 <div
-                    className="hidden sm:flex absolute top-0 right-[-1rem] z-50 rounded-lg w-12 sm:w-20 md:w-32 h-full items-center justify-center opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 cursor-pointer pointer-events-auto border border-transparent hover:shadow-[0_0_20px_rgba(107,114,128,0.5)] hover:backdrop-blur-sm group/chevron"
+                    className="hidden sm:flex absolute inset-y-0 right-[-1rem] z-50 rounded-lg w-12 sm:w-20 md:w-32 items-center justify-center opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 cursor-pointer pointer-events-auto border border-transparent hover:shadow-[0_0_20px_rgba(107,114,128,0.5)] hover:backdrop-blur-sm group/chevron"
                     onClick={() => handleClick('right')}
                 >
                     <div

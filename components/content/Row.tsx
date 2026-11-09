@@ -530,7 +530,7 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onI
         }
     }
     return (
-        <div className="-mt-4 sm:-mt-6 md:-mt-8">
+        <div>
             {/* Section Title with Edit Button */}
             <div className="flex items-center gap-3 px-4 sm:px-6 md:px-8 lg:px-16 pt-0 group/title">
                 <h2 className="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold transition duration-200 hover:text-gray-300">
@@ -557,10 +557,10 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onI
             </div>
 
             {/* Content Row */}
-            <div className="relative row-container h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] group">
+            <div className="relative row-container group">
                 {/* Left Arrow - Hidden on small mobile, visible on larger screens */}
                 <div
-                    className={`hidden sm:flex absolute top-0 left-[-1rem] z-50 rounded-lg w-12 sm:w-20 md:w-32 h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] items-center justify-center ${
+                    className={`hidden sm:flex absolute inset-y-0 left-[-1rem] z-50 rounded-lg w-12 sm:w-20 md:w-32 items-center justify-center ${
                         isMoved ? 'opacity-70 sm:opacity-0 sm:group-hover:opacity-100' : 'opacity-0'
                     } transition-all duration-300 cursor-pointer pointer-events-auto border border-transparent hover:shadow-[0_0_20px_rgba(107,114,128,0.5)] hover:backdrop-blur-sm group/chevron`}
                     onClick={() => handleClick('left')}
@@ -580,7 +580,7 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onI
                     ref={rowRef}
                     className="flex gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-8 overflow-x-scroll overflow-y-hidden scrollbar-hide scroll-smooth
                               px-4 sm:px-6 md:px-8 lg:px-16
-                              py-10"
+                              pt-6 pb-4"
                     style={{
                         scrollbarWidth: 'none',
                         msOverflowStyle: 'none',
@@ -630,7 +630,7 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onI
 
                 {/* Right Arrow - Hidden on small mobile, visible on larger screens */}
                 <div
-                    className="hidden sm:flex absolute top-0 right-[-1rem] z-50 rounded-lg w-12 sm:w-20 md:w-32 h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] items-center justify-center opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 cursor-pointer pointer-events-auto border border-transparent hover:shadow-[0_0_20px_rgba(107,114,128,0.5)] hover:backdrop-blur-sm group/chevron"
+                    className="hidden sm:flex absolute inset-y-0 right-[-1rem] z-50 rounded-lg w-12 sm:w-20 md:w-32 items-center justify-center opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 cursor-pointer pointer-events-auto border border-transparent hover:shadow-[0_0_20px_rgba(107,114,128,0.5)] hover:backdrop-blur-sm group/chevron"
                     onClick={() => handleClick('right')}
                 >
                     <div
