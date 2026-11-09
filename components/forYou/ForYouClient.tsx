@@ -16,7 +16,7 @@ import { useLikedHidden } from '../../hooks/useLikedHidden'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useAiQuotaStore } from '../../stores/aiQuotaStore'
 import ContentCard from '../common/ContentCard'
-import SubPageLayout from '../layout/SubPageLayout'
+import Header from '../layout/Header'
 import AiQuotaLine from '../smartSearch/AiQuotaLine'
 import type { ForYouAiStatus, ForYouPick } from '../../lib/forYou'
 
@@ -50,9 +50,14 @@ export function describeSeeds(titles: string[]): string {
 
 export default function ForYouPage() {
     return (
-        <SubPageLayout hideHeader>
-            <ForYouClient />
-        </SubPageLayout>
+        <div className="relative min-h-screen overflow-x-clip bg-gradient-to-b from-black to-gray-900">
+            <Header />
+            <main className="relative px-4 pb-24 pt-28 sm:px-6 sm:pt-32 md:px-8 lg:px-16">
+                <div className="mx-auto max-w-[1800px]">
+                    <ForYouClient />
+                </div>
+            </main>
+        </div>
     )
 }
 
@@ -71,15 +76,16 @@ function ForYouClient() {
     )
     const likedKeys = useMemo(() => new Set(liked.map(keyOf)), [liked])
 
-    const [mode, setMode] = useState<Mode | null>(null)
-    useEffect(() => {
-        if (isInitialized && mode === null) {
-            setMode(liked.length >= MIN_PICKS ? 'results' : 'pick')
-        }
-    }, [isInitialized, mode, liked.length])
+    // Until the visitor chooses, show results once they have enough picks. Derived
+    // rather than decided once, because saved likes can load just after the session.
+    const [chosenMode, setMode] = useState<Mode | null>(null)
+    const mode: Mode | null =
+        chosenMode ?? (isInitialized ? (liked.length >= MIN_PICKS ? 'results' : 'pick') : null)
 
     const toggleLove = useCallback(
         (content: Content) => {
+            // Picking means the visitor is using the picker: stay on it
+            setMode((current) => current ?? 'pick')
             if (likedKeys.has(keyOf(content))) void removeRating(content.id)
             else void rateContent(content, 'like')
         },
@@ -463,12 +469,13 @@ function ForYouResults({
             )}
 
             {status === 'ready' && data && data.picks.length > 0 && (
-                <ul className="mt-6 grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                <ul className="mt-6 flex flex-wrap gap-x-4 gap-y-6 sm:gap-x-6 md:gap-x-8">
                     {data.picks.map((pick) => (
-                        <li key={keyOf(pick.content)} className="min-w-0">
-                            <ContentCard content={pick.content} className="!w-full" />
+                        <li key={keyOf(pick.content)} className="flex flex-col">
+                            <ContentCard content={pick.content} />
+                            {/* w-0 + min-w-full: the reason wraps at the card's width */}
                             <p
-                                className={`mt-1 px-1 text-xs leading-snug sm:text-sm ${pick.reason ? 'text-amber-200/90' : 'text-gray-500'}`}
+                                className={`mt-1 w-0 min-w-full px-1 text-xs leading-snug sm:text-sm ${pick.reason ? 'text-amber-200/90' : 'text-gray-500'}`}
                             >
                                 {pick.reason ?? `Similar to ${pick.becauseOf}`}
                             </p>
