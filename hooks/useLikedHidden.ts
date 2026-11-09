@@ -73,12 +73,9 @@ export const useLikedHidden = () => {
     }
 
     const isHidden = (contentId: number) => {
-        // Check myRatings first (new system), fall back to legacy
-        const rating = getRatingFn(contentId)
-        if (rating) {
-            return rating.rating === 'dislike'
-        }
-        return hiddenMovies.some((m) => m.id === contentId)
+        // Hidden is its own list (a liked title can be hidden too); a dislike also hides
+        if (hiddenMovies.some((m) => m.id === contentId)) return true
+        return getRatingFn(contentId)?.rating === 'dislike'
     }
 
     const getRating = (contentId: number): 'like' | 'dislike' | null => {
@@ -102,9 +99,9 @@ export const useLikedHidden = () => {
 
     const toggleHidden = (content: Content) => {
         if (isHidden(content.id)) {
-            removeRating(content.id)
+            removeHiddenMovie(content.id)
         } else {
-            rateContent(content, 'dislike')
+            addHiddenMovie(content)
         }
     }
 

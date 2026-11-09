@@ -367,24 +367,49 @@ export function createUserStore(options: CreateUserStoreOptions) {
             logger.log(`🗑️ [${trackingContext}] Removed from liked:`, contentId)
         },
 
+        // Hiding is separate from rating: a liked title can be hidden from
+        // recommendations and stays liked. (Disliking still hides, see rateContent.)
         addHiddenMovie: async (content: Content) => {
             const state = get()
-
-            const alreadyHidden =
-                state.myRatings.some(
-                    (rating) => rating.content.id === content.id && rating.rating === 'dislike'
-                ) || state.hiddenMovies.some((m) => m.id === content.id)
-            if (alreadyHidden) {
+            if (state.hiddenMovies.some((m) => m.id === content.id)) {
                 logger.log(`⚠️ [${trackingContext}] Movie already hidden:`, getTitle(content))
                 return
             }
-
-            await get().rateContent(content, 'dislike')
+            if (adapter.isAsync) set({ syncStatus: 'syncing' })
+            set({
+                hiddenMovies: [...state.hiddenMovies, content],
+                lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+            })
+            try {
+                await saveToStorage(get(), 'addHiddenMovie')
+                if (adapter.isAsync) set({ syncStatus: 'synced' })
+            } catch (_error) {
+                if (adapter.isAsync) set({ syncStatus: 'offline' })
+            }
             logger.log(`🙈 [${trackingContext}] Added to hidden:`, getTitle(content))
         },
 
         removeHiddenMovie: async (contentId: number) => {
-            await get().removeRating(contentId)
+            const state = get()
+            // A dislike is what hid it: showing it again clears the dislike too
+            const disliked = state.myRatings.some(
+                (r) => r.content.id === contentId && r.rating === 'dislike'
+            )
+            if (disliked) {
+                await get().removeRating(contentId)
+            } else {
+                if (adapter.isAsync) set({ syncStatus: 'syncing' })
+                set({
+                    hiddenMovies: state.hiddenMovies.filter((m) => m.id !== contentId),
+                    lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+                })
+                try {
+                    await saveToStorage(get(), 'removeHiddenMovie')
+                    if (adapter.isAsync) set({ syncStatus: 'synced' })
+                } catch (_error) {
+                    if (adapter.isAsync) set({ syncStatus: 'offline' })
+                }
+            }
             logger.log(`🗑️ [${trackingContext}] Removed from hidden:`, contentId)
         },
 
@@ -457,11 +482,16 @@ export function createUserStore(options: CreateUserStoreOptions) {
             const state = get()
             if (adapter.isAsync) set({ syncStatus: 'syncing' })
 
+            const removed = state.myRatings.find((r) => r.content.id === contentId)
             const newMyRatings = state.myRatings.filter((r) => r.content.id !== contentId)
 
-            // Also remove from legacy arrays
+            // Also update legacy arrays. Removing a like leaves the title's hidden
+            // state alone; removing a dislike un-hides it (the dislike hid it).
             const newLikedMovies = state.likedMovies.filter((m) => m.id !== contentId)
-            const newHiddenMovies = state.hiddenMovies.filter((m) => m.id !== contentId)
+            const newHiddenMovies =
+                removed?.rating === 'like'
+                    ? state.hiddenMovies
+                    : state.hiddenMovies.filter((m) => m.id !== contentId)
 
             const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
             set({
