@@ -42,7 +42,7 @@ import { Z_INDEX } from '../../constants/zIndex'
  */
 function ActionLabel({ label, children }: { label: string; children: React.ReactNode }) {
     return (
-        <div className="relative flex flex-col items-center">
+        <div className="relative flex h-11 sm:h-auto flex-col items-center justify-center">
             {children}
             <span
                 aria-hidden="true"
