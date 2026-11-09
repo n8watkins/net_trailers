@@ -544,37 +544,6 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                 </div>
             )}
 
-            {/* Media Type Pill - Top Right (Outside scaling container) */}
-            {content && imageLoaded && (
-                <div
-                    className={`absolute top-1 right-1 sm:top-3 sm:right-3 z-20
-                          opacity-100 transition-all duration-300 ease-out ${
-                              isCardHovered
-                                  ? 'translate-x-3 -translate-y-4'
-                                  : 'translate-x-0 translate-y-0'
-                          }`}
-                >
-                    <span
-                        className={`px-1 py-0.5 sm:px-1.5 md:px-3 md:py-1 text-[10px] sm:text-xs md:text-base rounded-full backdrop-blur-sm ${
-                            isMovie(content)
-                                ? 'bg-gradient-to-br from-white to-gray-100 text-black font-bold border border-black'
-                                : 'bg-gradient-to-br from-black to-gray-900 text-white font-medium border border-white'
-                        }`}
-                    >
-                        {!isMovie(content) ? (
-                            <span>
-                                <span className="sm:hidden">TV</span>
-                                <span className="hidden sm:inline">
-                                    {size === 'compact' ? 'TV' : getContentType(content)}
-                                </span>
-                            </span>
-                        ) : (
-                            getContentType(content)
-                        )}
-                    </span>
-                </div>
-            )}
-
             {/* Movie Title and Year - Below Content Image */}
             {content && imageLoaded && (
                 <div

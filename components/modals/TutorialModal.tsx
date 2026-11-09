@@ -80,7 +80,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartT
                     >
                         <XMarkIcon className="h-6 w-6" />
                     </button>
-                    <div className="flex items-center justify-center gap-3 mb-2">
+                    <div className="flex items-center justify-center gap-3 mb-2 px-10">
                         {/* Glowing icon */}
                         <div className="relative">
                             <div className="absolute inset-0 bg-orange-500/30 blur-xl scale-150" />
@@ -177,41 +177,6 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartT
                                 />
                             </div>
 
-                            {/* Guest Mode Limitations */}
-                            <div className="mt-5 p-5 bg-gradient-to-r from-orange-500/15 to-amber-500/15 rounded-xl border border-orange-400/40 backdrop-blur-sm">
-                                <p className="text-white text-base font-bold mb-3 flex items-center gap-2">
-                                    🔒 Guest Mode Limitations
-                                </p>
-                                <ul className="text-gray-200 text-sm space-y-2">
-                                    <li className="flex items-start gap-2">
-                                        <span className="text-orange-400 font-bold">✗</span>
-                                        <span>Cannot create or share custom collections</span>
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <span className="text-orange-400 font-bold">✗</span>
-                                        <span>
-                                            Cannot create rankings or participate in community
-                                        </span>
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <span className="text-orange-400 font-bold">✗</span>
-                                        <span>Cannot use AI-powered smart search</span>
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <span className="text-orange-400 font-bold">✗</span>
-                                        <span>Cannot enable Child Safety Mode</span>
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <span className="text-orange-400 font-bold">✗</span>
-                                        <span>Data saved locally (not synced across devices)</span>
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <span className="text-orange-400 font-bold">✗</span>
-                                        <span>May be lost if you clear browser data</span>
-                                    </li>
-                                </ul>
-                            </div>
-
                             {/* Call to Action */}
                             <div className="mt-5 text-center">
                                 <div className="mb-4 py-4 px-6 bg-gradient-to-r from-red-500/20 via-orange-500/20 to-yellow-500/20 rounded-xl border border-red-500/30 backdrop-blur-sm">
@@ -219,7 +184,8 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartT
                                         ✨ Unlock the Full Experience
                                     </p>
                                     <p className="text-gray-300 text-sm">
-                                        Create an account to sync your data and access all features
+                                        Sign in to sync across devices, build collections and
+                                        rankings, and join the community
                                     </p>
                                 </div>
                                 <div className="flex justify-center gap-3">

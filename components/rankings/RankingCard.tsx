@@ -12,6 +12,7 @@
 
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -23,6 +24,30 @@ import { useRankingStore } from '@/stores/rankingStore'
 import { useSessionStore } from '@/stores/sessionStore'
 import useAuth from '@/hooks/useAuth'
 import { formatDistanceToNow } from 'date-fns'
+import type { Content } from '@/typings'
+
+/** Poster that falls back to a quiet title tile when the image is missing or 404s. */
+function RankingPoster({ content }: { content: Content }) {
+    const [failed, setFailed] = useState(false)
+    if (failed || !content.poster_path) {
+        return (
+            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-zinc-800 p-2 text-center text-xs font-semibold text-gray-300 ring-1 ring-zinc-700">
+                {getTitle(content)}
+            </div>
+        )
+    }
+    return (
+        <Image
+            src={getPosterPath(content)}
+            alt={getTitle(content)}
+            fill
+            loading="lazy"
+            sizes="110px"
+            onError={() => setFailed(true)}
+            className="object-cover rounded-md shadow-lg relative z-10 ring-1 ring-zinc-700 group-hover:ring-zinc-600 transition-all"
+        />
+    )
+}
 
 interface RankingCardProps {
     ranking: Ranking
@@ -84,14 +109,7 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
                                         transform: `translateY(${index === 1 ? '-3px' : '0'})`,
                                     }}
                                 >
-                                    <Image
-                                        src={getPosterPath(item.content)}
-                                        alt={getTitle(item.content)}
-                                        fill
-                                        loading="lazy"
-                                        sizes="110px"
-                                        className="object-cover rounded-md shadow-lg relative z-10 ring-1 ring-zinc-700 group-hover:ring-zinc-600 transition-all"
-                                    />
+                                    <RankingPoster content={item.content} />
                                 </div>
                             ))}
                         </div>

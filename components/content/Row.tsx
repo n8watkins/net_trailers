@@ -96,7 +96,8 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onI
     }
 
     // Show pencil for all collections - the modal will handle what can be edited based on collection type
-    const canEditCollection = !!collection
+    // Row editing is a signed-in feature; guests get a clean, read-only home page
+    const canEditCollection = !!collection && sessionType === 'authenticated'
 
     // Keep refs in sync with state for Intersection Observer
     useEffect(() => {

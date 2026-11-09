@@ -1,13 +1,7 @@
 import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import {
-    CommandLineIcon,
-    HomeIcon,
-    MagnifyingGlassIcon,
-    RectangleStackIcon,
-    AcademicCapIcon,
-} from '@heroicons/react/24/outline'
+import { HomeIcon, MagnifyingGlassIcon, RectangleStackIcon } from '@heroicons/react/24/outline'
 
 interface FooterProps {
     showAboutModal: boolean
@@ -267,12 +261,9 @@ function Footer({
                                     <p className="text-gray-300 text-sm">
                                         <button
                                             onClick={onOpenTutorial}
-                                            className="group hover:text-white transition-all duration-200 flex items-center gap-2 p-1 rounded-lg hover:bg-gray-700/20"
+                                            className="hover:text-white transition-colors duration-200"
                                         >
-                                            <AcademicCapIcon className="w-4 h-4 group-hover:text-red-400 transition-colors duration-200" />
-                                            <span className="underline group-hover:no-underline">
-                                                Help & Tutorial
-                                            </span>
+                                            Help & Tutorial
                                         </button>
                                     </p>
                                 )}
@@ -281,12 +272,9 @@ function Footer({
                                     <p className="hidden lg:block text-gray-300 text-sm">
                                         <button
                                             onClick={onOpenKeyboardShortcuts}
-                                            className="group hover:text-white transition-all duration-200 flex items-center gap-2 p-1 rounded-lg hover:bg-gray-700/20"
+                                            className="hover:text-white transition-colors duration-200"
                                         >
-                                            <CommandLineIcon className="w-4 h-4 group-hover:text-red-400 transition-colors duration-200" />
-                                            <span className="underline group-hover:no-underline">
-                                                Keyboard Shortcuts
-                                            </span>
+                                            Keyboard Shortcuts
                                         </button>
                                     </p>
                                 )}

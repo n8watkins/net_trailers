@@ -39,6 +39,7 @@ export default function TrendingActorsRow({
     const hasMoreRef = useRef(true)
 
     const sessionType = useSessionStore((state) => state.sessionType)
+    const isAuthenticated = sessionType === 'authenticated'
 
     // Get system recommendations from the appropriate store
     const authSystemRecommendations = useAuthStore((state) => state.systemRecommendations)
@@ -327,14 +328,16 @@ export default function TrendingActorsRow({
                 <h2 className="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold transition duration-200 hover:text-gray-300">
                     {title}
                 </h2>
-                {/* Edit button - visible by default */}
-                <button
-                    onClick={handleEdit}
-                    className="opacity-40 hover:opacity-100 transition-opacity duration-200 p-1.5 rounded-md hover:bg-gray-700/50 text-gray-400 hover:text-gray-200"
-                    title="Edit this row"
-                >
-                    <PencilIcon className="w-5 h-5" />
-                </button>
+                {/* Edit button - signed-in users only */}
+                {isAuthenticated && (
+                    <button
+                        onClick={handleEdit}
+                        className="opacity-40 hover:opacity-100 transition-opacity duration-200 p-1.5 rounded-md hover:bg-gray-700/50 text-gray-400 hover:text-gray-200"
+                        title="Edit this row"
+                    >
+                        <PencilIcon className="w-5 h-5" />
+                    </button>
+                )}
             </div>
 
             {/* Actors Row */}
