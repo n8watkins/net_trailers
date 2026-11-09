@@ -8,6 +8,7 @@ interface FooterProps {
     onCloseAboutModal: () => void
     onOpenKeyboardShortcuts?: () => void
     onOpenTutorial?: () => void
+    onOpenWelcome?: () => void
 }
 
 const linkClass = 'text-sm text-gray-300 transition-colors duration-200 hover:text-white'
@@ -17,7 +18,12 @@ const headingClass = 'mb-3 text-sm font-semibold uppercase tracking-wide text-am
  * Compact site footer: three short groups (Navigate, Project, Help & legal).
  * Genre links live in the header's Genres menu, so they are not repeated here.
  */
-function Footer({ onOpenAboutModal, onOpenKeyboardShortcuts, onOpenTutorial }: FooterProps) {
+function Footer({
+    onOpenAboutModal,
+    onOpenKeyboardShortcuts,
+    onOpenTutorial,
+    onOpenWelcome,
+}: FooterProps) {
     return (
         <footer className="border-t border-gray-800 bg-[#0a0a0a]">
             <div className="mx-auto max-w-7xl px-4 pb-24 pt-10 sm:px-6 lg:px-8">
@@ -129,6 +135,17 @@ function Footer({ onOpenAboutModal, onOpenKeyboardShortcuts, onOpenTutorial }: F
                     <div className="col-span-2 md:col-span-1">
                         <h3 className={headingClass}>Help &amp; legal</h3>
                         <ul className="grid grid-cols-2 gap-x-6 gap-y-2 md:grid-cols-1">
+                            {onOpenWelcome && (
+                                <li>
+                                    <button
+                                        type="button"
+                                        onClick={onOpenWelcome}
+                                        className={linkClass}
+                                    >
+                                        Welcome
+                                    </button>
+                                </li>
+                            )}
                             {onOpenTutorial && (
                                 <li>
                                     <button
