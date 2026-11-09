@@ -7,7 +7,6 @@ import {
     MagnifyingGlassIcon,
     SparklesIcon,
 } from '@heroicons/react/24/outline'
-import { useTypewriter } from '../../hooks/useTypewriter'
 import { useVoiceInput } from '../../hooks/useVoiceInput'
 import { useToast } from '../../hooks/useToast'
 import { getRandomQuery } from '../../constants/surpriseQueries'
@@ -43,20 +42,12 @@ interface SmartInputProps {
     onFocus?: () => void
     onBlur?: () => void
     disabled?: boolean
-    showTypewriter?: boolean
+    showExamplePlaceholder?: boolean
     size?: 'default' | 'large'
     className?: string
     variant?: 'solid' | 'transparent'
     shimmer?:
-        | 'none'
-        | 'subtle'
-        | 'bold'
-        | 'border'
-        | 'pulse'
-        | 'wave'
-        | 'rainbow'
-        | 'fast'
-        | 'double'
+        'none' | 'subtle' | 'bold' | 'border' | 'pulse' | 'wave' | 'rainbow' | 'fast' | 'double'
     showSurpriseMe?: boolean
     onSurpriseMe?: () => void
     surpriseIcon?: 'dice' | 'sparkles' // Icon to use for surprise button (default: dice)
@@ -69,7 +60,7 @@ interface SmartInputProps {
  *
  * Features:
  * - Voice input support
- * - Typewriter placeholder animation
+ * - Static example placeholder
  * - Clear button
  * - Sparkles icon
  * - Responsive box shadows (natural, hover, active states)
@@ -87,7 +78,7 @@ export function SmartInput({
     onFocus,
     onBlur,
     disabled = false,
-    showTypewriter = false,
+    showExamplePlaceholder = false,
     size = 'default',
     className = '',
     variant = 'solid',
@@ -105,53 +96,20 @@ export function SmartInput({
     const [isGeneratingSurprise, setIsGeneratingSurprise] = useState(false)
     const [isMounted, setIsMounted] = useState(false)
 
-    // Search examples for typewriter
-    const searchExamples = [
-        'neo-like characters',
-        'Keanu Reeves comedies',
-        'dark superheroes finding redemption',
-        'mind-bending time travel',
-        'strong female leads kicking ass',
-        'quirky indie rom-coms',
-        'clever heist movies',
-        'dystopian futures with hope',
-        'gripping true crime',
-        'Denzel Washington action',
-        'psychological thrillers',
-        'epic space battles',
-        'underdog sports comebacks',
-        'animated films that hit deep',
-        'detective stories with wit',
-        'found footage scares',
-        'royal family drama',
-        'revenge with consequences',
-        'buddy cop banter',
-        'dragons and fantasy worlds',
-        'controversial biopics',
-        'romantic escapes to Paris',
-        'survival against all odds',
-        'AI taking over',
-        'feel-good second chances',
-        'classic noir vibes',
-        'music biopics',
-        'trippy art films',
-        '80s nostalgia',
-        'mysterious islands',
-    ]
-
-    // Typing animation
-    const typewriterText = useTypewriter({
-        words: searchExamples,
-        typeSpeed: 60,
-        deleteSpeed: 30,
-        delayBetweenWords: 2500,
-        loop: true,
-    })
-
-    const placeholderText = showTypewriter
-        ? localValue
-            ? 'Describe what you want to watch...'
-            : typewriterText || 'Describe what you want to watch...'
+    // A static example reads better than an animated one and never shifts the layout.
+    // Phones get a shorter example so the placeholder stays on one line.
+    const [isNarrow, setIsNarrow] = useState(false)
+    useEffect(() => {
+        const query = window.matchMedia('(max-width: 639px)')
+        const update = () => setIsNarrow(query.matches)
+        update()
+        query.addEventListener('change', update)
+        return () => query.removeEventListener('change', update)
+    }, [])
+    const placeholderText = showExamplePlaceholder
+        ? isNarrow
+            ? 'Try "cozy mysteries"'
+            : 'Describe a mood, e.g. "cozy rainy-day mysteries"'
         : placeholder || 'Describe what you want to watch...'
 
     // Voice input
@@ -184,7 +142,7 @@ export function SmartInput({
         setLocalValue(value)
     }, [value])
 
-    // Auto-resize textarea when localValue changes (including programmatic changes)
+    // Auto-resize textarea when the value or placeholder changes (including programmatic changes)
     useEffect(() => {
         if (inputRef.current) {
             inputRef.current.style.height = 'auto'
@@ -193,7 +151,8 @@ export function SmartInput({
             const newHeight = Math.min(inputRef.current.scrollHeight, maxHeight)
             inputRef.current.style.height = newHeight + 'px'
         }
-    }, [localValue])
+        // The placeholder counts too: it changes length on phones after mount
+    }, [localValue, placeholderText])
 
     const handleFocus = () => {
         setIsFocused(true)
@@ -275,15 +234,15 @@ export function SmartInput({
     const getBackgroundClasses = () => {
         if (variant === 'transparent') {
             if (isFocused || isActive) {
-                return 'bg-black/50 backdrop-blur-xl shadow-[0_0_30px_rgba(239,68,68,0.6)]'
+                return 'bg-black/50 backdrop-blur-xl shadow-[0_0_30px_rgba(251,191,36,0.6)]'
             }
-            return 'bg-white/5 backdrop-blur-lg shadow-[0_0_20px_rgba(239,68,68,0.4)]'
+            return 'bg-white/5 backdrop-blur-lg shadow-[0_0_20px_rgba(251,191,36,0.4)]'
         }
         // Solid variant
         if (isFocused || isActive) {
-            return 'bg-gray-800 shadow-[0_0_30px_rgba(239,68,68,0.6)]'
+            return 'bg-gray-800 shadow-[0_0_30px_rgba(251,191,36,0.6)]'
         }
-        return 'bg-gray-800 shadow-[0_0_20px_rgba(239,68,68,0.4)]'
+        return 'bg-gray-800 shadow-[0_0_20px_rgba(251,191,36,0.4)]'
     }
 
     // Size-specific classes
@@ -314,9 +273,9 @@ export function SmartInput({
             case 'subtle':
                 return 'before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent before:pointer-events-none before:z-10'
             case 'bold':
-                return 'before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-red-400/50 before:to-transparent before:pointer-events-none before:z-10'
+                return 'before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-amber-300/50 before:to-transparent before:pointer-events-none before:z-10'
             case 'fast':
-                return 'before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-red-400/60 before:to-transparent before:pointer-events-none before:z-10'
+                return 'before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-amber-300/60 before:to-transparent before:pointer-events-none before:z-10'
             case 'wave':
                 return 'shimmer-wave-container'
             case 'rainbow':
@@ -324,7 +283,7 @@ export function SmartInput({
             case 'double':
                 return 'shimmer-double'
             case 'border':
-                return 'ring-2 ring-red-500/50 ring-offset-2 ring-offset-transparent animate-pulse-slow'
+                return 'ring-2 ring-amber-400/50 ring-offset-2 ring-offset-transparent animate-pulse-slow'
             case 'pulse':
                 return 'animate-glow-pulse'
             default:
@@ -369,12 +328,12 @@ export function SmartInput({
                 @keyframes glow-pulse {
                     0%,
                     100% {
-                        box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+                        box-shadow: 0 0 20px rgba(251, 191, 36, 0.4);
                     }
                     50% {
                         box-shadow:
-                            0 0 40px rgba(239, 68, 68, 0.8),
-                            0 0 60px rgba(239, 68, 68, 0.4);
+                            0 0 40px rgba(251, 191, 36, 0.8),
+                            0 0 60px rgba(251, 191, 36, 0.4);
                     }
                 }
                 @keyframes pulse-slow {
@@ -409,13 +368,13 @@ export function SmartInput({
                         110deg,
                         transparent 0%,
                         transparent 25%,
-                        rgba(220, 38, 38, 0.12) 35%,
-                        rgba(239, 68, 68, 0.18) 40%,
-                        rgba(248, 113, 113, 0.22) 45%,
-                        rgba(252, 165, 165, 0.25) 50%,
-                        rgba(248, 113, 113, 0.22) 55%,
-                        rgba(239, 68, 68, 0.18) 60%,
-                        rgba(220, 38, 38, 0.12) 65%,
+                        rgba(245, 158, 11, 0.12) 35%,
+                        rgba(251, 191, 36, 0.18) 40%,
+                        rgba(252, 211, 77, 0.22) 45%,
+                        rgba(253, 230, 138, 0.25) 50%,
+                        rgba(252, 211, 77, 0.22) 55%,
+                        rgba(251, 191, 36, 0.18) 60%,
+                        rgba(245, 158, 11, 0.12) 65%,
                         transparent 75%,
                         transparent 100%
                     );
@@ -436,13 +395,13 @@ export function SmartInput({
                         135deg,
                         transparent 0%,
                         transparent 25%,
-                        rgba(220, 38, 38, 0.1) 35%,
-                        rgba(239, 68, 68, 0.15) 40%,
-                        rgba(248, 113, 113, 0.18) 45%,
-                        rgba(252, 165, 165, 0.2) 50%,
-                        rgba(248, 113, 113, 0.18) 55%,
-                        rgba(239, 68, 68, 0.15) 60%,
-                        rgba(220, 38, 38, 0.1) 65%,
+                        rgba(245, 158, 11, 0.1) 35%,
+                        rgba(251, 191, 36, 0.15) 40%,
+                        rgba(252, 211, 77, 0.18) 45%,
+                        rgba(253, 230, 138, 0.2) 50%,
+                        rgba(252, 211, 77, 0.18) 55%,
+                        rgba(251, 191, 36, 0.15) 60%,
+                        rgba(245, 158, 11, 0.1) 65%,
                         transparent 75%,
                         transparent 100%
                     );
@@ -462,7 +421,7 @@ export function SmartInput({
                     background: linear-gradient(
                         90deg,
                         transparent 0%,
-                        rgba(239, 68, 68, 0.6) 25%,
+                        rgba(251, 191, 36, 0.6) 25%,
                         rgba(251, 191, 36, 0.6) 50%,
                         rgba(59, 130, 246, 0.6) 75%,
                         transparent 100%
@@ -484,7 +443,7 @@ export function SmartInput({
                     background: linear-gradient(
                         90deg,
                         transparent,
-                        rgba(239, 68, 68, 0.6),
+                        rgba(251, 191, 36, 0.6),
                         transparent
                     );
                     pointer-events: none;
@@ -537,7 +496,7 @@ export function SmartInput({
                     relative flex items-center
                     transition-all duration-300 ease-out
                     overflow-hidden
-                    hover:shadow-[0_0_30px_rgba(239,68,68,0.6)]
+                    hover:shadow-[0_0_30px_rgba(251,191,36,0.6)]
                     ${currentSize.container}
                     ${getBackgroundClasses()}
                     ${getShimmerClasses()}
@@ -552,7 +511,7 @@ export function SmartInput({
                             disabled={disabled || isGeneratingSurprise}
                             title="Surprise me with a search idea"
                             className={`
-                                ${currentSize.icon} text-red-400 hover:text-red-300
+                                ${currentSize.icon} text-amber-300 hover:text-amber-200
                                 cursor-pointer transition-all duration-300
                                 disabled:cursor-not-allowed disabled:opacity-50
                                 ${isGeneratingSurprise ? 'animate-spin-pulse' : 'hover:scale-110'}
@@ -599,7 +558,7 @@ export function SmartInput({
                 <div className="absolute right-3 sm:right-4 flex items-center gap-1 z-20">
                     {/* Listening indicator */}
                     {isListening && (
-                        <span className="text-xs text-red-400 mr-1 animate-pulse font-medium">
+                        <span className="text-xs text-amber-300 mr-1 animate-pulse font-medium">
                             Listening...
                         </span>
                     )}
@@ -634,13 +593,13 @@ export function SmartInput({
                             {/* Animated pulsing rings when listening */}
                             {isListening && (
                                 <>
-                                    <span className="absolute inset-0 rounded-full bg-red-500/40 animate-ping" />
+                                    <span className="absolute inset-0 rounded-full bg-amber-400/40 animate-ping" />
                                     <span
-                                        className="absolute inset-0 rounded-full bg-red-500/30 animate-pulse"
+                                        className="absolute inset-0 rounded-full bg-amber-400/30 animate-pulse"
                                         style={{ animationDuration: '1s' }}
                                     />
                                     <span
-                                        className="absolute inset-0 rounded-full bg-red-500/20 animate-pulse"
+                                        className="absolute inset-0 rounded-full bg-amber-400/20 animate-pulse"
                                         style={{
                                             animationDuration: '1.5s',
                                             animationDelay: '0.3s',
@@ -651,7 +610,7 @@ export function SmartInput({
                             <MicrophoneIcon
                                 className={`
                                     ${currentSize.button} transition-all relative z-10
-                                    ${isListening ? '!text-red-500 scale-110 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'text-red-400 hover:text-red-300'}
+                                    ${isListening ? '!text-red-500 scale-110 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'text-amber-300 hover:text-amber-200'}
                                 `}
                             />
                         </button>
@@ -665,7 +624,7 @@ export function SmartInput({
                         aria-label="Submit search"
                     >
                         <MagnifyingGlassIcon
-                            className={`${currentSize.button} text-red-400 hover:text-red-300 transition-colors`}
+                            className={`${currentSize.button} text-amber-300 hover:text-amber-200 transition-colors`}
                         />
                     </button>
                 </div>

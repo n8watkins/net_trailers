@@ -96,7 +96,8 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onI
     }
 
     // Show pencil for all collections - the modal will handle what can be edited based on collection type
-    const canEditCollection = !!collection
+    // Row editing is a signed-in feature; guests get a clean, read-only home page
+    const canEditCollection = !!collection && sessionType === 'authenticated'
 
     // Keep refs in sync with state for Intersection Observer
     useEffect(() => {
@@ -530,7 +531,7 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onI
         }
     }
     return (
-        <div className="-mt-4 sm:-mt-6 md:-mt-8">
+        <div>
             {/* Section Title with Edit Button */}
             <div className="flex items-center gap-3 px-4 sm:px-6 md:px-8 lg:px-16 pt-0 group/title">
                 <h2 className="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold transition duration-200 hover:text-gray-300">
@@ -557,10 +558,10 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onI
             </div>
 
             {/* Content Row */}
-            <div className="relative row-container h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] group">
+            <div className="relative row-container group">
                 {/* Left Arrow - Hidden on small mobile, visible on larger screens */}
                 <div
-                    className={`hidden sm:flex absolute top-0 left-[-1rem] z-50 rounded-lg w-12 sm:w-20 md:w-32 h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] items-center justify-center ${
+                    className={`hidden sm:flex absolute inset-y-0 left-[-1rem] z-50 rounded-lg w-12 sm:w-20 md:w-32 items-center justify-center ${
                         isMoved ? 'opacity-70 sm:opacity-0 sm:group-hover:opacity-100' : 'opacity-0'
                     } transition-all duration-300 cursor-pointer pointer-events-auto border border-transparent hover:shadow-[0_0_20px_rgba(107,114,128,0.5)] hover:backdrop-blur-sm group/chevron`}
                     onClick={() => handleClick('left')}
@@ -580,7 +581,7 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onI
                     ref={rowRef}
                     className="flex gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-8 overflow-x-scroll overflow-y-hidden scrollbar-hide scroll-smooth
                               px-4 sm:px-6 md:px-8 lg:px-16
-                              py-10"
+                              pt-6 pb-4"
                     style={{
                         scrollbarWidth: 'none',
                         msOverflowStyle: 'none',
@@ -611,7 +612,7 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onI
                     {isLoading && apiEndpoint && (
                         <div className="flex-shrink-0 flex items-center justify-center w-[120px] h-[180px] xs:w-[140px] xs:h-[210px] sm:w-[160px] sm:h-[240px] md:w-[180px] md:h-[270px] lg:w-[200px] lg:h-[300px] xl:w-[220px] xl:h-[330px]">
                             <div className="text-center">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-2"></div>
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500 mx-auto mb-2"></div>
                                 <div className="text-xs text-gray-400">Loading more...</div>
                             </div>
                         </div>
@@ -630,7 +631,7 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onI
 
                 {/* Right Arrow - Hidden on small mobile, visible on larger screens */}
                 <div
-                    className="hidden sm:flex absolute top-0 right-[-1rem] z-50 rounded-lg w-12 sm:w-20 md:w-32 h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] items-center justify-center opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 cursor-pointer pointer-events-auto border border-transparent hover:shadow-[0_0_20px_rgba(107,114,128,0.5)] hover:backdrop-blur-sm group/chevron"
+                    className="hidden sm:flex absolute inset-y-0 right-[-1rem] z-50 rounded-lg w-12 sm:w-20 md:w-32 items-center justify-center opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 cursor-pointer pointer-events-auto border border-transparent hover:shadow-[0_0_20px_rgba(107,114,128,0.5)] hover:backdrop-blur-sm group/chevron"
                     onClick={() => handleClick('right')}
                 >
                     <div

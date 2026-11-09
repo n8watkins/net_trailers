@@ -80,7 +80,7 @@ export function GenreMultiSelect({
                                 e.target.value = '' // Reset select
                             }
                         }}
-                        className="w-full px-4 py-2 bg-[#1a1a1a] border border-gray-700 rounded-lg text-white focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
+                        className="w-full px-4 py-2 bg-[#1a1a1a] border border-gray-700 rounded-lg text-white focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
                     >
                         <option value="">
                             {selectedGenres.length === 0

@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { XMarkIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 interface ConfirmationModalProps {
     isOpen: boolean
@@ -72,6 +73,8 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 
     const colorScheme = colors[dangerLevel]
 
+    useEscapeKey(isOpen, onClose)
+
     if (!isOpen) return null
 
     return (
@@ -80,7 +83,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             <div className="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-75" />
 
             {/* Modal panel */}
-            <div className="relative w-full max-w-md px-8 py-6 overflow-hidden text-left transition-all transform bg-[#0a0a0a] border border-red-500/40 rounded-xl shadow-2xl shadow-red-500/20">
+            <div className="relative w-full max-w-md px-8 py-6 overflow-hidden text-left transition-all transform bg-[#0a0a0a] border border-amber-400/40 rounded-xl shadow-2xl shadow-amber-400/20">
                 {/* Close Button */}
                 <button
                     onClick={handleClose}
@@ -127,7 +130,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                             onChange={(e) => setTypedText(e.target.value)}
                             onKeyDown={handleKeyDown}
                             placeholder={confirmationPhrase}
-                            className="w-full text-sm px-4 py-2 bg-[#0a0a0a] border border-[#313131] rounded-lg text-white placeholder-[#666] text-center focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent transition-all"
+                            className="w-full text-sm px-4 py-2 bg-[#0a0a0a] border border-[#313131] rounded-lg text-white placeholder-[#666] text-center focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
                             autoFocus
                         />
                     </div>

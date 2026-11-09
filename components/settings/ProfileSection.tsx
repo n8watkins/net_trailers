@@ -59,7 +59,7 @@ const VisibilityToggle: React.FC<VisibilityToggleProps> = ({
                     className="sr-only peer"
                 />
                 <div
-                    className={`w-10 h-5 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-600 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`w-10 h-5 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                 ></div>
             </label>
         </div>
@@ -210,7 +210,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                                     className="rounded-full object-cover border-2 border-[#313131] flex-shrink-0"
                                 />
                             ) : (
-                                <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center border-2 border-[#313131] flex-shrink-0">
+                                <div className="w-16 h-16 bg-amber-500 rounded-full flex items-center justify-center border-2 border-[#313131] flex-shrink-0">
                                     <span className="text-white font-bold text-xl">
                                         {getUserName().charAt(0).toUpperCase()}
                                     </span>
@@ -284,7 +284,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                                             className={`flex-1 py-2 px-4 rounded-md font-medium text-sm transition ${
                                                 isSavingProfile || !canSaveDisplayName
                                                     ? 'bg-gray-700 cursor-not-allowed opacity-50 text-gray-400'
-                                                    : 'bg-red-600 hover:bg-red-700 text-white'
+                                                    : 'bg-amber-500 hover:bg-amber-600 text-zinc-950'
                                             } flex items-center justify-center gap-2`}
                                         >
                                             {isSavingProfile ? (
@@ -451,7 +451,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                                             usernameError !== undefined ||
                                             username === profileUsername
                                                 ? 'bg-gray-700 cursor-not-allowed opacity-50 text-gray-400'
-                                                : 'bg-red-600 hover:bg-red-700 text-white'
+                                                : 'bg-amber-500 hover:bg-amber-600 text-zinc-950'
                                         } flex items-center justify-center gap-2`}
                                     >
                                         {isSavingUsername ? (
@@ -547,7 +547,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                                                 className="sr-only peer"
                                             />
                                             <div
-                                                className={`w-10 h-5 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-600 ${isSavingVisibility ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                className={`w-10 h-5 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500 ${isSavingVisibility ? 'opacity-50 cursor-not-allowed' : ''}`}
                                             ></div>
                                         </label>
                                     </div>
@@ -577,7 +577,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                                                 icon={ClockIcon}
                                                 checked={Boolean(
                                                     visibility.enablePublicProfile &&
-                                                        visibility.showWatchHistory
+                                                    visibility.showWatchHistory
                                                 )}
                                                 onChange={onVisibilityChange}
                                                 disabled={

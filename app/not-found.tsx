@@ -1,14 +1,16 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import LegacyCollectionRedirect from '../components/utility/LegacyCollectionRedirect'
 
 export const metadata: Metadata = {
-    title: 'Page Not Found - NetTrailer',
+    title: 'Page Not Found - NetTrailers',
     description: 'This page could not be found.',
 }
 
 export default function NotFound() {
     return (
         <div className="min-h-screen bg-black flex items-center justify-center relative overflow-hidden">
+            <LegacyCollectionRedirect />
             {/* Background pattern */}
             <div className="absolute inset-0 opacity-5">
                 <div className="absolute top-10 left-10 text-6xl">🎬</div>
@@ -26,7 +28,7 @@ export default function NotFound() {
                     <h1 className="text-8xl md:text-9xl font-bold text-white mb-4 tracking-wider">
                         404
                     </h1>
-                    <div className="w-32 h-1 bg-red-600 mx-auto mb-8"></div>
+                    <div className="w-32 h-1 bg-amber-500 mx-auto mb-8"></div>
                 </div>
 
                 {/* Error message */}
@@ -42,14 +44,10 @@ export default function NotFound() {
 
                 {/* Action buttons */}
                 <div className="space-y-6">
-                    <div className="bg-gray-900/50 backdrop-blur-sm rounded-lg p-6 border border-gray-700">
-                        <p className="text-gray-300 mb-4">What would you like to do?</p>
-                    </div>
-
                     <div className="flex justify-center">
                         <Link
                             href="/"
-                            className="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+                            className="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-semibold py-3 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
                         >
                             🏠 Go to Home
                         </Link>
@@ -58,7 +56,7 @@ export default function NotFound() {
 
                 {/* Fun message */}
                 <div className="mt-12 text-gray-500 text-sm">
-                    <p>🎭 Meanwhile, somewhere in the NetTrailer universe...</p>
+                    <p>🎭 Meanwhile, somewhere in the NetTrailers universe...</p>
                     <p className="mt-2 italic">
                         &quot;The page you&apos;re looking for is probably binge-watching something
                         else.&quot;

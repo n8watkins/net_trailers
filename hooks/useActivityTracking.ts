@@ -36,10 +36,10 @@ export function usePageViewTracking() {
             }
 
             const userId = getUserId()
-            const isAuth = sessionType === 'authenticated'
 
-            // Don't track if we don't have a user ID
-            if (!userId) {
+            // Only signed-in page views are stored (user_activity rows belong to a
+            // user), so guests send nothing instead of a request that does nothing.
+            if (!userId || sessionType !== 'authenticated') {
                 return
             }
 
@@ -51,8 +51,7 @@ export function usePageViewTracking() {
                     // from the Auth.js session cookie when needed.
                     body: JSON.stringify({
                         type: 'view',
-                        userId: isAuth ? userId : null,
-                        guestId: !isAuth ? userId : null,
+                        userId,
                         page: pathname,
                         userAgent: navigator.userAgent,
                     }),

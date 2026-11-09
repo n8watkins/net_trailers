@@ -125,13 +125,13 @@ function GenresDropdown() {
             </button>
 
             {isOpen && (
-                <div className="absolute top-full left-0 mt-6 w-[85vw] sm:w-72 md:w-80 max-w-[320px] bg-[#0f0f0f]/95 backdrop-blur-sm border border-red-500/40 rounded-lg shadow-xl shadow-red-500/20 z-[110] max-h-96 overflow-hidden animate-dropdown-enter">
+                <div className="absolute top-full left-0 mt-6 w-[85vw] sm:w-72 md:w-80 max-w-[320px] bg-[#0f0f0f]/95 backdrop-blur-sm border border-amber-400/40 rounded-lg shadow-xl shadow-amber-400/20 z-[110] max-h-96 overflow-hidden animate-dropdown-enter">
                     {/* Type Selector - Toggle style with checkboxes */}
                     <div className="flex border-b border-gray-700">
                         <button
                             className={`flex-1 px-4 py-3 text-sm font-medium transition-all flex items-center justify-center gap-2 select-none ${
                                 movieSelected
-                                    ? 'bg-red-600/90 text-white'
+                                    ? 'bg-amber-500/90 text-white'
                                     : 'text-gray-400 hover:text-white hover:bg-white/10'
                             }`}
                             onClick={toggleMovie}
@@ -144,7 +144,7 @@ function GenresDropdown() {
                                 }`}
                             >
                                 {movieSelected && (
-                                    <CheckIcon className="w-3 h-3 text-red-600 stroke-[3]" />
+                                    <CheckIcon className="w-3 h-3 text-amber-500 stroke-[3]" />
                                 )}
                             </div>
                             <FilmIcon className="h-4 w-4" />
@@ -153,7 +153,7 @@ function GenresDropdown() {
                         <button
                             className={`flex-1 px-4 py-3 text-sm font-medium transition-all flex items-center justify-center gap-2 select-none ${
                                 tvSelected
-                                    ? 'bg-red-600/90 text-white'
+                                    ? 'bg-amber-500/90 text-white'
                                     : 'text-gray-400 hover:text-white hover:bg-white/10'
                             }`}
                             onClick={toggleTv}
@@ -166,7 +166,7 @@ function GenresDropdown() {
                                 }`}
                             >
                                 {tvSelected && (
-                                    <CheckIcon className="w-3 h-3 text-red-600 stroke-[3]" />
+                                    <CheckIcon className="w-3 h-3 text-amber-500 stroke-[3]" />
                                 )}
                             </div>
                             <TvIcon className="h-4 w-4" />
@@ -176,7 +176,7 @@ function GenresDropdown() {
 
                     {/* Genres Grid */}
                     {/* SCROLLBAR: Track transparent to match dropdown background, thumb is red */}
-                    <div className="max-h-80 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-red-600 hover:scrollbar-thumb-red-500 scrollbar-thumb-rounded-full scrollbar-track-rounded-full p-4">
+                    <div className="max-h-80 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-amber-500 hover:scrollbar-thumb-amber-400 scrollbar-thumb-rounded-full scrollbar-track-rounded-full p-4">
                         <div className="grid grid-cols-2 gap-2">
                             {currentGenres.map((genre) => (
                                 <button

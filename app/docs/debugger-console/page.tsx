@@ -404,7 +404,7 @@ function DebugOption({
         rose: 'border-l-rose-500',
         yellow: 'border-l-yellow-500',
         pink: 'border-l-pink-500',
-        red: 'border-l-red-500',
+        red: 'border-l-amber-400',
         violet: 'border-l-violet-500',
     }[color]
 
@@ -454,13 +454,13 @@ function DataAction({
     const colorClasses = {
         purple: 'bg-purple-500/10 border-purple-500/30',
         amber: 'bg-amber-500/10 border-amber-500/30',
-        red: 'bg-red-500/10 border-red-500/30',
+        red: 'bg-amber-400/10 border-amber-400/30',
     }[color]
 
     const iconColorClasses = {
         purple: 'text-purple-400',
         amber: 'text-amber-400',
-        red: 'text-red-400',
+        red: 'text-amber-300',
     }[color]
 
     return (

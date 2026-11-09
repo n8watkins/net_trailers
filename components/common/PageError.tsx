@@ -10,7 +10,7 @@ interface Props {
     onDemoMode?: () => void
 }
 
-const NetflixError: React.FC<Props> = ({ onRetry, showDemoMode = false, onDemoMode }) => {
+const PageError: React.FC<Props> = ({ onRetry, showDemoMode = false, onDemoMode }) => {
     const router = useRouter()
 
     // Prefetch home page for instant loading
@@ -34,14 +34,14 @@ const NetflixError: React.FC<Props> = ({ onRetry, showDemoMode = false, onDemoMo
     return (
         <div className="min-h-screen bg-[#141414] flex items-center justify-center px-4">
             <div className="text-center max-w-md mx-auto">
-                {/* Netflix-style error icon */}
+                {/* Error icon */}
                 <div className="flex justify-center mb-8">
                     <div className="relative">
-                        <div className="w-24 h-24 bg-[#e50914] rounded-full flex items-center justify-center">
+                        <div className="w-24 h-24 bg-[#dc2626] rounded-full flex items-center justify-center">
                             <ExclamationTriangleIcon className="w-12 h-12 text-white" />
                         </div>
                         {/* Subtle pulsing animation */}
-                        <div className="absolute inset-0 w-24 h-24 bg-[#e50914] rounded-full animate-ping opacity-20"></div>
+                        <div className="absolute inset-0 w-24 h-24 bg-[#dc2626] rounded-full animate-ping opacity-20"></div>
                     </div>
                 </div>
 
@@ -58,7 +58,7 @@ const NetflixError: React.FC<Props> = ({ onRetry, showDemoMode = false, onDemoMo
                     {/* Retry button */}
                     <button
                         onClick={handleRetry}
-                        className="w-full bg-[#e50914] hover:bg-[#b8070f] text-white font-semibold py-3 px-8 rounded transition-colors duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl"
+                        className="w-full bg-[#dc2626] hover:bg-[#b91c1c] text-white font-semibold py-3 px-8 rounded transition-colors duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl"
                     >
                         <ArrowPathIcon className="w-5 h-5" />
                         <span>Refresh</span>
@@ -91,4 +91,4 @@ const NetflixError: React.FC<Props> = ({ onRetry, showDemoMode = false, onDemoMo
     )
 }
 
-export default NetflixError
+export default PageError

@@ -14,6 +14,7 @@ import {
     inferMediaTypeFromContent,
     inferTopGenresFromContent,
 } from '../../utils/collectionGenreUtils'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 type CreationMode = 'traditional' | 'smart'
 
@@ -45,6 +46,8 @@ function CollectionBuilderModal() {
     const userId = getUserId()
     const isOpen = collectionBuilderModal.isOpen
     const isAuthenticated = sessionType === 'authenticated'
+
+    useEscapeKey(isOpen, closeCollectionBuilderModal)
 
     if (!isOpen) return null
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react'
 import { AVAILABLE_COLORS } from '../../config/constants'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 interface ColorPickerModalProps {
     isOpen: boolean
@@ -32,6 +33,8 @@ function ColorPickerModal({
         document.addEventListener('mousedown', handleClickOutside)
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [isOpen, onClose])
+
+    useEscapeKey(isOpen, onClose)
 
     if (!isOpen) return null
 

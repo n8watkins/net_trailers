@@ -11,6 +11,7 @@ import { SimplifiedSmartBuilder } from '../collections/smart/SimplifiedSmartBuil
 import { CollectionFormData, CreateListRequest } from '../../types/collections'
 import { useToast } from '../../hooks/useToast'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 type CreationMode = 'traditional' | 'smart'
 
@@ -42,6 +43,8 @@ function CollectionModal() {
     const userId = getUserId()
     const isOpen = collectionModal.isOpen
     const isAuthenticated = sessionType === 'authenticated'
+
+    useEscapeKey(isOpen, closeCollectionModal)
 
     if (!isOpen) return null
 
@@ -91,7 +94,7 @@ function CollectionModal() {
                             onClick={() => setMode('smart')}
                             className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                                 mode === 'smart'
-                                    ? 'bg-red-600 text-white'
+                                    ? 'bg-amber-500 text-zinc-950'
                                     : 'text-gray-400 hover:text-white hover:bg-gray-700'
                             }`}
                         >
@@ -101,7 +104,7 @@ function CollectionModal() {
                             onClick={() => setMode('traditional')}
                             className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                                 mode === 'traditional'
-                                    ? 'bg-red-600 text-white'
+                                    ? 'bg-amber-500 text-zinc-950'
                                     : 'text-gray-400 hover:text-white hover:bg-gray-700'
                             }`}
                         >

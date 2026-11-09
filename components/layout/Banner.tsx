@@ -147,19 +147,6 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
     return (
         <>
             {/* AI-Powered Smart Search Overlay - Position varies by variant */}
-            {/* Mobile: pushed lower to avoid hero text, Desktop: centered */}
-            <div
-                className={`absolute inset-0 flex justify-center pointer-events-none z-20 ${
-                    variant === 'compact'
-                        ? 'items-start pt-64 sm:pt-72 md:pt-80 lg:pt-96 xl:pt-[26rem]'
-                        : 'items-end pb-32 sm:pb-36 md:items-center md:pb-0'
-                }`}
-            >
-                <div className="w-full max-w-4xl px-4 sm:px-6 md:px-8 pointer-events-auto">
-                    <SmartSearchInput />
-                </div>
-            </div>
-
             {/* background image with mobile-responsive container */}
             <div className="absolute inset-0 z-0 font-sans overflow-hidden">
                 {contentImgUrl && isCurrentImageLoaded && (
@@ -198,6 +185,9 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
                         />
                     </div>
                 )}
+                {/* Scrim: keeps the title and description readable on bright backdrops */}
+                <div className="absolute inset-0 pointer-events-none bg-black/30" />
+                <div className="absolute inset-y-0 left-0 w-full md:w-3/4 pointer-events-none bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
                 {/* Bottom gradient - VARIANT SPECIFIC */}
                 <div
                     className={`absolute bottom-0 left-0 right-0 pointer-events-none ${
@@ -226,7 +216,7 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
                 >
                     {featuredContent ? (
                         <>
-                            <h1 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight">
+                            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight [text-shadow:0_2px_12px_rgb(0_0_0/0.6)]">
                                 {getTitle(featuredContent)}
                             </h1>
                             <div className="flex items-center gap-2 mb-2">
@@ -237,7 +227,7 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
                                     {getYear(featuredContent)}
                                 </span>
                             </div>
-                            <p className="text-xs md:text-base lg:text-lg leading-relaxed text-gray-200 max-w-lg lg:max-w-xl">
+                            <p className="text-sm md:text-base lg:text-lg leading-relaxed text-gray-100 max-w-lg lg:max-w-xl line-clamp-4 md:line-clamp-none [text-shadow:0_1px_8px_rgb(0_0_0/0.7)]">
                                 {truncateString(featuredContent?.overview)}
                             </p>
                         </>
@@ -267,8 +257,8 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
                                 }
                             }}
                         >
-                            <PlayIcon className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 lg:h-7 lg:w-7" />
-                            <span className="text-xs sm:text-sm md:text-base lg:text-lg">Play</span>
+                            <PlayIcon className="h-5 w-5 md:h-6 md:w-6 lg:h-7 lg:w-7" />
+                            <span className="text-sm md:text-base lg:text-lg">Play</span>
                         </button>
                         <button
                             className="bannerButton bg-gray-600/70 text-white hover:bg-gray-600/50 transition-all duration-200 font-semibold backdrop-blur-sm"
@@ -279,12 +269,16 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
                                 }
                             }}
                         >
-                            <InformationCircleIcon className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 lg:h-7 lg:w-7" />
-                            <span className="text-xs sm:text-sm md:text-base lg:text-lg">
-                                More Info
-                            </span>
+                            <InformationCircleIcon className="h-5 w-5 md:h-6 md:w-6 lg:h-7 lg:w-7" />
+                            <span className="text-sm md:text-base lg:text-lg">More Info</span>
                         </button>
                     </div>
+                </div>
+
+                {/* AI mood search sits under the actions so it never covers the title.
+                    Outside the fading block so typing is not interrupted by slide changes. */}
+                <div className="relative z-20 w-full max-w-2xl pt-5 md:pt-8">
+                    <SmartSearchInput />
                 </div>
 
                 {/* Image-based pagination - hidden on mobile/tablet, higher on desktop */}
@@ -302,7 +296,7 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
                                 onClick={() => goToSlide(index)}
                                 className={`relative transition-all duration-300 rounded-md overflow-hidden ${
                                     index === currentIndex
-                                        ? 'w-16 h-24 sm:w-20 sm:h-30 md:w-24 md:h-36 ring-1 ring-red-500/50 shadow-[0_0_15px_rgba(220,38,38,0.4),0_0_30px_rgba(220,38,38,0.2)]'
+                                        ? 'w-16 h-24 sm:w-20 sm:h-30 md:w-24 md:h-36 ring-1 ring-amber-400/50 shadow-[0_0_15px_rgba(245,158,11,0.4),0_0_30px_rgba(245,158,11,0.2)]'
                                         : 'w-12 h-18 sm:w-14 sm:h-21 md:w-16 md:h-24 hover:scale-105 shadow-[0_0_8px_rgba(0,0,0,0.3)]'
                                 }`}
                                 style={{

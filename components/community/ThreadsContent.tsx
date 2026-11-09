@@ -8,7 +8,7 @@ import { useAuthStatus } from '@/hooks/useAuthStatus'
 import { useVoiceInput } from '@/hooks/useVoiceInput'
 import { useToast } from '@/hooks/useToast'
 import useAuth from '@/hooks/useAuth'
-import NetflixLoader from '@/components/common/NetflixLoader'
+import PageLoader from '@/components/common/PageLoader'
 import { FORUM_CATEGORIES } from '@/utils/forumCategories'
 import { ThreadCard } from '@/components/forum/ThreadCard'
 import { CreateThreadModal } from '@/components/forum/CreateThreadModal'
@@ -189,7 +189,7 @@ export default function ThreadsContent() {
                                         <button
                                             key={tab.id}
                                             onClick={() => router.push(`/community/${tab.id}`)}
-                                            className={`relative px-6 py-3 rounded-lg font-bold text-lg transition-all duration-300 ${
+                                            className={`relative px-3 py-2.5 sm:px-6 sm:py-3 rounded-lg font-bold text-base sm:text-lg transition-all duration-300 ${
                                                 isActive
                                                     ? 'bg-zinc-800 text-white shadow-lg scale-105'
                                                     : 'text-gray-400 hover:text-gray-200 hover:bg-zinc-800/50 hover:scale-105'
@@ -197,7 +197,7 @@ export default function ThreadsContent() {
                                         >
                                             <div className="flex items-center gap-2">
                                                 <Icon
-                                                    className={`w-6 h-6 ${isActive ? tab.color : ''}`}
+                                                    className={`w-5 h-5 sm:w-6 sm:h-6 ${isActive ? tab.color : ''}`}
                                                 />
                                                 <span>{tab.label}</span>
                                             </div>
@@ -268,14 +268,14 @@ export default function ThreadsContent() {
                                         <div className="relative">
                                             {isListening && (
                                                 <>
-                                                    <span className="absolute inset-0 rounded-full bg-red-500/40 animate-ping" />
-                                                    <span className="absolute inset-0 rounded-full bg-red-500/30 animate-pulse" />
+                                                    <span className="absolute inset-0 rounded-full bg-amber-400/40 animate-ping" />
+                                                    <span className="absolute inset-0 rounded-full bg-amber-400/30 animate-pulse" />
                                                 </>
                                             )}
                                             <MicrophoneIcon
                                                 className={`w-6 h-6 relative z-10 transition-all ${
                                                     isListening
-                                                        ? 'text-red-500 scale-110 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]'
+                                                        ? 'text-amber-400 scale-110 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]'
                                                         : 'text-gray-400 hover:text-blue-400'
                                                 }`}
                                             />
@@ -295,7 +295,7 @@ export default function ThreadsContent() {
                     {/* Loading state */}
                     {isLoadingThreads && (
                         <div className="py-16">
-                            <NetflixLoader inline={true} message="Loading threads..." />
+                            <PageLoader inline={true} message="Loading threads..." />
                         </div>
                     )}
 

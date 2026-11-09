@@ -5,12 +5,10 @@ import {
     FunnelIcon,
     MicrophoneIcon,
 } from '@heroicons/react/24/outline'
-import { FilmIcon, UserGroupIcon } from '@heroicons/react/24/solid'
 import { useRouter, usePathname } from 'next/navigation'
 import { useModalStore } from '../../stores/modalStore'
 import { useSearchStore } from '../../stores/searchStore'
 import { useSearch } from '../../hooks/useSearch'
-import { useTypewriter } from '../../hooks/useTypewriter'
 import { useVoiceInput } from '../../hooks/useVoiceInput'
 import { useToast } from '../../hooks/useToast'
 import { Content, TrendingPerson } from '../../typings'
@@ -25,6 +23,8 @@ interface SearchBarProps {
     onBlur?: () => void
     inputId?: string
     voiceSourceId?: string
+    /** Show the microphone button (off in the desktop header, where space is tight) */
+    showVoice?: boolean
 }
 
 export default function SearchBar({
@@ -34,57 +34,11 @@ export default function SearchBar({
     onBlur,
     inputId,
     voiceSourceId,
+    showVoice = true,
 }: SearchBarProps) {
-    // Get searchMode and setSearchMode from store for quick toggle and dynamic placeholders
+    // Search mode (titles or people) drives the placeholder
     const searchMode = useSearchStore((state) => state.searchMode)
-    const setSearchMode = useSearchStore((state) => state.setSearchMode)
 
-    // Popular titles for typewriter effect - updated with current popular content
-    const popularTitles = [
-        'Oppenheimer',
-        'Dune: Part Two',
-        'The Bear',
-        'Shogun',
-        'House of the Dragon',
-        'The Last of Us',
-        'Succession',
-        'Barbie',
-        'Poor Things',
-        'Fallout',
-        'Baby Reindeer',
-        'Ripley',
-        'The Gentlemen',
-        '3 Body Problem',
-        'Saltburn',
-    ]
-
-    // Popular people for typewriter effect when in people mode
-    const popularPeople = [
-        'Timothée Chalamet',
-        'Zendaya',
-        'Florence Pugh',
-        'Pedro Pascal',
-        'Sydney Sweeney',
-        'Austin Butler',
-        'Margot Robbie',
-        'Christopher Nolan',
-        'Denis Villeneuve',
-        'Greta Gerwig',
-        'Martin Scorsese',
-        'Cillian Murphy',
-        'Emma Stone',
-        'Ryan Gosling',
-        'Ana de Armas',
-    ]
-
-    const typewriterText = useTypewriter({
-        words: searchMode === 'people' ? popularPeople : popularTitles,
-        typeSpeed: 80,
-        deleteSpeed: 40,
-        delayBetweenWords: 2000,
-        loop: true,
-        maxLength: 20, // Limit for cleaner display on larger devices
-    })
     const router = useRouter()
     const pathname = usePathname()
     const isOnSearchPage = pathname === '/search'
@@ -455,7 +409,7 @@ export default function SearchBar({
                 >
                     <button
                         onClick={handleMobileSearchClick}
-                        className="w-12 h-12 flex items-center justify-center bg-[#0a0a0a] border border-gray-600/50 rounded-lg hover:border-red-500/50 transition-colors"
+                        className="w-12 h-12 flex items-center justify-center bg-[#0a0a0a] border border-gray-600/50 rounded-lg hover:border-amber-400/50 transition-colors"
                         type="button"
                         aria-label="Open search"
                     >
@@ -501,7 +455,9 @@ export default function SearchBar({
                         onFocus={handleInputFocus}
                         onBlur={handleInputBlur}
                         onKeyDown={handleKeyDown}
-                        placeholder={!isFocused && !query ? typewriterText : placeholder}
+                        placeholder={
+                            searchMode === 'people' ? 'Search actors and directors...' : placeholder
+                        }
                         autoComplete="off"
                         aria-label="Search for movies and TV shows"
                         aria-autocomplete="list"
@@ -512,60 +468,23 @@ export default function SearchBar({
                         }
                         aria-expanded={showSuggestions && quickResults.length > 0}
                         className={`
-                            block w-full pl-10 pr-12 sm:pr-36 py-2.5
+                            block w-full pl-10 ${showVoice ? (query ? 'pr-32' : 'pr-24') : query ? 'pr-20' : 'pr-12'} py-2.5
                             bg-[#0a0a0a] border-[0.5px] border-gray-600/30 rounded-lg
                             text-white placeholder-gray-400
-                            focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-transparent
+                            focus:outline-none focus:ring-1 focus:ring-amber-400 focus:border-transparent
                             transition-all duration-300 ease-in-out
                             placeholder:text-ellipsis placeholder:overflow-hidden placeholder:whitespace-nowrap
                             text-sm sm:text-base select-none
 
-                            shadow-[0_0_20px_rgba(220,38,38,0.4)]
-                            ${isFocused ? 'bg-[#0a0a0a] shadow-[0_0_30px_rgba(220,38,38,0.6)] border-red-500/50' : 'hover:shadow-[0_0_25px_rgba(220,38,38,0.5)] bg-[#0a0a0a]'}
+                            shadow-[0_0_20px_rgba(245,158,11,0.4)]
+                            ${isFocused ? 'bg-[#0a0a0a] shadow-[0_0_30px_rgba(245,158,11,0.6)] border-amber-400/50' : 'hover:shadow-[0_0_25px_rgba(245,158,11,0.5)] bg-[#0a0a0a]'}
                         `}
                     />
 
-                    {/* Quick Mode Toggle, Voice, Filter, and Clear Buttons */}
+                    {/* Voice, Filter, and Clear Buttons (Titles/People lives in the filter menu) */}
                     <div className="absolute inset-y-0 right-0 flex items-center">
-                        {/* Quick Search Mode Toggle - hidden on mobile */}
-                        <div className="hidden sm:flex items-center border-r border-gray-600/30 mr-1 pr-1">
-                            <div
-                                className="flex items-center bg-gray-800/60 rounded-full p-0.5"
-                                data-tour="search-type-toggle"
-                            >
-                                <button
-                                    onClick={() => setSearchMode('content')}
-                                    className={`p-1.5 transition-all duration-200 ${
-                                        searchMode === 'content'
-                                            ? 'text-red-500'
-                                            : 'text-gray-500 hover:text-gray-300'
-                                    }`}
-                                    type="button"
-                                    title="Search Titles"
-                                    aria-label="Search for movies and TV shows"
-                                    aria-pressed={searchMode === 'content'}
-                                >
-                                    <FilmIcon className="h-4 w-4" aria-hidden="true" />
-                                </button>
-                                <button
-                                    onClick={() => setSearchMode('people')}
-                                    className={`p-1.5 transition-all duration-200 ${
-                                        searchMode === 'people'
-                                            ? 'text-red-500'
-                                            : 'text-gray-500 hover:text-gray-300'
-                                    }`}
-                                    type="button"
-                                    title="Search People"
-                                    aria-label="Search for actors, directors, and writers"
-                                    aria-pressed={searchMode === 'people'}
-                                >
-                                    <UserGroupIcon className="h-4 w-4" aria-hidden="true" />
-                                </button>
-                            </div>
-                        </div>
-
                         {/* Voice Input Button - only render after mount to prevent hydration mismatch */}
-                        {isMounted && isSupported && (
+                        {showVoice && isMounted && isSupported && (
                             <button
                                 onClick={handleVoiceToggle}
                                 className={`px-3 py-2 transition-all duration-200 ${
@@ -580,13 +499,13 @@ export default function SearchBar({
                                     {/* Animated pulsing rings when listening */}
                                     {isListening && (
                                         <>
-                                            <span className="absolute inset-0 rounded-full bg-red-500/40 animate-ping" />
+                                            <span className="absolute inset-0 rounded-full bg-amber-400/40 animate-ping" />
                                             <span
-                                                className="absolute inset-0 rounded-full bg-red-500/30 animate-pulse"
+                                                className="absolute inset-0 rounded-full bg-amber-400/30 animate-pulse"
                                                 style={{ animationDuration: '1s' }}
                                             />
                                             <span
-                                                className="absolute inset-0 rounded-full bg-red-500/20 animate-pulse"
+                                                className="absolute inset-0 rounded-full bg-amber-400/20 animate-pulse"
                                                 style={{
                                                     animationDuration: '1.5s',
                                                     animationDelay: '0.3s',
@@ -597,7 +516,7 @@ export default function SearchBar({
                                     <MicrophoneIcon
                                         className={`h-5 w-5 relative z-10 transition-all ${
                                             isListening
-                                                ? 'scale-110 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)] !text-red-500'
+                                                ? 'scale-110 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)] !text-amber-400'
                                                 : ''
                                         }`}
                                         aria-hidden="true"
@@ -617,7 +536,7 @@ export default function SearchBar({
                             }}
                             className={`px-3 py-2 transition-colors ${
                                 showFilters || hasActiveFilters
-                                    ? 'text-red-400 hover:text-red-300'
+                                    ? 'text-amber-300 hover:text-amber-200'
                                     : 'text-gray-400 hover:text-white'
                             }`}
                             type="button"

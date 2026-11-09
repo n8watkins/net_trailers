@@ -92,7 +92,7 @@ export default function ActorContentModal() {
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             {/* Actor Photo */}
-                            <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden ring-2 ring-red-500 flex-shrink-0">
+                            <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden ring-2 ring-amber-400 flex-shrink-0">
                                 {profileImage ? (
                                     <Image
                                         src={profileImage}
@@ -137,7 +137,7 @@ export default function ActorContentModal() {
                 <div className="px-6 pb-6 overflow-y-auto max-h-[calc(90vh-120px)]">
                     {isLoading && (
                         <div className="flex items-center justify-center py-12">
-                            <div className="w-12 h-12 border-4 border-gray-600 border-t-red-600 rounded-full animate-spin" />
+                            <div className="w-12 h-12 border-4 border-gray-600 border-t-amber-500 rounded-full animate-spin" />
                         </div>
                     )}
 

@@ -53,9 +53,9 @@ const PreferencesControls = React.memo<PreferencesControlsProps>(
                                         Child Safety Mode
                                     </label>
                                     {hasPIN && pinEnabled && (
-                                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-600/20">
-                                            <LockClosedIcon className="h-3 w-3 text-red-500" />
-                                            <span className="text-xs text-red-500 font-medium">
+                                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20">
+                                            <LockClosedIcon className="h-3 w-3 text-amber-400" />
+                                            <span className="text-xs text-amber-400 font-medium">
                                                 PIN Protected
                                             </span>
                                         </div>
@@ -76,7 +76,7 @@ const PreferencesControls = React.memo<PreferencesControlsProps>(
                                     onChange={(e) => onChildSafetyModeChange(e.target.checked)}
                                     className="sr-only peer"
                                 />
-                                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
                             </label>
                         </div>
 
@@ -174,7 +174,7 @@ const PreferencesControls = React.memo<PreferencesControlsProps>(
                                     onChange={(e) => onAutoMuteChange(e.target.checked)}
                                     className="sr-only peer"
                                 />
-                                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
                             </label>
                         </div>
 
@@ -196,7 +196,7 @@ const PreferencesControls = React.memo<PreferencesControlsProps>(
                                     onChange={(e) =>
                                         onDefaultVolumeChange(parseInt(e.target.value))
                                     }
-                                    className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-red-600 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-red-600 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
+                                    className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-amber-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-amber-500 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
                                 />
                                 <span className="text-sm text-[#e5e5e5] min-w-[3rem] text-right">
                                     {defaultVolume}%

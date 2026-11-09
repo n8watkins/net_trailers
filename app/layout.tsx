@@ -6,7 +6,7 @@ import Analytics from '../components/utility/Analytics'
 import WebAnalytics from '../components/utility/WebAnalytics'
 
 export const viewport: Viewport = {
-    themeColor: '#e50914',
+    themeColor: '#f59e0b',
 }
 
 export const metadata: Metadata = {
@@ -33,7 +33,10 @@ export const metadata: Metadata = {
         description: 'Browse and watch trailers for the latest movies and TV shows',
     },
     icons: {
-        icon: '/favicon.ico',
+        icon: [
+            { url: '/favicon.ico', sizes: '48x48' },
+            { url: '/icon.svg', type: 'image/svg+xml' },
+        ],
         apple: '/apple-touch-icon.png',
     },
 }

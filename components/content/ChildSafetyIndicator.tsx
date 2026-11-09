@@ -46,7 +46,7 @@ export function ChildSafetyIndicator() {
                     : 'Child Safety Mode is active'
             }
         >
-            <ShieldCheckIcon className="w-5 h-5 text-red-500 flex-shrink-0" />
+            <ShieldCheckIcon className="w-5 h-5 text-amber-400 flex-shrink-0" />
             <span className="text-sm font-medium text-[#e5e5e5] whitespace-nowrap">Child Safe</span>
         </button>
     )

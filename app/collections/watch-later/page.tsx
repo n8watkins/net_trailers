@@ -21,12 +21,13 @@ import { Content } from '../../../typings'
 import { getTitle } from '../../../typings'
 import ContentCard from '../../../components/common/ContentCard'
 import ContentGridSpacer from '../../../components/common/ContentGridSpacer'
-import NetflixLoader from '../../../components/common/NetflixLoader'
+import PageLoader from '../../../components/common/PageLoader'
 import { UserList } from '../../../types/collections'
 import CollectionEditorModal from '../../../components/modals/CollectionEditorModal'
 import { useChildSafety } from '../../../hooks/useChildSafety'
 import Link from 'next/link'
 import { useModalStore } from '../../../stores/modalStore'
+import { readableTextOn } from '../../../utils/readableText'
 
 const CollectionPage = () => {
     // Fixed collection ID for Watch Later
@@ -505,7 +506,7 @@ const CollectionPage = () => {
                                                                       listColor,
                                                                       0.85
                                                                   ),
-                                                                  color: 'white',
+                                                                  color: readableTextOn(listColor),
                                                               }
                                                             : {
                                                                   borderColor: hexToRgba(
@@ -665,7 +666,7 @@ const CollectionPage = () => {
                             {/* Loading state */}
                             {isLoading && (
                                 <div className="py-16">
-                                    <NetflixLoader inline={true} message="Loading collection..." />
+                                    <PageLoader inline={true} message="Loading collection..." />
                                 </div>
                             )}
 

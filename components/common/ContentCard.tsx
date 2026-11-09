@@ -274,7 +274,7 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                 {/* Loading Skeleton */}
                 {!imageLoaded && imageToUse && (
                     <div className="w-full h-full bg-gray-800 rounded-md animate-pulse flex items-center justify-center">
-                        <div className="w-8 h-8 border-2 border-gray-600 border-t-red-600 rounded-full animate-spin"></div>
+                        <div className="w-8 h-8 border-2 border-gray-600 border-t-amber-500 rounded-full animate-spin"></div>
                     </div>
                 )}
 
@@ -286,7 +286,7 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                                   rounded-md overflow-hidden
                                   ${
                                       isCardHovered
-                                          ? 'shadow-[0_0_15px_rgba(220,38,38,0.4),0_0_30px_rgba(220,38,38,0.2)] ring-1 ring-red-500/50'
+                                          ? 'shadow-[0_0_15px_rgba(245,158,11,0.4),0_0_30px_rgba(245,158,11,0.2)] ring-1 ring-amber-400/50'
                                           : ''
                                   }
                                   ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
@@ -311,14 +311,14 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                         <div
                             className={`absolute inset-0 rounded-md
                                   transition-all duration-300 ease-out
-                                  ${isCardHovered ? 'shadow-[inset_0_0_10px_rgba(220,38,38,0.1)]' : ''}`}
+                                  ${isCardHovered ? 'shadow-[inset_0_0_10px_rgba(245,158,11,0.1)]' : ''}`}
                         ></div>
                     </div>
                 ) : (
                     <div
                         className={`relative w-full h-full transition-all duration-300 ease-out ${
                             isCardHovered
-                                ? 'shadow-[0_0_15px_rgba(220,38,38,0.4),0_0_30px_rgba(220,38,38,0.2)] ring-1 ring-red-500/50'
+                                ? 'shadow-[0_0_15px_rgba(245,158,11,0.4),0_0_30px_rgba(245,158,11,0.2)] ring-1 ring-amber-400/50'
                                 : ''
                         }`}
                     >
@@ -348,11 +348,11 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                             className="bg-black text-white font-bold
                                  px-4 py-1.5 md:px-6 md:py-2
                                  text-xs md:text-sm
-                                 rounded-full hover:bg-red-700 hover:text-white hover:scale-105
+                                 rounded-full hover:bg-amber-600 hover:text-white hover:scale-105
                                  transition-all duration-200
                                  flex-1 flex items-center justify-center gap-1.5
-                                 shadow-lg hover:shadow-xl hover:shadow-red-600/20
-                                 border-2 border-red-500 hover:border-red-600
+                                 shadow-lg hover:shadow-xl hover:shadow-amber-500/20
+                                 border-2 border-amber-400 hover:border-amber-500
                                  group/watch"
                         >
                             {size === 'compact' ? (
@@ -500,8 +500,8 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                                 }}
                                 className={`${size === 'compact' ? 'p-2' : 'p-3'} rounded-full border-2 transition-all duration-200 hover:scale-105 ${
                                     showHoverActions
-                                        ? 'bg-red-600 border-red-500 text-black'
-                                        : 'bg-black border-white text-white hover:bg-red-600 hover:border-red-500 hover:text-black'
+                                        ? 'bg-amber-500 border-amber-400 text-black'
+                                        : 'bg-black border-white text-white hover:bg-amber-500 hover:border-amber-400 hover:text-black'
                                 }`}
                                 aria-label="Show content actions menu"
                             >
@@ -541,37 +541,6 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                             {content.vote_average.toFixed(1)}
                         </span>
                     </div>
-                </div>
-            )}
-
-            {/* Media Type Pill - Top Right (Outside scaling container) */}
-            {content && imageLoaded && (
-                <div
-                    className={`absolute top-1 right-1 sm:top-3 sm:right-3 z-20
-                          opacity-100 transition-all duration-300 ease-out ${
-                              isCardHovered
-                                  ? 'translate-x-3 -translate-y-4'
-                                  : 'translate-x-0 translate-y-0'
-                          }`}
-                >
-                    <span
-                        className={`px-1 py-0.5 sm:px-1.5 md:px-3 md:py-1 text-[10px] sm:text-xs md:text-base rounded-full backdrop-blur-sm ${
-                            isMovie(content)
-                                ? 'bg-gradient-to-br from-white to-gray-100 text-black font-bold border border-black'
-                                : 'bg-gradient-to-br from-black to-gray-900 text-white font-medium border border-white'
-                        }`}
-                    >
-                        {!isMovie(content) ? (
-                            <span>
-                                <span className="sm:hidden">TV</span>
-                                <span className="hidden sm:inline">
-                                    {size === 'compact' ? 'TV' : getContentType(content)}
-                                </span>
-                            </span>
-                        ) : (
-                            getContentType(content)
-                        )}
-                    </span>
                 </div>
             )}
 

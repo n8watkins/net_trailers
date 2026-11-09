@@ -19,7 +19,6 @@ import { SparklesIcon } from '@heroicons/react/24/outline'
 
 import type ReactPlayerType from 'react-player'
 import ContentMetadata from '../common/ContentMetadata'
-import KeyboardShortcuts from '../utility/KeyboardShortcuts'
 import { Element, Genre } from '../../typings'
 import ToolTipMod from '../common/ToolTipMod'
 import SimpleLikeButton from '../content/SimpleLikeButton'
@@ -36,6 +35,24 @@ import JsonDebugModal from './modal-sections/JsonDebugModal'
 import MoreLikeThisSection from '../modal/MoreLikeThisSection'
 import { useChildSafety } from '../../hooks/useChildSafety'
 import { Z_INDEX } from '../../constants/zIndex'
+
+/**
+ * Round icon action with a small visible caption underneath, so the actions
+ * are understandable without hovering (and on touch screens).
+ */
+function ActionLabel({ label, children }: { label: string; children: React.ReactNode }) {
+    return (
+        <div className="relative flex h-11 sm:h-auto flex-col items-center justify-center">
+            {children}
+            <span
+                aria-hidden="true"
+                className="pointer-events-none absolute top-full mt-1 whitespace-nowrap text-[11px] sm:text-xs font-medium text-gray-300"
+            >
+                {label}
+            </span>
+        </div>
+    )
+}
 
 function Modal() {
     // Debug settings
@@ -618,7 +635,7 @@ function Modal() {
         >
             <div
                 className={`fixed inset-0 flex flex-col justify-center items-center ${
-                    fullScreen ? '' : 'p-2 sm:p-4 md:p-8'
+                    fullScreen ? '' : 'p-2 sm:p-4 md:px-8 md:py-10'
                 }`}
                 onClick={handleClose}
             >
@@ -626,7 +643,7 @@ function Modal() {
                     className={`relative w-full z-10 bg-[#141414] flex flex-col ${
                         fullScreen
                             ? 'h-screen max-h-screen'
-                            : 'rounded-md w-[95vw] max-w-sm sm:max-w-2xl md:max-w-3xl lg:max-w-5xl max-h-[92vh] overflow-y-auto modal-scrollbar'
+                            : 'rounded-md w-[95vw] max-w-sm sm:max-w-2xl md:max-w-3xl lg:max-w-5xl max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-2rem)] md:max-h-[calc(100dvh-5rem)] overflow-y-auto overscroll-contain modal-scrollbar'
                     }`}
                     onClick={(e) => e.stopPropagation()}
                 >
@@ -699,9 +716,9 @@ function Modal() {
                                     )}
 
                                     {/* Control Buttons Row */}
-                                    <div className="flex flex-wrap gap-4 sm:gap-8 items-center justify-between">
+                                    <div className="flex flex-wrap gap-x-4 gap-y-8 sm:gap-8 items-center justify-between pb-5">
                                         {/* Left side buttons */}
-                                        <div className="flex gap-2 sm:gap-4 items-center">
+                                        <div className="flex gap-4 items-center">
                                             {/* Play/Pause button - always show to prevent layout shift */}
                                             <button
                                                 className="flex items-center gap-1 sm:gap-2 px-3 py-1.5 sm:px-6 sm:py-2 bg-white text-black hover:bg-white/80 rounded text-sm sm:text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
@@ -727,77 +744,89 @@ function Modal() {
 
                                             {/* My List Button - Modified to open inline dropdown */}
                                             {currentMovie && 'media_type' in currentMovie && (
-                                                <ToolTipMod
-                                                    title={
-                                                        showInlineListDropdown ? '' : 'Add to Lists'
-                                                    }
-                                                >
-                                                    <button
-                                                        ref={inlineDropdownButtonRef}
-                                                        className={`group relative p-2 sm:p-3 rounded-full border-2 text-white transition-colors ${
-                                                            showInlineListDropdown ||
-                                                            isWatchlistButtonHovered
-                                                                ? 'border-white bg-black/50'
-                                                                : 'border-white/30 bg-black/20'
-                                                        }`}
-                                                        onMouseEnter={() =>
-                                                            setIsWatchlistButtonHovered(true)
+                                                <ActionLabel label="My List">
+                                                    <ToolTipMod
+                                                        title={
+                                                            showInlineListDropdown
+                                                                ? ''
+                                                                : 'Add to Lists'
                                                         }
-                                                        onMouseLeave={() =>
-                                                            setIsWatchlistButtonHovered(false)
-                                                        }
-                                                        onClick={(e) => {
-                                                            e.preventDefault()
-                                                            e.stopPropagation()
-                                                            // Toggle the dropdown open/closed
-                                                            setShowInlineListDropdown(
-                                                                !showInlineListDropdown
-                                                            )
-                                                        }}
                                                     >
-                                                        {(() => {
-                                                            const listsContaining =
-                                                                getListsContaining(currentMovie.id)
-                                                            const isInAnyList =
-                                                                listsContaining.length > 0
+                                                        <button
+                                                            ref={inlineDropdownButtonRef}
+                                                            aria-label="Add to lists"
+                                                            className={`group relative p-2 sm:p-3 rounded-full border-2 text-white transition-colors ${
+                                                                showInlineListDropdown ||
+                                                                isWatchlistButtonHovered
+                                                                    ? 'border-white bg-black/50'
+                                                                    : 'border-white/30 bg-black/20'
+                                                            }`}
+                                                            onMouseEnter={() =>
+                                                                setIsWatchlistButtonHovered(true)
+                                                            }
+                                                            onMouseLeave={() =>
+                                                                setIsWatchlistButtonHovered(false)
+                                                            }
+                                                            onClick={(e) => {
+                                                                e.preventDefault()
+                                                                e.stopPropagation()
+                                                                // Toggle the dropdown open/closed
+                                                                setShowInlineListDropdown(
+                                                                    !showInlineListDropdown
+                                                                )
+                                                            }}
+                                                        >
+                                                            {(() => {
+                                                                const listsContaining =
+                                                                    getListsContaining(
+                                                                        currentMovie.id
+                                                                    )
+                                                                const isInAnyList =
+                                                                    listsContaining.length > 0
 
-                                                            return (
-                                                                <>
-                                                                    {isInAnyList ? (
-                                                                        <CheckIcon
-                                                                            className={`h-4 w-4 sm:h-6 sm:w-6 transition-colors ${
-                                                                                showInlineListDropdown ||
-                                                                                isWatchlistButtonHovered
-                                                                                    ? 'text-white'
-                                                                                    : 'text-green-400'
-                                                                            }`}
-                                                                        />
-                                                                    ) : (
-                                                                        <PlusIcon
-                                                                            className={`h-4 w-4 sm:h-6 sm:w-6 transition-colors ${
-                                                                                showInlineListDropdown ||
-                                                                                isWatchlistButtonHovered
-                                                                                    ? 'text-white'
-                                                                                    : 'text-white/70'
-                                                                            }`}
-                                                                        />
-                                                                    )}
+                                                                return (
+                                                                    <>
+                                                                        {isInAnyList ? (
+                                                                            <CheckIcon
+                                                                                className={`h-4 w-4 sm:h-6 sm:w-6 transition-colors ${
+                                                                                    showInlineListDropdown ||
+                                                                                    isWatchlistButtonHovered
+                                                                                        ? 'text-white'
+                                                                                        : 'text-green-400'
+                                                                                }`}
+                                                                            />
+                                                                        ) : (
+                                                                            <PlusIcon
+                                                                                className={`h-4 w-4 sm:h-6 sm:w-6 transition-colors ${
+                                                                                    showInlineListDropdown ||
+                                                                                    isWatchlistButtonHovered
+                                                                                        ? 'text-white'
+                                                                                        : 'text-white/70'
+                                                                                }`}
+                                                                            />
+                                                                        )}
 
-                                                                    {/* Show count badge if in multiple lists */}
-                                                                    {listsContaining.length > 1 && (
-                                                                        <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                                                                            {listsContaining.length}
-                                                                        </span>
-                                                                    )}
-                                                                </>
-                                                            )
-                                                        })()}
-                                                    </button>
-                                                </ToolTipMod>
+                                                                        {/* Show count badge if in multiple lists */}
+                                                                        {listsContaining.length >
+                                                                            1 && (
+                                                                            <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                                                                {
+                                                                                    listsContaining.length
+                                                                                }
+                                                                            </span>
+                                                                        )}
+                                                                    </>
+                                                                )
+                                                            })()}
+                                                        </button>
+                                                    </ToolTipMod>
+                                                </ActionLabel>
                                             )}
 
                                             {/* Like Button */}
-                                            <SimpleLikeButton />
+                                            <ActionLabel label="Like">
+                                                <SimpleLikeButton />
+                                            </ActionLabel>
 
                                             {/* Hide/Unhide Toggle Button (NEW SCHEMA) */}
                                             {currentMovie &&
@@ -806,64 +835,76 @@ function Modal() {
                                                     const hidden = isHidden(currentMovie.id)
 
                                                     return (
-                                                        <ToolTipMod
-                                                            title={hidden ? 'Show' : 'Hide'}
+                                                        <ActionLabel
+                                                            label={hidden ? 'Unhide' : 'Hide'}
                                                         >
-                                                            <button
-                                                                className="group relative p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-colors duration-200"
-                                                                onClick={() => {
-                                                                    if (currentMovie) {
-                                                                        if (hidden) {
-                                                                            // Remove from hidden movies
-                                                                            removeHiddenMovie(
-                                                                                currentMovie.id
-                                                                            )
-                                                                            showContentShown(
-                                                                                `${getTitle(currentMovie as Content)} Shown`,
-                                                                                'Will appear in recommendations again'
-                                                                            )
-                                                                        } else {
-                                                                            // Add to hidden movies
-                                                                            addHiddenMovie(
-                                                                                currentMovie as Content
-                                                                            )
-                                                                            showContentHidden(
-                                                                                `${getTitle(currentMovie as Content)} Hidden`,
-                                                                                'Hidden from recommendations'
-                                                                            )
-                                                                        }
-                                                                    }
-                                                                }}
+                                                            <ToolTipMod
+                                                                title={hidden ? 'Show' : 'Hide'}
                                                             >
-                                                                {hidden ? (
-                                                                    <EyeSlashIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
-                                                                ) : (
-                                                                    <EyeIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
-                                                                )}
-                                                            </button>
-                                                        </ToolTipMod>
+                                                                <button
+                                                                    aria-label={
+                                                                        hidden
+                                                                            ? 'Show in recommendations'
+                                                                            : 'Hide from recommendations'
+                                                                    }
+                                                                    className="group relative p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-colors duration-200"
+                                                                    onClick={() => {
+                                                                        if (currentMovie) {
+                                                                            if (hidden) {
+                                                                                // Remove from hidden movies
+                                                                                removeHiddenMovie(
+                                                                                    currentMovie.id
+                                                                                )
+                                                                                showContentShown(
+                                                                                    `${getTitle(currentMovie as Content)} Shown`,
+                                                                                    'Will appear in recommendations again'
+                                                                                )
+                                                                            } else {
+                                                                                // Add to hidden movies
+                                                                                addHiddenMovie(
+                                                                                    currentMovie as Content
+                                                                                )
+                                                                                showContentHidden(
+                                                                                    `${getTitle(currentMovie as Content)} Hidden`,
+                                                                                    'Hidden from recommendations'
+                                                                                )
+                                                                            }
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    {hidden ? (
+                                                                        <EyeSlashIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
+                                                                    ) : (
+                                                                        <EyeIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
+                                                                    )}
+                                                                </button>
+                                                            </ToolTipMod>
+                                                        </ActionLabel>
                                                     )
                                                 })()}
 
-                                            <ToolTipMod title="Surprise Me">
-                                                <button
-                                                    className={`group relative p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-colors duration-200 ${
-                                                        isRandomLoading
-                                                            ? 'cursor-wait opacity-80'
-                                                            : ''
-                                                    }`}
-                                                    onClick={handleRandomContent}
-                                                    disabled={isRandomLoading}
-                                                >
-                                                    <SparklesIcon
-                                                        className={`h-4 w-4 sm:h-6 sm:w-6 text-white/70 transition-colors ${
+                                            <ActionLabel label="Surprise me">
+                                                <ToolTipMod title="Open a random title">
+                                                    <button
+                                                        aria-label="Surprise me: open a random title"
+                                                        className={`group relative p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-colors duration-200 ${
                                                             isRandomLoading
-                                                                ? 'animate-spin text-red-400'
-                                                                : 'group-hover:text-red-400'
+                                                                ? 'cursor-wait opacity-80'
+                                                                : ''
                                                         }`}
-                                                    />
-                                                </button>
-                                            </ToolTipMod>
+                                                        onClick={handleRandomContent}
+                                                        disabled={isRandomLoading}
+                                                    >
+                                                        <SparklesIcon
+                                                            className={`h-4 w-4 sm:h-6 sm:w-6 text-white/70 transition-colors ${
+                                                                isRandomLoading
+                                                                    ? 'animate-spin text-amber-300'
+                                                                    : 'group-hover:text-amber-300'
+                                                            }`}
+                                                        />
+                                                    </button>
+                                                </ToolTipMod>
+                                            </ActionLabel>
                                         </div>
 
                                         {/* Right side buttons - Video Controls */}
@@ -890,7 +931,7 @@ function Modal() {
 
                     {/* Content Section - Below Video - Hidden in fullscreen */}
                     {!fullScreen && (
-                        <div className="pt-2 px-4 pb-4 sm:pt-2.5 sm:px-6 sm:pb-6 space-y-3 sm:space-y-4 flex-1 overflow-y-auto min-h-[450px] modal-scrollbar">
+                        <div className="pt-2 px-4 pb-8 sm:pt-2.5 sm:px-6 sm:pb-10 space-y-3 sm:space-y-4">
                             {/* Content Metadata - Show immediately with card data, enhanced data loads in background */}
                             <ContentMetadata
                                 content={(enhancedMovieData || currentMovie) as Content}
@@ -916,55 +957,16 @@ function Modal() {
                             {currentMovie && <MoreLikeThisSection content={currentMovie} />}
                         </div>
                     )}
-                </div>
 
-                {/* Keyboard Shortcuts - Below Modal - Hidden in fullscreen and on mobile/tablet */}
-                {!showJsonDebug && !fullScreen && (
-                    <div className="hidden lg:flex mt-4 w-full justify-center px-4 pointer-events-none select-none">
-                        <KeyboardShortcuts
-                            shortcuts={[
-                                { key: 'ESC', description: 'Close' },
-                                {
-                                    key: 'SPACE',
-                                    description: playing ? 'Pause' : 'Play',
-                                    disabled: !trailer,
-                                },
-                                {
-                                    key: 'M',
-                                    description: muted ? 'Unmute' : 'Mute',
-                                    disabled: !trailer,
-                                },
-                                {
-                                    key: 'F',
-                                    description: 'Fullscreen',
-                                    icon: '⛶',
-                                    disabled: !trailer,
-                                },
-                                {
-                                    key: 'L',
-                                    description:
-                                        currentMovie && isLiked(currentMovie.id)
-                                            ? 'Unlike'
-                                            : 'Like',
-                                    icon: '👍',
-                                    disabled: !currentMovie,
-                                },
-                                {
-                                    key: 'H',
-                                    description:
-                                        currentMovie && isHidden(currentMovie.id) ? 'Show' : 'Hide',
-                                    disabled: !currentMovie,
-                                },
-                                {
-                                    key: 'R',
-                                    description: 'Watch on YouTube',
-                                    disabled: !trailer,
-                                },
-                            ]}
-                            className="opacity-80"
+                    {/* Soft fade at the bottom edge of the scroll area, so text never
+                        ends flush against the modal's edge */}
+                    {!fullScreen && (
+                        <div
+                            aria-hidden="true"
+                            className="pointer-events-none sticky bottom-0 -mt-8 h-8 shrink-0 bg-gradient-to-t from-[#141414] to-transparent"
                         />
-                    </div>
-                )}
+                    )}
+                </div>
 
                 {/* JSON Debug Modal */}
                 <JsonDebugModal

@@ -64,7 +64,7 @@ Sentry.init({
             namePlaceholder: 'Your name (optional)',
             // Set a custom email placeholder
             emailPlaceholder: 'Your email (optional)',
-            // Custom styles to match Netflix red theme
+            // Custom styles to match the app theme
             themeLight: {
                 submitButtonBackground: '#dc2626',
                 submitButtonBackgroundHover: '#b91c1c',

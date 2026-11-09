@@ -10,6 +10,20 @@ import { Content } from '../../types/collections'
 const tmdb = TMDBApiClient.getInstance()
 
 /**
+ * Titles with fewer votes than this are left out of recommendation rows: they are
+ * mostly obscure or mislabelled entries that make "More like this" look random.
+ */
+export const MIN_RECOMMENDATION_VOTES = 50
+
+/**
+ * Whether a TMDB result is fit to recommend: never adult titles, and only titles
+ * with enough votes to be a meaningful suggestion.
+ */
+export function isRecommendable(item: { adult?: boolean; vote_count?: number }): boolean {
+    return item.adult !== true && (item.vote_count ?? 0) >= MIN_RECOMMENDATION_VOTES
+}
+
+/**
  * TMDB response interface
  */
 interface TMDBResponse {
@@ -35,9 +49,10 @@ export async function getSimilarContent(
     try {
         const response = await tmdb.fetch<TMDBResponse>(`/${mediaType}/${contentId}/similar`, {
             page,
+            include_adult: 'false',
         })
 
-        return response.results.map(
+        return response.results.filter(isRecommendable).map(
             (item) =>
                 ({
                     ...item,
@@ -68,10 +83,10 @@ export async function getTMDBRecommendations(
     try {
         const response = await tmdb.fetch<TMDBResponse>(
             `/${mediaType}/${contentId}/recommendations`,
-            { page }
+            { page, include_adult: 'false' }
         )
 
-        return response.results.map(
+        return response.results.filter(isRecommendable).map(
             (item) =>
                 ({
                     ...item,
@@ -145,6 +160,7 @@ export async function discoverByPreferences(params: {
             'vote_average.gte': minRating,
             'vote_count.gte': minVoteCount,
             sort_by: sortBy,
+            include_adult: 'false',
             page,
         }
 
@@ -265,9 +281,15 @@ export async function getHybridRecommendations(
             getTMDBRecommendations(contentId, mediaType, 1),
         ])
 
-        // Mix results (50% similar, 50% recommended)
+        // Mix results (50% similar, 50% recommended), then top up from whichever
+        // list has more left, since filtering can leave one list short
         const halfLimit = Math.floor(limit / 2)
-        const mixed = [...similar.slice(0, halfLimit), ...recommended.slice(0, halfLimit)]
+        const mixed = [
+            ...similar.slice(0, halfLimit),
+            ...recommended.slice(0, halfLimit),
+            ...similar.slice(halfLimit),
+            ...recommended.slice(halfLimit),
+        ]
 
         // Deduplicate
         const seen = new Set<number>()

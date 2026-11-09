@@ -239,7 +239,7 @@ export function YearPicker({
                                 onClick={() => handleYearClick(year)}
                                 className={`px-3 py-2 text-sm rounded-lg transition-all duration-150 font-medium hover:scale-105 ${
                                     value === year
-                                        ? 'bg-red-600 text-white'
+                                        ? 'bg-amber-500 text-zinc-950'
                                         : 'bg-gray-700 text-white hover:bg-gray-600'
                                 }`}
                             >
@@ -264,7 +264,7 @@ export function YearPicker({
                     placeholder={placeholder}
                     value={inputValue}
                     onChange={handleInputChange}
-                    className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                    className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
                 />
 
                 {/* Dropdown toggle button */}

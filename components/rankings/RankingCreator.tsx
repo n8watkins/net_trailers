@@ -37,6 +37,7 @@ import {
     LockClosedIcon,
     Bars3Icon,
 } from '@heroicons/react/24/outline'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 interface RankingCreatorProps {
     existingRanking?: Ranking
@@ -53,6 +54,7 @@ interface LocalRankedItem {
 export function RankingCreator({ existingRanking, onComplete, onCancel }: RankingCreatorProps) {
     const isEditMode = !!existingRanking
     const [mouseDownOnBackdrop, setMouseDownOnBackdrop] = useState(false)
+    useEscapeKey(Boolean(onCancel), () => onCancel?.())
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
     const { user } = useAuth()
@@ -647,7 +649,7 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                                                                     onClick={() =>
                                                                         handleToggleItem(content)
                                                                     }
-                                                                    className="flex-shrink-0 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100"
+                                                                    className="flex-shrink-0 w-6 h-6 bg-amber-400 hover:bg-amber-500 text-zinc-950 rounded-full flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100"
                                                                 >
                                                                     <XMarkIcon className="w-4 h-4" />
                                                                 </button>
@@ -985,7 +987,7 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                                 {/* Title */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                                        Title <span className="text-red-500">*</span>
+                                        Title <span className="text-amber-400">*</span>
                                     </label>
                                     <input
                                         type="text"

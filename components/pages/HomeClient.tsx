@@ -16,7 +16,7 @@ import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
 import { useCacheStore } from '../../stores/cacheStore'
 import { processTrendingUpdates } from '../../utils/trendingNotifications'
-import NetflixLoader from '../common/NetflixLoader'
+import PageLoader from '../common/PageLoader'
 import { Cog6ToothIcon, PlusIcon } from '@heroicons/react/24/solid'
 
 interface HomeClientProps {
@@ -226,7 +226,7 @@ export default function HomeClient({ data }: HomeClientProps) {
     return (
         <>
             {/* Show loader until page is fully ready (hero + all system rows loaded) */}
-            {!pageReady && <NetflixLoader message="Loading NetTrailer..." />}
+            {!pageReady && <PageLoader message="Loading NetTrailers..." />}
 
             <div
                 className={`relative min-h-screen overflow-x-clip ${showModal && `overflow-y-hidden`} ${
@@ -236,24 +236,27 @@ export default function HomeClient({ data }: HomeClientProps) {
                 <Header />
 
                 <main id="content" className="relative">
-                    <div className="relative h-screen w-full">
+                    {/* Phones get a shorter hero so the first row peeks above the fold */}
+                    <div className="relative h-[30rem] sm:h-screen w-full">
                         <Banner
                             trending={trending}
                             onHeroImageLoaded={() => setHeroImageLoaded(true)}
                         />
                     </div>
-                    <section className="relative z-10 pb-52 space-y-8">
-                        {/* Manage Page Button - Floating in top right */}
-                        <div className="sticky top-20 z-20 flex justify-end px-4 sm:px-6 md:px-8 lg:px-16">
-                            <button
-                                onClick={() => openHomeRowEditorModal('home')}
-                                className="flex items-center gap-2 px-4 py-2 bg-gray-800/90 hover:bg-gray-700/90 text-white rounded-lg transition-colors shadow-lg backdrop-blur-sm border border-gray-700"
-                                title="Manage page layout"
-                            >
-                                <Cog6ToothIcon className="w-5 h-5" />
-                                <span className="hidden sm:inline">Manage Page</span>
-                            </button>
-                        </div>
+                    <section className="relative z-10 pb-16 space-y-8">
+                        {/* Manage Page Button - signed-in users only (guests get the default layout) */}
+                        {sessionType === 'authenticated' && (
+                            <div className="sticky top-20 z-20 flex justify-end px-4 sm:px-6 md:px-8 lg:px-16">
+                                <button
+                                    onClick={() => openHomeRowEditorModal('home')}
+                                    className="flex items-center gap-2 px-4 py-2 bg-gray-800/90 hover:bg-gray-700/90 text-white rounded-lg transition-colors shadow-lg backdrop-blur-sm border border-gray-700"
+                                    title="Manage page layout"
+                                >
+                                    <Cog6ToothIcon className="w-5 h-5" />
+                                    <span className="hidden sm:inline">Manage Page</span>
+                                </button>
+                            </div>
+                        )}
 
                         {/* System Recommendation Rows (Trending, Top Rated, Recommended For You) */}
                         {/* Rendered in user-defined order based on systemRecommendations settings */}
@@ -313,7 +316,7 @@ export default function HomeClient({ data }: HomeClientProps) {
                         <div className="flex justify-center pt-12 pb-8 px-4">
                             <button
                                 onClick={() => openCollectionBuilderModal()}
-                                className="create-collection-btn group relative flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-red-600/60 via-red-900/65 to-black/70 backdrop-blur-sm text-white rounded-lg transition-all duration-300 shadow-[0_0_30px_rgba(220,38,38,0.3)] hover:shadow-[0_0_50px_rgba(220,38,38,0.5)] hover:scale-105 font-bold text-xl tracking-wide border border-red-500/30 overflow-hidden"
+                                className="create-collection-btn group relative flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-amber-500/60 via-amber-800/65 to-black/70 backdrop-blur-sm text-white rounded-lg transition-all duration-300 shadow-[0_0_30px_rgba(245,158,11,0.3)] hover:shadow-[0_0_50px_rgba(245,158,11,0.5)] hover:scale-105 font-bold text-xl tracking-wide border border-amber-400/30 overflow-hidden"
                             >
                                 <PlusIcon className="w-7 h-7 transition-transform duration-300 group-hover:rotate-90 relative z-20" />
                                 <span className="relative z-20">Create Your Own Collection</span>
@@ -346,9 +349,9 @@ export default function HomeClient({ data }: HomeClientProps) {
                                     110deg,
                                     transparent 0%,
                                     transparent 30%,
-                                    rgba(248, 113, 113, 0.3) 45%,
-                                    rgba(252, 165, 165, 0.5) 50%,
-                                    rgba(248, 113, 113, 0.3) 55%,
+                                    rgba(252, 211, 77, 0.3) 45%,
+                                    rgba(253, 230, 138, 0.5) 50%,
+                                    rgba(252, 211, 77, 0.3) 55%,
                                     transparent 70%,
                                     transparent 100%
                                 );
@@ -366,9 +369,9 @@ export default function HomeClient({ data }: HomeClientProps) {
                                     135deg,
                                     transparent 0%,
                                     transparent 35%,
-                                    rgba(248, 113, 113, 0.25) 45%,
-                                    rgba(252, 165, 165, 0.4) 50%,
-                                    rgba(248, 113, 113, 0.25) 55%,
+                                    rgba(252, 211, 77, 0.25) 45%,
+                                    rgba(253, 230, 138, 0.4) 50%,
+                                    rgba(252, 211, 77, 0.25) 55%,
                                     transparent 65%,
                                     transparent 100%
                                 );

@@ -45,10 +45,16 @@ export function getCollectionRoute(collection: { id: string; name: string }): st
 }
 
 /**
- * Get the full URL path for a collection
+ * Get the full URL path for a collection.
+ * Collections used to live at /<name-slug>; those addresses now 404 and the
+ * not-found page forwards them here (see LegacyCollectionRedirect).
  * @param collection - Collection with id and name
  * @returns Full URL path with leading slash
  */
 export function getCollectionPath(collection: { id: string; name: string }): string {
-    return `/${getCollectionRoute(collection)}`
+    // Watch Later has its own page; every other collection lives at /collections/<id>
+    if (COLLECTION_ROUTE_MAP[collection.id]) {
+        return `/collections/${COLLECTION_ROUTE_MAP[collection.id]}`
+    }
+    return `/collections/${encodeURIComponent(collection.id)}`
 }

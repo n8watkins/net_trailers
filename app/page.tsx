@@ -1,8 +1,8 @@
 import { Suspense } from 'react'
 import { fetchHomeData } from '../lib/serverData'
 import HomeClient from '../components/pages/HomeClient'
-import NetflixLoader from '../components/common/NetflixLoader'
-import NetflixError from '../components/common/NetflixError'
+import PageLoader from '../components/common/PageLoader'
+import PageError from '../components/common/PageError'
 
 // Force dynamic rendering since we use cookies for child safety mode
 export const dynamic = 'force-dynamic'
@@ -22,19 +22,19 @@ async function HomeContent() {
             data.documentaries.length > 0
 
         if (!hasAnyContent) {
-            return <NetflixError />
+            return <PageError />
         }
 
         return <HomeClient data={data} />
     } catch (error) {
         console.error('Error fetching home data:', error)
-        return <NetflixError />
+        return <PageError />
     }
 }
 
 export default function Home() {
     return (
-        <Suspense fallback={<NetflixLoader message="Loading NetTrailer..." />}>
+        <Suspense fallback={<PageLoader message="Loading NetTrailers..." />}>
             <HomeContent />
         </Suspense>
     )

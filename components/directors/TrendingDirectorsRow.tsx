@@ -39,6 +39,7 @@ export default function TrendingDirectorsRow({
     const hasMoreRef = useRef(true)
 
     const sessionType = useSessionStore((state) => state.sessionType)
+    const isAuthenticated = sessionType === 'authenticated'
 
     // Get system recommendations from the appropriate store
     const authSystemRecommendations = useAuthStore((state) => state.systemRecommendations)
@@ -321,27 +322,29 @@ export default function TrendingDirectorsRow({
     const title = emoji ? `${emoji} ${displayName}` : displayName
 
     return (
-        <div className="mt-6 sm:mt-8 md:mt-10">
+        <div>
             {/* Section Title */}
             <div className="flex items-center gap-3 px-4 sm:px-6 md:px-8 lg:px-16 pt-0 group/header">
                 <h2 className="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold transition duration-200 hover:text-gray-300">
                     {title}
                 </h2>
-                {/* Edit button - visible by default */}
-                <button
-                    onClick={handleEdit}
-                    className="opacity-40 hover:opacity-100 transition-opacity duration-200 p-1.5 rounded-md hover:bg-gray-700/50 text-gray-400 hover:text-gray-200"
-                    title="Edit this row"
-                >
-                    <PencilIcon className="w-5 h-5" />
-                </button>
+                {/* Edit button - signed-in users only */}
+                {isAuthenticated && (
+                    <button
+                        onClick={handleEdit}
+                        className="opacity-40 hover:opacity-100 transition-opacity duration-200 p-1.5 rounded-md hover:bg-gray-700/50 text-gray-400 hover:text-gray-200"
+                        title="Edit this row"
+                    >
+                        <PencilIcon className="w-5 h-5" />
+                    </button>
+                )}
             </div>
 
             {/* Directors Row */}
-            <div className="relative h-[200px] sm:h-[220px] md:h-[250px] lg:h-[280px] group">
+            <div className="relative group">
                 {/* Left Arrow */}
                 <div
-                    className={`hidden sm:flex absolute top-0 left-[-1rem] z-50 rounded-lg w-12 sm:w-20 md:w-32 h-full items-center justify-center ${
+                    className={`hidden sm:flex absolute inset-y-0 left-[-1rem] z-50 rounded-lg w-12 sm:w-20 md:w-32 items-center justify-center ${
                         isMoved ? 'opacity-70 sm:opacity-0 sm:group-hover:opacity-100' : 'opacity-0'
                     } transition-all duration-300 cursor-pointer pointer-events-auto border border-transparent hover:shadow-[0_0_20px_rgba(107,114,128,0.5)] hover:backdrop-blur-sm group/chevron`}
                     onClick={() => handleClick('left')}
@@ -391,7 +394,7 @@ export default function TrendingDirectorsRow({
                     {isLoadingMore && (
                         <div className="flex-shrink-0 flex items-center justify-center w-[120px] h-[160px] sm:w-[140px] sm:h-[180px]">
                             <div className="text-center">
-                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-600 mx-auto mb-2"></div>
+                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-500 mx-auto mb-2"></div>
                                 <div className="text-xs text-gray-400">Loading...</div>
                             </div>
                         </div>
@@ -410,7 +413,7 @@ export default function TrendingDirectorsRow({
 
                 {/* Right Arrow */}
                 <div
-                    className="hidden sm:flex absolute top-0 right-[-1rem] z-50 rounded-lg w-12 sm:w-20 md:w-32 h-full items-center justify-center opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 cursor-pointer pointer-events-auto border border-transparent hover:shadow-[0_0_20px_rgba(107,114,128,0.5)] hover:backdrop-blur-sm group/chevron"
+                    className="hidden sm:flex absolute inset-y-0 right-[-1rem] z-50 rounded-lg w-12 sm:w-20 md:w-32 items-center justify-center opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 cursor-pointer pointer-events-auto border border-transparent hover:shadow-[0_0_20px_rgba(107,114,128,0.5)] hover:backdrop-blur-sm group/chevron"
                     onClick={() => handleClick('right')}
                 >
                     <div

@@ -10,7 +10,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import SubPageLayout from '../../../../components/layout/SubPageLayout'
-import NetflixLoader from '../../../../components/common/NetflixLoader'
+import PageLoader from '../../../../components/common/PageLoader'
 import { RectangleStackIcon, UserIcon } from '@heroicons/react/24/outline'
 import type { UserList } from '../../../../types/collections'
 import type { PublicProfilePayload } from '@/lib/publicProfile'
@@ -75,7 +75,7 @@ export default function UserCollectionsPage() {
                 icon={<RectangleStackIcon className="w-8 h-8" />}
                 iconColor="text-purple-400"
             >
-                <NetflixLoader />
+                <PageLoader />
             </SubPageLayout>
         )
     }

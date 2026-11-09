@@ -49,7 +49,7 @@ export default function CustomEmail({
                                 margin: '0',
                             }}
                         >
-                            This email was sent from the Net Trailers admin panel.
+                            This email was sent from the NetTrailers admin panel.
                         </p>
                     </td>
                 </tr>

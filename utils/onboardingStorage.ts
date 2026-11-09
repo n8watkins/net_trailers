@@ -71,19 +71,6 @@ export const clearOnboardingState = (): void => {
 }
 
 /**
- * Check if user should see welcome screen
- * Returns true if user hasn't seen the welcome screen yet
- */
-export const shouldShowWelcomeScreen = (): boolean => {
-    if (typeof window === 'undefined') {
-        return false
-    }
-
-    const state = loadOnboardingState()
-    return !state?.hasSeenWelcomeScreen
-}
-
-/**
  * Check if user should see interactive tour
  * Returns true if user hasn't completed or skipped the tour
  */

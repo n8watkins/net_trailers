@@ -74,9 +74,21 @@ async function seed() {
 
     // A public ranking.
     const rankedItems: RankedItem[] = [
-        { position: 1, content: movie(550, 'Fight Club', '/poster1.jpg'), addedAt: now() },
-        { position: 2, content: movie(157336, 'Interstellar', '/poster2.jpg'), addedAt: now() },
-        { position: 3, content: movie(27205, 'Inception', '/poster3.jpg'), addedAt: now() },
+        {
+            position: 1,
+            content: movie(550, 'Fight Club', '/jSziioSwPVrOy9Yow3XhWIBDjq1.jpg'),
+            addedAt: now(),
+        },
+        {
+            position: 2,
+            content: movie(157336, 'Interstellar', '/yQvGrMoipbRoddT0ZR8tPoR7NfX.jpg'),
+            addedAt: now(),
+        },
+        {
+            position: 3,
+            content: movie(27205, 'Inception', '/xlaY2zyzMfkhk0HSC5VUwzoZPU1.jpg'),
+            addedAt: now(),
+        },
     ] as RankedItem[]
     await db.insert(rankings).values({
         userId: DEMO_USER_ID,

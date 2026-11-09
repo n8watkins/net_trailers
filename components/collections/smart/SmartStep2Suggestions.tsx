@@ -107,7 +107,7 @@ export function SmartStep2Suggestions({
             setMediaType(data.mediaType || 'both')
         } catch (error) {
             if (error instanceof AuthRequiredError) {
-                showError('Please sign in', 'Smart suggestions require a Net Trailers account.')
+                showError('Please sign in', 'Smart suggestions require a NetTrailers account.')
             } else {
                 console.error('Load error:', error)
             }
@@ -148,7 +148,7 @@ export function SmartStep2Suggestions({
             setRowName(data.rowNames?.[0] || rowName)
         } catch (error) {
             if (error instanceof AuthRequiredError) {
-                showError('Please sign in', 'Smart suggestions require a Net Trailers account.')
+                showError('Please sign in', 'Smart suggestions require a NetTrailers account.')
             } else {
                 console.error('Name refresh error:', error)
             }
@@ -263,21 +263,21 @@ export function SmartStep2Suggestions({
 
         return (
             <div className="flex flex-col items-center justify-center py-20">
-                {/* Netflix-style animated logo */}
+                {/* Animated logo */}
                 <div className="relative mb-8">
                     <div className="text-9xl animate-pulse">{randomMessage.emoji}</div>
                     <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2">
                         <div className="flex gap-1">
                             <div
-                                className="w-2 h-2 bg-red-600 rounded-full animate-bounce"
+                                className="w-2 h-2 bg-amber-500 rounded-full animate-bounce"
                                 style={{ animationDelay: '0ms' }}
                             ></div>
                             <div
-                                className="w-2 h-2 bg-red-600 rounded-full animate-bounce"
+                                className="w-2 h-2 bg-amber-500 rounded-full animate-bounce"
                                 style={{ animationDelay: '150ms' }}
                             ></div>
                             <div
-                                className="w-2 h-2 bg-red-600 rounded-full animate-bounce"
+                                className="w-2 h-2 bg-amber-500 rounded-full animate-bounce"
                                 style={{ animationDelay: '300ms' }}
                             ></div>
                         </div>
@@ -326,7 +326,7 @@ export function SmartStep2Suggestions({
                                     onClick={() => setMediaType(type)}
                                     className={`px-4 py-2 rounded-lg transition-colors ${
                                         mediaType === type
-                                            ? 'bg-red-600 text-white'
+                                            ? 'bg-amber-500 text-zinc-950'
                                             : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                                     }`}
                                 >
@@ -391,7 +391,7 @@ export function SmartStep2Suggestions({
                                                 onClick={() => togglePersonRequired(person.id)}
                                                 className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
                                                     person.required
-                                                        ? 'bg-red-600 text-white hover:bg-red-700 shadow-md'
+                                                        ? 'bg-amber-500 text-zinc-950 hover:bg-amber-600 shadow-md'
                                                         : 'bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600'
                                                 }`}
                                                 title={
@@ -404,7 +404,7 @@ export function SmartStep2Suggestions({
                                             </button>
                                             <button
                                                 onClick={() => removePerson(person.id)}
-                                                className="text-gray-400 hover:text-red-400 transition-colors p-1"
+                                                className="text-gray-400 hover:text-amber-300 transition-colors p-1"
                                             >
                                                 <XMarkIcon className="w-5 h-5" />
                                             </button>
@@ -429,12 +429,12 @@ export function SmartStep2Suggestions({
                             {genreIds.map((id) => (
                                 <span
                                     key={id}
-                                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-600/20 text-red-400 rounded-full border border-red-600/50"
+                                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-500/20 text-amber-300 rounded-full border border-amber-500/50"
                                 >
                                     {findUnifiedGenre(id)?.name || `Genre ${id}`}
                                     <button
                                         onClick={() => removeGenre(id)}
-                                        className="hover:text-red-300 transition-colors"
+                                        className="hover:text-amber-200 transition-colors"
                                     >
                                         <XMarkIcon className="w-4 h-4" />
                                     </button>
@@ -462,7 +462,7 @@ export function SmartStep2Suggestions({
                 </button>
                 <button
                     onClick={handleContinue}
-                    className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold text-lg"
+                    className="flex-1 px-6 py-3 bg-amber-500 text-zinc-950 rounded-lg hover:bg-amber-600 transition-colors font-semibold text-lg"
                 >
                     Preview Row →
                 </button>
@@ -494,7 +494,7 @@ export function SmartStep2Suggestions({
                                 <button
                                     key={genre.id}
                                     onClick={() => addGenre(genre.id)}
-                                    className="px-4 py-2 bg-gray-800 text-gray-300 rounded-lg hover:bg-red-600 hover:text-white transition-colors text-sm"
+                                    className="px-4 py-2 bg-gray-800 text-gray-300 rounded-lg hover:bg-amber-500 hover:text-white transition-colors text-sm"
                                 >
                                     {genre.name}
                                 </button>

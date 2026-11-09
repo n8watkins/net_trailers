@@ -66,7 +66,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
 
     const handleSettingsClick = () => {
         setIsOpen(false)
-        router.push('/settings')
+        router.push('/settings/preferences')
     }
 
     const handleAboutClick = () => {
@@ -112,7 +112,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
 
                 {/* Dropdown Menu - Not Logged In */}
                 {isOpen && (
-                    <div className="absolute right-0 mt-6 w-[80vw] xs:w-64 sm:w-72 max-w-[288px] bg-[#0f0f0f]/95 backdrop-blur-sm border border-red-500/40 rounded-xl shadow-2xl shadow-red-500/20 z-[110] py-1 animate-fade-in-down">
+                    <div className="absolute right-0 mt-6 w-[80vw] xs:w-64 sm:w-72 max-w-[288px] bg-[#0f0f0f]/95 backdrop-blur-sm border border-amber-400/40 rounded-xl shadow-2xl shadow-amber-400/20 z-[110] py-1 animate-fade-in-down">
                         {/* Guest Account Status */}
                         <div className="px-5 py-6 border-b border-gray-700/50">
                             <div className="flex items-center space-x-3">
@@ -137,7 +137,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                                 }}
                                 className="group flex items-center w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                             >
-                                <UserCircleIcon className="w-6 h-6 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                <UserCircleIcon className="w-6 h-6 mr-4 group-hover:text-amber-400 transition-colors duration-200" />
                                 Sign In
                             </button>
 
@@ -148,7 +148,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                                 }}
                                 className="group flex items-center w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                             >
-                                <UserCircleIcon className="w-6 h-6 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                <UserCircleIcon className="w-6 h-6 mr-4 group-hover:text-amber-400 transition-colors duration-200" />
                                 Create Account
                             </button>
 
@@ -159,7 +159,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                                 className="group flex items-center justify-between w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                             >
                                 <div className="flex items-center">
-                                    <CogIcon className="w-6 h-6 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                    <CogIcon className="w-6 h-6 mr-4 group-hover:text-amber-400 transition-colors duration-200" />
                                     Settings
                                 </div>
                             </button>
@@ -174,7 +174,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                                 className="group flex items-center justify-between w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                             >
                                 <div className="flex items-center">
-                                    <AcademicCapIcon className="w-6 h-6 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                    <AcademicCapIcon className="w-6 h-6 mr-4 group-hover:text-amber-400 transition-colors duration-200" />
                                     Tutorial
                                 </div>
                                 <span className="text-xs text-gray-400 font-mono font-semibold">
@@ -187,7 +187,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                                 className="group flex items-center justify-between w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                             >
                                 <div className="flex items-center">
-                                    <InformationCircleIcon className="w-6 h-6 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                    <InformationCircleIcon className="w-6 h-6 mr-4 group-hover:text-amber-400 transition-colors duration-200" />
                                     About NetTrailers
                                 </div>
                                 <span className="text-xs text-gray-400 font-mono font-semibold">
@@ -203,7 +203,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                                 className="group flex items-center justify-between w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                             >
                                 <div className="flex items-center">
-                                    <CommandLineIcon className="w-6 h-6 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                    <CommandLineIcon className="w-6 h-6 mr-4 group-hover:text-amber-400 transition-colors duration-200" />
                                     Keyboard Shortcuts
                                 </div>
                                 <span className="text-xs text-gray-400 font-mono font-semibold">
@@ -236,7 +236,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                 {/* Avatar Button - Loading user details */}
                 <button
                     disabled
-                    className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-full bg-red-600 transition-all duration-200 focus:outline-none cursor-wait"
+                    className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-full bg-amber-500 transition-all duration-200 focus:outline-none cursor-wait"
                     aria-label="Loading user details"
                 >
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -268,7 +268,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 data-tour="avatar-button"
-                className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-full bg-red-600 hover:bg-red-700 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.6)] focus:shadow-[0_0_15px_rgba(255,255,255,0.6)] transition-all duration-300"
+                className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-full bg-amber-500 hover:bg-amber-600 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.6)] focus:shadow-[0_0_15px_rgba(255,255,255,0.6)] transition-all duration-300"
                 aria-label="Profile menu"
                 aria-expanded={isOpen}
             >
@@ -289,7 +289,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
 
             {/* Dropdown Menu */}
             {isOpen && (
-                <div className="absolute right-0 mt-6 w-[80vw] xs:w-64 sm:w-72 max-w-[288px] bg-[#0f0f0f]/95 backdrop-blur-sm border border-red-500/40 rounded-xl shadow-2xl shadow-red-500/20 z-[110] py-1 animate-fade-in-down">
+                <div className="absolute right-0 mt-6 w-[80vw] xs:w-64 sm:w-72 max-w-[288px] bg-[#0f0f0f]/95 backdrop-blur-sm border border-amber-400/40 rounded-xl shadow-2xl shadow-amber-400/20 z-[110] py-1 animate-fade-in-down">
                     {/* User Info Header */}
                     <div className="px-5 py-6 border-b border-gray-700/50">
                         <div className="flex items-center space-x-3">
@@ -313,7 +313,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                             onClick={handleProfileClick}
                             className="group flex items-center w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                         >
-                            <UserCircleIcon className="w-6 h-6 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                            <UserCircleIcon className="w-6 h-6 mr-4 group-hover:text-amber-400 transition-colors duration-200" />
                             Profile
                         </button>
 
@@ -322,7 +322,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                             className="group flex items-center justify-between w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                         >
                             <div className="flex items-center">
-                                <CogIcon className="w-6 h-6 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                <CogIcon className="w-6 h-6 mr-4 group-hover:text-amber-400 transition-colors duration-200" />
                                 Settings
                             </div>
                         </button>
@@ -337,7 +337,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                             className="group flex items-center justify-between w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                         >
                             <div className="flex items-center">
-                                <AcademicCapIcon className="w-6 h-6 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                <AcademicCapIcon className="w-6 h-6 mr-4 group-hover:text-amber-400 transition-colors duration-200" />
                                 Tutorial
                             </div>
                             <span className="text-xs text-gray-400 font-mono font-semibold">
@@ -350,7 +350,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                             className="group flex items-center justify-between w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                         >
                             <div className="flex items-center">
-                                <InformationCircleIcon className="w-6 h-6 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                <InformationCircleIcon className="w-6 h-6 mr-4 group-hover:text-amber-400 transition-colors duration-200" />
                                 About NetTrailers
                             </div>
                             <span className="text-xs text-gray-400 font-mono font-semibold">
@@ -366,7 +366,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                             className="group flex items-center justify-between w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                         >
                             <div className="flex items-center">
-                                <CommandLineIcon className="w-6 h-6 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                <CommandLineIcon className="w-6 h-6 mr-4 group-hover:text-amber-400 transition-colors duration-200" />
                                 Keyboard Shortcuts
                             </div>
                             <span className="text-xs text-gray-400 font-mono font-semibold">?</span>

@@ -199,11 +199,11 @@ export default function NotificationItem({ notification }: NotificationItemProps
                 isClickable
                     ? isLoading
                         ? 'cursor-wait opacity-70'
-                        : 'cursor-pointer hover:bg-red-950/40'
+                        : 'cursor-pointer hover:bg-amber-900/40'
                     : 'cursor-default'
             } ${
                 !notification.isRead
-                    ? 'bg-gradient-to-r from-red-900/50 via-red-950/30 to-red-950/10'
+                    ? 'bg-gradient-to-r from-amber-800/50 via-amber-900/30 to-amber-900/10'
                     : 'bg-transparent opacity-70'
             }`}
             onClick={handleClick}
@@ -214,7 +214,7 @@ export default function NotificationItem({ notification }: NotificationItemProps
                     <img
                         src={notification.imageUrl}
                         alt=""
-                        className="h-24 w-16 sm:h-32 sm:w-20 md:h-40 md:w-28 rounded object-cover ring-1 ring-red-900/30"
+                        className="h-24 w-16 sm:h-32 sm:w-20 md:h-40 md:w-28 rounded object-cover ring-1 ring-amber-800/30"
                     />
                 </div>
             )}
@@ -223,7 +223,7 @@ export default function NotificationItem({ notification }: NotificationItemProps
             <div className="flex min-w-0 flex-1 flex-col justify-start gap-3">
                 {/* Header: Category + Timestamp */}
                 <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-medium text-red-400">{categoryLabel}</span>
+                    <span className="text-sm font-medium text-amber-300">{categoryLabel}</span>
                     <time
                         className="flex-shrink-0 text-sm text-gray-300 font-medium"
                         dateTime={new Date(notification.createdAt).toISOString()}

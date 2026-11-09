@@ -31,7 +31,7 @@ const AccountManagementPage: React.FC = () => {
 
             <div className="bg-[#181818] border border-gray-700 rounded-lg p-6">
                 <div className="flex items-center gap-4 mb-6">
-                    <div className="w-16 h-16 rounded-full overflow-hidden bg-red-600 flex items-center justify-center flex-shrink-0">
+                    <div className="w-16 h-16 rounded-full overflow-hidden bg-amber-500 flex items-center justify-center flex-shrink-0">
                         {user.photoURL ? (
                             <img
                                 src={user.photoURL}

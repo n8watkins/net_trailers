@@ -11,6 +11,7 @@ import {
 import { useToast } from '../../hooks/useToast'
 import { useSessionStore } from '../../stores/sessionStore'
 import { authenticatedFetch } from '../../lib/authenticatedFetch'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 interface ShareModalProps {
     /** Whether modal is open */
@@ -212,6 +213,8 @@ export default function ShareModal({
         })
     }
 
+    useEscapeKey(isOpen, onClose)
+
     if (!isOpen) return null
 
     const shareUrl = shareLink ? `${window.location.origin}/shared/${shareLink.id}` : ''
@@ -320,7 +323,7 @@ export default function ShareModal({
                                     onClick={handleToggleActive}
                                     className={`px-4 py-2 rounded-md text-sm font-medium transition ${
                                         shareLink.isActive
-                                            ? 'bg-red-600/20 text-red-500 hover:bg-red-600/30'
+                                            ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
                                             : 'bg-green-600/20 text-green-500 hover:bg-green-600/30'
                                     }`}
                                 >

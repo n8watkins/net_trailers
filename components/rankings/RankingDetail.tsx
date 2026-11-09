@@ -1,5 +1,5 @@
 /**
- * RankingDetail Component - Cinematic Netflix-Inspired Edition
+ * RankingDetail Component - Cinematic Edition
  *
  * Full-page view for a single ranking with:
  * - Cinematic hero section with blurred poster collage
@@ -9,7 +9,7 @@
  * - Metallic gold rank badges with shine/bevel
  * - Neon-style rating badges
  * - Slide-in animations for items
- * - Premium Netflix-like production value
+ * - Premium production value
  */
 
 'use client'

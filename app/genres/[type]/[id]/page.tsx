@@ -1,12 +1,13 @@
 'use client'
 
+import { MOVIE_GENRES, TV_GENRES } from '../../../../constants/genres'
 import { useState, useEffect, useCallback, useRef, useMemo, Suspense } from 'react'
 import { useRouter, useSearchParams, useParams } from 'next/navigation'
 import Header from '../../../../components/layout/Header'
 import Modal from '../../../../components/modals/Modal'
 import ContentCard from '../../../../components/common/ContentCard'
 import ContentGridSpacer from '../../../../components/common/ContentGridSpacer'
-import NetflixLoader from '../../../../components/common/NetflixLoader'
+import PageLoader from '../../../../components/common/PageLoader'
 import { Content } from '../../../../typings'
 import { useSessionData } from '../../../../hooks/useSessionData'
 import { filterDislikedContent } from '../../../../utils/contentFilter'
@@ -39,7 +40,12 @@ function GenrePageContent() {
     const genreId = params?.id
     const mediaType = params?.type
     const tvGenres = searchParams?.get('tvGenres') // For "both" type, TV genre IDs
-    const genreName = name
+    // Links without ?name= (footer, shared URLs) fall back to the TMDB genre list
+    const genreName =
+        name ||
+        (mediaType === 'tv' ? TV_GENRES : MOVIE_GENRES).find((g) => String(g.id) === genreId)
+            ?.name ||
+        'Genre'
     const pageTitle = title
     const { isEnabled: childSafetyEnabled } = useChildSafety()
 
@@ -219,7 +225,7 @@ function GenrePageContent() {
     }, [hasMore, loadMore])
 
     if (loading && page === 1) {
-        return <NetflixLoader message={`Loading ${genreName} content`} />
+        return <PageLoader message={`Loading ${genreName} content`} />
     }
 
     if (error) {
@@ -236,7 +242,7 @@ function GenrePageContent() {
                             <p className="text-gray-400 mb-4">{error}</p>
                             <button
                                 onClick={() => router.refresh()}
-                                className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors"
+                                className="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-semibold py-2 px-6 rounded-lg transition-colors"
                             >
                                 Try Again
                             </button>
@@ -295,16 +301,6 @@ function GenrePageContent() {
                                 </div>
                             )}
 
-                            {/* Spacer with clear messaging about footer */}
-                            {hasMore && !loading && !loadingMore && (
-                                <div className="h-32 flex items-center justify-center">
-                                    <div className="text-gray-500 text-sm text-center">
-                                        <div className="mb-2">📖 Footer content below</div>
-                                        <div>Keep scrolling for more movies...</div>
-                                    </div>
-                                </div>
-                            )}
-
                             {/* Hidden trigger element positioned much further down */}
                             {hasMore && !loading && !loadingMore && (
                                 <div ref={loadMoreRef} className="h-32" />
@@ -318,7 +314,7 @@ function GenrePageContent() {
                                             setMaxPages((prev) => prev + 10)
                                             setHasMore(true)
                                         }}
-                                        className="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200 text-lg"
+                                        className="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-semibold py-3 px-8 rounded-lg transition-colors duration-200 text-lg"
                                     >
                                         Load More Results
                                     </button>
@@ -346,7 +342,7 @@ function GenrePageContent() {
 
 export default function GenrePage() {
     return (
-        <Suspense fallback={<NetflixLoader message="Loading genre..." />}>
+        <Suspense fallback={<PageLoader message="Loading genre..." />}>
             <GenrePageContent />
         </Suspense>
     )

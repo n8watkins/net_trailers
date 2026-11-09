@@ -1,4 +1,4 @@
-# Net Trailers handoff
+# NetTrailers handoff
 
 ## Current state and open work (2026-10-27): start here
 
@@ -7,7 +7,7 @@ Where older docs disagree with it, this section wins.
 
 ### What this is and where it lives
 
-Net Trailers is a Netflix-style movie and TV discovery app: TMDB browsing and trailers, Gemini-powered smart search, collections, rankings, polls and notifications.
+NetTrailers is a Netflix-style movie and TV discovery app: TMDB browsing and trailers, Gemini-powered smart search, collections, rankings, polls and notifications.
 Stack: Next.js 16, React 19, Turso (libSQL) with Drizzle, Auth.js (GitHub and magic link), Sentry, Tailwind 4 plus MUI.
 Live at https://net-trailers.vercel.app (Vercel; every push to `main` deploys to production).
 2026-11-03: the app also runs on Cloudflare Workers at https://net-trailers.nathancwatkins23.workers.dev (DEPLOYMENT.md), on the same Turso database; uploads are in R2, the crons are Cron Triggers (off until Vercel is turned off), and Cloudflare Web Analytics replaces Vercel Analytics.

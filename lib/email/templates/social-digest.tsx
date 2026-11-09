@@ -21,7 +21,7 @@ interface SocialDigestEmailProps {
 }
 
 /**
- * Premium Netflix-caliber Weekly Social Digest Email
+ * Premium Weekly Social Digest Email
  * Redesigned with table-based layout for maximum email client compatibility
  */
 export const SocialDigestEmail = ({
@@ -116,7 +116,7 @@ export const SocialDigestEmail = ({
                                         <a
                                             href={`${appUrl}/community?filter=my-rankings`}
                                             style={{
-                                                color: '#E50914',
+                                                color: '#DC2626',
                                                 textDecoration: 'none',
                                                 fontWeight: '600',
                                             }}
@@ -132,14 +132,14 @@ export const SocialDigestEmail = ({
                                         align="center"
                                         style={{
                                             paddingBottom: '32px',
-                                            borderBottom: '3px solid #E50914',
+                                            borderBottom: '3px solid #DC2626',
                                         }}
                                     >
                                         <div
                                             style={{
                                                 fontSize: '36px',
                                                 fontWeight: '900',
-                                                color: '#E50914',
+                                                color: '#DC2626',
                                                 letterSpacing: '3px',
                                                 textTransform: 'uppercase',
                                             }}
@@ -189,7 +189,7 @@ export const SocialDigestEmail = ({
                                             This week your rankings received{' '}
                                             {totalComments > 0 && (
                                                 <>
-                                                    <strong style={{ color: '#E50914' }}>
+                                                    <strong style={{ color: '#DC2626' }}>
                                                         {totalComments}{' '}
                                                         {totalComments === 1
                                                             ? 'comment'
@@ -200,7 +200,7 @@ export const SocialDigestEmail = ({
                                             {totalComments > 0 && totalLikes > 0 && ' and '}
                                             {totalLikes > 0 && (
                                                 <>
-                                                    <strong style={{ color: '#E50914' }}>
+                                                    <strong style={{ color: '#DC2626' }}>
                                                         {totalLikes}{' '}
                                                         {totalLikes === 1 ? 'like' : 'likes'}
                                                     </strong>
@@ -277,7 +277,7 @@ export const SocialDigestEmail = ({
                                                                     <div
                                                                         style={{
                                                                             fontSize: '13px',
-                                                                            color: '#E50914',
+                                                                            color: '#DC2626',
                                                                             fontWeight: '700',
                                                                             marginBottom: '6px',
                                                                         }}
@@ -318,7 +318,7 @@ export const SocialDigestEmail = ({
                                                                     <div
                                                                         style={{
                                                                             fontSize: '13px',
-                                                                            color: '#E50914',
+                                                                            color: '#DC2626',
                                                                             fontWeight: '700',
                                                                             marginBottom: '10px',
                                                                         }}
@@ -372,7 +372,7 @@ export const SocialDigestEmail = ({
                                                                                                         style={{
                                                                                                             fontSize:
                                                                                                                 '13px',
-                                                                                                            color: '#E50914',
+                                                                                                            color: '#DC2626',
                                                                                                             fontWeight:
                                                                                                                 '700',
                                                                                                             marginBottom:
@@ -440,7 +440,7 @@ export const SocialDigestEmail = ({
                                                                         <td
                                                                             style={{
                                                                                 backgroundColor:
-                                                                                    '#E50914',
+                                                                                    '#DC2626',
                                                                                 borderRadius: '4px',
                                                                                 padding: '8px 16px',
                                                                             }}
@@ -496,7 +496,7 @@ export const SocialDigestEmail = ({
                                             <tr>
                                                 <td
                                                     style={{
-                                                        backgroundColor: '#E50914',
+                                                        backgroundColor: '#DC2626',
                                                         borderRadius: '9999px',
                                                         padding: '14px 36px',
                                                     }}

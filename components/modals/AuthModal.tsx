@@ -2,6 +2,7 @@ import React from 'react'
 import { XMarkIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 import useAuth from '../../hooks/useAuth'
 import { isInAppBrowser } from '../../utils/isInAppBrowser'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 interface AuthModalProps {
     isOpen: boolean
@@ -65,6 +66,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         }
     }
 
+    useEscapeKey(isOpen, onClose)
+
     if (!isOpen) return null
 
     return (
@@ -86,7 +89,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
                 {user ? (
                     <div className="text-center">
-                        <div className="w-20 h-20 mx-auto mb-4 bg-red-600 rounded-full flex items-center justify-center overflow-hidden">
+                        <div className="w-20 h-20 mx-auto mb-4 bg-amber-500 rounded-full flex items-center justify-center overflow-hidden">
                             {user.photoURL ? (
                                 <img
                                     src={user.photoURL}
@@ -175,7 +178,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                                         onChange={(e) => setEmail(e.target.value)}
                                         placeholder="you@example.com"
                                         autoComplete="email"
-                                        className="w-full px-4 py-3 bg-gray-800 text-white rounded-md border border-gray-700 focus:border-red-500 focus:outline-none"
+                                        className="w-full px-4 py-3 bg-gray-800 text-white rounded-md border border-gray-700 focus:border-amber-400 focus:outline-none"
                                     />
                                     {emailError && (
                                         <p className="text-red-400 text-sm">{emailError}</p>
@@ -183,7 +186,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                                     <button
                                         type="submit"
                                         disabled={isWorking || loading}
-                                        className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white py-3 rounded-md font-medium transition-colors"
+                                        className="w-full bg-amber-500 hover:bg-amber-600 disabled:bg-gray-600 disabled:text-gray-300 text-zinc-950 py-3 rounded-md font-medium transition-colors"
                                     >
                                         Email me a sign-in link
                                     </button>

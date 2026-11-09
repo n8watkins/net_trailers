@@ -303,8 +303,8 @@ components/
 ├── utilities/           (10 components)
 │   ├── Analytics.tsx
 │   ├── ErrorBoundary.tsx
-│   ├── NetflixError.tsx
-│   ├── NetflixLoader.tsx
+│   ├── PageError.tsx
+│   ├── PageLoader.tsx
 │   ├── PostHydrationEffects.tsx
 │   ├── Toast.tsx
 │   ├── ToastManager.tsx

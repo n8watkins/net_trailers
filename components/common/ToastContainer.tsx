@@ -8,7 +8,8 @@ interface ToastContainerProps {
 
 /**
  * Toast container component that manages positioning and layout of toast notifications
- * Positioned at the top-right with downward cascade effect
+ * Positioned below the header (full width minus gutters on phones, top-right on
+ * larger screens) so it never covers the navigation, with a downward cascade effect
  * New toasts appear at the top, pushing existing toasts down
  * First toast translates down when second appears, then fades when third appears
  * Part of the unified toast system - replaced the old ErrorToast positioning
@@ -39,11 +40,10 @@ const ToastContainer: React.FC<ToastContainerProps> = memo(
 
         return (
             <div
-                className="fixed top-4 right-24 sm:right-32 md:right-40 lg:right-48 z-[100001] pointer-events-none w-full max-w-sm sm:max-w-md"
+                className="fixed top-24 left-4 right-4 sm:left-auto sm:right-6 sm:w-[26rem] z-[100001] pointer-events-none"
                 aria-live="polite"
                 aria-atomic="true"
                 role="status"
-                style={{ minHeight: '300px' }}
             >
                 {toasts.map((toast, index) => {
                     // Calculate position based on actual heights of previous toasts

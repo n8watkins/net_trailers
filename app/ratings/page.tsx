@@ -21,7 +21,7 @@ import {
     ChevronDownIcon,
 } from '@heroicons/react/24/solid'
 import { XMarkIcon, StarIcon, MicrophoneIcon } from '@heroicons/react/24/outline'
-import NetflixLoader from '../../components/common/NetflixLoader'
+import PageLoader from '../../components/common/PageLoader'
 import TitlePreferenceModal from '../../components/recommendations/TitlePreferenceModal'
 import { useVoiceInput } from '../../hooks/useVoiceInput'
 
@@ -40,7 +40,7 @@ export default function RatingsPage() {
                             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-purple-900/20 via-transparent to-transparent opacity-50" />
                         </div>
                         <div className="relative z-10 flex items-center justify-center py-32">
-                            <NetflixLoader />
+                            <PageLoader />
                         </div>
                     </div>
                 }
@@ -434,7 +434,7 @@ function RatingsPageContent() {
                     {/* Loading state */}
                     {isLoadingRatings && (
                         <div className="py-16">
-                            <NetflixLoader inline={true} message="Loading ratings..." />
+                            <PageLoader inline={true} message="Loading ratings..." />
                         </div>
                     )}
 
@@ -524,7 +524,7 @@ function RatingsPageContent() {
                             <button
                                 onClick={handleResetAllRatings}
                                 disabled={isResetting}
-                                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                                className="flex-1 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-zinc-950 rounded-lg transition-colors disabled:opacity-50"
                             >
                                 {isResetting ? 'Resetting...' : 'Reset All'}
                             </button>

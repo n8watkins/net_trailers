@@ -22,7 +22,7 @@ export default function ToggleSwitch({
     const colorClasses = {
         blue: 'bg-blue-600',
         green: 'bg-green-600',
-        red: 'bg-red-600',
+        red: 'bg-amber-500',
     }
 
     return (

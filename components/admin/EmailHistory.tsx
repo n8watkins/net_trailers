@@ -148,7 +148,7 @@ export default function EmailHistory() {
                                             {record.successCount} / {record.recipientCount}
                                         </p>
                                         {record.failureCount > 0 && (
-                                            <p className="mt-2 text-red-400">
+                                            <p className="mt-2 text-amber-300">
                                                 <span className="font-medium">Failures:</span>{' '}
                                                 {record.failureCount}
                                             </p>

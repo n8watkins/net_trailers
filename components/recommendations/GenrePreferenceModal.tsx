@@ -429,14 +429,14 @@ export default function GenrePreferenceModal({
                                         className={`absolute inset-0 z-10 flex items-center justify-center pointer-events-none rounded-2xl ${
                                             swipeIndicator === 'love'
                                                 ? 'bg-green-500/20'
-                                                : 'bg-red-500/20'
+                                                : 'bg-amber-400/20'
                                         }`}
                                     >
                                         <div
                                             className={`px-4 py-2 rounded-lg border-4 rotate-[-15deg] ${
                                                 swipeIndicator === 'love'
                                                     ? 'border-green-500 text-green-500'
-                                                    : 'border-red-500 text-red-500'
+                                                    : 'border-amber-400 text-amber-400'
                                             }`}
                                         >
                                             <span className="text-2xl font-bold uppercase tracking-wider">
@@ -522,13 +522,13 @@ export default function GenrePreferenceModal({
                                         className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 rounded-2xl ${
                                             animatingVote === 'love'
                                                 ? 'bg-green-500/30'
-                                                : 'bg-red-500/30'
+                                                : 'bg-amber-400/30'
                                         }`}
                                     >
                                         {animatingVote === 'love' ? (
                                             <HandThumbUpIcon className="w-24 h-24 text-green-500 animate-pulse" />
                                         ) : (
-                                            <HandThumbDownIcon className="w-24 h-24 text-red-500 animate-pulse" />
+                                            <HandThumbDownIcon className="w-24 h-24 text-amber-400 animate-pulse" />
                                         )}
                                     </div>
                                 )}
@@ -541,7 +541,7 @@ export default function GenrePreferenceModal({
                                     disabled={!!animatingVote}
                                     className="flex flex-col items-center gap-1.5 transition-all duration-200 active:scale-95 hover:scale-105"
                                 >
-                                    <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-full flex items-center justify-center border-2 bg-transparent border-gray-500 hover:border-red-500 hover:bg-red-500/10 transition-all">
+                                    <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-full flex items-center justify-center border-2 bg-transparent border-gray-500 hover:border-amber-400 hover:bg-amber-400/10 transition-all">
                                         <HandThumbDownIcon className="w-7 h-7 sm:w-8 sm:h-8 text-gray-300" />
                                     </div>
                                     <span className="text-xs text-gray-400 font-medium">

@@ -1,37 +1,30 @@
 'use client'
 
-import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import React, { useState, useRef, useCallback, useMemo } from 'react'
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
 import { usePageViewTracking } from '../../hooks/useActivityTracking'
 import KeyboardShortcutsModal from '../modals/KeyboardShortcutsModal'
 import TutorialModal from '../modals/TutorialModal'
-import WelcomeScreen from '../onboarding/WelcomeScreen'
 import InteractiveTour from '../onboarding/InteractiveTour'
 import Footer from './Footer'
 import AboutModal from '../modals/AboutModal'
 import ScrollToTopButton from '../common/ScrollToTopButton'
 import CustomScrollbar from '../common/CustomScrollbar'
-import { markAsVisited } from '../../utils/firstVisitTracker'
 import { useModalStore } from '../../stores/modalStore'
-import { shouldShowAboutModal, markAboutModalShown } from '../../utils/aboutModalTimer'
 import { LayoutProvider } from '../../contexts/LayoutContext'
 import { useOnboardingStore } from '../../stores/onboardingStore'
 import { useOnboardingPersistence } from '../../hooks/useOnboardingPersistence'
-import { shouldShowWelcomeScreen } from '../../utils/onboardingStorage'
 import { useToast } from '../../hooks/useToast'
 
 interface ClientLayoutProps {
     children: React.ReactNode
 }
 
-// Modal display delays (in milliseconds)
-const MODAL_DISPLAY_DELAY = 500 // Delay before showing welcome/about modal
-
 /**
  * ClientLayout provides the shell around all pages in the App Router.
  * It manages:
  * - Footer
- * - Global modals (About, Tutorial, Keyboard Shortcuts, Welcome Screen)
+ * - Global modals (About, Tutorial, Keyboard Shortcuts), opened only on request
  * - Scroll to top button
  * - Global keyboard shortcuts
  * - Onboarding persistence
@@ -42,13 +35,11 @@ function ClientLayout({ children }: ClientLayoutProps) {
     const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
     const [showAboutModal, setShowAboutModal] = useState(false)
     const [showTutorial, setShowTutorial] = useState(false)
-    const [showWelcome, setShowWelcome] = useState(false)
     const [isTourActive, setIsTourActive] = useState(false)
     const { modal } = useModalStore()
     const isModalOpen = modal.isOpen
     const searchInputRef = useRef<HTMLInputElement>(null)
-    const { markWelcomeScreenSeen, completeTour, skipTour, setCurrentTourStep } =
-        useOnboardingStore()
+    const { completeTour, skipTour, setCurrentTourStep } = useOnboardingStore()
     const { showSuccess } = useToast()
 
     // Enable onboarding persistence
@@ -59,18 +50,11 @@ function ClientLayout({ children }: ClientLayoutProps) {
     }, [showKeyboardShortcuts])
 
     const handleOpenAboutModal = useCallback(() => {
-        setShowAboutModal(!showAboutModal)
-        if (!showAboutModal) {
-            // Only mark as visited when opening
-        } else {
-            markAsVisited()
-        }
-    }, [showAboutModal])
+        setShowAboutModal((open) => !open)
+    }, [])
 
     const handleCloseAboutModal = useCallback(() => {
         setShowAboutModal(false)
-        markAsVisited()
-        markAboutModalShown() // Mark as shown when closing
     }, [])
 
     const handleOpenTutorial = useCallback(() => {
@@ -81,30 +65,15 @@ function ClientLayout({ children }: ClientLayoutProps) {
         setShowTutorial(false)
     }, [])
 
-    const handleCloseWelcome = useCallback(() => {
-        setShowWelcome(false)
-        markWelcomeScreenSeen()
-    }, [markWelcomeScreenSeen])
-
     const handleStartTour = useCallback(() => {
         setCurrentTourStep(0) // Reset to first step
         setIsTourActive(true)
     }, [setCurrentTourStep])
 
-    const handleBrowseFeatures = useCallback(() => {
-        setShowTutorial(true)
-    }, [])
-
-    const handleWatchDemo = useCallback(() => {
-        // For now, just open the tutorial modal
-        // In the future, this could link to a video
-        setShowTutorial(true)
-    }, [])
-
     const handleCompleteTour = useCallback(() => {
         completeTour()
         setIsTourActive(false)
-        showSuccess('Tour Complete!', "You're all set to explore Net Trailers!")
+        showSuccess('Tour Complete!', "You're all set to explore NetTrailers!")
     }, [completeTour, showSuccess])
 
     const handleSkipTour = useCallback(() => {
@@ -138,24 +107,6 @@ function ClientLayout({ children }: ClientLayoutProps) {
         }
     }, [])
 
-    // Auto-show Welcome screen on first visit OR About modal every 24 hours
-    // Combined to avoid duplicate localStorage reads
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            const shouldShowWelcome = shouldShowWelcomeScreen()
-
-            if (shouldShowWelcome) {
-                // Show welcome screen on first visit
-                setShowWelcome(true)
-            } else if (shouldShowAboutModal()) {
-                // Show about modal if welcome already seen
-                setShowAboutModal(true)
-            }
-        }, MODAL_DISPLAY_DELAY)
-
-        return () => clearTimeout(timer)
-    }, [])
-
     // Track page views for analytics
     usePageViewTracking()
 
@@ -184,20 +135,15 @@ function ClientLayout({ children }: ClientLayoutProps) {
 
     return (
         <LayoutProvider value={layoutContextValue}>
-            {children}
+            {/* At least a screen tall, so the footer never shows (and then jumps) while
+                a page is still loading its content */}
+            <div className="min-h-screen">{children}</div>
             <Footer
                 showAboutModal={showAboutModal}
                 onOpenAboutModal={handleOpenAboutModal}
                 onCloseAboutModal={handleCloseAboutModal}
                 onOpenKeyboardShortcuts={handleOpenShortcuts}
                 onOpenTutorial={handleOpenTutorial}
-            />
-            <WelcomeScreen
-                isOpen={showWelcome}
-                onClose={handleCloseWelcome}
-                onStartTour={handleStartTour}
-                onBrowseFeatures={handleBrowseFeatures}
-                onWatchDemo={handleWatchDemo}
             />
             <AboutModal
                 isOpen={showAboutModal}

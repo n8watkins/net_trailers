@@ -9,6 +9,7 @@
 import { useState } from 'react'
 import { XMarkIcon, FlagIcon } from '@heroicons/react/24/outline'
 import { ReportReason, ReportContentType } from '@/types/forum'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 interface ReportModalProps {
     isOpen: boolean
@@ -88,6 +89,8 @@ export function ReportModal({
         setSubmitted(false)
         onClose()
     }
+
+    useEscapeKey(isOpen, onClose)
 
     if (!isOpen) return null
 

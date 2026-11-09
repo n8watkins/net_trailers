@@ -15,7 +15,7 @@ import { useRouter } from 'next/navigation'
 import { useForumStore } from '@/stores/forumStore'
 import { useSessionStore } from '@/stores/sessionStore'
 import { useAuthStatus } from '@/hooks/useAuthStatus'
-import NetflixLoader from '@/components/common/NetflixLoader'
+import PageLoader from '@/components/common/PageLoader'
 import Header from '@/components/layout/Header'
 import { PollCard } from '@/components/forum/PollCard'
 import { CreatePollModal } from '@/components/forum/CreatePollModal'
@@ -232,7 +232,7 @@ export default function UserPollsPage() {
             <div className="min-h-screen bg-black">
                 <Header />
                 <div className="flex items-center justify-center min-h-screen">
-                    <NetflixLoader inline message="Loading your polls..." />
+                    <PageLoader inline message="Loading your polls..." />
                 </div>
             </div>
         )
@@ -257,7 +257,7 @@ export default function UserPollsPage() {
                     {/* Animated Background Gradients */}
                     <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900/80 to-black" />
                     <div
-                        className="absolute inset-0 bg-gradient-to-t from-pink-900/20 via-red-900/10 to-black/50 animate-pulse"
+                        className="absolute inset-0 bg-gradient-to-t from-pink-900/20 via-amber-800/10 to-black/50 animate-pulse"
                         style={{ animationDuration: '4s' }}
                     />
                     <div className="absolute inset-0 bg-gradient-radial from-pink-500/10 via-pink-900/5 to-transparent" />
@@ -364,7 +364,7 @@ export default function UserPollsPage() {
                         {/* Loading state */}
                         {isLoadingActivePolls && (
                             <div className="py-16">
-                                <NetflixLoader inline={true} message="Loading polls..." />
+                                <PageLoader inline={true} message="Loading polls..." />
                             </div>
                         )}
 
@@ -390,7 +390,7 @@ export default function UserPollsPage() {
                                 {activePollTab === 'created' && (
                                     <button
                                         onClick={() => setIsCreateModalOpen(true)}
-                                        className="px-8 py-4 font-bold rounded-xl bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white shadow-[0_0_30px_rgba(236,72,153,0.4)] hover:shadow-[0_0_40px_rgba(236,72,153,0.6)] scale-100 hover:scale-105 transition-all duration-300"
+                                        className="px-8 py-4 font-bold rounded-xl bg-gradient-to-r from-pink-500 to-amber-400 hover:from-pink-600 hover:to-amber-500 text-white shadow-[0_0_30px_rgba(236,72,153,0.4)] hover:shadow-[0_0_40px_rgba(236,72,153,0.6)] scale-100 hover:scale-105 transition-all duration-300"
                                     >
                                         Create First Poll
                                     </button>
@@ -398,7 +398,7 @@ export default function UserPollsPage() {
                                 {activePollTab === 'voted' && (
                                     <Link
                                         href="/community/polls"
-                                        className="px-8 py-4 font-bold rounded-xl bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white shadow-[0_0_30px_rgba(236,72,153,0.4)] hover:shadow-[0_0_40px_rgba(236,72,153,0.6)] scale-100 hover:scale-105 transition-all duration-300 inline-block"
+                                        className="px-8 py-4 font-bold rounded-xl bg-gradient-to-r from-pink-500 to-amber-400 hover:from-pink-600 hover:to-amber-500 text-white shadow-[0_0_30px_rgba(236,72,153,0.4)] hover:shadow-[0_0_40px_rgba(236,72,153,0.6)] scale-100 hover:scale-105 transition-all duration-300 inline-block"
                                     >
                                         Browse Community Polls
                                     </Link>
@@ -442,10 +442,10 @@ export default function UserPollsPage() {
                 >
                     <div className="relative">
                         {/* Glowing background */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-red-500 rounded-full blur-lg opacity-30 group-hover:opacity-40 transition-opacity" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-amber-400 rounded-full blur-lg opacity-30 group-hover:opacity-40 transition-opacity" />
 
                         {/* Button */}
-                        <div className="relative flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-pink-500 via-red-500 to-pink-600 rounded-full text-white font-bold text-sm shadow-[0_0_20px_rgba(236,72,153,0.3)] group-hover:shadow-[0_0_30px_rgba(236,72,153,0.4)] group-hover:scale-105 transition-all duration-300">
+                        <div className="relative flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-pink-500 via-amber-400 to-pink-600 rounded-full text-white font-bold text-sm shadow-[0_0_20px_rgba(236,72,153,0.3)] group-hover:shadow-[0_0_30px_rgba(236,72,153,0.4)] group-hover:scale-105 transition-all duration-300">
                             <ChartBarIcon className="w-5 h-5" />
                             <span className="hidden sm:inline">New Poll</span>
                         </div>

@@ -15,7 +15,7 @@ interface BaseEmailProps {
 }
 
 /**
- * Base email template component with consistent NetTrailer branding
+ * Base email template component with consistent NetTrailers branding
  * All email templates should use this as a wrapper for consistent styling
  */
 export const BaseEmail = ({
@@ -59,7 +59,7 @@ export const BaseEmail = ({
                     .logo {
                         font-size: 32px;
                         font-weight: bold;
-                        color: #e50914;
+                        color: #dc2626;
                         margin-bottom: 10px;
                         letter-spacing: 2px;
                     }
@@ -87,7 +87,7 @@ export const BaseEmail = ({
                     }
                     .cta-button {
                         display: inline-block;
-                        background-color: #e50914;
+                        background-color: #dc2626;
                         color: #ffffff !important;
                         padding: 14px 32px;
                         border-radius: 4px;
@@ -124,7 +124,7 @@ export const BaseEmail = ({
                         font-size: 12px;
                     }
                     .footer-link:hover {
-                        color: #e50914;
+                        color: #dc2626;
                     }
                     .copyright {
                         margin-top: 20px;
@@ -215,7 +215,7 @@ export const BaseEmail = ({
                                 </a>
                             </div>
                             <div className="copyright">
-                                © {new Date().getFullYear()} Net Trailers. All rights reserved.
+                                © {new Date().getFullYear()} NetTrailers. All rights reserved.
                             </div>
                         </div>
                     )}

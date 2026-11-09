@@ -7,7 +7,7 @@ import { PollCard } from '@/components/forum/PollCard'
 import { useForumStore } from '@/stores/forumStore'
 import { useSessionStore } from '@/stores/sessionStore'
 import { ChartBarIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
-import NetflixLoader from '@/components/common/NetflixLoader'
+import PageLoader from '@/components/common/PageLoader'
 
 export default function MyPollsPage() {
     const router = useRouter()
@@ -50,7 +50,7 @@ export default function MyPollsPage() {
             {/* Loading State */}
             {isLoadingPolls && (
                 <div className="flex justify-center py-20">
-                    <NetflixLoader />
+                    <PageLoader />
                 </div>
             )}
 

@@ -14,7 +14,7 @@ import { useRouter } from 'next/navigation'
 import SubPageLayout from '@/components/layout/SubPageLayout'
 import { useRankingStore } from '@/stores/rankingStore'
 import { useAuthStatus } from '@/hooks/useAuthStatus'
-import NetflixLoader from '@/components/common/NetflixLoader'
+import PageLoader from '@/components/common/PageLoader'
 import { useForumStore } from '@/stores/forumStore'
 import { UsersIcon } from '@heroicons/react/24/outline'
 import RankingsContent from './RankingsContent'
@@ -51,7 +51,7 @@ export default function CommunityHub({ activeTab }: CommunityHubProps) {
                 icon={<UsersIcon className="w-8 h-8" />}
                 iconColor="text-yellow-500"
             >
-                <NetflixLoader />
+                <PageLoader />
             </SubPageLayout>
         )
     }

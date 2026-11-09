@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import Image from 'next/image'
 import { XMarkIcon, SparklesIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline'
 import { WizardStep4Confirmation } from '../WizardStep4Confirmation'
-import NetflixLoader from '../../common/NetflixLoader'
+import PageLoader from '../../common/PageLoader'
 import { SmartInput } from '../../common/SmartInput'
 import type { CustomRowFormData } from '@/types/collections'
 import { Content } from '@/typings'
@@ -298,7 +298,7 @@ export function SimplifiedSmartBuilder({
                                     onClick={() => onModeChange('smart')}
                                     className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                                         mode === 'smart'
-                                            ? 'bg-red-600 text-white'
+                                            ? 'bg-amber-500 text-zinc-950'
                                             : 'text-gray-400 hover:text-white hover:bg-gray-700'
                                     }`}
                                 >
@@ -308,7 +308,7 @@ export function SimplifiedSmartBuilder({
                                     onClick={() => onModeChange('traditional')}
                                     className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                                         mode === 'traditional'
-                                            ? 'bg-red-600 text-white'
+                                            ? 'bg-amber-500 text-zinc-950'
                                             : 'text-gray-400 hover:text-white hover:bg-gray-700'
                                     }`}
                                 >
@@ -353,7 +353,7 @@ export function SimplifiedSmartBuilder({
                         size="large"
                         variant="solid"
                         showSurpriseMe={true}
-                        showTypewriter={true}
+                        showExamplePlaceholder={true}
                         shimmer="wave"
                         surpriseQueryType="collection"
                     />
@@ -424,7 +424,7 @@ export function SimplifiedSmartBuilder({
                                     type="button"
                                     onClick={() => setEnableInfiniteContent(!enableInfiniteContent)}
                                     className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                        enableInfiniteContent ? 'bg-red-600' : 'bg-gray-600'
+                                        enableInfiniteContent ? 'bg-amber-500' : 'bg-gray-600'
                                     }`}
                                 >
                                     <span
@@ -542,7 +542,7 @@ export function SimplifiedSmartBuilder({
                             <button
                                 onClick={handleCreate}
                                 disabled={isCreating}
-                                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                className="px-6 py-2 bg-amber-500 text-zinc-950 rounded-lg hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
                                 {isCreating ? 'Creating...' : 'Create Collection'}
                             </button>
@@ -553,7 +553,7 @@ export function SimplifiedSmartBuilder({
                 {/* Loading state */}
                 {isGenerating && (
                     <div className="absolute top-20 left-0 right-0 flex justify-center">
-                        <NetflixLoader inline slowCounter message="Building your collection..." />
+                        <PageLoader inline slowCounter message="Building your collection..." />
                     </div>
                 )}
             </div>

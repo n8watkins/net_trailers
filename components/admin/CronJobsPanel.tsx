@@ -169,7 +169,7 @@ export default function CronJobsPanel() {
                     </div>
                     {lastResult && (
                         <div
-                            className={`flex items-center gap-1 ${lastResult.success ? 'text-green-500' : 'text-red-500'}`}
+                            className={`flex items-center gap-1 ${lastResult.success ? 'text-green-500' : 'text-amber-400'}`}
                         >
                             {lastResult.success ? (
                                 <CheckCircle2 className="h-4 w-4" />

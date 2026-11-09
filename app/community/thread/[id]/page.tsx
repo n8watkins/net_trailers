@@ -15,7 +15,7 @@ import { useSessionStore } from '@/stores/sessionStore'
 import { useAuthStatus } from '@/hooks/useAuthStatus'
 import useAuth from '@/hooks/useAuth'
 import { getCategoryInfo } from '@/utils/forumCategories'
-import NetflixLoader from '@/components/common/NetflixLoader'
+import PageLoader from '@/components/common/PageLoader'
 import ImageUpload, { ImageUploadHandle } from '@/components/forum/ImageUpload'
 import { formatDistanceToNow } from 'date-fns'
 import {
@@ -153,7 +153,7 @@ export default function ThreadDetailPage({ params }: ThreadDetailPageProps) {
     if (isLoadingThreads || !currentThread) {
         return (
             <SubPageLayout title="Loading..." icon={<ChatBubbleLeftIcon className="w-8 h-8" />}>
-                <NetflixLoader />
+                <PageLoader />
             </SubPageLayout>
         )
     }

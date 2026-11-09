@@ -27,7 +27,7 @@ export const PasswordResetEmail = ({
             }}
         >
             <p style={{ marginBottom: '20px' }}>
-                We received a request to reset the password for your Net Trailers account. Click the
+                We received a request to reset the password for your NetTrailers account. Click the
                 button below to create a new password.
             </p>
 
@@ -35,7 +35,7 @@ export const PasswordResetEmail = ({
                 <p style={{ margin: 0, fontSize: '14px', color: '#b3b3b3' }}>
                     <strong style={{ color: '#ffffff' }}>Important:</strong> This link will expire
                     in{' '}
-                    <strong style={{ color: '#e50914' }}>
+                    <strong style={{ color: '#dc2626' }}>
                         {expiresIn} hour{expiresIn !== 1 ? 's' : ''}
                     </strong>
                     . If you don't reset your password within this time, you'll need to request a

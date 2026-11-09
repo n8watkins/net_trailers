@@ -68,14 +68,14 @@ const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ isOpen,
             onClick={onClose}
         >
             <div
-                className="relative bg-gradient-to-br from-zinc-900 via-zinc-900/95 to-black rounded-2xl max-w-4xl w-full border border-red-500/30 shadow-2xl shadow-red-500/10 overflow-hidden max-h-[90vh] flex flex-col"
+                className="relative bg-gradient-to-br from-zinc-900 via-zinc-900/95 to-black rounded-2xl max-w-4xl w-full border border-amber-400/30 shadow-2xl shadow-amber-400/10 overflow-hidden max-h-[90vh] flex flex-col"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Animated background glow */}
                 <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-64 bg-gradient-radial from-red-500/10 via-transparent to-transparent" />
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-64 bg-gradient-radial from-amber-400/10 via-transparent to-transparent" />
                     <div
-                        className="absolute inset-0 bg-gradient-to-t from-red-900/5 via-transparent to-transparent animate-pulse"
+                        className="absolute inset-0 bg-gradient-to-t from-amber-800/5 via-transparent to-transparent animate-pulse"
                         style={{ animationDuration: '4s' }}
                     />
                 </div>
@@ -91,7 +91,7 @@ const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ isOpen,
                 {/* Header */}
                 <div className="relative z-10 p-6 border-b border-zinc-800/50 flex-shrink-0">
                     <div className="flex items-center space-x-3">
-                        <CommandLineIcon className="w-6 h-6 text-red-500" />
+                        <CommandLineIcon className="w-6 h-6 text-amber-400" />
                         <h2 className="text-xl font-semibold text-white">Keyboard Shortcuts</h2>
                     </div>
                 </div>
@@ -102,7 +102,7 @@ const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ isOpen,
                         {Object.entries(shortcutsByCategory).map(
                             ([category, categoryShortcuts]) => (
                                 <div key={category} className="space-y-4">
-                                    <h3 className="text-lg font-medium text-red-400 border-b border-zinc-800/50 pb-2">
+                                    <h3 className="text-lg font-medium text-amber-300 border-b border-zinc-800/50 pb-2">
                                         {category}
                                     </h3>
                                     <div className="space-y-3">
@@ -138,7 +138,7 @@ const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ isOpen,
                         </p>
                         <button
                             onClick={onClose}
-                            className="px-4 py-2 text-sm font-medium text-white bg-red-500/90 hover:bg-red-600 rounded-lg transition-all duration-300 shadow-[0_0_10px_rgba(239,68,68,0.3)]"
+                            className="px-4 py-2 text-sm font-medium text-white bg-amber-400/90 hover:bg-amber-500 rounded-lg transition-all duration-300 shadow-[0_0_10px_rgba(251,191,36,0.3)]"
                         >
                             Got it!
                         </button>

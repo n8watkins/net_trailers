@@ -36,18 +36,6 @@ const nextConfig = {
             },
             {
                 protocol: 'https',
-                hostname: 'assets.nflxext.com',
-            },
-            {
-                protocol: 'https',
-                hostname: 'occ-0-3997-3996.1.nflxso.net',
-            },
-            {
-                protocol: 'https',
-                hostname: '*.nflxso.net',
-            },
-            {
-                protocol: 'https',
                 hostname: 'avatars.githubusercontent.com',
             },
             {
@@ -75,6 +63,13 @@ const nextConfig = {
                 source: '/movies',
                 destination: '/',
                 permanent: true, // 301 redirect
+            },
+            {
+                // An HTTP redirect lands at the top of the page; an in-app redirect
+                // scrolled phones down to the nested settings panel
+                source: '/settings',
+                destination: '/settings/preferences',
+                permanent: false,
             },
         ]
     },
