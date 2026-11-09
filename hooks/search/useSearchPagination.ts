@@ -132,16 +132,8 @@ export function useSearchPagination({
                     }
                 }
 
-                // Check if we stopped early due to limits
-                if (!loadAll && currentPageNum > maxPages && allResults.length < totalResults) {
-                    wasTruncated = true
-                    guestLog(`${logPrefix} Truncated: Reached maxPages limit`)
-                }
-
-                if (currentPageNum > TMDB_MAX_PAGE && allResults.length < totalResults) {
-                    wasTruncated = true
-                    guestLog(`${logPrefix} Truncated: Hit TMDB 500-page limit`)
-                }
+                // Stopping at maxPages or TMDB's 500-page cap is normal paging, not a
+                // failure: only a failed request marks the results as incomplete.
 
                 guestLog(
                     `${logPrefix} Loaded`,
