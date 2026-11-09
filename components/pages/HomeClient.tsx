@@ -237,7 +237,7 @@ export default function HomeClient({ data }: HomeClientProps) {
 
                 <main id="content" className="relative">
                     {/* Phones get a shorter hero so the first row peeks above the fold */}
-                    <div className="relative h-[30rem] sm:h-screen w-full">
+                    <div className="relative h-[33rem] sm:h-screen w-full">
                         <Banner
                             trending={trending}
                             onHeroImageLoaded={() => setHeroImageLoaded(true)}

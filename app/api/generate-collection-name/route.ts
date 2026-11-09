@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withAuth } from '@/lib/auth-middleware'
-import { consumeGeminiRateLimit } from '@/lib/geminiRateLimiter'
+import { consumeAiQuota, quotaExhaustedMessage } from '@/lib/aiQuota'
 import { sanitizeInput } from '@/utils/inputSanitization'
 import { apiError } from '@/utils/debugLogger'
 import { routeGeminiRequest, extractGeminiText, FLASH_LITE_PRIORITY } from '@/lib/geminiRouter'
@@ -62,13 +62,10 @@ async function handleGenerateRowName(request: NextRequest, userId: string): Prom
             )
         }
 
-        const rateStatus = consumeGeminiRateLimit(userId)
-        if (!rateStatus.allowed) {
+        const quota = await consumeAiQuota(`user:${userId}`)
+        if (!quota.allowed) {
             return NextResponse.json(
-                {
-                    error: 'AI naming limit reached. Please try again later.',
-                    retryAfterMs: rateStatus.retryAfterMs,
-                },
+                { error: quotaExhaustedMessage(quota), code: 'AI_QUOTA', quota },
                 { status: 429 }
             )
         }
