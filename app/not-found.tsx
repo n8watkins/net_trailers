@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import LegacyCollectionRedirect from '../components/utility/LegacyCollectionRedirect'
 
 export const metadata: Metadata = {
     title: 'Page Not Found - NetTrailers',
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
 export default function NotFound() {
     return (
         <div className="min-h-screen bg-black flex items-center justify-center relative overflow-hidden">
+            <LegacyCollectionRedirect />
             {/* Background pattern */}
             <div className="absolute inset-0 opacity-5">
                 <div className="absolute top-10 left-10 text-6xl">🎬</div>
@@ -42,10 +44,6 @@ export default function NotFound() {
 
                 {/* Action buttons */}
                 <div className="space-y-6">
-                    <div className="bg-gray-900/50 backdrop-blur-sm rounded-lg p-6 border border-gray-700">
-                        <p className="text-gray-300 mb-4">What would you like to do?</p>
-                    </div>
-
                     <div className="flex justify-center">
                         <Link
                             href="/"

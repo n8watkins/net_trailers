@@ -2,6 +2,20 @@
 
 import { useCallback, useEffect, useId, useRef, useSyncExternalStore } from 'react'
 import { voiceInputManager } from '../lib/voiceInputManager'
+import type { VoiceInputState } from '../lib/voiceInputManager'
+
+/**
+ * What the server renders, and what the first client render must match: speech
+ * recognition is a browser API, so it is never "supported" during SSR or
+ * hydration. React swaps in the real browser state right after hydrating.
+ */
+const SERVER_SNAPSHOT: VoiceInputState = {
+    isSupported: false,
+    isListening: false,
+    activeSourceId: null,
+    transcript: '',
+}
+const getServerSnapshot = () => SERVER_SNAPSHOT
 
 interface UseVoiceInputOptions {
     onResult: (transcript: string) => void
@@ -56,7 +70,7 @@ export function useVoiceInput({
         isListening: globalListening,
         transcript,
         activeSourceId,
-    } = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
+    } = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
     const isActiveSource = globalListening && activeSourceId === resolvedSourceId
     const isBusy = globalListening && activeSourceId !== resolvedSourceId

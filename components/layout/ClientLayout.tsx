@@ -135,7 +135,9 @@ function ClientLayout({ children }: ClientLayoutProps) {
 
     return (
         <LayoutProvider value={layoutContextValue}>
-            {children}
+            {/* At least a screen tall, so the footer never shows (and then jumps) while
+                a page is still loading its content */}
+            <div className="min-h-screen">{children}</div>
             <Footer
                 showAboutModal={showAboutModal}
                 onOpenAboutModal={handleOpenAboutModal}
