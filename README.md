@@ -14,7 +14,7 @@ A streaming-style trailer browser and discovery platform built with modern web t
 | ----------------- | ------------------------------------ | ------------------ | ---------------- | ------------------- | ---------------- | ----------------------- | ----------- |
 | ▲ **Next.js 16**  | 🗄️ **Turso (libSQL)**                | 🌿 **Drizzle ORM** | 🎬 **TMDB**      | 🎨 **Tailwind CSS** | 🐻 **Zustand**   | 🛡️ **Sentry**           | 🧪 **Jest** |
 | **TS TypeScript** | 🔐 **Auth.js (GitHub + magic link)** | 📧 **Brevo**       | 🤖 **Gemini AI** | 🎭 **Material-UI**  |                  | 📊 **GA4**              | 🧪 **RTL**  |
-| ⚛️ **React 19**   |                                      |                    |                  | 🦸 **Heroicons**    |                  | 📈 **Vercel Analytics** |             |
+| ⚛️ **React 19**   |                                      |                    |                  | 🦸 **Heroicons**    |                  | 📈 **CF Web Analytics** |             |
 
 </div>
 
@@ -132,7 +132,7 @@ A streaming-style trailer browser and discovery platform built with modern web t
 
 - **Image Upload Support**
     - Upload images to threads and forum posts
-    - Vercel Blob integration for image hosting (uploads scoped per user)
+    - Cloudflare R2 image hosting (uploads scoped per user)
     - Image preview and optimization
     - Automatic image resizing for performance
 
@@ -228,7 +228,7 @@ A streaming-style trailer browser and discovery platform built with modern web t
     - Comprehensive error handling with user-friendly messages
     - Toast notification system (6 types: success, error, watchlist operations, content visibility)
     - Watch history tracking
-    - Analytics integration (GA4, Vercel Analytics)
+    - Analytics integration (GA4, Cloudflare Web Analytics)
 
 #### 🔐 Admin Portal
 
@@ -301,7 +301,7 @@ A streaming-style trailer browser and discovery platform built with modern web t
     - **49 API routes** organized by feature
     - Sentry error monitoring (client & server-side)
     - Google Analytics 4 integration
-    - Vercel Analytics for performance insights
+    - Cloudflare Web Analytics for performance insights
     - Bundle analyzer for optimization
 
 ## 🎯 Live Demo
@@ -355,7 +355,7 @@ _Experience all features or continue as guest to explore the platform_
     # Callback URL: http://localhost:3000/api/auth/callback/github (and your prod URL)
     AUTH_GITHUB_ID=your_github_oauth_client_id
     AUTH_GITHUB_SECRET=your_github_oauth_client_secret
-    # Production URL (only needed in production behind a proxy, e.g. Vercel)
+    # Production URL (only needed in production behind a proxy)
     AUTH_URL=https://your-deployment-url.com
 
     # TMDB API (Required)
@@ -385,10 +385,6 @@ _Experience all features or continue as guest to explore the platform_
 
     # Cron Job Security (Required for auto-updating collections)
     CRON_SECRET=your_random_secret_string
-
-    # Vercel Blob (Required for forum/thread image uploads)
-    # Create a Blob store in your Vercel project; token is provided automatically there.
-    BLOB_READ_WRITE_TOKEN=your_blob_read_write_token
 
     # Account Limits (Optional - defaults to 50)
     NEXT_PUBLIC_MAX_TOTAL_ACCOUNTS=50
@@ -460,29 +456,10 @@ _Experience all features or continue as guest to explore the platform_
     - Trending notification controls
     - Demo reset for portfolio presentations
 
-6. **Vercel Cron Job Setup** (Optional - for auto-updating collections and trending notifications)
+6. **Scheduled jobs** (optional, for auto-updating collections, trending notifications and the social digest)
 
-    The project includes two cron jobs configured in `vercel.json`:
-
-    ```json
-    {
-        "crons": [
-            {
-                "path": "/api/cron/update-collections",
-                "schedule": "0 2 * * *"
-            },
-            {
-                "path": "/api/cron/update-trending",
-                "schedule": "0 */6 * * *"
-            }
-        ]
-    }
-    ```
-
-    - **update-collections**: Runs daily at 2 AM UTC to refresh auto-updating collections
-    - **update-trending**: Runs every 6 hours to check for new trending content
-
-    Both cron jobs can also be triggered manually from the admin dashboard.
+    In production they run as Cloudflare Cron Triggers (`wrangler.jsonc`, `worker/crons.ts`); see DEPLOYMENT.md.
+    They can also be triggered by hand from the admin dashboard.
 
 7. **Run the development server**
 
@@ -704,7 +681,7 @@ net_trailers/
 ├── sentry.client.config.ts   # Sentry client config
 ├── instrumentation.ts    # Sentry server config (Next.js 15+)
 ├── next.config.mjs       # Next.js configuration
-├── vercel.json           # Vercel deployment config (cron jobs)
+├── wrangler.jsonc        # Cloudflare Worker config (bindings, crons, domain)
 ├── tailwind.config.ts    # Tailwind CSS configuration
 ├── jest.config.js        # Jest configuration
 └── tsconfig.json         # TypeScript configuration
@@ -822,7 +799,7 @@ Social & misc:   shares (collection snapshots), user_activity, user_badges,
 **Cron Job Flow** (Daily at 2 AM UTC):
 
 ```
-1. Vercel cron triggers /api/cron/update-collections
+1. A Cloudflare Cron Trigger calls /api/cron/refresh-collection-cache
 2. Verify CRON_SECRET for security
 3. Query Turso for collections with autoUpdateEnabled: true
 4. For each collection:
@@ -893,11 +870,11 @@ npm run test:ci       # CI mode (used in GitHub Actions)
     - Ranking engagement
 - **Privacy**: Anonymized IP, GDPR compliant
 
-### Vercel Analytics
+### Cloudflare Web Analytics
 
 - **Performance metrics**: Core Web Vitals tracking
 - **Real user monitoring**: Actual user experience data
-- **Integration**: Automatic with Vercel deployment
+- **Integration**: `components/utility/WebAnalytics.tsx`, enabled by `NEXT_PUBLIC_CF_WEB_ANALYTICS_TOKEN`
 
 ## 🎨 Toast Notification System
 
@@ -943,43 +920,11 @@ showSuccess('Operation completed', 'Optional description')
 
 ## 🌐 Deployment
 
-### Vercel (Recommended)
+### Cloudflare Workers
 
-```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-vercel
-
-# Production deployment
-vercel --prod
-```
-
-**Configuration**:
-
-- Set environment variables in Vercel dashboard
-- Enable Vercel Analytics automatically
-- Configure custom domain in project settings
-- Set up cron job in `vercel.json` for auto-updating collections
-
-### Vercel Cron Job Setup
-
-In Vercel dashboard:
-
-1. Add `CRON_SECRET` environment variable
-2. Deploy `vercel.json` with cron configuration:
-
-```json
-{
-    "crons": [
-        {
-            "path": "/api/cron/update-collections",
-            "schedule": "0 2 * * *"
-        }
-    ]
-}
-```
+NetTrailers runs on Cloudflare Workers through the OpenNext adapter, at https://nettrailers.n8builds.dev.
+Every push to `main` builds and deploys (`.github/workflows/deploy.yml`); `npm run deploy` deploys by hand.
+Secrets, bindings, Cron Triggers, logs and rollback are covered in [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ### Other Platforms
 

@@ -43,15 +43,15 @@ Never let another host run the same crons against the same database: two social 
 Plain values live in `wrangler.jsonc` (`vars`).
 Secrets are set with `npx wrangler secret put <NAME>` (it reads the value from stdin) and listed with `npx wrangler secret list`:
 
-| Secret                                                                           | Used for                                                                                 |
-| -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`                                         | the database (`turso db show net-trailers --url`, `turso db tokens create net-trailers`) |
-| `AUTH_SECRET`                                                                    | Auth.js                                                                                  |
-| `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`                                           | GitHub sign-in (the OAuth App's callback must be `<app-url>/api/auth/callback/github`)   |
-| `BREVO_API_KEY`, `EMAIL_FROM` (or `EMAIL_PROVIDER=resend` with `RESEND_API_KEY`) | magic-link and notification email                                                        |
-| `TMDB_API_KEY`                                                                   | every movie and TV page                                                                  |
-| `GEMINI_API_KEY`                                                                 | smart search and the other AI features                                                   |
-| `CRON_SECRET`                                                                    | the Cron Triggers                                                                        |
+| Secret                                                                           | Used for                                                                                  |
+| -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`                                         | the database (`turso db show net-trailers --url`, `turso db tokens create net-trailers`)  |
+| `AUTH_SECRET`                                                                    | Auth.js                                                                                   |
+| `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`                                           | optional GitHub sign-in; without both only email sign-in is offered (`lib/authConfig.ts`) |
+| `BREVO_API_KEY`, `EMAIL_FROM` (or `EMAIL_PROVIDER=resend` with `RESEND_API_KEY`) | magic-link and notification email                                                         |
+| `TMDB_API_KEY`                                                                   | every movie and TV page                                                                   |
+| `GEMINI_API_KEY`                                                                 | smart search and the other AI features                                                    |
+| `CRON_SECRET`                                                                    | the Cron Triggers                                                                         |
 
 Build-time values (inlined into the pages, all public) are set in the deploy workflow: `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_GA_MEASUREMENT_ID`, `NEXT_PUBLIC_SENTRY_DSN`, and `NEXT_PUBLIC_CF_WEB_ANALYTICS_TOKEN` from a repository variable.
 For a deploy by hand, export the same values in the shell first.
@@ -92,15 +92,17 @@ Fix forward afterwards by reverting the commit and deploying again.
 
 ## Moving off Vercel
 
-The cutover change sets the address to nettrailers.n8builds.dev (custom domain, `NEXT_PUBLIC_APP_URL`, sitemap and robots), moves `ADMIN_GITHUB_LOGIN` into `vars`, and turns the crons on.
-Merge it only when all of these hold, in this order:
+The cutover change serves the site at nettrailers.n8builds.dev (custom domain, `NEXT_PUBLIC_APP_URL`, sitemap and robots), sets `ADMIN_GITHUB_LOGIN` as a var, turns the crons on and removes `vercel.json`.
+GitHub sign-in is optional, so the cutover does not wait for an OAuth App: email magic links work on their own.
+Do these in order:
 
-1. Every secret in the table above is set on the Worker.
-2. The GitHub OAuth App lists `https://nettrailers.n8builds.dev/api/auth/callback/github` as its callback URL (GitHub allows several, so the Vercel one can stay until the end).
-3. The Vercel project is deleted or paused, so its crons stop.
-4. Right after that, rotate the database token: `turso db tokens invalidate net-trailers` (this revokes every token, including Vercel's), then `turso db tokens create net-trailers | npx wrangler secret put TURSO_AUTH_TOKEN --name net-trailers`, never printing it.
+1. Set the missing Worker secrets (`npx wrangler secret list` shows which exist; values are read from stdin and never printed).
+2. Delete (or pause) the Vercel project `net-trailers`, so its crons stop.
+3. Merge the cutover pull request; the deploy workflow publishes the Worker and creates the `nettrailers.n8builds.dev` record.
+4. Right after, rotate the database token: `turso db tokens invalidate net-trailers` (this revokes every token, including Vercel's), then `turso db tokens create net-trailers | npx wrangler secret put TURSO_AUTH_TOKEN --name net-trailers`, never printing it.
 
-Afterwards, remove `vercel.json`; `__tests__/worker/crons.test.ts` compares against it, so move the schedules into the test then.
+To add GitHub sign-in later, create a GitHub OAuth App with the callback `https://nettrailers.n8builds.dev/api/auth/callback/github` and put `AUTH_GITHUB_ID` and `AUTH_GITHUB_SECRET` on the Worker; the button appears without a deploy.
+The admin dashboard recognises the admin by GitHub login, so it needs GitHub sign-in.
 
 ## Taking it down
 

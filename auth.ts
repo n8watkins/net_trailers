@@ -20,6 +20,7 @@ import type { Provider } from 'next-auth/providers'
 import { db } from '@/db'
 import { accounts, sessions, users, verificationTokens } from '@/db/schema'
 import { authLogger } from '@/lib/log'
+import { isGitHubAuthConfigured } from '@/lib/authConfig'
 
 const adminLogin = process.env.ADMIN_GITHUB_LOGIN?.toLowerCase()
 
@@ -100,19 +101,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     // Error type and a masked message only; see lib/log.ts.
     logger: authLogger,
     providers: [
-        GitHub({
-            // AUTH_GITHUB_ID / AUTH_GITHUB_SECRET are read from env automatically.
-            profile(profile) {
-                return {
-                    id: profile.id.toString(),
-                    name: profile.name ?? profile.login,
-                    email: profile.email,
-                    image: profile.avatar_url,
-                    // Persisted on the users row; used for admin identification.
-                    githubLogin: profile.login,
-                }
-            },
-        }),
+        // GitHub sign-in is optional: it is registered only when its OAuth App
+        // credentials exist, so email magic links work on their own. The sign-in
+        // modal asks /api/auth/providers and hides the button when it is absent.
+        ...(isGitHubAuthConfigured()
+            ? [
+                  GitHub({
+                      // AUTH_GITHUB_ID / AUTH_GITHUB_SECRET are read from env automatically.
+                      profile(profile) {
+                          return {
+                              id: profile.id.toString(),
+                              name: profile.name ?? profile.login,
+                              email: profile.email,
+                              image: profile.avatar_url,
+                              // Persisted on the users row; used for admin identification.
+                              githubLogin: profile.login,
+                          }
+                      },
+                  }),
+              ]
+            : []),
         // Passwordless email magic links (SendGrid or Resend - see emailProvider above).
         emailProvider,
     ],
