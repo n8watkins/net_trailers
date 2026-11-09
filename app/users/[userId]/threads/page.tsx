@@ -88,7 +88,7 @@ export default function UserThreadsPage() {
             'tv-shows': 'bg-purple-600',
             recommendations: 'bg-green-600',
             rankings: 'bg-yellow-600',
-            announcements: 'bg-red-600',
+            announcements: 'bg-amber-500',
         }
         return colors[category] || 'bg-gray-600'
     }

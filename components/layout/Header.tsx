@@ -444,7 +444,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                 onClick={() => !isRandomLoading && handleRandomContent()}
                                 title="Jump to a random movie or TV show"
                             >
-                                <span className="absolute -inset-3 opacity-0 group-hover:opacity-50 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-red-400 via-red-300/60 via-40% to-transparent rounded-md blur-lg transition-opacity duration-400" />
+                                <span className="absolute -inset-3 opacity-0 group-hover:opacity-50 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-amber-300 via-amber-200/60 via-40% to-transparent rounded-md blur-lg transition-opacity duration-400" />
                                 <SparklesIcon
                                     className={`h-5 w-5 relative z-10 ${isRandomLoading ? 'animate-pulse' : ''}`}
                                 />
@@ -588,7 +588,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                             data-tour={dataTourAttr}
                                             className={`group relative flex items-center justify-center gap-2 whitespace-nowrap border-b-2 px-2 sm:px-1 py-2 sm:py-3 text-sm font-medium transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 ${
                                                 isActive
-                                                    ? 'border-red-600 text-red-600'
+                                                    ? 'border-amber-500 text-amber-500'
                                                     : 'border-transparent text-gray-400 hover:text-gray-200'
                                             }`}
                                         >
@@ -644,7 +644,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                             <button
                                                 className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
                                                     pathname === '/'
-                                                        ? 'text-white font-semibold bg-red-600/20'
+                                                        ? 'text-white font-semibold bg-amber-500/20'
                                                         : 'hover:bg-white/10'
                                                 }`}
                                                 onClick={() => {
@@ -672,7 +672,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                             <button
                                                 className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
                                                     pathname.startsWith('/collections')
-                                                        ? 'text-white font-semibold bg-red-600/20'
+                                                        ? 'text-white font-semibold bg-amber-500/20'
                                                         : 'hover:bg-white/10'
                                                 }`}
                                                 onClick={() => {
@@ -689,7 +689,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                                 className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
                                                     pathname === '/ratings' ||
                                                     pathname.startsWith('/ratings')
-                                                        ? 'text-white font-semibold bg-red-600/20'
+                                                        ? 'text-white font-semibold bg-amber-500/20'
                                                         : 'hover:bg-white/10'
                                                 }`}
                                                 onClick={() => {
@@ -705,7 +705,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                             <button
                                                 className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
                                                     pathname === '/search'
-                                                        ? 'text-white font-semibold bg-red-600/20'
+                                                        ? 'text-white font-semibold bg-amber-500/20'
                                                         : 'hover:bg-white/10'
                                                 }`}
                                                 onClick={() => {
@@ -729,7 +729,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                                 }
                                                 disabled={isRandomLoading}
                                             >
-                                                <span className="absolute -inset-3 opacity-0 group-hover:opacity-50 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-red-400 via-red-300/60 via-40% to-transparent rounded-lg blur-lg transition-opacity duration-400" />
+                                                <span className="absolute -inset-3 opacity-0 group-hover:opacity-50 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-amber-300 via-amber-200/60 via-40% to-transparent rounded-lg blur-lg transition-opacity duration-400" />
                                                 <SparklesIcon
                                                     className={`h-5 w-5 relative z-10 ${isRandomLoading ? 'animate-pulse' : ''}`}
                                                 />

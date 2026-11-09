@@ -407,7 +407,7 @@ export default function SmartSearchActions({
                     {isAskingMore && (
                         <div className="flex items-center justify-center py-4">
                             <div className="text-center">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-2"></div>
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500 mx-auto mb-2"></div>
                                 <div className="text-sm text-gray-400">
                                     Loading more suggestions...
                                 </div>

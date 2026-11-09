@@ -100,7 +100,7 @@ export default function UserPollsPage() {
             tv: 'bg-purple-600',
             recommendations: 'bg-green-600',
             rankings: 'bg-yellow-600',
-            announcements: 'bg-red-600',
+            announcements: 'bg-amber-500',
         }
         return colors[category] || 'bg-gray-600'
     }
@@ -183,7 +183,7 @@ export default function UserPollsPage() {
                                                 {poll.category}
                                             </span>
                                             {expired ? (
-                                                <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-900/50 text-red-400">
+                                                <span className="px-2 py-0.5 rounded text-xs font-medium bg-amber-800/50 text-amber-300">
                                                     Closed
                                                 </span>
                                             ) : (

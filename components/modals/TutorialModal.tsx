@@ -66,7 +66,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartT
                 {/* Animated background gradients */}
                 <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900/80 to-black -z-10" />
                 <div
-                    className="absolute inset-0 bg-gradient-to-t from-orange-900/20 via-red-900/10 to-black/50 animate-pulse -z-10"
+                    className="absolute inset-0 bg-gradient-to-t from-orange-900/20 via-amber-800/10 to-black/50 animate-pulse -z-10"
                     style={{ animationDuration: '4s' }}
                 />
                 <div className="absolute inset-0 bg-gradient-radial from-orange-500/5 via-orange-900/5 to-transparent -z-10" />
@@ -84,7 +84,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartT
                         {/* Glowing icon */}
                         <div className="relative">
                             <div className="absolute inset-0 bg-orange-500/30 blur-xl scale-150" />
-                            <div className="relative w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center shadow-lg">
+                            <div className="relative w-12 h-12 bg-gradient-to-br from-orange-500 to-amber-500 rounded-full flex items-center justify-center shadow-lg">
                                 <AcademicCapIcon className="h-7 w-7 text-white" />
                             </div>
                         </div>
@@ -140,7 +140,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartT
                     {isGuest ? (
                         /* Guest Mode Content */
                         <>
-                            <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-xl p-4 border border-orange-500/20">
+                            <div className="bg-gradient-to-r from-orange-500/10 to-amber-400/10 rounded-xl p-4 border border-orange-500/20">
                                 <p className="text-orange-400 font-bold text-lg mb-1">
                                     🚀 Guest Mode Features
                                 </p>
@@ -179,8 +179,8 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartT
 
                             {/* Call to Action */}
                             <div className="mt-5 text-center">
-                                <div className="mb-4 py-4 px-6 bg-gradient-to-r from-red-500/20 via-orange-500/20 to-yellow-500/20 rounded-xl border border-red-500/30 backdrop-blur-sm">
-                                    <p className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-orange-400 to-yellow-400 text-lg font-black mb-2">
+                                <div className="mb-4 py-4 px-6 bg-gradient-to-r from-amber-400/20 via-orange-500/20 to-yellow-500/20 rounded-xl border border-amber-400/30 backdrop-blur-sm">
+                                    <p className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-orange-400 to-yellow-400 text-lg font-black mb-2">
                                         ✨ Unlock the Full Experience
                                     </p>
                                     <p className="text-gray-300 text-sm">
@@ -197,7 +197,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartT
                                     </button>
                                     <button
                                         onClick={handleSignUp}
-                                        className="px-6 py-3 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-bold rounded-lg transition-all duration-200 shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:scale-105"
+                                        className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-zinc-950 font-bold rounded-lg transition-all duration-200 shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:scale-105"
                                     >
                                         Create Account
                                     </button>
@@ -209,7 +209,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartT
                         <>
                             {activeTab === 'basics' && (
                                 <>
-                                    <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-xl p-4 border border-orange-500/20">
+                                    <div className="bg-gradient-to-r from-orange-500/10 to-amber-400/10 rounded-xl p-4 border border-orange-500/20">
                                         <p className="text-orange-400 font-bold text-lg mb-1">
                                             🎯 Essential Features
                                         </p>
@@ -256,7 +256,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartT
                                         />
                                         <FeatureItem
                                             icon={
-                                                <ShieldCheckIcon className="w-5 h-5 text-red-500" />
+                                                <ShieldCheckIcon className="w-5 h-5 text-amber-400" />
                                             }
                                             title="Child Safety Mode"
                                             description="Filter adult content with PIN protection for family-safe browsing"
@@ -302,7 +302,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartT
                                             description="Generate shareable links to showcase your curated collections"
                                         />
                                         <FeatureItem
-                                            icon={<BellIcon className="w-5 h-5 text-red-400" />}
+                                            icon={<BellIcon className="w-5 h-5 text-amber-300" />}
                                             title="Notifications"
                                             description="Get notified when collections update or watchlist items release"
                                         />
@@ -395,7 +395,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartT
                                         />
                                         <FeatureItem
                                             icon={
-                                                <HandThumbUpIcon className="w-5 h-5 text-red-400" />
+                                                <HandThumbUpIcon className="w-5 h-5 text-amber-300" />
                                             }
                                             title="Like & Comment"
                                             description="Engage with rankings and forum posts - build community connections"
@@ -422,7 +422,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartT
 
                             {/* Interactive Tour CTA */}
                             {onStartTour && (
-                                <div className="mt-6 p-5 bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-xl border-2 border-orange-500/40">
+                                <div className="mt-6 p-5 bg-gradient-to-r from-orange-500/10 to-amber-400/10 rounded-xl border-2 border-orange-500/40">
                                     <div className="flex items-center justify-between gap-4">
                                         <div className="flex-1">
                                             <h4 className="text-white font-bold text-lg mb-1 flex items-center gap-2">
@@ -449,7 +449,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartT
                                                     router.push('/')
                                                 }
                                             }}
-                                            className="flex-shrink-0 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold rounded-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-lg hover:shadow-orange-500/50 hover:scale-105"
+                                            className="flex-shrink-0 px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold rounded-lg hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg hover:shadow-orange-500/50 hover:scale-105"
                                         >
                                             Start Tour
                                         </button>

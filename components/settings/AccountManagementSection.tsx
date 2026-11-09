@@ -93,7 +93,7 @@ const AccountManagementSection: React.FC<AccountManagementSectionProps> = ({
                                     <span className="font-medium">Email Settings</span>
                                 </div>
                                 {activeTab === 'email' && (
-                                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-600" />
+                                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-500" />
                                 )}
                             </button>
                             <button
@@ -109,7 +109,7 @@ const AccountManagementSection: React.FC<AccountManagementSectionProps> = ({
                                     <span className="font-medium">Password Settings</span>
                                 </div>
                                 {activeTab === 'password' && (
-                                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-600" />
+                                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-500" />
                                 )}
                             </button>
                         </nav>
@@ -151,7 +151,7 @@ const AccountManagementSection: React.FC<AccountManagementSectionProps> = ({
                                 className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
                                     isSendingVerification || isGoogleAuth
                                         ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                                        : 'bg-red-600 text-white hover:bg-red-700'
+                                        : 'bg-amber-500 text-zinc-950 hover:bg-amber-600'
                                 }`}
                             >
                                 {isSendingVerification
@@ -265,7 +265,7 @@ const AccountManagementSection: React.FC<AccountManagementSectionProps> = ({
                                     className={`bannerButton ${
                                         isUpdatingEmail || !hasEmailRequiredFields
                                             ? 'bg-gray-600 cursor-not-allowed opacity-50'
-                                            : 'bg-red-600 hover:bg-red-700'
+                                            : 'bg-amber-500 hover:bg-amber-600'
                                     } text-white flex items-center justify-center gap-2 w-full`}
                                 >
                                     {isUpdatingEmail ? (
@@ -333,7 +333,7 @@ const AccountManagementSection: React.FC<AccountManagementSectionProps> = ({
                                     className={`bannerButton ${
                                         isUpdatingPassword || !hasPasswordRequiredFields
                                             ? 'bg-gray-600 cursor-not-allowed opacity-50'
-                                            : 'bg-red-600 hover:bg-red-700'
+                                            : 'bg-amber-500 hover:bg-amber-600'
                                     } text-white flex items-center justify-center gap-2 w-full`}
                                 >
                                     {isUpdatingPassword ? (

@@ -176,8 +176,8 @@ export default function ChildSafetyPINModal({
                 {/* Header */}
                 <div className="mb-6 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="rounded-full bg-red-600/20 p-2">
-                            <LockClosedIcon className="h-6 w-6 text-red-600" />
+                        <div className="rounded-full bg-amber-500/20 p-2">
+                            <LockClosedIcon className="h-6 w-6 text-amber-500" />
                         </div>
                         <h2 className="text-2xl font-bold text-white">
                             {title || defaultTitles[mode]}
@@ -209,7 +209,7 @@ export default function ChildSafetyPINModal({
                                     type={showOldPin ? 'text' : 'password'}
                                     value={oldPin}
                                     onChange={(e) => handlePinChange(e.target.value, setOldPin)}
-                                    className="w-full rounded-md bg-[#333] px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-600"
+                                    className="w-full rounded-md bg-[#333] px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
                                     placeholder="Enter current PIN"
                                     inputMode="numeric"
                                     pattern="\d*"
@@ -237,7 +237,7 @@ export default function ChildSafetyPINModal({
                                 type={showPin ? 'text' : 'password'}
                                 value={pin}
                                 onChange={(e) => handlePinChange(e.target.value, setPin)}
-                                className="w-full rounded-md bg-[#333] px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-600"
+                                className="w-full rounded-md bg-[#333] px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
                                 placeholder={`${PIN_CONSTRAINTS.MIN_LENGTH}-${PIN_CONSTRAINTS.MAX_LENGTH} digits`}
                                 inputMode="numeric"
                                 pattern="\d*"
@@ -252,7 +252,7 @@ export default function ChildSafetyPINModal({
                             </button>
                         </div>
                         {pin.length > 0 && !isPinValid(pin) && (
-                            <p className="mt-1 text-xs text-red-500">
+                            <p className="mt-1 text-xs text-amber-400">
                                 PIN must be {PIN_CONSTRAINTS.MIN_LENGTH}-
                                 {PIN_CONSTRAINTS.MAX_LENGTH} digits
                             </p>
@@ -270,7 +270,7 @@ export default function ChildSafetyPINModal({
                                     type={showConfirmPin ? 'text' : 'password'}
                                     value={confirmPin}
                                     onChange={(e) => handlePinChange(e.target.value, setConfirmPin)}
-                                    className="w-full rounded-md bg-[#333] px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-600"
+                                    className="w-full rounded-md bg-[#333] px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
                                     placeholder="Re-enter PIN"
                                     inputMode="numeric"
                                     pattern="\d*"
@@ -285,7 +285,7 @@ export default function ChildSafetyPINModal({
                                 </button>
                             </div>
                             {confirmPin.length > 0 && pin !== confirmPin && (
-                                <p className="mt-1 text-xs text-red-500">PINs do not match</p>
+                                <p className="mt-1 text-xs text-amber-400">PINs do not match</p>
                             )}
                             {mode === 'change' && pin.length > 0 && pin === oldPin && (
                                 <p className="mt-1 text-xs text-yellow-500">
@@ -297,7 +297,7 @@ export default function ChildSafetyPINModal({
 
                     {/* Error Display */}
                     {error && (
-                        <div className="rounded-md bg-red-600/20 px-4 py-3 text-sm text-red-500">
+                        <div className="rounded-md bg-amber-500/20 px-4 py-3 text-sm text-amber-400">
                             {error}
                         </div>
                     )}
@@ -314,7 +314,7 @@ export default function ChildSafetyPINModal({
                         <button
                             type="submit"
                             disabled={!canSubmit() || isLoading}
-                            className="flex-1 rounded-md bg-red-600 px-4 py-3 font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50 transition flex items-center justify-center gap-2"
+                            className="flex-1 rounded-md bg-amber-500 px-4 py-3 font-medium text-zinc-950 hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50 transition flex items-center justify-center gap-2"
                         >
                             {isLoading ? (
                                 <>

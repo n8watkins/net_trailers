@@ -789,7 +789,7 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                                     Drag to reorder, click to add notes, or remove items
                                 </p>
                                 {selectedItems.length < RANKING_CONSTRAINTS.MIN_ITEM_COUNT && (
-                                    <p className="text-sm text-red-400 mt-1">
+                                    <p className="text-sm text-amber-300 mt-1">
                                         ⚠️ Add at least {RANKING_CONSTRAINTS.MIN_ITEM_COUNT} items
                                         to continue
                                     </p>
@@ -951,18 +951,18 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                                 className={`w-full bg-zinc-800 border rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none ${
                                     !title.trim() ||
                                     title.length < RANKING_CONSTRAINTS.MIN_TITLE_LENGTH
-                                        ? 'border-red-500 focus:border-red-400'
+                                        ? 'border-amber-400 focus:border-amber-300'
                                         : 'border-zinc-700 focus:border-yellow-500'
                                 }`}
                             />
                             <div className="flex items-center justify-between mt-1">
                                 <div>
                                     {!title.trim() && (
-                                        <p className="text-xs text-red-400">Title is required</p>
+                                        <p className="text-xs text-amber-300">Title is required</p>
                                     )}
                                     {title.trim() &&
                                         title.length < RANKING_CONSTRAINTS.MIN_TITLE_LENGTH && (
-                                            <p className="text-xs text-red-400">
+                                            <p className="text-xs text-amber-300">
                                                 Title must be at least{' '}
                                                 {RANKING_CONSTRAINTS.MIN_TITLE_LENGTH} characters
                                             </p>

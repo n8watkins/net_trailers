@@ -23,18 +23,18 @@ function ProfileImageCard({ content }: { content: Movie | TVShow }) {
     return (
         <div className="group relative flex-shrink-0 w-28 sm:w-32 transition-all duration-300 hover:scale-105 hover:-translate-y-1">
             {/* Ambient glow behind poster */}
-            <div className="absolute -inset-1 bg-gradient-to-br from-red-500/15 via-pink-500/10 to-red-500/15 rounded-lg blur-md opacity-0 group-hover:opacity-100 transition-all duration-300" />
+            <div className="absolute -inset-1 bg-gradient-to-br from-amber-400/15 via-pink-500/10 to-amber-400/15 rounded-lg blur-md opacity-0 group-hover:opacity-100 transition-all duration-300" />
 
             {/* Poster container */}
             <div className="relative aspect-[2/3] overflow-hidden rounded-lg">
                 {/* Rim light effect */}
-                <div className="absolute -inset-0.5 bg-gradient-to-br from-red-400/20 via-pink-500/15 to-red-400/20 rounded-lg blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300" />
+                <div className="absolute -inset-0.5 bg-gradient-to-br from-amber-300/20 via-pink-500/15 to-amber-300/20 rounded-lg blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300" />
 
                 {imageToUse ? (
                     <img
                         src={imageToUse}
                         alt={getTitle(content)}
-                        className="relative w-full h-full object-cover rounded-lg ring-1 ring-white/10 group-hover:ring-red-400/30 transition-all duration-300 shadow-lg group-hover:shadow-[0_8px_25px_rgba(239,68,68,0.2)]"
+                        className="relative w-full h-full object-cover rounded-lg ring-1 ring-white/10 group-hover:ring-amber-300/30 transition-all duration-300 shadow-lg group-hover:shadow-[0_8px_25px_rgba(251,191,36,0.2)]"
                         onError={handleImageError}
                     />
                 ) : (
@@ -81,10 +81,10 @@ export function LikedContentSection({
         <ProfileErrorBoundary sectionName="Liked Content">
             <section id="liked-section" className="relative group/section">
                 {/* Ambient glow behind card */}
-                <div className="absolute -inset-1 bg-gradient-to-br from-red-500/8 via-pink-500/6 to-red-500/8 rounded-2xl blur-xl opacity-60 group-hover/section:opacity-100 transition-all duration-300" />
+                <div className="absolute -inset-1 bg-gradient-to-br from-amber-400/8 via-pink-500/6 to-amber-400/8 rounded-2xl blur-xl opacity-60 group-hover/section:opacity-100 transition-all duration-300" />
 
                 {/* Main container - Glassmorphic */}
-                <div className="relative bg-gradient-to-br from-red-950/20 via-zinc-900/80 to-pink-950/20 backdrop-blur-lg rounded-xl overflow-hidden border border-red-500/10 group-hover/section:border-red-500/20 transition-all duration-300 shadow-lg">
+                <div className="relative bg-gradient-to-br from-amber-900/20 via-zinc-900/80 to-pink-950/20 backdrop-blur-lg rounded-xl overflow-hidden border border-amber-400/10 group-hover/section:border-amber-400/20 transition-all duration-300 shadow-lg">
                     {/* Inner padding container */}
                     <div className="p-5 sm:p-6">
                         {/* Section Header */}
@@ -102,12 +102,12 @@ export function LikedContentSection({
                             {likedContent.length > 0 && (
                                 <Link
                                     href={viewAllUrl}
-                                    className="group/link flex items-center gap-2 text-sm text-red-400 hover:text-red-300 transition-colors"
+                                    className="group/link flex items-center gap-2 text-sm text-amber-300 hover:text-amber-200 transition-colors"
                                 >
                                     <span className="group-hover/link:underline">
                                         View all {likedContent.length}
                                     </span>
-                                    <span className="text-red-500/50 group-hover/link:translate-x-0.5 transition-transform">
+                                    <span className="text-amber-400/50 group-hover/link:translate-x-0.5 transition-transform">
                                         &rarr;
                                     </span>
                                 </Link>
@@ -118,7 +118,7 @@ export function LikedContentSection({
                         {likedContent.length > 0 ? (
                             <div className="relative">
                                 {/* Ambient underglow for row */}
-                                <div className="absolute inset-x-0 -bottom-2 h-8 bg-gradient-to-t from-red-500/5 to-transparent blur-lg" />
+                                <div className="absolute inset-x-0 -bottom-2 h-8 bg-gradient-to-t from-amber-400/5 to-transparent blur-lg" />
 
                                 {/* Scrollable poster row */}
                                 <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">

@@ -612,7 +612,7 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onI
                     {isLoading && apiEndpoint && (
                         <div className="flex-shrink-0 flex items-center justify-center w-[120px] h-[180px] xs:w-[140px] xs:h-[210px] sm:w-[160px] sm:h-[240px] md:w-[180px] md:h-[270px] lg:w-[200px] lg:h-[300px] xl:w-[220px] xl:h-[330px]">
                             <div className="text-center">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-2"></div>
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500 mx-auto mb-2"></div>
                                 <div className="text-xs text-gray-400">Loading more...</div>
                             </div>
                         </div>

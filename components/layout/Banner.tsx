@@ -296,7 +296,7 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
                                 onClick={() => goToSlide(index)}
                                 className={`relative transition-all duration-300 rounded-md overflow-hidden ${
                                     index === currentIndex
-                                        ? 'w-16 h-24 sm:w-20 sm:h-30 md:w-24 md:h-36 ring-1 ring-red-500/50 shadow-[0_0_15px_rgba(220,38,38,0.4),0_0_30px_rgba(220,38,38,0.2)]'
+                                        ? 'w-16 h-24 sm:w-20 sm:h-30 md:w-24 md:h-36 ring-1 ring-amber-400/50 shadow-[0_0_15px_rgba(245,158,11,0.4),0_0_30px_rgba(245,158,11,0.2)]'
                                         : 'w-12 h-18 sm:w-14 sm:h-21 md:w-16 md:h-24 hover:scale-105 shadow-[0_0_8px_rgba(0,0,0,0.3)]'
                                 }`}
                                 style={{

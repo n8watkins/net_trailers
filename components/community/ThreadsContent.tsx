@@ -268,14 +268,14 @@ export default function ThreadsContent() {
                                         <div className="relative">
                                             {isListening && (
                                                 <>
-                                                    <span className="absolute inset-0 rounded-full bg-red-500/40 animate-ping" />
-                                                    <span className="absolute inset-0 rounded-full bg-red-500/30 animate-pulse" />
+                                                    <span className="absolute inset-0 rounded-full bg-amber-400/40 animate-ping" />
+                                                    <span className="absolute inset-0 rounded-full bg-amber-400/30 animate-pulse" />
                                                 </>
                                             )}
                                             <MicrophoneIcon
                                                 className={`w-6 h-6 relative z-10 transition-all ${
                                                     isListening
-                                                        ? 'text-red-500 scale-110 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]'
+                                                        ? 'text-amber-400 scale-110 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]'
                                                         : 'text-gray-400 hover:text-blue-400'
                                                 }`}
                                             />

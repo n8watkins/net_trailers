@@ -57,7 +57,7 @@ export function WizardStep1Basic({
                         onClick={() => handleMediaTypeToggle('movie')}
                         className={`flex flex-col items-center justify-center gap-2 px-4 py-4 rounded-lg border-2 transition-all ${
                             isMovieSelected
-                                ? 'border-red-600 bg-red-600/20 text-white'
+                                ? 'border-amber-500 bg-amber-500/20 text-white'
                                 : 'border-gray-700 bg-[#1a1a1a] text-gray-400 hover:border-gray-600'
                         }`}
                     >
@@ -69,7 +69,7 @@ export function WizardStep1Basic({
                         onClick={() => handleMediaTypeToggle('tv')}
                         className={`flex flex-col items-center justify-center gap-2 px-4 py-4 rounded-lg border-2 transition-all ${
                             isTVSelected
-                                ? 'border-red-600 bg-red-600/20 text-white'
+                                ? 'border-amber-500 bg-amber-500/20 text-white'
                                 : 'border-gray-700 bg-[#1a1a1a] text-gray-400 hover:border-gray-600'
                         }`}
                     >
@@ -103,7 +103,7 @@ export function WizardStep1Basic({
                         disabled={formData.genres.length < 2}
                         className={`px-4 py-4 rounded-lg border-2 transition-all text-left ${
                             formData.genreLogic === 'AND'
-                                ? 'border-red-600 bg-red-600/20 text-white'
+                                ? 'border-amber-500 bg-amber-500/20 text-white'
                                 : 'border-gray-700 bg-[#1a1a1a] text-gray-400 hover:border-gray-600'
                         } ${formData.genres.length < 2 ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
@@ -118,7 +118,7 @@ export function WizardStep1Basic({
                         disabled={formData.genres.length < 2}
                         className={`px-4 py-4 rounded-lg border-2 transition-all text-left ${
                             formData.genreLogic === 'OR'
-                                ? 'border-red-600 bg-red-600/20 text-white'
+                                ? 'border-amber-500 bg-amber-500/20 text-white'
                                 : 'border-gray-700 bg-[#1a1a1a] text-gray-400 hover:border-gray-600'
                         } ${formData.genres.length < 2 ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
@@ -134,7 +134,7 @@ export function WizardStep1Basic({
                     type="button"
                     onClick={onNext}
                     disabled={!canProgress}
-                    className="px-8 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                    className="px-8 py-3 bg-amber-500 text-zinc-950 rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                 >
                     Next →
                 </button>

@@ -17,7 +17,7 @@ export function GuestModeIndicator() {
         <button
             type="button"
             onClick={() => openAuthModal('signin')}
-            className="whitespace-nowrap rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+            className="whitespace-nowrap rounded-md bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-950 transition-colors hover:bg-amber-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
         >
             Sign in
         </button>

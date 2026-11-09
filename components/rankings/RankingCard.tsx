@@ -119,7 +119,7 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
 
                         {/* Trending badge */}
                         {ranking.likes > 50 && (
-                            <div className="absolute top-2 left-2 px-2 py-1 bg-gradient-to-r from-orange-500 to-red-500 rounded-full text-[10px] font-bold text-white flex items-center gap-1 shadow-md">
+                            <div className="absolute top-2 left-2 px-2 py-1 bg-gradient-to-r from-orange-500 to-amber-400 rounded-full text-[10px] font-bold text-white flex items-center gap-1 shadow-md">
                                 <FireIcon className="w-3 h-3" />
                                 <span>HOT</span>
                             </div>
@@ -187,8 +187,8 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
                             <span
                                 className={`text-xs font-medium transition-colors ${
                                     isLiked
-                                        ? 'text-red-400'
-                                        : 'text-gray-500 group-hover/like:text-red-400'
+                                        ? 'text-amber-300'
+                                        : 'text-gray-500 group-hover/like:text-amber-300'
                                 }`}
                             >
                                 {ranking.likes}

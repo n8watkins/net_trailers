@@ -524,7 +524,7 @@ function RatingsPageContent() {
                             <button
                                 onClick={handleResetAllRatings}
                                 disabled={isResetting}
-                                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                                className="flex-1 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-zinc-950 rounded-lg transition-colors disabled:opacity-50"
                             >
                                 {isResetting ? 'Resetting...' : 'Reset All'}
                             </button>

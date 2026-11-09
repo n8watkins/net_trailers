@@ -273,7 +273,7 @@ export default function ChangelogPage() {
                                             </button>
                                             <button
                                                 onClick={collapseAll}
-                                                className="text-sm px-3 py-1.5 bg-red-500/20 text-red-400 rounded border border-red-500/30 hover:bg-red-500/30 transition-colors"
+                                                className="text-sm px-3 py-1.5 bg-amber-400/20 text-amber-300 rounded border border-amber-400/30 hover:bg-amber-400/30 transition-colors"
                                             >
                                                 Collapse All
                                             </button>
@@ -380,7 +380,7 @@ function VersionRelease({
                                 {version.isUnreleased ? 'Unreleased' : `v${version.version}`}
                             </div>
                             {isFirst && !version.isUnreleased && (
-                                <span className="px-3 py-1 bg-red-500/20 text-red-400 text-xs font-semibold rounded-full border border-red-500/30">
+                                <span className="px-3 py-1 bg-amber-400/20 text-amber-300 text-xs font-semibold rounded-full border border-amber-400/30">
                                     Latest
                                 </span>
                             )}

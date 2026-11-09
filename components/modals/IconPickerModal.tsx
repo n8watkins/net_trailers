@@ -24,7 +24,7 @@ function IconPickerModal({ isOpen, selectedIcon, onSelectIcon, onClose }: IconPi
         entertainment: 'bg-purple-900',
         fantasy: 'bg-blue-900',
         achievements: 'bg-yellow-900',
-        action: 'bg-red-900',
+        action: 'bg-amber-800',
     }
 
     const categories: IconCategory[] = [

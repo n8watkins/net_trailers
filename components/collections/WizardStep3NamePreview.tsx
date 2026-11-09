@@ -269,7 +269,7 @@ export function WizardStep3NamePreview({
                     {activeFilterCount > 0 && (
                         <>
                             <div className="border-t border-gray-700 my-2 pt-2">
-                                <span className="text-red-400 font-medium text-xs">
+                                <span className="text-amber-300 font-medium text-xs">
                                     {activeFilterCount} Advanced Filter
                                     {activeFilterCount > 1 ? 's' : ''} Applied
                                 </span>
@@ -301,7 +301,7 @@ export function WizardStep3NamePreview({
                                 }}
                                 placeholder="e.g., Epic Sci-Fi Adventures"
                                 maxLength={CUSTOM_ROW_CONSTRAINTS.MAX_NAME_LENGTH}
-                                className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                                className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
                                 autoFocus
                             />
                             <button
@@ -410,7 +410,7 @@ export function WizardStep3NamePreview({
                                 {previewContent.map((content, index) => (
                                     <div
                                         key={`${content.id}-${index}`}
-                                        className="relative aspect-[2/3] bg-gray-800 rounded-md overflow-hidden group cursor-pointer hover:ring-2 hover:ring-red-500 transition-all"
+                                        className="relative aspect-[2/3] bg-gray-800 rounded-md overflow-hidden group cursor-pointer hover:ring-2 hover:ring-amber-400 transition-all"
                                         style={{
                                             gridColumn:
                                                 Math.floor(index / 10) === currentPreviewPage
@@ -513,7 +513,7 @@ export function WizardStep3NamePreview({
                     type="button"
                     onClick={onCreate}
                     disabled={!isNameValid || isCreating}
-                    className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                    className="flex-1 px-6 py-3 bg-amber-500 text-zinc-950 rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                 >
                     {isCreating ? 'Creating Collection...' : 'Create Collection'}
                 </button>

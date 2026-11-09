@@ -82,7 +82,7 @@ function InlineWatchlistDropdown({
                         if (list.name === 'Liked') {
                             return <HandThumbUpIcon className="w-5 h-5 text-green-400" />
                         } else if (list.name === 'Not For Me') {
-                            return <HandThumbDownIcon className="w-5 h-5 text-red-400" />
+                            return <HandThumbDownIcon className="w-5 h-5 text-amber-300" />
                         } else if (list.name === 'Watchlist') {
                             return <EyeIcon className="w-5 h-5 text-blue-400" />
                         }

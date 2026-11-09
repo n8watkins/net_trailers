@@ -240,7 +240,7 @@ export default function PrivacyPage() {
                                         Through our support page:{' '}
                                         <a
                                             href="/support"
-                                            className="text-red-400 hover:text-red-300 underline"
+                                            className="text-amber-300 hover:text-amber-200 underline"
                                         >
                                             /support
                                         </a>
@@ -249,7 +249,7 @@ export default function PrivacyPage() {
                                         Email:{' '}
                                         <a
                                             href="mailto:privacy@nettrailer.app"
-                                            className="text-red-400 hover:text-red-300 underline"
+                                            className="text-amber-300 hover:text-amber-200 underline"
                                         >
                                             privacy@nettrailer.app
                                         </a>
@@ -260,7 +260,7 @@ export default function PrivacyPage() {
                                             href="https://github.com/n8watkins/net_trailer"
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="text-red-400 hover:text-red-300 underline"
+                                            className="text-amber-300 hover:text-amber-200 underline"
                                         >
                                             Project Repository
                                         </a>

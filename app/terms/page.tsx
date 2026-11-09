@@ -151,7 +151,7 @@ export default function TermsPage() {
                                     Your privacy is important to us. Please review our{' '}
                                     <Link
                                         href="/privacy"
-                                        className="text-red-400 hover:text-red-300 underline"
+                                        className="text-amber-300 hover:text-amber-200 underline"
                                     >
                                         Privacy Policy
                                     </Link>
@@ -298,7 +298,7 @@ export default function TermsPage() {
                                         Through our support page:{' '}
                                         <a
                                             href="/support"
-                                            className="text-red-400 hover:text-red-300 underline"
+                                            className="text-amber-300 hover:text-amber-200 underline"
                                         >
                                             /support
                                         </a>
@@ -307,7 +307,7 @@ export default function TermsPage() {
                                         Email:{' '}
                                         <a
                                             href="mailto:legal@nettrailer.app"
-                                            className="text-red-400 hover:text-red-300 underline"
+                                            className="text-amber-300 hover:text-amber-200 underline"
                                         >
                                             legal@nettrailer.app
                                         </a>
@@ -318,7 +318,7 @@ export default function TermsPage() {
                                             href="https://github.com/n8watkins/net_trailer"
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="text-red-400 hover:text-red-300 underline"
+                                            className="text-amber-300 hover:text-amber-200 underline"
                                         >
                                             Project Repository
                                         </a>

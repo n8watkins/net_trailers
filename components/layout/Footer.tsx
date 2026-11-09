@@ -43,7 +43,7 @@ function Footer({
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
                         {/* Navigate Section */}
                         <div>
-                            <h3 className="text-red-500 text-lg font-semibold mb-4">Navigate</h3>
+                            <h3 className="text-amber-400 text-lg font-semibold mb-4">Navigate</h3>
                             <ul className="space-y-3">
                                 <li>
                                     <Link
@@ -77,7 +77,7 @@ function Footer({
 
                         {/* Movie Genres Section */}
                         <div>
-                            <h3 className="text-red-500 text-lg font-semibold mb-4">
+                            <h3 className="text-amber-400 text-lg font-semibold mb-4">
                                 Movie Genres
                             </h3>
                             <ul className="space-y-3">
@@ -96,7 +96,7 @@ function Footer({
 
                         {/* TV Genres Section */}
                         <div>
-                            <h3 className="text-red-500 text-lg font-semibold mb-4">TV Genres</h3>
+                            <h3 className="text-amber-400 text-lg font-semibold mb-4">TV Genres</h3>
                             <ul className="space-y-3">
                                 {tvGenres.map((genre) => (
                                     <li key={genre.id}>
@@ -113,7 +113,7 @@ function Footer({
 
                         {/* Connect Section */}
                         <div>
-                            <h3 className="text-red-500 text-lg font-semibold mb-4">
+                            <h3 className="text-amber-400 text-lg font-semibold mb-4">
                                 Connect With Me
                             </h3>
                             <div className="flex space-x-4 mb-6">
@@ -121,7 +121,7 @@ function Footer({
                                     href="https://github.com/n8watkins"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-gray-300 hover:text-red-500 transition-colors duration-200"
+                                    className="text-gray-300 hover:text-amber-400 transition-colors duration-200"
                                     aria-label="GitHub"
                                 >
                                     <svg
@@ -136,7 +136,7 @@ function Footer({
                                     href="https://www.linkedin.com/in/n8watkins/"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-gray-300 hover:text-red-500 transition-colors duration-200"
+                                    className="text-gray-300 hover:text-amber-400 transition-colors duration-200"
                                     aria-label="LinkedIn"
                                 >
                                     <svg
@@ -151,7 +151,7 @@ function Footer({
                                     href="https://x.com/n8watkins"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-gray-300 hover:text-red-500 transition-colors duration-200"
+                                    className="text-gray-300 hover:text-amber-400 transition-colors duration-200"
                                     aria-label="Twitter/X"
                                 >
                                     <svg
@@ -172,7 +172,7 @@ function Footer({
                                             className="group hover:text-white transition-colors duration-200 flex items-center gap-2"
                                         >
                                             <svg
-                                                className="w-6 h-6 group-hover:text-red-500 transition-colors duration-200"
+                                                className="w-6 h-6 group-hover:text-amber-400 transition-colors duration-200"
                                                 fill="none"
                                                 stroke="currentColor"
                                                 viewBox="0 0 24 24"
@@ -195,7 +195,7 @@ function Footer({
                                             className="group hover:text-white transition-colors duration-200 flex items-center gap-2"
                                         >
                                             <svg
-                                                className="w-6 h-6 group-hover:text-red-500 transition-colors duration-200"
+                                                className="w-6 h-6 group-hover:text-amber-400 transition-colors duration-200"
                                                 fill="currentColor"
                                                 viewBox="0 0 24 24"
                                             >
@@ -210,7 +210,7 @@ function Footer({
 
                         {/* Legal & Support Section */}
                         <div>
-                            <h3 className="text-red-500 text-lg font-semibold mb-4">
+                            <h3 className="text-amber-400 text-lg font-semibold mb-4">
                                 Legal & Support
                             </h3>
                             <div className="space-y-3">
@@ -304,7 +304,7 @@ function Footer({
                                     href="https://www.themoviedb.org/"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-red-500 hover:text-red-400 transition-colors duration-200"
+                                    className="text-amber-400 hover:text-amber-300 transition-colors duration-200"
                                 >
                                     TMDB
                                 </a>

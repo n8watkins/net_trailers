@@ -173,7 +173,7 @@ const ImageUpload = forwardRef<ImageUploadHandle, ImageUploadProps>(function Ima
 
             {/* Error message */}
             {error && (
-                <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-3">
+                <div className="bg-amber-800/20 border border-amber-400/30 rounded-lg p-3">
                     <p className="text-red-400 text-sm">{error}</p>
                 </div>
             )}

@@ -428,7 +428,7 @@ export default function RankingsPage() {
 
                         {/* Error State */}
                         {error && (
-                            <div className="bg-red-900/20 border border-red-800 rounded-xl p-4 max-w-2xl mx-auto">
+                            <div className="bg-amber-800/20 border border-amber-700 rounded-xl p-4 max-w-2xl mx-auto">
                                 <p className="text-red-400 text-center">{error}</p>
                             </div>
                         )}

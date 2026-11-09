@@ -409,7 +409,7 @@ export default function SearchBar({
                 >
                     <button
                         onClick={handleMobileSearchClick}
-                        className="w-12 h-12 flex items-center justify-center bg-[#0a0a0a] border border-gray-600/50 rounded-lg hover:border-red-500/50 transition-colors"
+                        className="w-12 h-12 flex items-center justify-center bg-[#0a0a0a] border border-gray-600/50 rounded-lg hover:border-amber-400/50 transition-colors"
                         type="button"
                         aria-label="Open search"
                     >
@@ -471,13 +471,13 @@ export default function SearchBar({
                             block w-full pl-10 ${showVoice ? (query ? 'pr-32' : 'pr-24') : query ? 'pr-20' : 'pr-12'} py-2.5
                             bg-[#0a0a0a] border-[0.5px] border-gray-600/30 rounded-lg
                             text-white placeholder-gray-400
-                            focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-transparent
+                            focus:outline-none focus:ring-1 focus:ring-amber-400 focus:border-transparent
                             transition-all duration-300 ease-in-out
                             placeholder:text-ellipsis placeholder:overflow-hidden placeholder:whitespace-nowrap
                             text-sm sm:text-base select-none
 
-                            shadow-[0_0_20px_rgba(220,38,38,0.4)]
-                            ${isFocused ? 'bg-[#0a0a0a] shadow-[0_0_30px_rgba(220,38,38,0.6)] border-red-500/50' : 'hover:shadow-[0_0_25px_rgba(220,38,38,0.5)] bg-[#0a0a0a]'}
+                            shadow-[0_0_20px_rgba(245,158,11,0.4)]
+                            ${isFocused ? 'bg-[#0a0a0a] shadow-[0_0_30px_rgba(245,158,11,0.6)] border-amber-400/50' : 'hover:shadow-[0_0_25px_rgba(245,158,11,0.5)] bg-[#0a0a0a]'}
                         `}
                     />
 
@@ -499,13 +499,13 @@ export default function SearchBar({
                                     {/* Animated pulsing rings when listening */}
                                     {isListening && (
                                         <>
-                                            <span className="absolute inset-0 rounded-full bg-red-500/40 animate-ping" />
+                                            <span className="absolute inset-0 rounded-full bg-amber-400/40 animate-ping" />
                                             <span
-                                                className="absolute inset-0 rounded-full bg-red-500/30 animate-pulse"
+                                                className="absolute inset-0 rounded-full bg-amber-400/30 animate-pulse"
                                                 style={{ animationDuration: '1s' }}
                                             />
                                             <span
-                                                className="absolute inset-0 rounded-full bg-red-500/20 animate-pulse"
+                                                className="absolute inset-0 rounded-full bg-amber-400/20 animate-pulse"
                                                 style={{
                                                     animationDuration: '1.5s',
                                                     animationDelay: '0.3s',
@@ -516,7 +516,7 @@ export default function SearchBar({
                                     <MicrophoneIcon
                                         className={`h-5 w-5 relative z-10 transition-all ${
                                             isListening
-                                                ? 'scale-110 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)] !text-red-500'
+                                                ? 'scale-110 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)] !text-amber-400'
                                                 : ''
                                         }`}
                                         aria-hidden="true"
@@ -536,7 +536,7 @@ export default function SearchBar({
                             }}
                             className={`px-3 py-2 transition-colors ${
                                 showFilters || hasActiveFilters
-                                    ? 'text-red-400 hover:text-red-300'
+                                    ? 'text-amber-300 hover:text-amber-200'
                                     : 'text-gray-400 hover:text-white'
                             }`}
                             type="button"

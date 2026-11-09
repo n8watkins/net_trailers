@@ -225,7 +225,7 @@ export default function SmartSearchClient() {
                     {/* Header Section */}
                     <div className="mb-12">
                         <div className="flex items-center gap-3 mb-4">
-                            <SparklesIcon className="h-8 w-8 text-red-500" />
+                            <SparklesIcon className="h-8 w-8 text-amber-400" />
                             <h1 className="text-2xl font-bold text-white">Smart Search</h1>
                         </div>
 
@@ -248,11 +248,11 @@ export default function SmartSearchClient() {
                                                 setIsEditingQuery(false)
                                             }
                                         }}
-                                        className="max-w-2xl bg-transparent text-white text-2xl md:text-3xl font-bold leading-none border-b-2 border-red-500 focus:outline-none py-0"
+                                        className="max-w-2xl bg-transparent text-white text-2xl md:text-3xl font-bold leading-none border-b-2 border-amber-400 focus:outline-none py-0"
                                     />
                                     <button
                                         onClick={handleSaveQuery}
-                                        className="p-1 rounded bg-red-600 text-white hover:bg-red-700 transition-colors self-center"
+                                        className="p-1 rounded bg-amber-500 text-zinc-950 hover:bg-amber-600 transition-colors self-center"
                                     >
                                         <CheckIcon className="h-4 w-4" />
                                     </button>
@@ -260,7 +260,7 @@ export default function SmartSearchClient() {
                             ) : (
                                 <>
                                     <h2
-                                        className="text-2xl md:text-3xl font-bold text-white leading-none hover:text-red-400 transition-colors cursor-pointer border-b-2 border-transparent"
+                                        className="text-2xl md:text-3xl font-bold text-white leading-none hover:text-amber-300 transition-colors cursor-pointer border-b-2 border-transparent"
                                         onClick={() => setIsEditingQuery(true)}
                                     >
                                         {queryParam}

@@ -50,7 +50,7 @@ export default function SmartSearchModeBar() {
                 transition-all duration-200
                 ${
                     isActive
-                        ? 'bg-red-600 text-white shadow-lg scale-105'
+                        ? 'bg-amber-500 text-zinc-950 shadow-lg scale-105'
                         : 'bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white'
                 }
               `}

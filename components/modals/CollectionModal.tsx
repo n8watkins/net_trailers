@@ -94,7 +94,7 @@ function CollectionModal() {
                             onClick={() => setMode('smart')}
                             className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                                 mode === 'smart'
-                                    ? 'bg-red-600 text-white'
+                                    ? 'bg-amber-500 text-zinc-950'
                                     : 'text-gray-400 hover:text-white hover:bg-gray-700'
                             }`}
                         >
@@ -104,7 +104,7 @@ function CollectionModal() {
                             onClick={() => setMode('traditional')}
                             className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                                 mode === 'traditional'
-                                    ? 'bg-red-600 text-white'
+                                    ? 'bg-amber-500 text-zinc-950'
                                     : 'text-gray-400 hover:text-white hover:bg-gray-700'
                             }`}
                         >

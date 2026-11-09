@@ -379,7 +379,7 @@ function PersonPageContent() {
                     <div className="flex items-end gap-4 sm:gap-6">
                         {/* Person Image */}
                         {personImage && (
-                            <div className="relative w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full overflow-hidden ring-2 ring-red-500 flex-shrink-0">
+                            <div className="relative w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full overflow-hidden ring-2 ring-amber-400 flex-shrink-0">
                                 <Image
                                     src={personImage}
                                     alt={personDetails?.name || 'Person'}
@@ -437,7 +437,7 @@ function PersonPageContent() {
                                 onClick={() => setMediaTypeFilter('all')}
                                 className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                                     mediaTypeFilter === 'all'
-                                        ? 'bg-red-600 text-white'
+                                        ? 'bg-amber-500 text-zinc-950'
                                         : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                                 }`}
                             >
@@ -447,7 +447,7 @@ function PersonPageContent() {
                                 onClick={() => setMediaTypeFilter('movie')}
                                 className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                                     mediaTypeFilter === 'movie'
-                                        ? 'bg-red-600 text-white'
+                                        ? 'bg-amber-500 text-zinc-950'
                                         : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                                 }`}
                             >
@@ -457,7 +457,7 @@ function PersonPageContent() {
                                 onClick={() => setMediaTypeFilter('tv')}
                                 className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                                     mediaTypeFilter === 'tv'
-                                        ? 'bg-red-600 text-white'
+                                        ? 'bg-amber-500 text-zinc-950'
                                         : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                                 }`}
                             >
@@ -474,7 +474,7 @@ function PersonPageContent() {
                                 onClick={() => setRoleFilter('all')}
                                 className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                                     roleFilter === 'all'
-                                        ? 'bg-red-600 text-white'
+                                        ? 'bg-amber-500 text-zinc-950'
                                         : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                                 }`}
                             >
@@ -485,7 +485,7 @@ function PersonPageContent() {
                                     onClick={() => setRoleFilter('acting')}
                                     className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                                         roleFilter === 'acting'
-                                            ? 'bg-red-600 text-white'
+                                            ? 'bg-amber-500 text-zinc-950'
                                             : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                                     }`}
                                 >
@@ -497,7 +497,7 @@ function PersonPageContent() {
                                     onClick={() => setRoleFilter('directing')}
                                     className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                                         roleFilter === 'directing'
-                                            ? 'bg-red-600 text-white'
+                                            ? 'bg-amber-500 text-zinc-950'
                                             : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                                     }`}
                                 >
@@ -509,7 +509,7 @@ function PersonPageContent() {
                                     onClick={() => setRoleFilter('writing')}
                                     className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                                         roleFilter === 'writing'
-                                            ? 'bg-red-600 text-white'
+                                            ? 'bg-amber-500 text-zinc-950'
                                             : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                                     }`}
                                 >
@@ -521,7 +521,7 @@ function PersonPageContent() {
                                     onClick={() => setRoleFilter('production')}
                                     className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                                         roleFilter === 'production'
-                                            ? 'bg-red-600 text-white'
+                                            ? 'bg-amber-500 text-zinc-950'
                                             : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                                     }`}
                                 >
@@ -533,7 +533,7 @@ function PersonPageContent() {
                                     onClick={() => setRoleFilter('other_crew')}
                                     className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                                         roleFilter === 'other_crew'
-                                            ? 'bg-red-600 text-white'
+                                            ? 'bg-amber-500 text-zinc-950'
                                             : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                                     }`}
                                 >
@@ -550,7 +550,7 @@ function PersonPageContent() {
                                 onClick={() => setGenreFilter('all')}
                                 className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                                     genreFilter === 'all'
-                                        ? 'bg-red-600 text-white'
+                                        ? 'bg-amber-500 text-zinc-950'
                                         : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                                 }`}
                             >
@@ -562,7 +562,7 @@ function PersonPageContent() {
                                     onClick={() => setGenreFilter(genre.id)}
                                     className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                                         genreFilter === genre.id
-                                            ? 'bg-red-600 text-white'
+                                            ? 'bg-amber-500 text-zinc-950'
                                             : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                                     }`}
                                 >

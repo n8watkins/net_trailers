@@ -251,14 +251,14 @@ export default function RankingsContent() {
                                         <div className="relative">
                                             {isListening && (
                                                 <>
-                                                    <span className="absolute inset-0 rounded-full bg-red-500/40 animate-ping" />
-                                                    <span className="absolute inset-0 rounded-full bg-red-500/30 animate-pulse" />
+                                                    <span className="absolute inset-0 rounded-full bg-amber-400/40 animate-ping" />
+                                                    <span className="absolute inset-0 rounded-full bg-amber-400/30 animate-pulse" />
                                                 </>
                                             )}
                                             <MicrophoneIcon
                                                 className={`w-6 h-6 relative z-10 transition-all ${
                                                     isListening
-                                                        ? 'text-red-500 scale-110 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]'
+                                                        ? 'text-amber-400 scale-110 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]'
                                                         : 'text-gray-400 hover:text-yellow-400'
                                                 }`}
                                             />
@@ -277,7 +277,7 @@ export default function RankingsContent() {
                 <div className="px-6 sm:px-8 lg:px-12 py-8 space-y-6">
                     {/* Error State */}
                     {error && (
-                        <div className="bg-red-900/20 border border-red-800 rounded-lg p-4">
+                        <div className="bg-amber-800/20 border border-amber-700 rounded-lg p-4">
                             <p className="text-red-400">{error}</p>
                         </div>
                     )}

@@ -132,7 +132,7 @@ export function CollectionWizard({
                                     onClick={() => onModeChange('smart')}
                                     className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                                         mode === 'smart'
-                                            ? 'bg-red-600 text-white'
+                                            ? 'bg-amber-500 text-zinc-950'
                                             : 'text-gray-400 hover:text-white hover:bg-gray-700'
                                     }`}
                                 >
@@ -142,7 +142,7 @@ export function CollectionWizard({
                                     onClick={() => onModeChange('traditional')}
                                     className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                                         mode === 'traditional'
-                                            ? 'bg-red-600 text-white'
+                                            ? 'bg-amber-500 text-zinc-950'
                                             : 'text-gray-400 hover:text-white hover:bg-gray-700'
                                     }`}
                                 >
@@ -177,9 +177,9 @@ export function CollectionWizard({
                                     <div
                                         className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition-all ${
                                             isCompleted
-                                                ? 'bg-red-600 text-white'
+                                                ? 'bg-amber-500 text-zinc-950'
                                                 : isCurrent
-                                                  ? 'bg-red-600 text-white ring-4 ring-red-600/30'
+                                                  ? 'bg-amber-500 text-zinc-950 ring-4 ring-amber-500/30'
                                                   : 'bg-gray-700 text-gray-400'
                                         }`}
                                     >
@@ -192,7 +192,7 @@ export function CollectionWizard({
                                     {index < totalSteps - 1 && (
                                         <div
                                             className={`flex-1 h-1 rounded transition-all ${
-                                                isCompleted ? 'bg-red-600' : 'bg-gray-700'
+                                                isCompleted ? 'bg-amber-500' : 'bg-gray-700'
                                             }`}
                                         />
                                     )}

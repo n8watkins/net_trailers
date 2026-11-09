@@ -394,7 +394,7 @@ export default function TrendingDirectorsRow({
                     {isLoadingMore && (
                         <div className="flex-shrink-0 flex items-center justify-center w-[120px] h-[160px] sm:w-[140px] sm:h-[180px]">
                             <div className="text-center">
-                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-600 mx-auto mb-2"></div>
+                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-500 mx-auto mb-2"></div>
                                 <div className="text-xs text-gray-400">Loading...</div>
                             </div>
                         </div>

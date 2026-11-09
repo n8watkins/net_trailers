@@ -89,7 +89,8 @@ export default function SearchFilters({
 
     const hasActivePeopleFilters = peopleFilters.department !== 'all'
 
-    const hasActiveFilters = searchMode === 'content' ? hasActiveContentFilters : hasActivePeopleFilters
+    const hasActiveFilters =
+        searchMode === 'content' ? hasActiveContentFilters : hasActivePeopleFilters
 
     const FilterDropdown = React.memo(function FilterDropdown({
         label,
@@ -121,8 +122,8 @@ export default function SearchFilters({
                         onChange={handleChange}
                         className={`appearance-none bg-gray-800 text-white rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none transition-all min-w-[120px] border ${
                             isActive
-                                ? 'border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)] hover:shadow-[0_0_12px_rgba(239,68,68,0.5)] focus:shadow-[0_0_12px_rgba(239,68,68,0.5)]'
-                                : 'border-gray-600 hover:border-gray-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'
+                                ? 'border-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.4)] hover:shadow-[0_0_12px_rgba(251,191,36,0.5)] focus:shadow-[0_0_12px_rgba(251,191,36,0.5)]'
+                                : 'border-gray-600 hover:border-gray-500 focus:ring-2 focus:ring-amber-400 focus:border-amber-400'
                         }`}
                     >
                         {options.map((option) => (
@@ -182,7 +183,7 @@ export default function SearchFilters({
                         onClick={() => setSearchMode('content')}
                         className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
                             searchMode === 'content'
-                                ? 'bg-red-600 text-white'
+                                ? 'bg-amber-500 text-zinc-950'
                                 : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                         }`}
                     >
@@ -193,7 +194,7 @@ export default function SearchFilters({
                         onClick={() => setSearchMode('people')}
                         className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
                             searchMode === 'people'
-                                ? 'bg-red-600 text-white'
+                                ? 'bg-amber-500 text-zinc-950'
                                 : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                         }`}
                     >
@@ -246,7 +247,9 @@ export default function SearchFilters({
                         <FilterDropdown
                             label="Department"
                             value={peopleFilters.department}
-                            onChange={(value) => updatePeopleFilter('department', value as DepartmentFilter)}
+                            onChange={(value) =>
+                                updatePeopleFilter('department', value as DepartmentFilter)
+                            }
                             options={departmentOptions}
                             isActive={peopleFilters.department !== 'all'}
                         />
@@ -256,7 +259,7 @@ export default function SearchFilters({
                 {hasActiveFilters && (
                     <button
                         onClick={clearAllFilters}
-                        className="self-start lg:self-end px-4 py-2 text-sm text-red-400 hover:text-red-300 border border-red-600 hover:border-red-500 rounded-lg transition-colors"
+                        className="self-start lg:self-end px-4 py-2 text-sm text-amber-300 hover:text-amber-200 border border-amber-500 hover:border-amber-400 rounded-lg transition-colors"
                     >
                         Clear Filters
                     </button>
@@ -291,7 +294,11 @@ export default function SearchFilters({
                                     title="Click to remove Rating filter"
                                 >
                                     <span>
-                                        {ratingOptions.find((opt) => opt.value === filters.rating)?.label}
+                                        {
+                                            ratingOptions.find(
+                                                (opt) => opt.value === filters.rating
+                                            )?.label
+                                        }
                                     </span>
                                     <XMarkIcon className="ml-1 w-3 h-3 group-hover:text-gray-200" />
                                 </button>
@@ -303,7 +310,10 @@ export default function SearchFilters({
                                     title="Click to remove Year filter"
                                 >
                                     <span>
-                                        {yearOptions.find((opt) => opt.value === filters.year)?.label}
+                                        {
+                                            yearOptions.find((opt) => opt.value === filters.year)
+                                                ?.label
+                                        }
                                     </span>
                                     <XMarkIcon className="ml-1 w-3 h-3 group-hover:text-gray-200" />
                                 </button>
@@ -315,7 +325,10 @@ export default function SearchFilters({
                                     title="Click to remove Sort filter"
                                 >
                                     <span>
-                                        {sortOptions.find((opt) => opt.value === filters.sortBy)?.label}
+                                        {
+                                            sortOptions.find((opt) => opt.value === filters.sortBy)
+                                                ?.label
+                                        }
                                     </span>
                                     <XMarkIcon className="ml-1 w-3 h-3 group-hover:text-gray-200" />
                                 </button>
@@ -331,7 +344,11 @@ export default function SearchFilters({
                                     title="Click to remove Department filter"
                                 >
                                     <span>
-                                        {departmentOptions.find((opt) => opt.value === peopleFilters.department)?.label}
+                                        {
+                                            departmentOptions.find(
+                                                (opt) => opt.value === peopleFilters.department
+                                            )?.label
+                                        }
                                     </span>
                                     <XMarkIcon className="ml-1 w-3 h-3 group-hover:text-gray-200" />
                                 </button>

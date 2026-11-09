@@ -153,7 +153,7 @@ export function CustomRowForm({ initialData, onSubmit, onCancel, isLoading }: Cu
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="e.g., Musical Anime, Action Comedies"
-                    className="w-full px-4 py-2 bg-[#1a1a1a] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
+                    className="w-full px-4 py-2 bg-[#1a1a1a] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
                     maxLength={CUSTOM_ROW_CONSTRAINTS.MAX_NAME_LENGTH}
                     disabled={isGeneratingName}
                 />
@@ -179,7 +179,7 @@ export function CustomRowForm({ initialData, onSubmit, onCancel, isLoading }: Cu
                         onClick={() => setFormData({ ...formData, mediaType: 'movie', genres: [] })}
                         className={`flex flex-col items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${
                             formData.mediaType === 'movie'
-                                ? 'border-red-600 bg-red-600/20 text-white'
+                                ? 'border-amber-500 bg-amber-500/20 text-white'
                                 : 'border-gray-700 bg-[#1a1a1a] text-gray-400 hover:border-gray-600'
                         }`}
                     >
@@ -191,7 +191,7 @@ export function CustomRowForm({ initialData, onSubmit, onCancel, isLoading }: Cu
                         onClick={() => setFormData({ ...formData, mediaType: 'tv', genres: [] })}
                         className={`flex flex-col items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${
                             formData.mediaType === 'tv'
-                                ? 'border-red-600 bg-red-600/20 text-white'
+                                ? 'border-amber-500 bg-amber-500/20 text-white'
                                 : 'border-gray-700 bg-[#1a1a1a] text-gray-400 hover:border-gray-600'
                         }`}
                     >
@@ -203,7 +203,7 @@ export function CustomRowForm({ initialData, onSubmit, onCancel, isLoading }: Cu
                         onClick={() => setFormData({ ...formData, mediaType: 'both', genres: [] })}
                         className={`flex flex-col items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${
                             formData.mediaType === 'both'
-                                ? 'border-red-600 bg-red-600/20 text-white'
+                                ? 'border-amber-500 bg-amber-500/20 text-white'
                                 : 'border-gray-700 bg-[#1a1a1a] text-gray-400 hover:border-gray-600'
                         }`}
                     >
@@ -241,7 +241,7 @@ export function CustomRowForm({ initialData, onSubmit, onCancel, isLoading }: Cu
                             onClick={() => setFormData({ ...formData, genreLogic: 'AND' })}
                             className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all ${
                                 formData.genreLogic === 'AND'
-                                    ? 'border-red-600 bg-red-600/20 text-white'
+                                    ? 'border-amber-500 bg-amber-500/20 text-white'
                                     : 'border-gray-700 bg-[#1a1a1a] text-gray-400 hover:border-gray-600'
                             }`}
                         >
@@ -255,7 +255,7 @@ export function CustomRowForm({ initialData, onSubmit, onCancel, isLoading }: Cu
                             onClick={() => setFormData({ ...formData, genreLogic: 'OR' })}
                             className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all ${
                                 formData.genreLogic === 'OR'
-                                    ? 'border-red-600 bg-red-600/20 text-white'
+                                    ? 'border-amber-500 bg-amber-500/20 text-white'
                                     : 'border-gray-700 bg-[#1a1a1a] text-gray-400 hover:border-gray-600'
                             }`}
                         >
@@ -279,7 +279,7 @@ export function CustomRowForm({ initialData, onSubmit, onCancel, isLoading }: Cu
                 <button
                     type="submit"
                     disabled={isLoading}
-                    className="flex-1 bg-red-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 bg-amber-500 text-zinc-950 px-6 py-3 rounded-lg font-medium hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {isLoading ? 'Saving...' : initialData ? 'Update Row' : 'Create Row'}
                 </button>

@@ -151,13 +151,13 @@ function SearchPageContent() {
                     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
                         <div className="text-center max-w-md px-6">
                             <div className="flex space-x-3 justify-center mb-6">
-                                <div className="w-6 h-6 bg-red-600 rounded-full animate-bounce"></div>
+                                <div className="w-6 h-6 bg-amber-500 rounded-full animate-bounce"></div>
                                 <div
-                                    className="w-6 h-6 bg-red-600 rounded-full animate-bounce"
+                                    className="w-6 h-6 bg-amber-500 rounded-full animate-bounce"
                                     style={{ animationDelay: '0.1s' }}
                                 ></div>
                                 <div
-                                    className="w-6 h-6 bg-red-600 rounded-full animate-bounce"
+                                    className="w-6 h-6 bg-amber-500 rounded-full animate-bounce"
                                     style={{ animationDelay: '0.2s' }}
                                 ></div>
                             </div>

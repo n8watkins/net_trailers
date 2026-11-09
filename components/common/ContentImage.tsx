@@ -160,8 +160,8 @@ function ContentImage({
                     className="relative w-full h-full
                               transition-all duration-300 ease-out
                               rounded-md overflow-hidden
-                              group-hover:shadow-[0_0_15px_rgba(220,38,38,0.4),0_0_30px_rgba(220,38,38,0.2)]
-                              group-hover:ring-1 group-hover:ring-red-500/50"
+                              group-hover:shadow-[0_0_15px_rgba(245,158,11,0.4),0_0_30px_rgba(245,158,11,0.2)]
+                              group-hover:ring-1 group-hover:ring-amber-400/50"
                 >
                     {imageToUse ? (
                         <>
@@ -185,7 +185,7 @@ function ContentImage({
                             <div
                                 className="absolute inset-0 rounded-md
                                           transition-all duration-300 ease-out
-                                          group-hover:shadow-[inset_0_0_10px_rgba(220,38,38,0.1)]"
+                                          group-hover:shadow-[inset_0_0_10px_rgba(245,158,11,0.1)]"
                             ></div>
                         </>
                     ) : (
@@ -223,11 +223,11 @@ function ContentImage({
                             className="bg-black text-white font-bold
                                      px-4 py-1.5 md:px-6 md:py-2
                                      text-xs md:text-sm
-                                     rounded-full hover:bg-red-700 hover:text-white hover:scale-[1.01]
+                                     rounded-full hover:bg-amber-600 hover:text-white hover:scale-[1.01]
                                      transition-all duration-200
                                      flex-1 flex items-center justify-center gap-1.5
-                                     shadow-lg hover:shadow-xl hover:shadow-red-600/20
-                                     border-2 border-red-500 hover:border-red-600
+                                     shadow-lg hover:shadow-xl hover:shadow-amber-500/20
+                                     border-2 border-amber-400 hover:border-amber-500
                                      group/watch"
                         >
                             <PlayIcon className="w-4 h-4 group-hover/watch:scale-105 transition-transform duration-200" />
@@ -246,7 +246,7 @@ function ContentImage({
             <div
                 className={`flex items-center rounded-lg p-4 cursor-pointer group border transition-all duration-300 ease-in-out ${
                     isSelected
-                        ? 'bg-red-600/30 border-red-500/50 shadow-lg shadow-red-500/20'
+                        ? 'bg-amber-500/30 border-amber-400/50 shadow-lg shadow-amber-400/20'
                         : 'bg-gray-800/50 hover:bg-gray-700/50 border-transparent'
                 } ${className}`}
                 onClick={handleImageClick}
@@ -278,7 +278,7 @@ function ContentImage({
                     {/* Title and Year */}
                     <div className="flex items-start justify-between mb-2">
                         <div className="flex-1 min-w-0">
-                            <h3 className="text-white font-semibold text-lg truncate group-hover:text-red-400 transition-colors">
+                            <h3 className="text-white font-semibold text-lg truncate group-hover:text-amber-300 transition-colors">
                                 {content ? getTitle(content) : 'Loading...'}
                             </h3>
                             <p className="text-gray-400 text-sm">

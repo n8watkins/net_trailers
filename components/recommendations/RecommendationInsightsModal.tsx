@@ -177,14 +177,14 @@ export default function RecommendationInsightsModal({
                             {notForMeGenres.length > 0 && (
                                 <div>
                                     <div className="flex items-center gap-1.5 mb-2">
-                                        <HandThumbDownIcon className="w-3.5 h-3.5 text-red-500" />
+                                        <HandThumbDownIcon className="w-3.5 h-3.5 text-amber-400" />
                                         <span className="text-gray-400 text-xs">Not for me</span>
                                     </div>
                                     <div className="flex flex-wrap gap-1.5">
                                         {notForMeGenres.map((pref) => (
                                             <span
                                                 key={pref.genreId}
-                                                className="px-2 py-1 bg-red-500/20 text-red-300 rounded text-xs"
+                                                className="px-2 py-1 bg-amber-400/20 text-amber-200 rounded text-xs"
                                             >
                                                 {getGenreName(pref.genreId)}
                                             </span>
@@ -240,21 +240,21 @@ export default function RecommendationInsightsModal({
                             {dislikedTitles.length > 0 && (
                                 <div>
                                     <div className="flex items-center gap-1.5 mb-2">
-                                        <HandThumbDownIcon className="w-3.5 h-3.5 text-red-500" />
+                                        <HandThumbDownIcon className="w-3.5 h-3.5 text-amber-400" />
                                         <span className="text-gray-400 text-xs">Not for me</span>
                                     </div>
                                     <div className="flex flex-wrap gap-1.5">
                                         {dislikedTitles.slice(0, 6).map((vote) => (
                                             <span
                                                 key={`${vote.contentId}-${vote.mediaType}`}
-                                                className="px-2 py-1 bg-red-500/20 text-red-300 rounded text-xs truncate max-w-[150px]"
+                                                className="px-2 py-1 bg-amber-400/20 text-amber-200 rounded text-xs truncate max-w-[150px]"
                                                 title={getTitle(vote)}
                                             >
                                                 {getTitle(vote)}
                                             </span>
                                         ))}
                                         {dislikedTitles.length > 6 && (
-                                            <span className="px-2 py-1 bg-red-500/10 text-red-400 rounded text-xs">
+                                            <span className="px-2 py-1 bg-amber-400/10 text-amber-300 rounded text-xs">
                                                 +{dislikedTitles.length - 6} more
                                             </span>
                                         )}

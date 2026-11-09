@@ -127,7 +127,7 @@ export default function NotificationPanel() {
                 <div className="flex items-center gap-2">
                     <h2 className="text-base font-semibold text-white">Notifications</h2>
                     {unreadCount > 0 && (
-                        <span className="inline-flex items-center rounded-full bg-red-600 px-2 py-0.5 text-xs font-medium text-white">
+                        <span className="inline-flex items-center rounded-full bg-amber-500 px-2 py-0.5 text-xs font-medium text-zinc-950">
                             {unreadCount} new
                         </span>
                     )}
@@ -160,10 +160,10 @@ export default function NotificationPanel() {
             </div>
 
             {/* Notifications List */}
-            <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-red-600 hover:scrollbar-thumb-red-500 scrollbar-thumb-rounded-full scrollbar-track-rounded-full">
+            <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-amber-500 hover:scrollbar-thumb-amber-400 scrollbar-thumb-rounded-full scrollbar-track-rounded-full">
                 {isLoading ? (
                     <div className="flex items-center justify-center py-12">
-                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-red-600 border-t-transparent"></div>
+                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"></div>
                     </div>
                 ) : notifications.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-12 text-gray-400">
@@ -196,7 +196,7 @@ export default function NotificationPanel() {
                         </span>
                         <a
                             href="/notifications"
-                            className="text-red-500 hover:text-red-400 transition-colors font-semibold"
+                            className="text-amber-400 hover:text-amber-300 transition-colors font-semibold"
                             onClick={closePanel}
                         >
                             View All →
@@ -222,7 +222,7 @@ export default function NotificationPanel() {
             >
                 <div
                     ref={mobilePanelRef}
-                    className={`w-full max-w-sm rounded-xl bg-[#0f0f0f]/95 backdrop-blur-sm border border-red-500/40 shadow-2xl shadow-red-500/20 transition-all duration-200 ease-out ${
+                    className={`w-full max-w-sm rounded-xl bg-[#0f0f0f]/95 backdrop-blur-sm border border-amber-400/40 shadow-2xl shadow-amber-400/20 transition-all duration-200 ease-out ${
                         isAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
                     }`}
                     role="dialog"
@@ -235,7 +235,7 @@ export default function NotificationPanel() {
             {/* Desktop: Traditional dropdown below bell icon */}
             <div
                 ref={panelRef}
-                className={`hidden sm:block absolute right-0 top-full z-50 mt-6 w-[400px] md:w-[520px] max-w-[520px] rounded-lg bg-[#0f0f0f]/95 backdrop-blur-sm border border-red-500/40 shadow-2xl shadow-red-500/20 transition-all duration-200 ease-out origin-top ${
+                className={`hidden sm:block absolute right-0 top-full z-50 mt-6 w-[400px] md:w-[520px] max-w-[520px] rounded-lg bg-[#0f0f0f]/95 backdrop-blur-sm border border-amber-400/40 shadow-2xl shadow-amber-400/20 transition-all duration-200 ease-out origin-top ${
                     isAnimating
                         ? 'opacity-100 translate-y-0 scale-100'
                         : 'opacity-0 -translate-y-2 scale-95'

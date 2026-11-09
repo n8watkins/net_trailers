@@ -63,11 +63,11 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             button: 'bg-orange-600 hover:bg-orange-700',
         },
         danger: {
-            bg: 'bg-red-900/20',
-            border: 'border-red-600/50',
-            icon: 'text-red-500',
-            text: 'text-red-400',
-            button: 'bg-red-600 hover:bg-red-700',
+            bg: 'bg-amber-800/20',
+            border: 'border-amber-500/50',
+            icon: 'text-amber-400',
+            text: 'text-amber-300',
+            button: 'bg-amber-500 hover:bg-amber-600',
         },
     }
 
@@ -83,7 +83,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             <div className="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-75" />
 
             {/* Modal panel */}
-            <div className="relative w-full max-w-md px-8 py-6 overflow-hidden text-left transition-all transform bg-[#0a0a0a] border border-red-500/40 rounded-xl shadow-2xl shadow-red-500/20">
+            <div className="relative w-full max-w-md px-8 py-6 overflow-hidden text-left transition-all transform bg-[#0a0a0a] border border-amber-400/40 rounded-xl shadow-2xl shadow-amber-400/20">
                 {/* Close Button */}
                 <button
                     onClick={handleClose}
@@ -130,7 +130,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                             onChange={(e) => setTypedText(e.target.value)}
                             onKeyDown={handleKeyDown}
                             placeholder={confirmationPhrase}
-                            className="w-full text-sm px-4 py-2 bg-[#0a0a0a] border border-[#313131] rounded-lg text-white placeholder-[#666] text-center focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent transition-all"
+                            className="w-full text-sm px-4 py-2 bg-[#0a0a0a] border border-[#313131] rounded-lg text-white placeholder-[#666] text-center focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
                             autoFocus
                         />
                     </div>

@@ -510,7 +510,7 @@
     }
 
     .drop-shadow-glow-red {
-        filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.8));
+        filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.8));
     }
 
     /* Shimmer animation for skeleton loading */
@@ -607,7 +607,7 @@
     right: 0;
     width: 8px;
     border-radius: 9999px;
-    background: rgb(220, 38, 38); /* red-600 */
+    background: rgb(245, 158, 11); /* amber-500 */
     transition:
         background 0.2s ease,
         width 0.2s ease,
@@ -616,20 +616,20 @@
 }
 
 .custom-scrollbar-thumb:hover {
-    background: rgb(239, 68, 68); /* red-500 */
+    background: rgb(251, 191, 36); /* amber-400 */
     width: 10px;
     left: 10px;
 }
 
 .custom-scrollbar.dragging .custom-scrollbar-thumb {
-    background: rgb(239, 68, 68); /* red-500 */
+    background: rgb(251, 191, 36); /* amber-400 */
     cursor: grabbing;
 }
 
 /* Modal content scrollbar - overlay style with auto-hide on scroll */
 .modal-scrollbar {
     scrollbar-width: thin; /* Firefox */
-    scrollbar-color: rgb(220, 38, 38) transparent; /* red-600 thumb, transparent track */
+    scrollbar-color: rgb(245, 158, 11) transparent; /* amber-500 thumb, transparent track */
 }
 
 /* Webkit/Chrome scrollbar */
@@ -646,12 +646,12 @@
 }
 
 .modal-scrollbar::-webkit-scrollbar-thumb {
-    background: rgb(220, 38, 38); /* red-600 */
+    background: rgb(245, 158, 11); /* amber-500 */
     border-radius: 9999px;
 }
 
 .modal-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgb(239, 68, 68); /* red-500 */
+    background: rgb(251, 191, 36); /* amber-400 */
 }
 
 /* Light blue scrollbar for collection creator modal */

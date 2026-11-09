@@ -236,7 +236,7 @@ function GenrePageContent() {
                             <p className="text-gray-400 mb-4">{error}</p>
                             <button
                                 onClick={() => router.refresh()}
-                                className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors"
+                                className="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-semibold py-2 px-6 rounded-lg transition-colors"
                             >
                                 Try Again
                             </button>
@@ -318,7 +318,7 @@ function GenrePageContent() {
                                             setMaxPages((prev) => prev + 10)
                                             setHasMore(true)
                                         }}
-                                        className="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200 text-lg"
+                                        className="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-semibold py-3 px-8 rounded-lg transition-colors duration-200 text-lg"
                                     >
                                         Load More Results
                                     </button>

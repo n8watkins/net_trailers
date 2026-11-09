@@ -52,7 +52,7 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, onClose }
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-600/50">
                     <div className="flex items-center space-x-3">
-                        <CogIcon className="w-6 h-6 text-red-500" />
+                        <CogIcon className="w-6 h-6 text-amber-400" />
                         <h2 className="text-xl font-semibold text-white">
                             {activeSection === 'main'
                                 ? 'User Settings'
@@ -96,7 +96,7 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, onClose }
                                     onClick={() => handleSectionChange('email')}
                                     className="w-full flex items-center p-4 text-left hover:bg-gray-800/50 rounded-lg transition-colors duration-200 group"
                                 >
-                                    <EnvelopeIcon className="w-5 h-5 text-gray-400 group-hover:text-red-500 mr-4" />
+                                    <EnvelopeIcon className="w-5 h-5 text-gray-400 group-hover:text-amber-400 mr-4" />
                                     <div>
                                         <p className="text-white font-medium">Change Email</p>
                                         <p className="text-gray-400 text-sm">
@@ -186,7 +186,7 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, onClose }
                                     <input
                                         type="email"
                                         placeholder="Enter new email address"
-                                        className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                        className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
                                     />
                                 </div>
                             </div>
@@ -198,7 +198,7 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, onClose }
                                 >
                                     Back
                                 </button>
-                                <button className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors duration-200">
+                                <button className="flex-1 px-4 py-2 bg-amber-500 text-zinc-950 rounded-md hover:bg-amber-600 transition-colors duration-200">
                                     Update Email
                                 </button>
                             </div>
@@ -217,7 +217,7 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, onClose }
                                     <input
                                         type="password"
                                         placeholder="Enter current password"
-                                        className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                        className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
                                     />
                                 </div>
 
@@ -228,7 +228,7 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, onClose }
                                     <input
                                         type="password"
                                         placeholder="Enter new password"
-                                        className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                        className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
                                     />
                                 </div>
 
@@ -239,7 +239,7 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, onClose }
                                     <input
                                         type="password"
                                         placeholder="Confirm new password"
-                                        className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                        className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
                                     />
                                 </div>
                             </div>
@@ -251,7 +251,7 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, onClose }
                                 >
                                     Back
                                 </button>
-                                <button className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors duration-200">
+                                <button className="flex-1 px-4 py-2 bg-amber-500 text-zinc-950 rounded-md hover:bg-amber-600 transition-colors duration-200">
                                     Update Password
                                 </button>
                             </div>
@@ -278,7 +278,7 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, onClose }
                                 />
                                 <label
                                     htmlFor="watchlist-upload"
-                                    className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors duration-200 cursor-pointer"
+                                    className="inline-flex items-center px-4 py-2 bg-amber-500 text-zinc-950 rounded-md hover:bg-amber-600 transition-colors duration-200 cursor-pointer"
                                 >
                                     Choose File
                                 </label>

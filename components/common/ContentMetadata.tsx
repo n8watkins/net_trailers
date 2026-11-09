@@ -127,7 +127,7 @@ export default function ContentMetadata({
                                 <span className="text-gray-400">Director: </span>
                                 <Link
                                     href={`/person/${director.id}`}
-                                    className="text-white hover:text-red-400 hover:underline transition-colors"
+                                    className="text-white hover:text-amber-300 hover:underline transition-colors"
                                     onClick={onPersonClick}
                                 >
                                     {director.name}
@@ -155,7 +155,7 @@ export default function ContentMetadata({
                                 <span key={actor.id}>
                                     <Link
                                         href={`/person/${actor.id}`}
-                                        className="hover:text-red-400 hover:underline transition-colors"
+                                        className="hover:text-amber-300 hover:underline transition-colors"
                                         onClick={onPersonClick}
                                     >
                                         {actor.name}
@@ -183,7 +183,7 @@ export default function ContentMetadata({
                                     <span key={genre.id}>
                                         <Link
                                             href={`/genres/${mediaType}/${genre.id}?name=${encodeURIComponent(genre.name)}`}
-                                            className="hover:text-red-400 hover:underline transition-colors"
+                                            className="hover:text-amber-300 hover:underline transition-colors"
                                             onClick={onPersonClick}
                                         >
                                             {genre.name}

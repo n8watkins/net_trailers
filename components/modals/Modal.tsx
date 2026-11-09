@@ -635,7 +635,7 @@ function Modal() {
         >
             <div
                 className={`fixed inset-0 flex flex-col justify-center items-center ${
-                    fullScreen ? '' : 'p-2 sm:p-4 md:p-8'
+                    fullScreen ? '' : 'p-2 sm:p-4 md:px-8 md:py-10'
                 }`}
                 onClick={handleClose}
             >
@@ -643,7 +643,7 @@ function Modal() {
                     className={`relative w-full z-10 bg-[#141414] flex flex-col ${
                         fullScreen
                             ? 'h-screen max-h-screen'
-                            : 'rounded-md w-[95vw] max-w-sm sm:max-w-2xl md:max-w-3xl lg:max-w-5xl max-h-[92vh] overflow-y-auto modal-scrollbar'
+                            : 'rounded-md w-[95vw] max-w-sm sm:max-w-2xl md:max-w-3xl lg:max-w-5xl max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-2rem)] md:max-h-[calc(100dvh-5rem)] overflow-y-auto overscroll-contain modal-scrollbar'
                     }`}
                     onClick={(e) => e.stopPropagation()}
                 >
@@ -898,8 +898,8 @@ function Modal() {
                                                         <SparklesIcon
                                                             className={`h-4 w-4 sm:h-6 sm:w-6 text-white/70 transition-colors ${
                                                                 isRandomLoading
-                                                                    ? 'animate-spin text-red-400'
-                                                                    : 'group-hover:text-red-400'
+                                                                    ? 'animate-spin text-amber-300'
+                                                                    : 'group-hover:text-amber-300'
                                                             }`}
                                                         />
                                                     </button>
@@ -931,7 +931,7 @@ function Modal() {
 
                     {/* Content Section - Below Video - Hidden in fullscreen */}
                     {!fullScreen && (
-                        <div className="pt-2 px-4 pb-4 sm:pt-2.5 sm:px-6 sm:pb-6 space-y-3 sm:space-y-4 flex-1 overflow-y-auto min-h-[450px] modal-scrollbar">
+                        <div className="pt-2 px-4 pb-8 sm:pt-2.5 sm:px-6 sm:pb-10 space-y-3 sm:space-y-4">
                             {/* Content Metadata - Show immediately with card data, enhanced data loads in background */}
                             <ContentMetadata
                                 content={(enhancedMovieData || currentMovie) as Content}
@@ -956,6 +956,15 @@ function Modal() {
                             {/* More Like This Section */}
                             {currentMovie && <MoreLikeThisSection content={currentMovie} />}
                         </div>
+                    )}
+
+                    {/* Soft fade at the bottom edge of the scroll area, so text never
+                        ends flush against the modal's edge */}
+                    {!fullScreen && (
+                        <div
+                            aria-hidden="true"
+                            className="pointer-events-none sticky bottom-0 -mt-8 h-8 shrink-0 bg-gradient-to-t from-[#141414] to-transparent"
+                        />
                     )}
                 </div>
 
