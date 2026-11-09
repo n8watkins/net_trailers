@@ -129,25 +129,22 @@ test('creates a collection and adds a title to it', async () => {
     await page.getByRole('button', { name: /^Create Collection$/ }).click()
     await expect(page.getByRole('heading', { name: 'E2E Favorites' })).toBeHidden()
 
-    // The creator saves its titles one by one; let that finish, then add a title
-    // from a fresh page load
-    await page.waitForLoadState('networkidle')
-    heroTitle = await openHeroTitle(page)
-    await page
-        .locator('.MuiModal-root')
-        .getByRole('button', { name: 'Add to lists' })
-        .first()
-        .click()
-    await page
-        .locator('.MuiModal-root')
-        .getByRole('button', { name: /E2E Favorites/ })
-        .click()
+    // Add a title straight away, with no reload. The new collection used to lose
+    // this when its ~14 per-title saves landed after it; it now saves in one write.
+    const titleModal = page.locator('.MuiModal-root')
+    if (!(await titleModal.getByRole('button', { name: 'Add to lists' }).first().isVisible())) {
+        heroTitle = await openHeroTitle(page)
+    }
+    await titleModal.getByRole('button', { name: 'Add to lists' }).first().click()
+    await titleModal.getByRole('button', { name: /E2E Favorites/ }).click()
     await expect(page.getByText(`Added ${heroTitle} to "E2E Favorites"`)).toBeVisible()
     await closeModal(page)
     await page.waitForLoadState('networkidle')
 
+    // A fresh load reads the saved collection back from the server
     await page.goto('/collections')
-    await expect(page.getByText('E2E Favorites').first()).toBeVisible()
+    await page.getByText('E2E Favorites').first().click()
+    await expect(page.getByText(heroTitle).first()).toBeVisible()
 })
 
 test('records watch history', async () => {

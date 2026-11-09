@@ -151,6 +151,9 @@ export interface CreateListRequest {
     // AI-generated metadata
     originalQuery?: string
     canGenerateMore?: boolean
+
+    /** Titles to start with, saved in the same write as the new collection */
+    items?: Content[]
 }
 
 /**

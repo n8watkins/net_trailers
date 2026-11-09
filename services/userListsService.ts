@@ -99,7 +99,13 @@ export class UserListsService {
             id: this.generateId(),
             name: sanitizedName,
             description: sanitizedDescription,
-            items: [],
+            // Starting titles, de-duplicated by media type and id
+            items: (request.items ?? []).filter(
+                (item, index, all) =>
+                    all.findIndex(
+                        (other) => other.id === item.id && other.media_type === item.media_type
+                    ) === index
+            ),
             createdAt: Date.now(),
             updatedAt: Date.now(),
             color: sanitizedColor,

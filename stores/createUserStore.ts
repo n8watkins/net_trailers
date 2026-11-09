@@ -250,7 +250,35 @@ export function createUserStore(options: CreateUserStoreOptions) {
     })
 
     // Helper to save data to storage
-    const saveToStorage = async (state: UserState, context: string) => {
+    /*
+     * Saves are serialized. Each save sends the whole state, so overlapping saves
+     * could land out of order and an older snapshot could overwrite a newer one
+     * (this lost titles added right after creating a collection). While a save is
+     * in flight, later calls share one follow-up save of the latest state.
+     */
+    let readLatestState: (() => UserState) | null = null
+    let saveInFlight: Promise<void> | null = null
+    let followUpSave: Promise<void> | null = null
+
+    const saveToStorage = (state: UserState, context: string): Promise<void> => {
+        if (!saveInFlight) {
+            saveInFlight = writeToStorage(state, context).finally(() => {
+                saveInFlight = null
+            })
+            return saveInFlight
+        }
+        if (!followUpSave) {
+            followUpSave = saveInFlight
+                .catch(() => undefined)
+                .then(() => {
+                    followUpSave = null
+                    return saveToStorage(readLatestState ? readLatestState() : state, context)
+                })
+        }
+        return followUpSave
+    }
+
+    const writeToStorage = async (state: UserState, context: string) => {
         const id = state[idField]
         if (!id) {
             logger.warn(
@@ -288,346 +316,485 @@ export function createUserStore(options: CreateUserStoreOptions) {
         }
     }
 
-    return create<UserStore>((set, get) => ({
-        ...getDefaultState(),
+    return create<UserStore>((set, get) => {
+        readLatestState = get
+        return {
+            ...getDefaultState(),
 
-        addToWatchlist: async (content: Content) => {
-            const state = get()
-            const isAlreadyInWatchlist = state.defaultWatchlist.some(
-                (item) => item.id === content.id
-            )
-            if (isAlreadyInWatchlist) {
-                logger.log(`⚠️ [${trackingContext}] Item already in watchlist:`, getTitle(content))
-                return
-            }
+            addToWatchlist: async (content: Content) => {
+                const state = get()
+                const isAlreadyInWatchlist = state.defaultWatchlist.some(
+                    (item) => item.id === content.id
+                )
+                if (isAlreadyInWatchlist) {
+                    logger.log(
+                        `⚠️ [${trackingContext}] Item already in watchlist:`,
+                        getTitle(content)
+                    )
+                    return
+                }
 
-            if (adapter.isAsync) set({ syncStatus: 'syncing' })
-
-            const newWatchlist = [...state.defaultWatchlist, content]
-            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
-            set({
-                defaultWatchlist: newWatchlist,
-                lastActive: newLastActive,
-            })
-
-            try {
-                await saveToStorage(get(), 'addToWatchlist')
-                if (adapter.isAsync) set({ syncStatus: 'synced' })
-            } catch (_error) {
-                if (adapter.isAsync) set({ syncStatus: 'offline' })
-            }
-
-            logger.log(`✅ [${trackingContext}] Added to watchlist:`, {
-                title: getTitle(content),
-                contentId: content.id,
-                newWatchlistCount: newWatchlist.length,
-            })
-        },
-
-        removeFromWatchlist: async (contentId: number) => {
-            const state = get()
-            if (adapter.isAsync) set({ syncStatus: 'syncing' })
-
-            const newWatchlist = state.defaultWatchlist.filter((item) => item.id !== contentId)
-            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
-            set({
-                defaultWatchlist: newWatchlist,
-                lastActive: newLastActive,
-            })
-
-            try {
-                await saveToStorage(get(), 'removeFromWatchlist')
-                if (adapter.isAsync) set({ syncStatus: 'synced' })
-            } catch (_error) {
-                if (adapter.isAsync) set({ syncStatus: 'offline' })
-            }
-
-            logger.log(`🗑️ [${trackingContext}] Removed from watchlist:`, contentId)
-        },
-
-        addLikedMovie: async (content: Content) => {
-            const state = get()
-
-            // Avoid duplicate writes when already liked
-            const alreadyLiked =
-                state.myRatings.some(
-                    (rating) => rating.content.id === content.id && rating.rating === 'like'
-                ) || state.likedMovies.some((m) => m.id === content.id)
-            if (alreadyLiked) {
-                logger.log(`⚠️ [${trackingContext}] Movie already liked:`, getTitle(content))
-                return
-            }
-
-            await get().rateContent(content, 'like')
-            logger.log(`👍 [${trackingContext}] Added to liked:`, getTitle(content))
-        },
-
-        removeLikedMovie: async (contentId: number) => {
-            await get().removeRating(contentId)
-            logger.log(`🗑️ [${trackingContext}] Removed from liked:`, contentId)
-        },
-
-        // Hiding is separate from rating: a liked title can be hidden from
-        // recommendations and stays liked. (Disliking still hides, see rateContent.)
-        addHiddenMovie: async (content: Content) => {
-            const state = get()
-            if (state.hiddenMovies.some((m) => m.id === content.id)) {
-                logger.log(`⚠️ [${trackingContext}] Movie already hidden:`, getTitle(content))
-                return
-            }
-            if (adapter.isAsync) set({ syncStatus: 'syncing' })
-            set({
-                hiddenMovies: [...state.hiddenMovies, content],
-                lastActive: typeof window !== 'undefined' ? Date.now() : 0,
-            })
-            try {
-                await saveToStorage(get(), 'addHiddenMovie')
-                if (adapter.isAsync) set({ syncStatus: 'synced' })
-            } catch (_error) {
-                if (adapter.isAsync) set({ syncStatus: 'offline' })
-            }
-            logger.log(`🙈 [${trackingContext}] Added to hidden:`, getTitle(content))
-        },
-
-        removeHiddenMovie: async (contentId: number) => {
-            const state = get()
-            // A dislike is what hid it: showing it again clears the dislike too
-            const disliked = state.myRatings.some(
-                (r) => r.content.id === contentId && r.rating === 'dislike'
-            )
-            if (disliked) {
-                await get().removeRating(contentId)
-            } else {
                 if (adapter.isAsync) set({ syncStatus: 'syncing' })
+
+                const newWatchlist = [...state.defaultWatchlist, content]
+                const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
                 set({
-                    hiddenMovies: state.hiddenMovies.filter((m) => m.id !== contentId),
-                    lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+                    defaultWatchlist: newWatchlist,
+                    lastActive: newLastActive,
                 })
+
                 try {
-                    await saveToStorage(get(), 'removeHiddenMovie')
+                    await saveToStorage(get(), 'addToWatchlist')
                     if (adapter.isAsync) set({ syncStatus: 'synced' })
                 } catch (_error) {
                     if (adapter.isAsync) set({ syncStatus: 'offline' })
                 }
-            }
-            logger.log(`🗑️ [${trackingContext}] Removed from hidden:`, contentId)
-        },
 
-        // New unified rating actions
-        rateContent: async (content: Content, rating: 'like' | 'dislike') => {
-            const state = get()
-            if (adapter.isAsync) set({ syncStatus: 'syncing' })
+                logger.log(`✅ [${trackingContext}] Added to watchlist:`, {
+                    title: getTitle(content),
+                    contentId: content.id,
+                    newWatchlistCount: newWatchlist.length,
+                })
+            },
 
-            // Remove existing rating if exists (for re-rating)
-            const existingIndex = state.myRatings.findIndex((r) => r.content.id === content.id)
-
-            const newRating: RatedContent = {
-                content,
-                rating,
-                ratedAt: Date.now(),
-            }
-
-            let newMyRatings: RatedContent[]
-            if (existingIndex >= 0) {
-                // Update existing rating
-                newMyRatings = [...state.myRatings]
-                newMyRatings[existingIndex] = newRating
-            } else {
-                // Add new rating
-                newMyRatings = [...state.myRatings, newRating]
-            }
-
-            // Also update legacy arrays for backward compatibility
-            let newLikedMovies = state.likedMovies
-            let newHiddenMovies = state.hiddenMovies
-
-            if (rating === 'like') {
-                // Add to liked if not already there
-                if (!state.likedMovies.some((m) => m.id === content.id)) {
-                    newLikedMovies = [...state.likedMovies, content]
-                }
-                // Remove from hidden if there
-                newHiddenMovies = state.hiddenMovies.filter((m) => m.id !== content.id)
-            } else {
-                // Add to hidden if not already there
-                if (!state.hiddenMovies.some((m) => m.id === content.id)) {
-                    newHiddenMovies = [...state.hiddenMovies, content]
-                }
-                // Remove from liked if there
-                newLikedMovies = state.likedMovies.filter((m) => m.id !== content.id)
-            }
-
-            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
-            set({
-                myRatings: newMyRatings,
-                likedMovies: newLikedMovies,
-                hiddenMovies: newHiddenMovies,
-                lastActive: newLastActive,
-            })
-
-            try {
-                await saveToStorage(get(), 'rateContent')
-                if (adapter.isAsync) set({ syncStatus: 'synced' })
-            } catch (_error) {
-                if (adapter.isAsync) set({ syncStatus: 'offline' })
-            }
-
-            logger.log(`⭐ [${trackingContext}] Rated content:`, {
-                title: getTitle(content),
-                rating,
-            })
-        },
-
-        removeRating: async (contentId: number) => {
-            const state = get()
-            if (adapter.isAsync) set({ syncStatus: 'syncing' })
-
-            const removed = state.myRatings.find((r) => r.content.id === contentId)
-            const newMyRatings = state.myRatings.filter((r) => r.content.id !== contentId)
-
-            // Also update legacy arrays. Removing a like leaves the title's hidden
-            // state alone; removing a dislike un-hides it (the dislike hid it).
-            const newLikedMovies = state.likedMovies.filter((m) => m.id !== contentId)
-            const newHiddenMovies =
-                removed?.rating === 'like'
-                    ? state.hiddenMovies
-                    : state.hiddenMovies.filter((m) => m.id !== contentId)
-
-            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
-            set({
-                myRatings: newMyRatings,
-                likedMovies: newLikedMovies,
-                hiddenMovies: newHiddenMovies,
-                lastActive: newLastActive,
-            })
-
-            try {
-                await saveToStorage(get(), 'removeRating')
-                if (adapter.isAsync) set({ syncStatus: 'synced' })
-            } catch (_error) {
-                if (adapter.isAsync) set({ syncStatus: 'offline' })
-            }
-
-            logger.log(`🗑️ [${trackingContext}] Removed rating for:`, contentId)
-        },
-
-        getRating: (contentId: number) => {
-            const state = get()
-            return state.myRatings.find((r) => r.content.id === contentId)
-        },
-
-        getLikedContent: () => {
-            const state = get()
-            return state.myRatings.filter((r) => r.rating === 'like').map((r) => r.content)
-        },
-
-        getDislikedContent: () => {
-            const state = get()
-            return state.myRatings.filter((r) => r.rating === 'dislike').map((r) => r.content)
-        },
-
-        createList: async (request: CreateListRequest) => {
-            const state = get()
-            if (adapter.isAsync) set({ syncStatus: 'syncing' })
-
-            const updatedPrefs = UserListsService.createList(state, request)
-            const newList =
-                updatedPrefs.userCreatedWatchlists[updatedPrefs.userCreatedWatchlists.length - 1]
-
-            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
-            set({
-                userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
-                lastActive: newLastActive,
-            })
-
-            try {
-                await saveToStorage(get(), 'createList')
-                if (adapter.isAsync) set({ syncStatus: 'synced' })
-            } catch (_error) {
-                if (adapter.isAsync) set({ syncStatus: 'offline' })
-            }
-
-            logger.log(`📋 [${trackingContext}] Created list:`, request.name, newList.id)
-            return newList.id
-        },
-
-        addToList: async (listId: string, content: Content) => {
-            const state = get()
-            if (adapter.isAsync) set({ syncStatus: 'syncing' })
-
-            const updatedPrefs = UserListsService.addToList(state, { listId, content })
-
-            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
-            set({
-                userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
-                lastActive: newLastActive,
-            })
-
-            try {
-                await saveToStorage(get(), 'addToList')
-                if (adapter.isAsync) set({ syncStatus: 'synced' })
-            } catch (_error) {
-                if (adapter.isAsync) set({ syncStatus: 'offline' })
-            }
-
-            logger.log(`📝 [${trackingContext}] Added to list:`, {
-                listId,
-                content: getTitle(content),
-            })
-        },
-
-        removeFromList: async (listId: string, contentId: number) => {
-            const state = get()
-            if (adapter.isAsync) set({ syncStatus: 'syncing' })
-
-            const updatedPrefs = UserListsService.removeFromList(state, { listId, contentId })
-
-            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
-            set({
-                userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
-                lastActive: newLastActive,
-            })
-
-            try {
-                await saveToStorage(get(), 'removeFromList')
-                if (adapter.isAsync) set({ syncStatus: 'synced' })
-            } catch (_error) {
-                if (adapter.isAsync) set({ syncStatus: 'offline' })
-            }
-
-            logger.log(`🗑️ [${trackingContext}] Removed from list:`, { listId, contentId })
-        },
-
-        updateList: async (
-            listId: string,
-            updates: {
-                name?: string
-                emoji?: string
-                color?: string
-                order?: number
-                displayAsRow?: boolean
-                genres?: string[]
-                genreLogic?: 'AND' | 'OR'
-                mediaType?: 'movie' | 'tv' | 'both'
-            }
-        ) => {
-            // Check if this is a system recommendation ID - route to updateSystemRecommendation
-            const systemRecIds = ['trending', 'top-rated', 'recommended-for-you']
-            if (systemRecIds.includes(listId)) {
+            removeFromWatchlist: async (contentId: number) => {
                 const state = get()
                 if (adapter.isAsync) set({ syncStatus: 'syncing' })
 
-                // Map UserList updates to SystemRecommendation updates
-                const sysRecUpdates: Partial<Omit<SystemRecommendation, 'id'>> = {}
-                if (updates.name !== undefined) sysRecUpdates.name = updates.name
-                if (updates.emoji !== undefined) sysRecUpdates.emoji = updates.emoji
-                if (updates.order !== undefined) sysRecUpdates.order = updates.order
-                if (updates.displayAsRow !== undefined) sysRecUpdates.enabled = updates.displayAsRow
-                if (updates.genres !== undefined) sysRecUpdates.genres = updates.genres
-                if (updates.mediaType !== undefined) sysRecUpdates.mediaType = updates.mediaType
+                const newWatchlist = state.defaultWatchlist.filter((item) => item.id !== contentId)
+                const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
+                set({
+                    defaultWatchlist: newWatchlist,
+                    lastActive: newLastActive,
+                })
+
+                try {
+                    await saveToStorage(get(), 'removeFromWatchlist')
+                    if (adapter.isAsync) set({ syncStatus: 'synced' })
+                } catch (_error) {
+                    if (adapter.isAsync) set({ syncStatus: 'offline' })
+                }
+
+                logger.log(`🗑️ [${trackingContext}] Removed from watchlist:`, contentId)
+            },
+
+            addLikedMovie: async (content: Content) => {
+                const state = get()
+
+                // Avoid duplicate writes when already liked
+                const alreadyLiked =
+                    state.myRatings.some(
+                        (rating) => rating.content.id === content.id && rating.rating === 'like'
+                    ) || state.likedMovies.some((m) => m.id === content.id)
+                if (alreadyLiked) {
+                    logger.log(`⚠️ [${trackingContext}] Movie already liked:`, getTitle(content))
+                    return
+                }
+
+                await get().rateContent(content, 'like')
+                logger.log(`👍 [${trackingContext}] Added to liked:`, getTitle(content))
+            },
+
+            removeLikedMovie: async (contentId: number) => {
+                await get().removeRating(contentId)
+                logger.log(`🗑️ [${trackingContext}] Removed from liked:`, contentId)
+            },
+
+            // Hiding is separate from rating: a liked title can be hidden from
+            // recommendations and stays liked. (Disliking still hides, see rateContent.)
+            addHiddenMovie: async (content: Content) => {
+                const state = get()
+                if (state.hiddenMovies.some((m) => m.id === content.id)) {
+                    logger.log(`⚠️ [${trackingContext}] Movie already hidden:`, getTitle(content))
+                    return
+                }
+                if (adapter.isAsync) set({ syncStatus: 'syncing' })
+                set({
+                    hiddenMovies: [...state.hiddenMovies, content],
+                    lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+                })
+                try {
+                    await saveToStorage(get(), 'addHiddenMovie')
+                    if (adapter.isAsync) set({ syncStatus: 'synced' })
+                } catch (_error) {
+                    if (adapter.isAsync) set({ syncStatus: 'offline' })
+                }
+                logger.log(`🙈 [${trackingContext}] Added to hidden:`, getTitle(content))
+            },
+
+            removeHiddenMovie: async (contentId: number) => {
+                const state = get()
+                // A dislike is what hid it: showing it again clears the dislike too
+                const disliked = state.myRatings.some(
+                    (r) => r.content.id === contentId && r.rating === 'dislike'
+                )
+                if (disliked) {
+                    await get().removeRating(contentId)
+                } else {
+                    if (adapter.isAsync) set({ syncStatus: 'syncing' })
+                    set({
+                        hiddenMovies: state.hiddenMovies.filter((m) => m.id !== contentId),
+                        lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+                    })
+                    try {
+                        await saveToStorage(get(), 'removeHiddenMovie')
+                        if (adapter.isAsync) set({ syncStatus: 'synced' })
+                    } catch (_error) {
+                        if (adapter.isAsync) set({ syncStatus: 'offline' })
+                    }
+                }
+                logger.log(`🗑️ [${trackingContext}] Removed from hidden:`, contentId)
+            },
+
+            // New unified rating actions
+            rateContent: async (content: Content, rating: 'like' | 'dislike') => {
+                const state = get()
+                if (adapter.isAsync) set({ syncStatus: 'syncing' })
+
+                // Remove existing rating if exists (for re-rating)
+                const existingIndex = state.myRatings.findIndex((r) => r.content.id === content.id)
+
+                const newRating: RatedContent = {
+                    content,
+                    rating,
+                    ratedAt: Date.now(),
+                }
+
+                let newMyRatings: RatedContent[]
+                if (existingIndex >= 0) {
+                    // Update existing rating
+                    newMyRatings = [...state.myRatings]
+                    newMyRatings[existingIndex] = newRating
+                } else {
+                    // Add new rating
+                    newMyRatings = [...state.myRatings, newRating]
+                }
+
+                // Also update legacy arrays for backward compatibility
+                let newLikedMovies = state.likedMovies
+                let newHiddenMovies = state.hiddenMovies
+
+                if (rating === 'like') {
+                    // Add to liked if not already there
+                    if (!state.likedMovies.some((m) => m.id === content.id)) {
+                        newLikedMovies = [...state.likedMovies, content]
+                    }
+                    // Remove from hidden if there
+                    newHiddenMovies = state.hiddenMovies.filter((m) => m.id !== content.id)
+                } else {
+                    // Add to hidden if not already there
+                    if (!state.hiddenMovies.some((m) => m.id === content.id)) {
+                        newHiddenMovies = [...state.hiddenMovies, content]
+                    }
+                    // Remove from liked if there
+                    newLikedMovies = state.likedMovies.filter((m) => m.id !== content.id)
+                }
+
+                const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
+                set({
+                    myRatings: newMyRatings,
+                    likedMovies: newLikedMovies,
+                    hiddenMovies: newHiddenMovies,
+                    lastActive: newLastActive,
+                })
+
+                try {
+                    await saveToStorage(get(), 'rateContent')
+                    if (adapter.isAsync) set({ syncStatus: 'synced' })
+                } catch (_error) {
+                    if (adapter.isAsync) set({ syncStatus: 'offline' })
+                }
+
+                logger.log(`⭐ [${trackingContext}] Rated content:`, {
+                    title: getTitle(content),
+                    rating,
+                })
+            },
+
+            removeRating: async (contentId: number) => {
+                const state = get()
+                if (adapter.isAsync) set({ syncStatus: 'syncing' })
+
+                const removed = state.myRatings.find((r) => r.content.id === contentId)
+                const newMyRatings = state.myRatings.filter((r) => r.content.id !== contentId)
+
+                // Also update legacy arrays. Removing a like leaves the title's hidden
+                // state alone; removing a dislike un-hides it (the dislike hid it).
+                const newLikedMovies = state.likedMovies.filter((m) => m.id !== contentId)
+                const newHiddenMovies =
+                    removed?.rating === 'like'
+                        ? state.hiddenMovies
+                        : state.hiddenMovies.filter((m) => m.id !== contentId)
+
+                const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
+                set({
+                    myRatings: newMyRatings,
+                    likedMovies: newLikedMovies,
+                    hiddenMovies: newHiddenMovies,
+                    lastActive: newLastActive,
+                })
+
+                try {
+                    await saveToStorage(get(), 'removeRating')
+                    if (adapter.isAsync) set({ syncStatus: 'synced' })
+                } catch (_error) {
+                    if (adapter.isAsync) set({ syncStatus: 'offline' })
+                }
+
+                logger.log(`🗑️ [${trackingContext}] Removed rating for:`, contentId)
+            },
+
+            getRating: (contentId: number) => {
+                const state = get()
+                return state.myRatings.find((r) => r.content.id === contentId)
+            },
+
+            getLikedContent: () => {
+                const state = get()
+                return state.myRatings.filter((r) => r.rating === 'like').map((r) => r.content)
+            },
+
+            getDislikedContent: () => {
+                const state = get()
+                return state.myRatings.filter((r) => r.rating === 'dislike').map((r) => r.content)
+            },
+
+            createList: async (request: CreateListRequest) => {
+                const state = get()
+                if (adapter.isAsync) set({ syncStatus: 'syncing' })
+
+                const updatedPrefs = UserListsService.createList(state, request)
+                const newList =
+                    updatedPrefs.userCreatedWatchlists[
+                        updatedPrefs.userCreatedWatchlists.length - 1
+                    ]
+
+                const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
+                set({
+                    userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
+                    lastActive: newLastActive,
+                })
+
+                try {
+                    await saveToStorage(get(), 'createList')
+                    if (adapter.isAsync) set({ syncStatus: 'synced' })
+                } catch (_error) {
+                    if (adapter.isAsync) set({ syncStatus: 'offline' })
+                }
+
+                logger.log(`📋 [${trackingContext}] Created list:`, request.name, newList.id)
+                return newList.id
+            },
+
+            addToList: async (listId: string, content: Content) => {
+                const state = get()
+                if (adapter.isAsync) set({ syncStatus: 'syncing' })
+
+                const updatedPrefs = UserListsService.addToList(state, { listId, content })
+
+                const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
+                set({
+                    userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
+                    lastActive: newLastActive,
+                })
+
+                try {
+                    await saveToStorage(get(), 'addToList')
+                    if (adapter.isAsync) set({ syncStatus: 'synced' })
+                } catch (_error) {
+                    if (adapter.isAsync) set({ syncStatus: 'offline' })
+                }
+
+                logger.log(`📝 [${trackingContext}] Added to list:`, {
+                    listId,
+                    content: getTitle(content),
+                })
+            },
+
+            removeFromList: async (listId: string, contentId: number) => {
+                const state = get()
+                if (adapter.isAsync) set({ syncStatus: 'syncing' })
+
+                const updatedPrefs = UserListsService.removeFromList(state, { listId, contentId })
+
+                const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
+                set({
+                    userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
+                    lastActive: newLastActive,
+                })
+
+                try {
+                    await saveToStorage(get(), 'removeFromList')
+                    if (adapter.isAsync) set({ syncStatus: 'synced' })
+                } catch (_error) {
+                    if (adapter.isAsync) set({ syncStatus: 'offline' })
+                }
+
+                logger.log(`🗑️ [${trackingContext}] Removed from list:`, { listId, contentId })
+            },
+
+            updateList: async (
+                listId: string,
+                updates: {
+                    name?: string
+                    emoji?: string
+                    color?: string
+                    order?: number
+                    displayAsRow?: boolean
+                    genres?: string[]
+                    genreLogic?: 'AND' | 'OR'
+                    mediaType?: 'movie' | 'tv' | 'both'
+                }
+            ) => {
+                // Check if this is a system recommendation ID - route to updateSystemRecommendation
+                const systemRecIds = ['trending', 'top-rated', 'recommended-for-you']
+                if (systemRecIds.includes(listId)) {
+                    const state = get()
+                    if (adapter.isAsync) set({ syncStatus: 'syncing' })
+
+                    // Map UserList updates to SystemRecommendation updates
+                    const sysRecUpdates: Partial<Omit<SystemRecommendation, 'id'>> = {}
+                    if (updates.name !== undefined) sysRecUpdates.name = updates.name
+                    if (updates.emoji !== undefined) sysRecUpdates.emoji = updates.emoji
+                    if (updates.order !== undefined) sysRecUpdates.order = updates.order
+                    if (updates.displayAsRow !== undefined)
+                        sysRecUpdates.enabled = updates.displayAsRow
+                    if (updates.genres !== undefined) sysRecUpdates.genres = updates.genres
+                    if (updates.mediaType !== undefined) sysRecUpdates.mediaType = updates.mediaType
+
+                    const newRecommendations = state.systemRecommendations.map((rec) =>
+                        rec.id === listId ? { ...rec, ...sysRecUpdates } : rec
+                    )
+
+                    const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
+                    set({
+                        systemRecommendations: newRecommendations,
+                        lastActive: newLastActive,
+                    })
+
+                    try {
+                        await saveToStorage(get(), 'updateList-systemRec')
+                        if (adapter.isAsync) set({ syncStatus: 'synced' })
+                    } catch (_error) {
+                        if (adapter.isAsync) set({ syncStatus: 'offline' })
+                    }
+
+                    logger.log(
+                        `✏️ [${trackingContext}] Updated system recommendation via updateList:`,
+                        {
+                            listId,
+                            updates,
+                        }
+                    )
+                    return
+                }
+
+                const state = get()
+                if (adapter.isAsync) set({ syncStatus: 'syncing' })
+
+                const updatedPrefs = UserListsService.updateList(state, { id: listId, ...updates })
+
+                const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
+                set({
+                    userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
+                    lastActive: newLastActive,
+                })
+
+                try {
+                    await saveToStorage(get(), 'updateList')
+                    if (adapter.isAsync) set({ syncStatus: 'synced' })
+                } catch (_error) {
+                    if (adapter.isAsync) set({ syncStatus: 'offline' })
+                }
+
+                logger.log(`✏️ [${trackingContext}] Updated list:`, { listId, updates })
+            },
+
+            deleteList: async (listId: string) => {
+                const state = get()
+                if (adapter.isAsync) set({ syncStatus: 'syncing' })
+
+                const updatedPrefs = UserListsService.deleteList(state, listId)
+
+                const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
+                set({
+                    userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
+                    lastActive: newLastActive,
+                })
+
+                try {
+                    await saveToStorage(get(), 'deleteList')
+                    if (adapter.isAsync) set({ syncStatus: 'synced' })
+                } catch (_error) {
+                    if (adapter.isAsync) set({ syncStatus: 'offline' })
+                }
+
+                logger.log(`🗑️ [${trackingContext}] Deleted list:`, listId)
+            },
+
+            updatePreferences: async (prefs: Partial<UserState>) => {
+                // Guest-specific: Block child safety mode changes
+                if (enableGuestFeatures && 'childSafetyMode' in prefs) {
+                    logger.log(
+                        `⚠️ [${trackingContext}] Blocked childSafetyMode update - guests cannot change this setting`
+                    )
+                    const { childSafetyMode: _childSafetyMode, ...allowedPrefs } = prefs
+                    if (Object.keys(allowedPrefs).length === 0) return
+                    prefs = allowedPrefs
+                }
+
+                // ✅ CRITICAL: Clear cache when child safety mode changes
+                // This prevents serving cached adult content when switching to child safety mode
+                // or vice versa
+                if ('childSafetyMode' in prefs && typeof window !== 'undefined') {
+                    const currentChildSafetyMode = get().childSafetyMode
+                    const newChildSafetyMode = prefs.childSafetyMode
+
+                    if (currentChildSafetyMode !== newChildSafetyMode) {
+                        // Import cache store dynamically to avoid circular dependency
+                        import('./cacheStore').then(({ useCacheStore }) => {
+                            useCacheStore.getState().clearCache()
+                            logger.log(
+                                `🧹 [${trackingContext}] Cache cleared due to childSafetyMode change: ${currentChildSafetyMode} → ${newChildSafetyMode}`
+                            )
+                        })
+                    }
+                }
+
+                if (adapter.isAsync) set({ syncStatus: 'syncing' })
+
+                set({
+                    ...prefs,
+                    lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+                })
+
+                const state = get()
+
+                try {
+                    await saveToStorage(state, 'updatePreferences')
+                    if (adapter.isAsync) set({ syncStatus: 'synced' })
+                    logger.log(`✅ [${trackingContext}] Preferences saved:`, {
+                        autoMute: state.autoMute,
+                        defaultVolume: state.defaultVolume,
+                        childSafetyMode: state.childSafetyMode,
+                        improveRecommendations: state.improveRecommendations,
+                        showRecommendations: state.showRecommendations,
+                    })
+                } catch (_error) {
+                    if (adapter.isAsync) set({ syncStatus: 'offline' })
+                    logger.error(`❌ [${trackingContext}] Failed to save preferences:`, _error)
+                }
+            },
+
+            updateSystemRecommendation: async (
+                id: string,
+                updates: Partial<Omit<SystemRecommendation, 'id'>>
+            ) => {
+                const state = get()
+                if (adapter.isAsync) set({ syncStatus: 'syncing' })
 
                 const newRecommendations = state.systemRecommendations.map((rec) =>
-                    rec.id === listId ? { ...rec, ...sysRecUpdates } : rec
+                    rec.id === id ? { ...rec, ...updates } : rec
                 )
 
                 const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
@@ -637,457 +804,334 @@ export function createUserStore(options: CreateUserStoreOptions) {
                 })
 
                 try {
-                    await saveToStorage(get(), 'updateList-systemRec')
+                    await saveToStorage(get(), 'updateSystemRecommendation')
                     if (adapter.isAsync) set({ syncStatus: 'synced' })
                 } catch (_error) {
                     if (adapter.isAsync) set({ syncStatus: 'offline' })
                 }
 
-                logger.log(
-                    `✏️ [${trackingContext}] Updated system recommendation via updateList:`,
-                    {
-                        listId,
-                        updates,
-                    }
-                )
-                return
-            }
-
-            const state = get()
-            if (adapter.isAsync) set({ syncStatus: 'syncing' })
-
-            const updatedPrefs = UserListsService.updateList(state, { id: listId, ...updates })
-
-            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
-            set({
-                userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
-                lastActive: newLastActive,
-            })
-
-            try {
-                await saveToStorage(get(), 'updateList')
-                if (adapter.isAsync) set({ syncStatus: 'synced' })
-            } catch (_error) {
-                if (adapter.isAsync) set({ syncStatus: 'offline' })
-            }
-
-            logger.log(`✏️ [${trackingContext}] Updated list:`, { listId, updates })
-        },
-
-        deleteList: async (listId: string) => {
-            const state = get()
-            if (adapter.isAsync) set({ syncStatus: 'syncing' })
-
-            const updatedPrefs = UserListsService.deleteList(state, listId)
-
-            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
-            set({
-                userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
-                lastActive: newLastActive,
-            })
-
-            try {
-                await saveToStorage(get(), 'deleteList')
-                if (adapter.isAsync) set({ syncStatus: 'synced' })
-            } catch (_error) {
-                if (adapter.isAsync) set({ syncStatus: 'offline' })
-            }
-
-            logger.log(`🗑️ [${trackingContext}] Deleted list:`, listId)
-        },
-
-        updatePreferences: async (prefs: Partial<UserState>) => {
-            // Guest-specific: Block child safety mode changes
-            if (enableGuestFeatures && 'childSafetyMode' in prefs) {
-                logger.log(
-                    `⚠️ [${trackingContext}] Blocked childSafetyMode update - guests cannot change this setting`
-                )
-                const { childSafetyMode: _childSafetyMode, ...allowedPrefs } = prefs
-                if (Object.keys(allowedPrefs).length === 0) return
-                prefs = allowedPrefs
-            }
-
-            // ✅ CRITICAL: Clear cache when child safety mode changes
-            // This prevents serving cached adult content when switching to child safety mode
-            // or vice versa
-            if ('childSafetyMode' in prefs && typeof window !== 'undefined') {
-                const currentChildSafetyMode = get().childSafetyMode
-                const newChildSafetyMode = prefs.childSafetyMode
-
-                if (currentChildSafetyMode !== newChildSafetyMode) {
-                    // Import cache store dynamically to avoid circular dependency
-                    import('./cacheStore').then(({ useCacheStore }) => {
-                        useCacheStore.getState().clearCache()
-                        logger.log(
-                            `🧹 [${trackingContext}] Cache cleared due to childSafetyMode change: ${currentChildSafetyMode} → ${newChildSafetyMode}`
-                        )
-                    })
-                }
-            }
-
-            if (adapter.isAsync) set({ syncStatus: 'syncing' })
-
-            set({
-                ...prefs,
-                lastActive: typeof window !== 'undefined' ? Date.now() : 0,
-            })
-
-            const state = get()
-
-            try {
-                await saveToStorage(state, 'updatePreferences')
-                if (adapter.isAsync) set({ syncStatus: 'synced' })
-                logger.log(`✅ [${trackingContext}] Preferences saved:`, {
-                    autoMute: state.autoMute,
-                    defaultVolume: state.defaultVolume,
-                    childSafetyMode: state.childSafetyMode,
-                    improveRecommendations: state.improveRecommendations,
-                    showRecommendations: state.showRecommendations,
+                logger.log(`✏️ [${trackingContext}] Updated system recommendation:`, {
+                    id,
+                    updates,
                 })
-            } catch (_error) {
-                if (adapter.isAsync) set({ syncStatus: 'offline' })
-                logger.error(`❌ [${trackingContext}] Failed to save preferences:`, _error)
-            }
-        },
+            },
 
-        updateSystemRecommendation: async (
-            id: string,
-            updates: Partial<Omit<SystemRecommendation, 'id'>>
-        ) => {
-            const state = get()
-            if (adapter.isAsync) set({ syncStatus: 'syncing' })
-
-            const newRecommendations = state.systemRecommendations.map((rec) =>
-                rec.id === id ? { ...rec, ...updates } : rec
-            )
-
-            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
-            set({
-                systemRecommendations: newRecommendations,
-                lastActive: newLastActive,
-            })
-
-            try {
-                await saveToStorage(get(), 'updateSystemRecommendation')
-                if (adapter.isAsync) set({ syncStatus: 'synced' })
-            } catch (_error) {
-                if (adapter.isAsync) set({ syncStatus: 'offline' })
-            }
-
-            logger.log(`✏️ [${trackingContext}] Updated system recommendation:`, { id, updates })
-        },
-
-        reorderSystemRecommendations: async (orderedIds: string[]) => {
-            const state = get()
-            if (adapter.isAsync) set({ syncStatus: 'syncing' })
-
-            // Create a map of current recommendations
-            const recMap = new Map(state.systemRecommendations.map((rec) => [rec.id, rec]))
-
-            // Reorder based on orderedIds, assigning new order values
-            const newRecommendations = orderedIds
-                .map((id, index) => {
-                    const rec = recMap.get(id as SystemRecommendation['id'])
-                    return rec ? { ...rec, order: index } : null
-                })
-                .filter((rec): rec is SystemRecommendation => rec !== null)
-
-            // Add any recommendations not in orderedIds at the end
-            state.systemRecommendations.forEach((rec) => {
-                if (!orderedIds.includes(rec.id)) {
-                    newRecommendations.push({ ...rec, order: newRecommendations.length })
-                }
-            })
-
-            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
-            set({
-                systemRecommendations: newRecommendations,
-                lastActive: newLastActive,
-            })
-
-            try {
-                await saveToStorage(get(), 'reorderSystemRecommendations')
-                if (adapter.isAsync) set({ syncStatus: 'synced' })
-            } catch (_error) {
-                if (adapter.isAsync) set({ syncStatus: 'offline' })
-            }
-
-            logger.log(`🔄 [${trackingContext}] Reordered system recommendations:`, orderedIds)
-        },
-
-        ...(enableFirebaseSync && {
-            syncWithStorage: async (userId: string) => {
+            reorderSystemRecommendations: async (orderedIds: string[]) => {
                 const state = get()
+                if (adapter.isAsync) set({ syncStatus: 'syncing' })
 
-                // Clear store if switching to a different user
-                if (state.userId && state.userId !== userId) {
-                    logger.warn(
-                        `⚠️ [${trackingContext}] User ID mismatch! Store: ${state.userId}, Requested: ${userId}. Clearing store.`
-                    )
-                    set(getDefaultState())
+                // Create a map of current recommendations
+                const recMap = new Map(state.systemRecommendations.map((rec) => [rec.id, rec]))
+
+                // Reorder based on orderedIds, assigning new order values
+                const newRecommendations = orderedIds
+                    .map((id, index) => {
+                        const rec = recMap.get(id as SystemRecommendation['id'])
+                        return rec ? { ...rec, order: index } : null
+                    })
+                    .filter((rec): rec is SystemRecommendation => rec !== null)
+
+                // Add any recommendations not in orderedIds at the end
+                state.systemRecommendations.forEach((rec) => {
+                    if (!orderedIds.includes(rec.id)) {
+                        newRecommendations.push({ ...rec, order: newRecommendations.length })
+                    }
+                })
+
+                const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
+                set({
+                    systemRecommendations: newRecommendations,
+                    lastActive: newLastActive,
+                })
+
+                try {
+                    await saveToStorage(get(), 'reorderSystemRecommendations')
+                    if (adapter.isAsync) set({ syncStatus: 'synced' })
+                } catch (_error) {
+                    if (adapter.isAsync) set({ syncStatus: 'offline' })
                 }
 
-                // Run the sync directly (sync manager deduplication removed with Firebase)
-                const runSync = async () => {
-                    try {
-                        logger.log(`🔄 [${trackingContext}] Executing sync for user: ${userId}`)
-                        set({ syncStatus: 'syncing', userId })
+                logger.log(`🔄 [${trackingContext}] Reordered system recommendations:`, orderedIds)
+            },
 
-                        const firebaseData = await adapter.load(userId)
+            ...(enableFirebaseSync && {
+                syncWithStorage: async (userId: string) => {
+                    const state = get()
 
-                        // Verify we're still loading data for the correct user
-                        const currentState = get()
-                        if (currentState.userId !== userId) {
-                            logger.warn(
-                                `⚠️ [${trackingContext}] User changed during sync (${currentState.userId} != ${userId}), aborting`
-                            )
-                            return null
-                        }
+                    // Clear store if switching to a different user
+                    if (state.userId && state.userId !== userId) {
+                        logger.warn(
+                            `⚠️ [${trackingContext}] User ID mismatch! Store: ${state.userId}, Requested: ${userId}. Clearing store.`
+                        )
+                        set(getDefaultState())
+                    }
 
-                        // Ensure all collections have required new fields for backward compatibility
-                        let normalizedCollections = (firebaseData.userCreatedWatchlists || []).map(
-                            (list, index) => ({
+                    // Run the sync directly (sync manager deduplication removed with Firebase)
+                    const runSync = async () => {
+                        try {
+                            logger.log(`🔄 [${trackingContext}] Executing sync for user: ${userId}`)
+                            set({ syncStatus: 'syncing', userId })
+
+                            const firebaseData = await adapter.load(userId)
+
+                            // Verify we're still loading data for the correct user
+                            const currentState = get()
+                            if (currentState.userId !== userId) {
+                                logger.warn(
+                                    `⚠️ [${trackingContext}] User changed during sync (${currentState.userId} != ${userId}), aborting`
+                                )
+                                return null
+                            }
+
+                            // Ensure all collections have required new fields for backward compatibility
+                            let normalizedCollections = (
+                                firebaseData.userCreatedWatchlists || []
+                            ).map((list, index) => ({
                                 ...list,
                                 collectionType: list.collectionType || ('manual' as const),
                                 displayAsRow: list.displayAsRow ?? true,
                                 order: list.order ?? index,
                                 enabled: list.enabled ?? true,
-                            })
-                        )
+                            }))
 
-                        // Track if we need to save seeded defaults back to storage
-                        let needsSeedSave = false
+                            // Track if we need to save seeded defaults back to storage
+                            let needsSeedSave = false
 
-                        // Seed default collections for new users
-                        if (needsDefaultCollections(normalizedCollections)) {
-                            logger.log(
-                                `🌱 [${trackingContext}] Seeding default collections for new user: ${userId}`
-                            )
-                            normalizedCollections = createDefaultCollectionsForUser()
-                            needsSeedSave = true
-                        }
-
-                        // Merge system recommendations - adds any missing defaults to existing users
-                        const systemRecommendations = mergeSystemRecommendations(
-                            firebaseData.systemRecommendations || []
-                        )
-                        // Check if we added new recommendations
-                        const existingCount = (firebaseData.systemRecommendations || []).length
-                        if (systemRecommendations.length > existingCount) {
-                            logger.log(
-                                `🌱 [${trackingContext}] Added ${systemRecommendations.length - existingCount} new system recommendations for user: ${userId}`
-                            )
-                            needsSeedSave = true
-                        } else if (existingCount === 0) {
-                            logger.log(
-                                `🌱 [${trackingContext}] Seeding default system recommendations for new user: ${userId}`
-                            )
-                            needsSeedSave = true
-                        }
-
-                        set({
-                            userId,
-                            likedMovies: firebaseData.likedMovies,
-                            hiddenMovies: firebaseData.hiddenMovies,
-                            defaultWatchlist: firebaseData.defaultWatchlist,
-                            userCreatedWatchlists: normalizedCollections,
-                            systemRecommendations,
-                            lastActive: firebaseData.lastActive,
-                            autoMute: firebaseData.autoMute ?? true,
-                            defaultVolume: firebaseData.defaultVolume ?? 50,
-                            childSafetyMode: firebaseData.childSafetyMode ?? false,
-                            improveRecommendations: firebaseData.improveRecommendations ?? true,
-                            showRecommendations: firebaseData.showRecommendations ?? true,
-                            trackWatchHistory: firebaseData.trackWatchHistory ?? true,
-                            notifications:
-                                firebaseData.notifications ?? cloneDefaultNotifications(),
-                            genrePreferences: firebaseData.genrePreferences ?? [],
-                            contentPreferences: firebaseData.contentPreferences ?? [],
-                            shownPreferenceContent: firebaseData.shownPreferenceContent ?? [],
-                            votedContent: firebaseData.votedContent ?? [],
-                            skippedContent: filterExpiredSkips(firebaseData.skippedContent ?? []),
-                            myRatings: migrateToMyRatings(
-                                firebaseData.myRatings,
-                                firebaseData.likedMovies,
-                                firebaseData.hiddenMovies
-                            ),
-                            syncStatus: 'synced',
-                        })
-
-                        // Persist seeded defaults to Firestore so they survive refresh
-                        if (needsSeedSave) {
-                            logger.log(
-                                `💾 [${trackingContext}] Saving seeded defaults to Firestore for user: ${userId}`
-                            )
-                            try {
-                                await saveToStorage(get(), 'seedDefaults')
-                            } catch (saveError) {
-                                logger.error(
-                                    `❌ [${trackingContext}] Failed to save seeded defaults:`,
-                                    saveError
+                            // Seed default collections for new users
+                            if (needsDefaultCollections(normalizedCollections)) {
+                                logger.log(
+                                    `🌱 [${trackingContext}] Seeding default collections for new user: ${userId}`
                                 )
-                                // Don't fail the whole sync - defaults are still in memory
+                                normalizedCollections = createDefaultCollectionsForUser()
+                                needsSeedSave = true
                             }
+
+                            // Merge system recommendations - adds any missing defaults to existing users
+                            const systemRecommendations = mergeSystemRecommendations(
+                                firebaseData.systemRecommendations || []
+                            )
+                            // Check if we added new recommendations
+                            const existingCount = (firebaseData.systemRecommendations || []).length
+                            if (systemRecommendations.length > existingCount) {
+                                logger.log(
+                                    `🌱 [${trackingContext}] Added ${systemRecommendations.length - existingCount} new system recommendations for user: ${userId}`
+                                )
+                                needsSeedSave = true
+                            } else if (existingCount === 0) {
+                                logger.log(
+                                    `🌱 [${trackingContext}] Seeding default system recommendations for new user: ${userId}`
+                                )
+                                needsSeedSave = true
+                            }
+
+                            set({
+                                userId,
+                                likedMovies: firebaseData.likedMovies,
+                                hiddenMovies: firebaseData.hiddenMovies,
+                                defaultWatchlist: firebaseData.defaultWatchlist,
+                                userCreatedWatchlists: normalizedCollections,
+                                systemRecommendations,
+                                lastActive: firebaseData.lastActive,
+                                autoMute: firebaseData.autoMute ?? true,
+                                defaultVolume: firebaseData.defaultVolume ?? 50,
+                                childSafetyMode: firebaseData.childSafetyMode ?? false,
+                                improveRecommendations: firebaseData.improveRecommendations ?? true,
+                                showRecommendations: firebaseData.showRecommendations ?? true,
+                                trackWatchHistory: firebaseData.trackWatchHistory ?? true,
+                                notifications:
+                                    firebaseData.notifications ?? cloneDefaultNotifications(),
+                                genrePreferences: firebaseData.genrePreferences ?? [],
+                                contentPreferences: firebaseData.contentPreferences ?? [],
+                                shownPreferenceContent: firebaseData.shownPreferenceContent ?? [],
+                                votedContent: firebaseData.votedContent ?? [],
+                                skippedContent: filterExpiredSkips(
+                                    firebaseData.skippedContent ?? []
+                                ),
+                                myRatings: migrateToMyRatings(
+                                    firebaseData.myRatings,
+                                    firebaseData.likedMovies,
+                                    firebaseData.hiddenMovies
+                                ),
+                                syncStatus: 'synced',
+                            })
+
+                            // Persist seeded defaults to Firestore so they survive refresh
+                            if (needsSeedSave) {
+                                logger.log(
+                                    `💾 [${trackingContext}] Saving seeded defaults to Firestore for user: ${userId}`
+                                )
+                                try {
+                                    await saveToStorage(get(), 'seedDefaults')
+                                } catch (saveError) {
+                                    logger.error(
+                                        `❌ [${trackingContext}] Failed to save seeded defaults:`,
+                                        saveError
+                                    )
+                                    // Don't fail the whole sync - defaults are still in memory
+                                }
+                            }
+
+                            logger.log(
+                                `✅ [${trackingContext}] Successfully synced for user ${userId}`
+                            )
+                            return firebaseData
+                        } catch (error) {
+                            logger.error(`❌ [${trackingContext}] Failed to sync:`, error)
+                            set({ syncStatus: 'offline' })
+                            throw error
                         }
-
-                        logger.log(`✅ [${trackingContext}] Successfully synced for user ${userId}`)
-                        return firebaseData
-                    } catch (error) {
-                        logger.error(`❌ [${trackingContext}] Failed to sync:`, error)
-                        set({ syncStatus: 'offline' })
-                        throw error
                     }
-                }
 
-                await runSync()
-            },
-            // Alias for backward compatibility with authStore
-            get syncWithFirebase() {
-                return this.syncWithStorage
-            },
-        }),
+                    await runSync()
+                },
+                // Alias for backward compatibility with authStore
+                get syncWithFirebase() {
+                    return this.syncWithStorage
+                },
+            }),
 
-        ...(enableGuestFeatures && {
-            syncFromLocalStorage: async (guestId: string) => {
-                const loadedData = await adapter.load(guestId)
+            ...(enableGuestFeatures && {
+                syncFromLocalStorage: async (guestId: string) => {
+                    const loadedData = await adapter.load(guestId)
 
-                // Track if we need to save seeded defaults back to storage
-                let needsSeedSave = false
+                    // Track if we need to save seeded defaults back to storage
+                    let needsSeedSave = false
 
-                // Ensure all collections have required new fields for backward compatibility
-                let normalizedCollections = (loadedData.userCreatedWatchlists || []).map(
-                    (list, index) => ({
-                        ...list,
-                        collectionType: list.collectionType || ('manual' as const),
-                        displayAsRow: list.displayAsRow ?? true,
-                        order: list.order ?? index,
-                        enabled: list.enabled ?? true,
-                    })
-                )
-
-                // Seed default collections for new guest users
-                if (needsDefaultCollections(normalizedCollections)) {
-                    logger.log(
-                        `🌱 [${trackingContext}] Seeding default collections for new guest: ${guestId}`
+                    // Ensure all collections have required new fields for backward compatibility
+                    let normalizedCollections = (loadedData.userCreatedWatchlists || []).map(
+                        (list, index) => ({
+                            ...list,
+                            collectionType: list.collectionType || ('manual' as const),
+                            displayAsRow: list.displayAsRow ?? true,
+                            order: list.order ?? index,
+                            enabled: list.enabled ?? true,
+                        })
                     )
-                    normalizedCollections = createDefaultCollectionsForUser()
-                    needsSeedSave = true
-                }
 
-                // Merge system recommendations - adds any missing defaults to existing guests
-                const systemRecommendations = mergeSystemRecommendations(
-                    loadedData.systemRecommendations || []
-                )
-                // Check if we added new recommendations
-                const existingCount = (loadedData.systemRecommendations || []).length
-                if (systemRecommendations.length > existingCount) {
-                    logger.log(
-                        `🌱 [${trackingContext}] Added ${systemRecommendations.length - existingCount} new system recommendations for guest: ${guestId}`
-                    )
-                    needsSeedSave = true
-                } else if (existingCount === 0) {
-                    logger.log(
-                        `🌱 [${trackingContext}] Seeding default system recommendations for new guest: ${guestId}`
-                    )
-                    needsSeedSave = true
-                }
-
-                set({
-                    [idField]: guestId,
-                    likedMovies: loadedData.likedMovies,
-                    hiddenMovies: loadedData.hiddenMovies,
-                    defaultWatchlist: loadedData.defaultWatchlist,
-                    userCreatedWatchlists: normalizedCollections,
-                    systemRecommendations,
-                    lastActive: loadedData.lastActive,
-                    autoMute: loadedData.autoMute ?? true,
-                    defaultVolume: loadedData.defaultVolume ?? 50,
-                    childSafetyMode: false, // Always false for guests
-                    improveRecommendations: loadedData.improveRecommendations ?? true,
-                    showRecommendations: loadedData.showRecommendations ?? true,
-                    trackWatchHistory: loadedData.trackWatchHistory ?? true,
-                    notifications: loadedData.notifications ?? cloneDefaultNotifications(),
-                    genrePreferences: loadedData.genrePreferences ?? [],
-                    contentPreferences: loadedData.contentPreferences ?? [],
-                    shownPreferenceContent: loadedData.shownPreferenceContent ?? [],
-                    votedContent: loadedData.votedContent ?? [],
-                    skippedContent: filterExpiredSkips(loadedData.skippedContent ?? []),
-                    myRatings: migrateToMyRatings(
-                        loadedData.myRatings,
-                        loadedData.likedMovies,
-                        loadedData.hiddenMovies
-                    ),
-                })
-
-                // Persist seeded defaults to localStorage so they survive refresh
-                if (needsSeedSave) {
-                    logger.log(
-                        `💾 [${trackingContext}] Saving seeded defaults to localStorage for guest: ${guestId}`
-                    )
-                    try {
-                        await saveToStorage(get(), 'seedDefaults')
-                    } catch (saveError) {
-                        logger.error(
-                            `❌ [${trackingContext}] Failed to save seeded defaults:`,
-                            saveError
+                    // Seed default collections for new guest users
+                    if (needsDefaultCollections(normalizedCollections)) {
+                        logger.log(
+                            `🌱 [${trackingContext}] Seeding default collections for new guest: ${guestId}`
                         )
+                        normalizedCollections = createDefaultCollectionsForUser()
+                        needsSeedSave = true
                     }
-                }
 
-                logger.log(`🔄 [${trackingContext}] Synced from localStorage:`, {
-                    guestId,
-                    watchlistCount: loadedData.defaultWatchlist.length,
-                })
-            },
-            clearAllData: () => {
+                    // Merge system recommendations - adds any missing defaults to existing guests
+                    const systemRecommendations = mergeSystemRecommendations(
+                        loadedData.systemRecommendations || []
+                    )
+                    // Check if we added new recommendations
+                    const existingCount = (loadedData.systemRecommendations || []).length
+                    if (systemRecommendations.length > existingCount) {
+                        logger.log(
+                            `🌱 [${trackingContext}] Added ${systemRecommendations.length - existingCount} new system recommendations for guest: ${guestId}`
+                        )
+                        needsSeedSave = true
+                    } else if (existingCount === 0) {
+                        logger.log(
+                            `🌱 [${trackingContext}] Seeding default system recommendations for new guest: ${guestId}`
+                        )
+                        needsSeedSave = true
+                    }
+
+                    set({
+                        [idField]: guestId,
+                        likedMovies: loadedData.likedMovies,
+                        hiddenMovies: loadedData.hiddenMovies,
+                        defaultWatchlist: loadedData.defaultWatchlist,
+                        userCreatedWatchlists: normalizedCollections,
+                        systemRecommendations,
+                        lastActive: loadedData.lastActive,
+                        autoMute: loadedData.autoMute ?? true,
+                        defaultVolume: loadedData.defaultVolume ?? 50,
+                        childSafetyMode: false, // Always false for guests
+                        improveRecommendations: loadedData.improveRecommendations ?? true,
+                        showRecommendations: loadedData.showRecommendations ?? true,
+                        trackWatchHistory: loadedData.trackWatchHistory ?? true,
+                        notifications: loadedData.notifications ?? cloneDefaultNotifications(),
+                        genrePreferences: loadedData.genrePreferences ?? [],
+                        contentPreferences: loadedData.contentPreferences ?? [],
+                        shownPreferenceContent: loadedData.shownPreferenceContent ?? [],
+                        votedContent: loadedData.votedContent ?? [],
+                        skippedContent: filterExpiredSkips(loadedData.skippedContent ?? []),
+                        myRatings: migrateToMyRatings(
+                            loadedData.myRatings,
+                            loadedData.likedMovies,
+                            loadedData.hiddenMovies
+                        ),
+                    })
+
+                    // Persist seeded defaults to localStorage so they survive refresh
+                    if (needsSeedSave) {
+                        logger.log(
+                            `💾 [${trackingContext}] Saving seeded defaults to localStorage for guest: ${guestId}`
+                        )
+                        try {
+                            await saveToStorage(get(), 'seedDefaults')
+                        } catch (saveError) {
+                            logger.error(
+                                `❌ [${trackingContext}] Failed to save seeded defaults:`,
+                                saveError
+                            )
+                        }
+                    }
+
+                    logger.log(`🔄 [${trackingContext}] Synced from localStorage:`, {
+                        guestId,
+                        watchlistCount: loadedData.defaultWatchlist.length,
+                    })
+                },
+                clearAllData: () => {
+                    const state = get()
+                    const preservedId = state[idField]
+
+                    if (preservedId) {
+                        adapter.clear(preservedId as string)
+                    }
+
+                    set({
+                        ...getDefaultState(),
+                        [idField]: preservedId,
+                        lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+                    })
+                    logger.log(`🧹 [${trackingContext}] Cleared all data, preserved ${idField}`)
+                },
+            }),
+
+            clearLocalCache: () => {
                 const state = get()
-                const preservedId = state[idField]
+                const id = state[idField]
+                set(getDefaultState())
+                logger.log(`🧹 [${trackingContext}] Cleared local cache for ${idField} ${id}`)
+            },
 
-                if (preservedId) {
-                    adapter.clear(preservedId as string)
+            loadData: (data: UserState) => {
+                const state = get()
+
+                // Verify we're loading data for the correct user if ID is provided
+                if (data[idField] && state[idField] && data[idField] !== state[idField]) {
+                    logger.warn(
+                        `⚠️ [${trackingContext}] Attempted to load data for wrong ${idField}! Store: ${state[idField]}, Data: ${data[idField]}`
+                    )
+                    return
                 }
 
                 set({
-                    ...getDefaultState(),
-                    [idField]: preservedId,
+                    ...data,
+                    notifications: data.notifications ?? cloneDefaultNotifications(),
                     lastActive: typeof window !== 'undefined' ? Date.now() : 0,
                 })
-                logger.log(`🧹 [${trackingContext}] Cleared all data, preserved ${idField}`)
-            },
-        }),
-
-        clearLocalCache: () => {
-            const state = get()
-            const id = state[idField]
-            set(getDefaultState())
-            logger.log(`🧹 [${trackingContext}] Cleared local cache for ${idField} ${id}`)
-        },
-
-        loadData: (data: UserState) => {
-            const state = get()
-
-            // Verify we're loading data for the correct user if ID is provided
-            if (data[idField] && state[idField] && data[idField] !== state[idField]) {
-                logger.warn(
-                    `⚠️ [${trackingContext}] Attempted to load data for wrong ${idField}! Store: ${state[idField]}, Data: ${data[idField]}`
+                logger.log(
+                    `📥 [${trackingContext}] Loaded data for ${idField} ${data[idField] || 'unknown'}:`,
+                    {
+                        watchlistCount: data.defaultWatchlist.length,
+                        likedCount: data.likedMovies.length,
+                        hiddenCount: data.hiddenMovies.length,
+                        listsCount: data.userCreatedWatchlists.length,
+                    }
                 )
-                return
-            }
-
-            set({
-                ...data,
-                notifications: data.notifications ?? cloneDefaultNotifications(),
-                lastActive: typeof window !== 'undefined' ? Date.now() : 0,
-            })
-            logger.log(
-                `📥 [${trackingContext}] Loaded data for ${idField} ${data[idField] || 'unknown'}:`,
-                {
-                    watchlistCount: data.defaultWatchlist.length,
-                    likedCount: data.likedMovies.length,
-                    hiddenCount: data.hiddenMovies.length,
-                    listsCount: data.userCreatedWatchlists.length,
-                }
-            )
-        },
-    }))
+            },
+        }
+    })
 }
