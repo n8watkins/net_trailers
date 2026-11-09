@@ -9,17 +9,19 @@
 import { NextRequest } from 'next/server'
 import { POST } from '../../../../app/api/smart-suggestions/route'
 import { generateSmartSuggestions } from '../../../../utils/smartRowSuggestions'
-import { consumeGeminiRateLimit } from '@/lib/geminiRateLimiter'
-import { getRequestIdentity } from '@/lib/requestIdentity'
+import { consumeAiQuota } from '@/lib/aiQuota'
+import { getAiVisitor } from '@/lib/aiVisitor'
 import { routeGeminiRequest, extractGeminiText } from '@/lib/geminiRouter'
 import { TMDBApiClient } from '@/utils/tmdbApi'
 
 jest.mock('../../../../utils/smartRowSuggestions')
-jest.mock('@/lib/requestIdentity', () => ({
-    getRequestIdentity: jest.fn(),
+jest.mock('@/lib/aiVisitor', () => ({
+    getAiVisitor: jest.fn(),
 }))
-jest.mock('@/lib/geminiRateLimiter', () => ({
-    consumeGeminiRateLimit: jest.fn(),
+jest.mock('@/lib/aiQuota', () => ({
+    consumeAiQuota: jest.fn(),
+    refundAiQuota: jest.fn().mockResolvedValue(undefined),
+    quotaExhaustedMessage: jest.fn(() => 'limit'),
 }))
 jest.mock('@/lib/geminiRouter', () => ({
     routeGeminiRequest: jest.fn(),
@@ -35,10 +37,15 @@ jest.mock('@/utils/tmdbApi', () => ({
 const mockGenerateSmartSuggestions = generateSmartSuggestions as jest.MockedFunction<
     typeof generateSmartSuggestions
 >
-const mockGetRequestIdentity = getRequestIdentity as jest.MockedFunction<typeof getRequestIdentity>
-const mockConsumeGeminiRateLimit = consumeGeminiRateLimit as jest.MockedFunction<
-    typeof consumeGeminiRateLimit
->
+const mockGetAiVisitor = getAiVisitor as jest.MockedFunction<typeof getAiVisitor>
+const mockConsumeAiQuota = consumeAiQuota as jest.MockedFunction<typeof consumeAiQuota>
+const quotaOk = {
+    allowed: true,
+    remaining: 9,
+    limit: 10,
+    exhausted: null,
+    resetsAt: '2026-11-09T00:00:00.000Z',
+} as const
 const mockRouteGeminiRequest = routeGeminiRequest as jest.MockedFunction<typeof routeGeminiRequest>
 const mockExtractGeminiText = extractGeminiText as jest.MockedFunction<typeof extractGeminiText>
 const mockGetTMDBInstance = TMDBApiClient.getInstance as jest.Mock
@@ -64,8 +71,8 @@ describe('/api/smart-suggestions - Refactored flow', () => {
     beforeEach(() => {
         jest.clearAllMocks()
         mockGenerateSmartSuggestions.mockReset()
-        mockGetRequestIdentity.mockResolvedValue({ userId: null, rateLimitKey: 'test-rate' })
-        mockConsumeGeminiRateLimit.mockReturnValue({ allowed: true, retryAfterMs: 0 })
+        mockGetAiVisitor.mockResolvedValue({ userId: null, key: 'test-rate' })
+        mockConsumeAiQuota.mockResolvedValue({ ...quotaOk })
         mockRouteGeminiRequest.mockResolvedValue({ success: true, data: {} })
         mockExtractGeminiText.mockReturnValue(null)
 
@@ -134,16 +141,14 @@ describe('/api/smart-suggestions - Refactored flow', () => {
 
     describe('Gemini merge', () => {
         it('merges Gemini genre IDs and updates mediaType from analysis', async () => {
-            mockGenerateSmartSuggestions.mockResolvedValueOnce(createTmdbResult())
-            ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-                ok: true,
-                status: 200,
-                json: async () => ({
+            mockGenerateSmartSuggestions.mockResolvedValueOnce(createTmdbResult()) // Gemini analysis now runs in-process (lib/gemini/analyzeText)
+            mockExtractGeminiText.mockReturnValueOnce(
+                JSON.stringify({
                     genreIds: ['horror', 'thriller'],
                     mediaType: 'tv',
                     movieRecommendations: [],
-                }),
-            })
+                })
+            )
 
             const response = await POST(
                 createRequest({ rawText: 'moody horror miniseries', mediaType: 'movie' })
@@ -163,16 +168,14 @@ describe('/api/smart-suggestions - Refactored flow', () => {
 
         it('converts Gemini movie recommendations into a content list after TMDB lookup', async () => {
             mockGenerateSmartSuggestions.mockResolvedValueOnce(createTmdbResult())
-            mockTMDBFetch.mockResolvedValueOnce({ results: [{ id: 42 }] })
-            ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-                ok: true,
-                status: 200,
-                json: async () => ({
+            mockTMDBFetch.mockResolvedValueOnce({ results: [{ id: 42 }] }) // Gemini analysis now runs in-process (lib/gemini/analyzeText)
+            mockExtractGeminiText.mockReturnValueOnce(
+                JSON.stringify({
                     genreIds: [],
                     mediaType: 'movie',
                     movieRecommendations: [{ title: 'Blade Runner', year: 1982 }],
-                }),
-            })
+                })
+            )
 
             const response = await POST(
                 createRequest({ rawText: 'neon soaked sci-fi noir', mediaType: 'movie' })
@@ -204,21 +207,25 @@ describe('/api/smart-suggestions - Refactored flow', () => {
             expect(data.rowNames[0]).toBe('Certified Bangers')
             expect(data.rowNames[1]).toBe('Ridley Scott Films')
             expect(mockRouteGeminiRequest).toHaveBeenCalled()
-            expect(mockConsumeGeminiRateLimit).toHaveBeenCalledWith('test-rate')
+            expect(mockConsumeAiQuota).toHaveBeenCalledWith('test-rate')
         })
 
-        it('returns 429 when the naming rate limit is exhausted', async () => {
+        it('falls back to TMDB-only and says so when the AI quota is used up', async () => {
             mockGenerateSmartSuggestions.mockResolvedValueOnce(createTmdbResult())
-            mockConsumeGeminiRateLimit.mockReturnValueOnce({ allowed: false, retryAfterMs: 2500 })
+            mockConsumeAiQuota.mockResolvedValueOnce({
+                ...quotaOk,
+                allowed: false,
+                remaining: 0,
+                exhausted: 'visitor',
+            })
 
             const response = await POST(
                 createRequest({ rawText: 'ambient space adventures', mediaType: 'movie' })
             )
             const data = await response.json()
 
-            expect(response.status).toBe(429)
-            expect(data.error).toContain('AI naming limit')
-            expect(data.retryAfterMs).toBe(2500)
+            expect(response.status).toBe(200)
+            expect(data.ai).toBe('limit')
             expect(data.suggestions[0].source).toBe('tmdb')
             expect(mockRouteGeminiRequest).not.toHaveBeenCalled()
         })
