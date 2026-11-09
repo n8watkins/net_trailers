@@ -230,6 +230,17 @@ export default function SystemRecommendationRow({
         !isEnabled || error ? [] : isLoading ? undefined : content
     )
 
+    // Links like /#trending land on this row once it has rendered (rows load after the page)
+    const isVisible = isEnabled && !isLoading && dedupe.ready && !error && content.length > 0
+    useEffect(() => {
+        if (!isVisible || window.location.hash !== `#${recommendationId}`) return
+        // Wait a beat so the router's own scroll-to-top after navigation has happened
+        const timer = setTimeout(() => {
+            document.getElementById(recommendationId)?.scrollIntoView({ block: 'start' })
+        }, 150)
+        return () => clearTimeout(timer)
+    }, [isVisible, recommendationId])
+
     // Don't render if disabled
     if (!isEnabled) {
         return null
@@ -258,13 +269,15 @@ export default function SystemRecommendationRow({
     const apiEndpoint = params ? `${baseEndpoint}?${params}` : baseEndpoint
 
     return (
-        <Row
-            title={title}
-            content={content}
-            collection={collectionForEdit}
-            apiEndpoint={apiEndpoint}
-            excludeKeys={dedupe.exclude}
-        />
+        <div id={recommendationId} className="scroll-mt-28">
+            <Row
+                title={title}
+                content={content}
+                collection={collectionForEdit}
+                apiEndpoint={apiEndpoint}
+                excludeKeys={dedupe.exclude}
+            />
+        </div>
     )
 }
 

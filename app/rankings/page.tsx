@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import SubPageLayout from '../../components/layout/SubPageLayout'
 import { RankingGrid } from '../../components/rankings/RankingGrid'
@@ -19,29 +19,19 @@ import { Ranking, RankingComment } from '../../types/rankings'
 import { authenticatedFetch } from '../../lib/authenticatedFetch'
 import { formatDistanceToNow } from 'date-fns'
 import Link from 'next/link'
-import {
-    TrophyIcon,
-    ChatBubbleLeftIcon,
-    HeartIcon,
-    XMarkIcon,
-    MicrophoneIcon,
-} from '@heroicons/react/24/outline'
-import {
-    Cog6ToothIcon,
-    ChevronDownIcon,
-    TrashIcon,
-    PlusIcon,
-    MagnifyingGlassIcon,
-} from '@heroicons/react/24/solid'
-import { useVoiceInput } from '../../hooks/useVoiceInput'
-import { useToast } from '../../hooks/useToast'
+import { TrophyIcon, ChatBubbleLeftIcon, HeartIcon } from '@heroicons/react/24/outline'
+import { TrashIcon, PlusIcon } from '@heroicons/react/24/solid'
+import PageHeader from '../../components/layout/PageHeader'
+import PageEmptyState, { emptyStateActionClass } from '../../components/layout/PageEmptyState'
+import { FilterPills, ListSearchInput, ManageMenu } from '../../components/layout/PageToolbar'
+import { useModalStore } from '../../stores/modalStore'
 
 export default function RankingsPage() {
     const router = useRouter()
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
     const { isGuest, isInitialized } = useAuthStatus()
-    const { showError } = useToast()
+    const openAuthModal = useModalStore((state) => state.openAuthModal)
 
     const { rankings, isLoading, error, loadUserRankings } = useRankingStore()
 
@@ -55,13 +45,8 @@ export default function RankingsPage() {
     const [rankingsSearch, setRankingsSearch] = useState('')
     const [commentsSearch, setCommentsSearch] = useState('')
     const [likedSearch, setLikedSearch] = useState('')
-    const [isMounted, setIsMounted] = useState(false)
 
     // Manage dropdown state
-    const [showManageDropdown, setShowManageDropdown] = useState(false)
-    const manageDropdownRef = useRef<HTMLDivElement>(null)
-
-    // Voice input for active search
     const currentSearch =
         activeTab === 'rankings'
             ? rankingsSearch
@@ -75,50 +60,10 @@ export default function RankingsPage() {
               ? setCommentsSearch
               : setLikedSearch
 
-    const {
-        isListening,
-        isSupported,
-        transcript: _transcript,
-        startListening,
-        stopListening,
-    } = useVoiceInput({
-        onResult: (transcript) => {
-            setCurrentSearch(transcript)
-        },
-        onError: (error) => {
-            showError(error)
-        },
-        sourceId: `rankings-${activeTab}-search`,
-    })
-
-    // Track client-side mount
-    useEffect(() => {
-        setIsMounted(true)
-    }, [])
-
-    // Handle click outside to close dropdown
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (
-                manageDropdownRef.current &&
-                !manageDropdownRef.current.contains(event.target as Node)
-            ) {
-                setShowManageDropdown(false)
-            }
-        }
-
-        if (showManageDropdown) {
-            document.addEventListener('mousedown', handleClickOutside)
-        }
-
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside)
-        }
-    }, [showManageDropdown])
-
     // Load all data on mount
     useEffect(() => {
-        if (isInitialized && userId) {
+        // Rankings need an account; guests get a sign-in prompt instead of a 401
+        if (isInitialized && userId && !isGuest) {
             // Load user rankings
             loadUserRankings(userId)
 
@@ -149,7 +94,7 @@ export default function RankingsPage() {
 
     const handleCreateNew = () => {
         if (isGuest) {
-            alert('Please sign in to create rankings')
+            openAuthModal('signin')
             return
         }
         router.push('/rankings/new')
@@ -206,392 +151,217 @@ export default function RankingsPage() {
         (activeTab === 'comments' && userComments.length > 0) ||
         (activeTab === 'liked' && likedRankings.length > 0)
 
+    const hasAnything = rankings.length > 0 || userComments.length > 0 || likedRankings.length > 0
+    const searchPlaceholder = `Search ${
+        activeTab === 'rankings'
+            ? 'your rankings'
+            : activeTab === 'comments'
+              ? 'your comments'
+              : 'liked rankings'
+    }...`
+
     return (
         <SubPageLayout hideHeader>
-            <div className="relative -mt-20 -mx-6 sm:-mx-8 lg:-mx-12">
-                {/* Atmospheric Background */}
-                <div className="fixed inset-0 pointer-events-none">
-                    <div className="absolute inset-0 bg-black" />
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-yellow-900/20 via-transparent to-transparent opacity-50" />
-                    <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black opacity-60" />
-                </div>
-
-                {/* Content Container */}
-                <div className="relative z-10">
-                    {/* Cinematic Hero Header */}
-                    <div className="relative overflow-hidden pt-12">
-                        {/* Animated Background Gradients */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900/80 to-black" />
-                        <div
-                            className="absolute inset-0 bg-gradient-to-t from-yellow-900/20 via-amber-900/10 to-black/50 animate-pulse"
-                            style={{ animationDuration: '4s' }}
-                        />
-                        <div className="absolute inset-0 bg-gradient-radial from-yellow-500/10 via-yellow-900/5 to-transparent" />
-
-                        {/* Soft edge vignetting for subtle blending */}
-                        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/80" />
-                        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60" />
-
-                        {/* Hero Content */}
-                        <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-4">
-                            {/* Title with inline icon */}
-                            <div className="flex items-center gap-4 mb-2">
-                                {/* Trophy Icon with glow */}
-                                <div className="relative">
-                                    <div className="absolute inset-0 bg-yellow-500/30 blur-2xl scale-150" />
-                                    <TrophyIcon className="relative w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 text-yellow-400 drop-shadow-[0_0_20px_rgba(234,179,8,0.5)]" />
-                                </div>
-
-                                {/* Title */}
-                                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white text-center tracking-tight">
-                                    <span className="bg-gradient-to-r from-yellow-200 via-amber-100 to-yellow-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
-                                        My Rankings
-                                    </span>
-                                </h1>
-                            </div>
-
-                            {/* Subtitle */}
-                            <p className="text-base sm:text-lg text-gray-300 mb-6 text-center max-w-2xl">
-                                Create, manage, and share your personalized content rankings
-                            </p>
-
-                            {/* Filter Tabs - Left Aligned */}
-                            <div className="w-full max-w-4xl mb-5 px-4">
-                                <div className="flex flex-wrap gap-2 items-center justify-between">
-                                    {/* Left: Tab Pills */}
-                                    <div className="flex flex-wrap gap-2">
-                                        {[
+            <div className="space-y-6">
+                <PageHeader
+                    title="My Rankings"
+                    icon={<TrophyIcon />}
+                    actions={
+                        !isGuest && (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={handleCreateNew}
+                                    className="inline-flex h-9 items-center gap-2 rounded-full bg-amber-500 px-4 text-sm font-semibold text-zinc-950 transition-colors hover:bg-amber-400"
+                                >
+                                    <PlusIcon className="h-4 w-4" />
+                                    New ranking
+                                </button>
+                                {hasAnything && (
+                                    <ManageMenu
+                                        items={[
                                             {
-                                                value: 'rankings',
-                                                label: 'Your Rankings',
-                                                icon: TrophyIcon,
-                                                disabled: false,
+                                                label: 'Clear data',
+                                                icon: TrashIcon,
+                                                danger: true,
+                                                onSelect: () => router.push('/settings/account'),
                                             },
-                                            {
-                                                value: 'comments',
-                                                label: 'Comments',
-                                                icon: ChatBubbleLeftIcon,
-                                                disabled: isGuest,
-                                            },
-                                            {
-                                                value: 'liked',
-                                                label: 'Liked',
-                                                icon: HeartIcon,
-                                                disabled: isGuest,
-                                            },
-                                        ].map((tab) => {
-                                            const Icon = tab.icon
-                                            const isSelected = activeTab === tab.value
-
-                                            return (
-                                                <button
-                                                    key={tab.value}
-                                                    onClick={() =>
-                                                        !tab.disabled &&
-                                                        setActiveTab(
-                                                            tab.value as
-                                                                'rankings' | 'comments' | 'liked'
-                                                        )
-                                                    }
-                                                    disabled={tab.disabled}
-                                                    className={`group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 ${
-                                                        tab.disabled
-                                                            ? 'bg-zinc-900/20 text-gray-600 border-zinc-800/50 cursor-not-allowed'
-                                                            : isSelected
-                                                              ? 'bg-yellow-500/90 text-black border-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.3)] scale-105'
-                                                              : 'bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105 hover:shadow-[0_0_8px_rgba(255,255,255,0.08)]'
-                                                    }`}
-                                                >
-                                                    <Icon
-                                                        className={`w-4 h-4 ${isSelected ? 'text-black' : ''}`}
-                                                    />
-                                                    <span className="relative z-10">
-                                                        {tab.label}
-                                                    </span>
-                                                    {isSelected && !tab.disabled && (
-                                                        <div className="absolute inset-0 rounded-full bg-yellow-500 blur-md opacity-15 animate-pulse" />
-                                                    )}
-                                                </button>
-                                            )
-                                        })}
-                                    </div>
-
-                                    {/* Right: Manage dropdown */}
-                                    <div className="relative" ref={manageDropdownRef}>
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                setShowManageDropdown(!showManageDropdown)
-                                            }
-                                            className="group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105 hover:shadow-[0_0_8px_rgba(255,255,255,0.08)]"
-                                        >
-                                            <Cog6ToothIcon className="w-4 h-4 text-gray-400" />
-                                            <span>Manage</span>
-                                            <ChevronDownIcon
-                                                className={`w-4 h-4 transition-transform ${
-                                                    showManageDropdown ? 'rotate-180' : ''
-                                                }`}
-                                            />
-                                        </button>
-
-                                        {/* Dropdown Menu */}
-                                        {showManageDropdown && (
-                                            <div className="absolute top-full mt-2 right-0 bg-zinc-900/95 backdrop-blur-lg border border-zinc-700/50 rounded-xl shadow-2xl z-50 min-w-[200px] overflow-hidden">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        router.push('/settings/account')
-                                                        setShowManageDropdown(false)
-                                                    }}
-                                                    className="w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-zinc-800/80 transition-colors"
-                                                >
-                                                    <TrashIcon className="w-5 h-5 text-red-400 flex-shrink-0" />
-                                                    <span>Clear Data</span>
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Enhanced Search Bar */}
+                                        ]}
+                                    />
+                                )}
+                            </>
+                        )
+                    }
+                >
+                    {!isGuest && hasAnything && (
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <FilterPills<'rankings' | 'comments' | 'liked'>
+                                label="Show"
+                                value={activeTab}
+                                onChange={setActiveTab}
+                                options={[
+                                    {
+                                        value: 'rankings',
+                                        label: (
+                                            <>
+                                                <TrophyIcon className="h-4 w-4" />
+                                                Your rankings
+                                            </>
+                                        ),
+                                    },
+                                    {
+                                        value: 'comments',
+                                        label: (
+                                            <>
+                                                <ChatBubbleLeftIcon className="h-4 w-4" />
+                                                Comments
+                                            </>
+                                        ),
+                                    },
+                                    {
+                                        value: 'liked',
+                                        label: (
+                                            <>
+                                                <HeartIcon className="h-4 w-4" />
+                                                Liked
+                                            </>
+                                        ),
+                                    },
+                                ]}
+                            />
                             {showSearch && (
-                                <div className="w-full max-w-4xl relative">
-                                    <div className="relative group">
-                                        <MagnifyingGlassIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 z-10 transition-colors group-focus-within:text-yellow-400" />
-                                        <input
-                                            type="text"
-                                            value={currentSearch}
-                                            onChange={(e) => setCurrentSearch(e.target.value)}
-                                            placeholder={`Search ${activeTab === 'rankings' ? 'your rankings' : activeTab === 'comments' ? 'your comments' : 'liked rankings'}...`}
-                                            className={`w-full pl-14 ${isMounted && isSupported ? 'pr-24' : 'pr-14'} py-4 bg-zinc-900/40 backdrop-blur-lg border border-zinc-800/50 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-yellow-500 focus:shadow-[0_0_25px_rgba(234,179,8,0.3)] transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700`}
-                                        />
-                                        <div className="absolute right-5 top-1/2 -translate-y-1/2 z-10 flex items-center gap-2">
-                                            {isMounted && isSupported && (
-                                                <button
-                                                    type="button"
-                                                    onClick={async () => {
-                                                        if (isListening) {
-                                                            stopListening()
-                                                        } else {
-                                                            await startListening()
-                                                        }
-                                                    }}
-                                                    className={`p-1.5 rounded-lg transition-all ${
-                                                        isListening
-                                                            ? 'bg-yellow-500 text-white animate-pulse'
-                                                            : 'text-gray-400 hover:text-yellow-400 hover:bg-yellow-500/10'
-                                                    }`}
-                                                    title={
-                                                        isListening
-                                                            ? 'Stop listening'
-                                                            : 'Voice search'
-                                                    }
-                                                >
-                                                    <MicrophoneIcon className="w-5 h-5" />
-                                                </button>
-                                            )}
-                                            {currentSearch && (
-                                                <button
-                                                    onClick={() => setCurrentSearch('')}
-                                                    className="text-gray-400 hover:text-white transition-colors"
-                                                >
-                                                    <XMarkIcon className="w-6 h-6" />
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        {/* Glowing border effect on focus */}
-                                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-yellow-500 to-amber-500 opacity-0 group-focus-within:opacity-20 blur-xl transition-opacity duration-300 -z-10" />
-                                    </div>
-                                </div>
+                                <ListSearchInput
+                                    key={activeTab}
+                                    value={currentSearch}
+                                    onChange={setCurrentSearch}
+                                    placeholder={searchPlaceholder}
+                                    voiceSourceId={`rankings-${activeTab}-search`}
+                                />
                             )}
                         </div>
+                    )}
+                </PageHeader>
+
+                {isGuest && (
+                    <PageEmptyState
+                        icon={<TrophyIcon />}
+                        title="Sign in to make rankings"
+                        description="Rank your favourite movies and shows, share the list, and see what others think."
+                        action={
+                            <button
+                                type="button"
+                                onClick={() => openAuthModal('signin')}
+                                className={emptyStateActionClass}
+                            >
+                                Sign in
+                            </button>
+                        }
+                    />
+                )}
+
+                {!isGuest && error && (
+                    <div className="max-w-2xl rounded-xl border border-red-700/60 bg-red-900/20 p-4">
+                        <p className="text-red-400">{error}</p>
                     </div>
+                )}
 
-                    {/* Main Content Area */}
-                    <div className="px-6 sm:px-8 lg:px-12 py-4 space-y-6">
-                        {/* Guest Mode Banner */}
-                        {isGuest && (
-                            <div className="flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-yellow-600/10 border border-yellow-600/30 max-w-2xl mx-auto">
-                                <span className="text-yellow-500 text-sm text-center">
-                                    Sign in to create rankings, comment, and like other rankings.
-                                </span>
-                                <Link
-                                    href="/auth"
-                                    className="text-yellow-500 hover:text-yellow-400 text-sm font-medium underline underline-offset-2 whitespace-nowrap"
-                                >
-                                    Sign In
-                                </Link>
+                {!isGuest && !isLoading && !hasAnything && !error && (
+                    <PageEmptyState
+                        icon={<TrophyIcon />}
+                        title="No rankings yet"
+                        description="Pick a handful of titles and put them in order. Your rankings, comments and likes show up here."
+                        action={
+                            <button
+                                type="button"
+                                onClick={handleCreateNew}
+                                className={emptyStateActionClass}
+                            >
+                                Create a ranking
+                            </button>
+                        }
+                    />
+                )}
+
+                {!isGuest && (isLoading || hasAnything) && activeTab === 'rankings' && (
+                    <RankingGrid
+                        rankings={filteredRankings}
+                        isLoading={isLoading}
+                        emptyMessage={
+                            rankingsSearch.trim()
+                                ? 'No rankings match your search.'
+                                : 'No rankings yet. Create your first ranking to get started!'
+                        }
+                        showAuthor={false}
+                        onLike={handleRankingClick}
+                    />
+                )}
+
+                {!isGuest && hasAnything && activeTab === 'comments' && (
+                    <>
+                        {isLoadingComments ? (
+                            <div className="py-16">
+                                <PageLoader inline={true} message="Loading comments..." />
                             </div>
-                        )}
-
-                        {/* Error State (guests already see the sign-in prompt above) */}
-                        {error && !isGuest && (
-                            <div className="bg-red-900/20 border border-red-700/60 rounded-xl p-4 max-w-2xl mx-auto">
-                                <p className="text-red-400 text-center">{error}</p>
-                            </div>
-                        )}
-
-                        {/* Rankings Tab Content */}
-                        {activeTab === 'rankings' && (
-                            <>
-                                {/* Rankings Grid */}
-                                <RankingGrid
-                                    rankings={filteredRankings}
-                                    isLoading={isLoading}
-                                    emptyMessage={
-                                        rankingsSearch.trim()
-                                            ? 'No rankings match your search.'
-                                            : isGuest
-                                              ? 'Sign in to create your first ranking!'
-                                              : 'No rankings yet. Create your first ranking to get started!'
-                                    }
-                                    showAuthor={false}
-                                    onLike={handleRankingClick}
-                                />
-
-                                {/* Search Results Count */}
-                                {rankingsSearch.trim() && filteredRankings.length > 0 && (
-                                    <p className="text-sm text-gray-500 text-center">
-                                        Showing {filteredRankings.length} of {rankings.length}{' '}
-                                        rankings
-                                    </p>
-                                )}
-                            </>
-                        )}
-
-                        {/* Comments Tab Content */}
-                        {activeTab === 'comments' && (
-                            <>
-                                {isLoadingComments ? (
-                                    <div className="py-16">
-                                        <PageLoader inline={true} message="Loading comments..." />
-                                    </div>
-                                ) : filteredComments.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center py-20 text-center">
-                                        <div className="relative mb-6">
-                                            <div className="absolute inset-0 bg-yellow-500/20 blur-2xl scale-150" />
-                                            <div className="relative w-24 h-24 rounded-full bg-zinc-900/60 backdrop-blur-lg flex items-center justify-center border-2 border-zinc-800/50">
-                                                <ChatBubbleLeftIcon className="w-12 h-12 text-yellow-500" />
-                                            </div>
+                        ) : filteredComments.length === 0 ? (
+                            <p className="py-12 text-center text-gray-400">
+                                {commentsSearch.trim()
+                                    ? 'No comments match your search.'
+                                    : 'Comments you leave on rankings show up here.'}
+                            </p>
+                        ) : (
+                            <div className="max-w-4xl space-y-4">
+                                {filteredComments.map((comment, index) => (
+                                    <Link
+                                        key={comment.id}
+                                        href={`/rankings/${comment.rankingId}`}
+                                        className="block animate-fadeInUp rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 transition-colors hover:border-amber-500/40"
+                                        style={{
+                                            animationDelay: `${Math.min(index * 50, 500)}ms`,
+                                            animationFillMode: 'both',
+                                        }}
+                                    >
+                                        <div className="mb-2 flex items-start justify-between">
+                                            <span className="text-sm text-gray-500">
+                                                {formatDistanceToNow(comment.createdAt, {
+                                                    addSuffix: true,
+                                                })}
+                                            </span>
+                                            <span className="flex items-center gap-1 text-sm text-gray-500">
+                                                <HeartIcon className="h-4 w-4" />
+                                                {comment.likes}
+                                            </span>
                                         </div>
-                                        <h3 className="text-2xl font-bold text-white mb-3">
-                                            {commentsSearch.trim()
-                                                ? 'No comments match your search'
-                                                : 'No comments yet'}
-                                        </h3>
-                                        <p className="text-gray-400 mb-8 max-w-md text-lg">
-                                            {commentsSearch.trim()
-                                                ? 'Try a different search term'
-                                                : 'Start commenting on rankings to see them here!'}
-                                        </p>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-4 max-w-4xl mx-auto">
-                                        {filteredComments.map((comment, index) => (
-                                            <Link
-                                                key={comment.id}
-                                                href={`/rankings/${comment.rankingId}`}
-                                                className="block bg-zinc-900/60 backdrop-blur-lg border border-zinc-800/50 rounded-xl p-4 hover:border-yellow-500/30 hover:shadow-[0_0_15px_rgba(234,179,8,0.1)] transition-all duration-300 animate-fadeInUp"
-                                                style={{
-                                                    animationDelay: `${Math.min(index * 50, 500)}ms`,
-                                                    animationFillMode: 'both',
-                                                }}
-                                            >
-                                                <div className="flex justify-between items-start mb-2">
-                                                    <span className="text-sm text-gray-500">
-                                                        {formatDistanceToNow(comment.createdAt, {
-                                                            addSuffix: true,
-                                                        })}
-                                                    </span>
-                                                    <div className="flex items-center gap-4 text-sm text-gray-500">
-                                                        <div className="flex items-center gap-1">
-                                                            <HeartIcon className="w-4 h-4" />
-                                                            <span>{comment.likes}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <p className="text-white">{comment.text}</p>
-                                                <div className="mt-2 text-sm text-gray-400">
-                                                    On:{' '}
-                                                    <span className="text-yellow-500">
-                                                        View Ranking →
-                                                    </span>
-                                                </div>
-                                            </Link>
-                                        ))}
-
-                                        {/* Search Results Count */}
-                                        {commentsSearch.trim() && filteredComments.length > 0 && (
-                                            <p className="text-sm text-gray-500 text-center">
-                                                Showing {filteredComments.length} of{' '}
-                                                {userComments.length} comments
-                                            </p>
-                                        )}
-                                    </div>
-                                )}
-                            </>
-                        )}
-
-                        {/* Liked Rankings Tab Content */}
-                        {activeTab === 'liked' && (
-                            <>
-                                {isLoadingLiked ? (
-                                    <div className="py-16">
-                                        <PageLoader
-                                            inline={true}
-                                            message="Loading liked rankings..."
-                                        />
-                                    </div>
-                                ) : (
-                                    <>
-                                        <RankingGrid
-                                            rankings={filteredLikedRankings}
-                                            isLoading={isLoadingLiked}
-                                            emptyMessage={
-                                                likedSearch.trim()
-                                                    ? 'No liked rankings match your search.'
-                                                    : 'No liked rankings yet. Start liking rankings you enjoy!'
-                                            }
-                                            showAuthor={true}
-                                            onLike={handleRankingClick}
-                                        />
-
-                                        {/* Search Results Count */}
-                                        {likedSearch.trim() && filteredLikedRankings.length > 0 && (
-                                            <p className="text-sm text-gray-500 text-center">
-                                                Showing {filteredLikedRankings.length} of{' '}
-                                                {likedRankings.length} rankings
-                                            </p>
-                                        )}
-                                    </>
-                                )}
-                            </>
-                        )}
-                    </div>
-                </div>
-
-                {/* Floating Create Ranking Button */}
-                {!isGuest && (
-                    <button
-                        onClick={handleCreateNew}
-                        className="fixed bottom-8 right-20 z-50 group"
-                        style={{
-                            animation: 'bob 5s ease-in-out infinite',
-                        }}
-                    >
-                        <div className="relative">
-                            {/* Glowing background */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-amber-500 rounded-full blur-lg opacity-30 group-hover:opacity-40 transition-opacity" />
-
-                            {/* Button */}
-                            <div className="relative flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-yellow-500 via-amber-500 to-yellow-600 rounded-full text-black font-bold text-sm shadow-[0_0_20px_rgba(234,179,8,0.3)] group-hover:shadow-[0_0_30px_rgba(234,179,8,0.4)] group-hover:scale-105 transition-all duration-300">
-                                <PlusIcon className="w-5 h-5" />
-                                <span className="hidden sm:inline">New Ranking</span>
+                                        <p className="text-white">{comment.text}</p>
+                                        <div className="mt-2 text-sm text-amber-400">
+                                            View ranking →
+                                        </div>
+                                    </Link>
+                                ))}
                             </div>
-                        </div>
-                    </button>
+                        )}
+                    </>
+                )}
+
+                {!isGuest && hasAnything && activeTab === 'liked' && (
+                    <>
+                        {isLoadingLiked ? (
+                            <div className="py-16">
+                                <PageLoader inline={true} message="Loading liked rankings..." />
+                            </div>
+                        ) : (
+                            <RankingGrid
+                                rankings={filteredLikedRankings}
+                                isLoading={isLoadingLiked}
+                                emptyMessage={
+                                    likedSearch.trim()
+                                        ? 'No liked rankings match your search.'
+                                        : 'Rankings you like show up here.'
+                                }
+                                showAuthor={true}
+                                onLike={handleRankingClick}
+                            />
+                        )}
+                    </>
                 )}
 
                 {/* Add keyframe animations */}
@@ -604,16 +374,6 @@ export default function RankingsPage() {
                         to {
                             opacity: 1;
                             transform: translateY(0);
-                        }
-                    }
-
-                    @keyframes bob {
-                        0%,
-                        100% {
-                            transform: translateY(0);
-                        }
-                        50% {
-                            transform: translateY(-8px);
                         }
                     }
 

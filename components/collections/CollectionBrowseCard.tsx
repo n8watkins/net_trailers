@@ -45,9 +45,9 @@ export default function CollectionBrowseCard({ collection }: CollectionBrowseCar
     }
 
     return (
-        <Link href={href} className="block group">
+        <Link href={href} className="block group h-full">
             <div
-                className="relative bg-zinc-900/60 backdrop-blur-lg border-2 rounded-xl p-5 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/10 h-full"
+                className="relative flex h-full flex-col bg-zinc-900/60 backdrop-blur-lg border-2 rounded-xl p-5 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/10"
                 style={{
                     borderColor: hexToRgba(listColor, 0.5),
                 }}
