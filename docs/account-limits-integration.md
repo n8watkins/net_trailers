@@ -2,11 +2,9 @@
 
 > ⚠️ **Superseded — historical (Firebase-era).** This guide describes a Firebase
 > Auth + Firestore + `canCreateAccount()` approach that is no longer used. The
-> total-signup cap is now enforced directly in the Auth.js `signIn` callback in
-> `auth.ts` — it counts rows in the Turso `user` table and blocks brand-new
-> signups once `NEXT_PUBLIC_MAX_TOTAL_ACCOUNTS` (default 50) is reached. There is
-> no `canCreateAccount()` and no `firestore.rules`. See `CLAUDE.md` for the
-> current auth model. Kept for reference only.
+> later total-signup cap (`NEXT_PUBLIC_MAX_TOTAL_ACCOUNTS`, 50 by default, in
+> `auth.ts`) was removed on 2026-11-10; why, and what guards costs now, is in
+> `docs/costs-and-limits.md`. Kept for reference only.
 
 ## Overview
 

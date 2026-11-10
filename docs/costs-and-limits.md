@@ -1,12 +1,22 @@
 # Notification Costs & Account Limits - Complete Breakdown
 
-> ⚠️ **Superseded — historical (Firebase-era).** The cost figures below are for
-> the former **Firebase / Firestore** backend. The app now runs on **Turso
-> (libSQL) + Drizzle**, which has its own separate pricing and free tier, so
-> these Firestore read/write/storage numbers no longer apply. The account cap
-> still exists — enforced in the `auth.ts` `signIn` callback
-> (`NEXT_PUBLIC_MAX_TOTAL_ACCOUNTS`). See `CLAUDE.md` for the current stack.
-> Kept for reference only.
+## Current state (2026-11-10)
+
+There is no cap on the number of accounts.
+Until 2026-11-10 the `signIn` callback in `auth.ts` refused brand-new signups once the `user` table held 50 rows (`NEXT_PUBLIC_MAX_TOTAL_ACCOUNTS`).
+It was a cost guard from the Firebase era, when each account's notifications meant Firestore reads and writes on a pay-as-you-go plan (the breakdown below), and a cheap way to stop a bot from creating thousands of accounts.
+It also had a side effect: once full, the sign-in form told anyone whether an address already had an account.
+
+What more accounts cost now:
+
+- **Database (Turso):** an account is a few rows (user, profile, preferences, collections).
+  The free plan includes 5 GB of storage, 500 million rows read and 10 million rows written a month, so thousands of active accounts stay well inside it.
+- **Email:** every email goes through the email gate (`lib/email/gate.ts`), which caps the whole site at 200 a day and 2,000 a month however many accounts exist, plus 5 sign-in links a day per address and 20 per IP.
+  Cloudflare Email Service includes 3,000 emails a month, shared by every project on the account, then charges $0.35 per 1,000; the site-wide cap keeps this app below that on its own.
+- **AI (Gemini):** capped per visitor and site-wide per day (`lib/aiQuota.ts`), not per account.
+- **Bots:** Turnstile on the sign-in form (`lib/turnstile.ts`) stops scripted requests for sign-in links before any limit or email is spent.
+
+The rest of this file is the Firebase-era breakdown, kept for reference; its Firestore figures no longer apply.
 
 ## 📊 Notification Costs Breakdown
 
