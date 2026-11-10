@@ -4,12 +4,8 @@ import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
 import { usePageViewTracking } from '../../hooks/useActivityTracking'
-import KeyboardShortcutsModal from '../modals/KeyboardShortcutsModal'
-import TutorialModal from '../modals/TutorialModal'
-import InteractiveTour from '../onboarding/InteractiveTour'
+import dynamic from 'next/dynamic'
 import Footer from './Footer'
-import AboutModal from '../modals/AboutModal'
-import WelcomeModal from '../modals/WelcomeModal'
 import { hasSeenWelcome, isWelcomeSuppressedPath, markWelcomeSeen } from '../../lib/welcome'
 import ScrollToTopButton from '../common/ScrollToTopButton'
 import CustomScrollbar from '../common/CustomScrollbar'
@@ -19,6 +15,15 @@ import { useOnboardingStore } from '../../stores/onboardingStore'
 import { useOnboardingPersistence } from '../../hooks/useOnboardingPersistence'
 import { useToast } from '../../hooks/useToast'
 
+// Opened on request only, so they load on first open instead of with every page
+const KeyboardShortcutsModal = dynamic(() => import('../modals/KeyboardShortcutsModal'), {
+    ssr: false,
+})
+const TutorialModal = dynamic(() => import('../modals/TutorialModal'), { ssr: false })
+const InteractiveTour = dynamic(() => import('../onboarding/InteractiveTour'), { ssr: false })
+const AboutModal = dynamic(() => import('../modals/AboutModal'), { ssr: false })
+const WelcomeModal = dynamic(() => import('../modals/WelcomeModal'), { ssr: false })
+
 interface ClientLayoutProps {
     children: React.ReactNode
 }
@@ -27,7 +32,7 @@ interface ClientLayoutProps {
  * ClientLayout provides the shell around all pages in the App Router.
  * It manages:
  * - Footer
- * - Global modals (About, Tutorial, Keyboard Shortcuts), opened only on request
+ * - Global modals (About, Tutorial, Keyboard Shortcuts, first-visit Welcome), loaded only when opened
  * - Scroll to top button
  * - Global keyboard shortcuts
  * - Onboarding persistence
@@ -194,33 +199,43 @@ function ClientLayout({ children }: ClientLayoutProps) {
                 onOpenTutorial={handleOpenTutorial}
                 onOpenWelcome={handleOpenWelcome}
             />
-            <AboutModal
-                isOpen={showAboutModal}
-                onClose={handleCloseAboutModal}
-                onOpenTutorial={handleOpenTutorial}
-                onStartTour={handleStartTour}
-            />
-            <TutorialModal
-                isOpen={showTutorial}
-                onClose={handleCloseTutorial}
-                onStartTour={handleStartTour}
-                onOpenWelcome={handleOpenWelcome}
-            />
-            <WelcomeModal
-                isOpen={showWelcome}
-                onClose={handleCloseWelcome}
-                onTryMood={handleWelcomeTryMood}
-                onOpenAbout={handleWelcomeOpenAbout}
-            />
-            <KeyboardShortcutsModal
-                isOpen={showKeyboardShortcuts}
-                onClose={() => setShowKeyboardShortcuts(false)}
-            />
-            <InteractiveTour
-                isActive={isTourActive}
-                onComplete={handleCompleteTour}
-                onSkip={handleSkipTour}
-            />
+            {showAboutModal && (
+                <AboutModal
+                    isOpen={showAboutModal}
+                    onClose={handleCloseAboutModal}
+                    onOpenTutorial={handleOpenTutorial}
+                    onStartTour={handleStartTour}
+                />
+            )}
+            {showTutorial && (
+                <TutorialModal
+                    isOpen={showTutorial}
+                    onClose={handleCloseTutorial}
+                    onStartTour={handleStartTour}
+                    onOpenWelcome={handleOpenWelcome}
+                />
+            )}
+            {showWelcome && (
+                <WelcomeModal
+                    isOpen={showWelcome}
+                    onClose={handleCloseWelcome}
+                    onTryMood={handleWelcomeTryMood}
+                    onOpenAbout={handleWelcomeOpenAbout}
+                />
+            )}
+            {showKeyboardShortcuts && (
+                <KeyboardShortcutsModal
+                    isOpen={showKeyboardShortcuts}
+                    onClose={() => setShowKeyboardShortcuts(false)}
+                />
+            )}
+            {isTourActive && (
+                <InteractiveTour
+                    isActive={isTourActive}
+                    onComplete={handleCompleteTour}
+                    onSkip={handleSkipTour}
+                />
+            )}
             <ScrollToTopButton />
             <CustomScrollbar />
         </LayoutProvider>

@@ -53,6 +53,8 @@ export class TMDBApiClient {
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                // Shared TMDB client: cache responses for an hour (data cache, R2 on the Worker)
+                next: { revalidate: 3600 },
             })
 
             if (!response.ok) {

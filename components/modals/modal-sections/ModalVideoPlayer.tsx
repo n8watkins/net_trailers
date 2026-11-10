@@ -76,11 +76,9 @@ function ModalVideoPlayer({
                 />
             ) : (
                 <Image
-                    src={`https://image.tmdb.org/t/p/original/${currentMovie?.backdrop_path}`}
+                    src={`https://image.tmdb.org/t/p/w1280${currentMovie?.backdrop_path}`}
                     alt="movie_backdrop"
                     fill
-                    quality={100}
-                    priority
                     style={{ objectFit: 'cover' }}
                     className={fullScreen ? '' : 'rounded-md'}
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"

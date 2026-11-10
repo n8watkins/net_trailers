@@ -14,12 +14,13 @@ import { useHomeRowDedupe } from '../home/HomeRowDedupe'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
-import { SystemRecommendation, SystemRecommendationId } from '../../types/recommendations'
+import { SystemRecommendationId } from '../../types/recommendations'
 import { Collection } from '../../types/collections'
 import {
     generateSystemRecommendationName,
     getSystemRecommendationEmoji,
 } from '../../utils/systemRecommendationNames'
+import RowSkeleton from '../content/RowSkeleton'
 
 interface SystemRecommendationRowProps {
     /** The type of system recommendation */
@@ -77,7 +78,7 @@ export default function SystemRecommendationRow({
     })
     const emoji = getSystemRecommendationEmoji(recommendationId)
 
-    // Convert SystemRecommendation to Collection for Row's edit functionality
+    // Convert the system recommendation to a Collection for Row's edit functionality
     const collectionForEdit = useMemo((): Collection | null => {
         if (!recommendation) return null
         return {
@@ -246,9 +247,10 @@ export default function SystemRecommendationRow({
         return null
     }
 
-    // Don't render while loading, or until the rows above have settled
+    // While loading, or until the rows above have settled, hold the row's space
+    // so the rows below it don't jump
     if (isLoading || !dedupe.ready) {
-        return null
+        return <RowSkeleton />
     }
 
     // Don't render if error or no content
