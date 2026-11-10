@@ -7,6 +7,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 
+import { getAuthorIdentity } from '@/db/queries/profiles'
+
 import { withAuth } from '@/lib/auth-middleware'
 import { createComment, getRankingComments } from '@/db/queries/rankingComments'
 import type { CreateCommentRequest } from '@/types/rankings'
@@ -65,20 +67,11 @@ export const POST = withAuth(
             )
         }
 
-        const { userName, userAvatar, type, positionNumber, text, parentCommentId } = body as {
-            userName?: string
-            userAvatar?: string
+        const { type, positionNumber, text, parentCommentId } = body as {
             type?: 'ranking' | 'position'
             positionNumber?: number
             text?: string
             parentCommentId?: string
-        }
-
-        if (!userName || typeof userName !== 'string') {
-            return NextResponse.json(
-                { success: false, error: 'userName is required' },
-                { status: 400 }
-            )
         }
 
         if (!text || typeof text !== 'string' || text.trim().length === 0) {
@@ -104,7 +97,14 @@ export const POST = withAuth(
         }
 
         try {
-            const comment = await createComment(userId, userName, userAvatar, createRequest)
+            // Name and avatar come from the author's profile, never from the request.
+            const author = await getAuthorIdentity(userId)
+            const comment = await createComment(
+                userId,
+                author.name,
+                author.avatar ?? undefined,
+                createRequest
+            )
             return NextResponse.json({ success: true, comment }, { status: 201 })
         } catch (error) {
             const msg = error instanceof Error ? error.message : 'Failed to create comment'

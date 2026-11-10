@@ -9,6 +9,10 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 
+import { getAuthorIdentity } from '@/db/queries/profiles'
+import { ownUploads } from '@/lib/uploads'
+import { FORUM_CATEGORIES } from '@/utils/forumCategories'
+
 import { withAuth } from '@/lib/auth-middleware'
 import { currentUserId } from '@/db/queries/_helpers'
 import { createThread, getLikedThreadIds, listThreads } from '@/db/queries/threads'
@@ -62,10 +66,7 @@ export const POST = withAuth(async (request: NextRequest, userId: string) => {
         return NextResponse.json({ success: false, error: 'Missing request body' }, { status: 400 })
     }
 
-    const { title, content, category, userName, userAvatar, tags, images } = body as Record<
-        string,
-        unknown
-    >
+    const { title, content, category, tags, images } = body as Record<string, unknown>
 
     if (typeof title !== 'string' || !title.trim()) {
         return NextResponse.json({ success: false, error: 'title is required' }, { status: 400 })
@@ -73,19 +74,24 @@ export const POST = withAuth(async (request: NextRequest, userId: string) => {
     if (typeof content !== 'string' || !content.trim()) {
         return NextResponse.json({ success: false, error: 'content is required' }, { status: 400 })
     }
-    if (typeof category !== 'string' || !category.trim()) {
-        return NextResponse.json({ success: false, error: 'category is required' }, { status: 400 })
+    if (typeof category !== 'string' || !FORUM_CATEGORIES.some((c) => c.id === category)) {
+        return NextResponse.json({ success: false, error: 'category is invalid' }, { status: 400 })
     }
+
+    // Name and avatar come from the author's profile, never from the request.
+    const author = await getAuthorIdentity(userId)
 
     const thread = await createThread({
         title: title.trim().slice(0, 200),
         content: content.trim().slice(0, 5000),
         category: category as ForumCategory,
         userId,
-        userName: typeof userName === 'string' ? userName : null,
-        userAvatar: typeof userAvatar === 'string' ? userAvatar : null,
-        tags: Array.isArray(tags) ? (tags as string[]).slice(0, 5) : [],
-        images: Array.isArray(images) ? (images as string[]).slice(0, 4) : [],
+        userName: author.name,
+        userAvatar: author.avatar,
+        tags: Array.isArray(tags)
+            ? tags.filter((t): t is string => typeof t === 'string').slice(0, 5)
+            : [],
+        images: ownUploads(images, userId),
     })
 
     return NextResponse.json({ success: true, thread }, { status: 201 })

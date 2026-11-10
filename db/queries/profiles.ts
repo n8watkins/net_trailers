@@ -12,7 +12,7 @@
 import { and, desc, eq, sql } from 'drizzle-orm'
 
 import { db } from '@/db'
-import { profiles, userActivity, userBadges, userFollows } from '@/db/schema'
+import { profiles, userActivity, userBadges, userFollows, users } from '@/db/schema'
 import {
     DEFAULT_PROFILE_VISIBILITY,
     createDefaultProfile,
@@ -580,5 +580,40 @@ export async function addActivity(
         referenceId: inserted[0].referenceId,
         referenceType: inserted[0].referenceType,
         preview: inserted[0].preview,
+    }
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Author identity                                                            */
+/* -------------------------------------------------------------------------- */
+
+export interface AuthorIdentity {
+    name: string
+    username: string | null
+    avatar: string | null
+}
+
+/**
+ * The name and avatar stamped on a user's posts (threads, replies, polls,
+ * rankings, comments), read from their own profile on the server. Never take
+ * these from the request: anyone could post as someone else.
+ */
+export async function getAuthorIdentity(userId: string): Promise<AuthorIdentity> {
+    const [row] = await db
+        .select({
+            displayName: profiles.displayName,
+            username: profiles.username,
+            avatarUrl: profiles.avatarUrl,
+            name: users.name,
+            image: users.image,
+        })
+        .from(users)
+        .leftJoin(profiles, eq(profiles.userId, users.id))
+        .where(eq(users.id, userId))
+        .limit(1)
+    return {
+        name: row?.displayName?.trim() || row?.name?.trim() || 'User',
+        username: row?.username ?? null,
+        avatar: row?.avatarUrl ?? row?.image ?? null,
     }
 }

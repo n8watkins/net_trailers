@@ -13,6 +13,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 
+import { getAuthorIdentity } from '@/db/queries/profiles'
+
 import { withAuth } from '@/lib/auth-middleware'
 import { currentUserId } from '@/db/queries/_helpers'
 import { createPoll, listPolls, type PollListSort } from '@/db/queries/polls'
@@ -71,8 +73,6 @@ export const POST = withAuth(async (request: NextRequest, userId: string) => {
         question,
         options: optionTexts,
         category,
-        userName,
-        userAvatar,
         description,
         tags,
     } = body as Record<string, unknown>
@@ -120,10 +120,12 @@ export const POST = withAuth(async (request: NextRequest, userId: string) => {
     }
 
     try {
+        // Name and avatar come from the author's profile, never from the request.
+        const author = await getAuthorIdentity(userId)
         const pollId = await createPoll({
             userId,
-            userName: typeof userName === 'string' ? userName : 'Anonymous',
-            userAvatar: typeof userAvatar === 'string' ? userAvatar : null,
+            userName: author.name,
+            userAvatar: author.avatar,
             question: question.trim(),
             optionTexts: validOptions,
             category: category as ForumCategory,

@@ -53,3 +53,18 @@ export function ownedUploadKey(url: string, userId: string): string | null {
 export function isUploadUrl(url: string): boolean {
     return url.startsWith(UPLOAD_PREFIX)
 }
+
+/**
+ * The site paths of this user's own uploads among `urls` (at most `max`),
+ * for images attached to posts. Anything else (other users' uploads, outside
+ * URLs that would load from a third party for every viewer) is dropped.
+ */
+export function ownUploads(urls: unknown, userId: string, max = 4): string[] {
+    if (!Array.isArray(urls)) return []
+    return urls
+        .filter((u): u is string => typeof u === 'string')
+        .map((u) => ownedUploadKey(u, userId))
+        .filter((key): key is string => key !== null)
+        .map((key) => `/${key}`)
+        .slice(0, max)
+}

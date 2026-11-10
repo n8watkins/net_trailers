@@ -9,6 +9,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 
+import { getAuthorIdentity } from '@/db/queries/profiles'
+
 import { withAuth } from '@/lib/auth-middleware'
 import { currentUserId } from '@/db/queries/_helpers'
 import {
@@ -83,21 +85,11 @@ export const POST = withAuth(async (request: NextRequest, userId: string) => {
         return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 })
     }
 
-    const { displayName, username, userAvatar, title, description, isPublic, itemCount } = body as {
-        displayName?: string
-        username?: string
-        userAvatar?: string
+    const { title, description, isPublic, itemCount } = body as {
         title?: string
         description?: string
         isPublic?: boolean
         itemCount?: number
-    }
-
-    if (!displayName || typeof displayName !== 'string') {
-        return NextResponse.json(
-            { success: false, error: 'displayName is required' },
-            { status: 400 }
-        )
     }
 
     if (!title || typeof title !== 'string' || title.trim().length < 5) {
@@ -122,11 +114,13 @@ export const POST = withAuth(async (request: NextRequest, userId: string) => {
     }
 
     try {
+        // Name and avatar come from the author's profile, never from the request.
+        const author = await getAuthorIdentity(userId)
         const ranking = await createRanking(
             userId,
-            displayName,
-            username,
-            userAvatar,
+            author.name,
+            author.username ?? undefined,
+            author.avatar ?? undefined,
             createRequest
         )
         return NextResponse.json({ success: true, ranking }, { status: 201 })
