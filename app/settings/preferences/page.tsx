@@ -12,8 +12,10 @@ import PreferencesSection from '../../../components/settings/PreferencesSection'
 import ChildSafetyPINModal from '../../../components/settings/ChildSafetyPINModal'
 import InfoModal from '../../../components/modals/InfoModal'
 import { useChildSafetyPINStore } from '../../../stores/childSafetyStore'
+import { useLayoutContext } from '../../../contexts/LayoutContext'
 
 const PreferencesPage: React.FC = () => {
+    const { onOpenWelcome } = useLayoutContext()
     const { isGuest } = useAuthStatus()
     const userData = useUserData()
     const { showSuccess, showError } = useToast()
@@ -245,6 +247,26 @@ const PreferencesPage: React.FC = () => {
                 onChangePIN={handleChangePIN}
                 onRemovePIN={handleRemovePIN}
             />
+
+            {/* Help: reopen the first-visit welcome */}
+            {onOpenWelcome && (
+                <div className="px-8 pb-8">
+                    <h3 className="text-lg font-semibold text-white mb-4">Getting started</h3>
+                    <div className="flex flex-col gap-3 rounded-lg border border-[#313131] bg-[#0a0a0a] p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-sm text-gray-400">
+                            The short welcome from your first visit: what NetTrailers does and where
+                            to start.
+                        </p>
+                        <button
+                            type="button"
+                            onClick={onOpenWelcome}
+                            className="h-10 shrink-0 rounded-lg border border-zinc-600 px-4 text-sm font-medium text-white transition-colors hover:border-amber-500 hover:text-amber-300"
+                        >
+                            Show the welcome
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Child Safety Mode Modal for Guest Users */}
             <InfoModal

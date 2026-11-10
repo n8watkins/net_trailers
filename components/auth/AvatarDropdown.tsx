@@ -7,6 +7,7 @@ import {
     InformationCircleIcon,
     CommandLineIcon,
     AcademicCapIcon,
+    HandRaisedIcon,
 } from '@heroicons/react/24/outline'
 import useAuth from '../../hooks/useAuth'
 import { useRouter } from 'next/navigation'
@@ -21,6 +22,7 @@ interface AvatarDropdownProps {
     onOpenAboutModal?: () => void
     onOpenTutorial?: () => void
     onOpenKeyboardShortcuts?: () => void
+    onOpenWelcome?: () => void
 }
 
 const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
@@ -30,6 +32,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
     onOpenAboutModal,
     onOpenTutorial,
     onOpenKeyboardShortcuts,
+    onOpenWelcome,
 }) => {
     const [isOpen, setIsOpen] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
@@ -165,6 +168,21 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                             </button>
 
                             <div className="h-px bg-gray-700/50 mx-5 my-2"></div>
+
+                            {onOpenWelcome && (
+                                <button
+                                    onClick={() => {
+                                        setIsOpen(false)
+                                        onOpenWelcome()
+                                    }}
+                                    className="group flex items-center justify-between w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                                >
+                                    <div className="flex items-center">
+                                        <HandRaisedIcon className="w-6 h-6 mr-4 group-hover:text-amber-400 transition-colors duration-200" />
+                                        Welcome
+                                    </div>
+                                </button>
+                            )}
 
                             <button
                                 onClick={() => {
@@ -328,6 +346,21 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                         </button>
 
                         <div className="h-px bg-gray-700/50 mx-5 my-2"></div>
+
+                        {onOpenWelcome && (
+                            <button
+                                onClick={() => {
+                                    setIsOpen(false)
+                                    onOpenWelcome()
+                                }}
+                                className="group flex items-center justify-between w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                            >
+                                <div className="flex items-center">
+                                    <HandRaisedIcon className="w-6 h-6 mr-4 group-hover:text-amber-400 transition-colors duration-200" />
+                                    Welcome
+                                </div>
+                            </button>
+                        )}
 
                         <button
                             onClick={() => {
