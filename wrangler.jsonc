@@ -40,9 +40,9 @@
     "vars": {
         // Replaces VERCEL_ENV: "production" here; unset locally and in tests.
         "APP_ENV": "production",
-        // "false" while Vercel still runs the same crons on the same database;
-        // set it to "true" when the Vercel project is turned off (DEPLOY.md).
-        "CRONS_ENABLED": "false",
+        // The Vercel project is a redirect without crons, so the Worker alone
+        // runs the three crons (worker/crons.ts).
+        "CRONS_ENABLED": "true",
         // The site's one public address; the workers.dev address forwards to it
         // (worker/canonical.ts).
         "PUBLIC_URL": "https://nettrailers.n8builds.dev",

@@ -445,29 +445,10 @@ _Experience all features or continue as guest to explore the platform_
     - Trending notification controls
     - Demo reset for portfolio presentations
 
-6. **Vercel Cron Job Setup** (Optional - for auto-updating collections and trending notifications)
+6. **Cron jobs** (optional locally)
 
-    The project includes two cron jobs configured in `vercel.json`:
-
-    ```json
-    {
-        "crons": [
-            {
-                "path": "/api/cron/update-collections",
-                "schedule": "0 2 * * *"
-            },
-            {
-                "path": "/api/cron/update-trending",
-                "schedule": "0 */6 * * *"
-            }
-        ]
-    }
-    ```
-
-    - **update-collections**: Runs daily at 2 AM UTC to refresh auto-updating collections
-    - **update-trending**: Runs every 6 hours to check for new trending content
-
-    Both cron jobs can also be triggered manually from the admin dashboard.
+    The deployed Worker runs three Cron Triggers (`worker/crons.ts`, `wrangler.jsonc`), each calling its `/api/cron/*` route with `CRON_SECRET`: trending on Monday, the collection cache on Sunday and the social digest on Wednesday, all at 02:00 UTC.
+    They can also be run from the admin dashboard; DEPLOYMENT.md shows how to try them locally.
 
 7. **Run the development server**
 
@@ -689,7 +670,7 @@ net_trailers/
 ├── instrumentation-client.ts # Sentry client config
 ├── instrumentation.ts    # Sentry server config (Next.js 15+)
 ├── next.config.mjs       # Next.js configuration
-├── vercel.json           # Vercel deployment config (cron jobs)
+├── wrangler.jsonc        # Cloudflare Worker config (bindings, crons, domain)
 ├── tailwind.config.ts    # Tailwind CSS configuration
 ├── jest.config.js        # Jest configuration
 └── tsconfig.json         # TypeScript configuration
@@ -946,25 +927,6 @@ vercel --prod
 - Set environment variables in Vercel dashboard
 - Enable Vercel Analytics automatically
 - Configure custom domain in project settings
-- Set up cron job in `vercel.json` for auto-updating collections
-
-### Vercel Cron Job Setup
-
-In Vercel dashboard:
-
-1. Add `CRON_SECRET` environment variable
-2. Deploy `vercel.json` with cron configuration:
-
-```json
-{
-    "crons": [
-        {
-            "path": "/api/cron/update-collections",
-            "schedule": "0 2 * * *"
-        }
-    ]
-}
-```
 
 ### Other Platforms
 

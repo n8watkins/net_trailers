@@ -52,26 +52,20 @@ describe('wrangler.jsonc', () => {
 })
 
 describe('Cron Triggers', () => {
-    it('run the Vercel crons at the same schedules', () => {
-        const vercel = JSON.parse(readFileSync(join(root, 'vercel.json'), 'utf8')) as {
-            crons: { path: string; schedule: string }[]
+    it('run the three crons at the schedules Vercel used', () => {
+        // The schedules the Vercel project ran (vercel.json, removed at the
+        // cutover); weekdays are named because Cloudflare counts from 1 = Sunday.
+        const fromVercel = {
+            '0 2 * * MON': '/api/cron/update-trending',
+            '0 2 * * SUN': '/api/cron/refresh-collection-cache',
+            '0 2 * * WED': '/api/cron/social-digest',
         }
-        // Vercel (standard cron) counts weekdays from 0 = Sunday; the Worker names them.
-        const DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
-        const named = (schedule: string) => {
-            const fields = schedule.split(' ')
-            fields[4] = DAYS[Number(fields[4])]
-            return fields.join(' ')
-        }
-        const fromVercel = Object.fromEntries(
-            vercel.crons.map((cron) => [named(cron.schedule), cron.path])
-        )
         expect(CRON_ROUTES).toEqual(fromVercel)
         expect([...wrangler().triggers.crons].sort()).toEqual(Object.keys(CRON_ROUTES).sort())
     })
 
-    it('stay off until Vercel stops running them (CRONS_ENABLED)', async () => {
-        expect(wrangler().vars.CRONS_ENABLED).toBe('false')
+    it('run on the Worker, and stay off whenever CRONS_ENABLED is not "true"', async () => {
+        expect(wrangler().vars.CRONS_ENABLED).toBe('true')
         const next = app()
         expect(
             await runCron(next, '0 2 * * WED', env({ CRONS_ENABLED: 'false' }), ctx)
