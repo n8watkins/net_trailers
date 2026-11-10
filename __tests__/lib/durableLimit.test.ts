@@ -72,3 +72,16 @@ describe('durable limits', () => {
         expect(await hashKey('someone@example.com')).toBe(hashed)
     })
 })
+
+describe('durable limits housekeeping', () => {
+    it('deletes windows that ended more than 40 days ago, and keeps recent ones', async () => {
+        const old = new Date('2026-08-01T12:00:00Z')
+        await countEvent('test:old', 'day', old)
+        await countEvent('test:recent', 'day', noon)
+        // The first spend in a later hour sweeps.
+        const later = new Date('2026-11-12T12:00:00Z')
+        await consumeLimits([{ key: 'test:sweep', limit: 5, window: 'day' }], later)
+        expect(await readCount('test:old', 'day', old)).toBe(0)
+        expect(await readCount('test:recent', 'day', noon)).toBe(1)
+    })
+})

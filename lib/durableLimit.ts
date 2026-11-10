@@ -16,6 +16,7 @@
  */
 
 import { sql } from 'drizzle-orm'
+import { NextResponse } from 'next/server'
 
 import { db } from '@/db'
 
@@ -108,10 +109,17 @@ async function add(key: string, info: WindowInfo, by: number): Promise<number> {
     return rows[0]?.count ?? by
 }
 
-/** Old windows are deleted now and then, so the table stays small. */
+/** Windows that ended this long ago are deleted (kept a while for usage reports). */
+const RETAIN_MS = 40 * DAY_MS
+const SWEEP_EVERY_MS = 60 * 60 * 1000
+let lastSweep: number | null = null
+
+/** At most once an hour per isolate, old windows are deleted so the table stays small. */
 async function maybePrune(now: Date): Promise<void> {
-    if (Math.random() >= 0.02) return
-    await db.run(sql`DELETE FROM rate_limits WHERE expiresAt < ${now.getTime()}`)
+    const t = now.getTime()
+    if (lastSweep !== null && Math.abs(t - lastSweep) < SWEEP_EVERY_MS) return
+    lastSweep = t
+    await db.run(sql`DELETE FROM rate_limits WHERE expiresAt < ${t - RETAIN_MS}`)
 }
 
 /**
@@ -179,8 +187,8 @@ export async function resetLimit(
 }
 
 /** A 429 response body and headers for a refused call. */
-export function tooManyRequests(result: Extract<LimitResult, { allowed: false }>): Response {
-    return Response.json(
+export function tooManyRequests(result: Extract<LimitResult, { allowed: false }>): NextResponse {
+    return NextResponse.json(
         {
             success: false,
             error: 'Too many requests. Please try again later.',
