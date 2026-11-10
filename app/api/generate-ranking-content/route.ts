@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withAuth } from '@/lib/auth-middleware'
-import { consumeGeminiRateLimit } from '@/lib/geminiRateLimiter'
+import { consumeAiQuota, quotaExhaustedMessage } from '@/lib/aiQuota'
 import { sanitizeInput } from '@/utils/inputSanitization'
 import { apiLog, apiError, apiWarn } from '@/utils/debugLogger'
 import { loadUserPreferences } from '@/db/queries/userPreferences'
@@ -48,13 +48,10 @@ async function handleGenerateRow(request: NextRequest, userId: string): Promise<
             return NextResponse.json({ error: 'AI service unavailable' }, { status: 503 })
         }
 
-        const rateStatus = consumeGeminiRateLimit(userId)
-        if (!rateStatus.allowed) {
+        const quota = await consumeAiQuota(`user:${userId}`)
+        if (!quota.allowed) {
             return NextResponse.json(
-                {
-                    error: 'AI request limit reached. Please try again later.',
-                    retryAfterMs: rateStatus.retryAfterMs,
-                },
+                { error: quotaExhaustedMessage(quota), code: 'AI_QUOTA', quota },
                 { status: 429 }
             )
         }

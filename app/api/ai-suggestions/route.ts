@@ -2,15 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { SmartSearchAPIRequest } from '../../../types/smartSearch'
 import { buildInitialPrompt, buildFollowUpPrompt } from '../../../utils/gemini/promptBuilder'
 import { parseGeminiResponse, enrichWithTMDB } from '../../../utils/gemini/responseParser'
-import { consumeGeminiRateLimit } from '@/lib/geminiRateLimiter'
-import { getRequestIdentity } from '@/lib/requestIdentity'
+import { getAiVisitor } from '@/lib/aiVisitor'
+import { consumeAiQuota, quotaExhaustedMessage, refundAiQuota } from '@/lib/aiQuota'
 import { sanitizeInput } from '@/utils/inputSanitization'
 import { apiLog, apiError } from '@/utils/debugLogger'
 import { routeGeminiRequest, extractGeminiText } from '@/lib/geminiRouter'
 
 export async function POST(request: NextRequest) {
     try {
-        const { userId, rateLimitKey } = await getRequestIdentity(request)
+        const visitor = await getAiVisitor(request)
+        const userId = visitor.userId
         const body: SmartSearchAPIRequest = await request.json()
         const { query, mode, conversationHistory = [], existingMovies = [] } = body
 
@@ -37,13 +38,10 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        const rateStatus = consumeGeminiRateLimit(rateLimitKey)
-        if (!rateStatus.allowed) {
+        const quota = await consumeAiQuota(visitor.key)
+        if (!quota.allowed) {
             return NextResponse.json(
-                {
-                    error: 'AI request limit reached. Please try again later.',
-                    retryAfterMs: rateStatus.retryAfterMs,
-                },
+                { error: quotaExhaustedMessage(quota), code: 'AI_QUOTA', quota },
                 { status: 429 }
             )
         }
@@ -77,6 +75,7 @@ export async function POST(request: NextRequest) {
             // Upstream failure (invalid key, quota, outage): log the detail, tell the
             // client only that AI search is unavailable so it can offer regular search.
             apiError('[AI Suggestions] Gemini router error:', result.error)
+            await refundAiQuota(visitor.key).catch(() => undefined)
             return NextResponse.json(
                 { error: 'AI search is unavailable right now', code: 'AI_UNAVAILABLE' },
                 { status: 503 }
@@ -119,6 +118,7 @@ export async function POST(request: NextRequest) {
             emoji: parsed.emoji,
             color: parsed.color,
             _meta: result.metadata, // Include router metadata
+            quota,
         })
     } catch (error: any) {
         apiError('[AI Suggestions] Error:', error)

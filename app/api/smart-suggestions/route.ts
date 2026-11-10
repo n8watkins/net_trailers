@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateSmartSuggestions } from '../../../utils/smartRowSuggestions'
-import { consumeGeminiRateLimit } from '@/lib/geminiRateLimiter'
-import { getRequestIdentity } from '@/lib/requestIdentity'
+import { getAiVisitor } from '@/lib/aiVisitor'
+import { consumeAiQuota, refundAiQuota, type ConsumeResult } from '@/lib/aiQuota'
+import { analyzeText } from '@/lib/gemini/analyzeText'
 import { TMDBApiClient } from '@/utils/tmdbApi'
 import { sanitizeInput } from '@/utils/inputSanitization'
 import { apiError, apiWarn } from '@/utils/debugLogger'
@@ -9,7 +10,6 @@ import { routeGeminiRequest, extractGeminiText, FLASH_LITE_PRIORITY } from '@/li
 
 export async function POST(request: NextRequest) {
     try {
-        const { rateLimitKey } = await getRequestIdentity(request)
         const body = await request.json()
         const { rawText, seed } = body
         let mediaType = body.mediaType || 'both'
@@ -28,31 +28,30 @@ export async function POST(request: NextRequest) {
         }
         const sanitizedRawText = textResult.sanitized
 
-        let geminiInsights = null
-        try {
-            const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-            const authHeader = request.headers.get('authorization')
-            if (authHeader) {
-                headers.Authorization = authHeader
-            }
-
-            const geminiResponse = await fetch(`${request.nextUrl.origin}/api/gemini/analyze`, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify({
-                    text: sanitizedRawText,
-                    mediaType,
-                }),
-            })
-
-            if (geminiResponse.ok) {
-                geminiInsights = await geminiResponse.json()
-                if (geminiInsights.mediaType) {
-                    mediaType = geminiInsights.mediaType
+        // One smart suggestion = one unit of the visitor's AI quota, spent before
+        // any Gemini call. Without quota (or a key) the result is TMDB-only and
+        // says so in `ai`, rather than silently degrading.
+        const apiKey = process.env.GEMINI_API_KEY
+        let quota: ConsumeResult | null = null
+        let ai: 'used' | 'limit' | 'unavailable' = 'unavailable'
+        let geminiInsights: Awaited<ReturnType<typeof analyzeText>> | null = null
+        if (apiKey) {
+            const visitorKey = (await getAiVisitor(request)).key
+            quota = await consumeAiQuota(visitorKey)
+            if (quota.allowed) {
+                try {
+                    geminiInsights = await analyzeText(sanitizedRawText, mediaType, apiKey)
+                    ai = 'used'
+                    if (geminiInsights.mediaType) {
+                        mediaType = geminiInsights.mediaType
+                    }
+                } catch (error) {
+                    apiWarn('Gemini analysis failed, continuing with TMDB only:', error)
+                    await refundAiQuota(visitorKey).catch(() => undefined)
                 }
+            } else {
+                ai = 'limit'
             }
-        } catch (error) {
-            apiWarn('Gemini analysis failed, continuing with TMDB only:', error)
         }
 
         if (!['movie', 'tv', 'both'].includes(mediaType)) {
@@ -71,33 +70,26 @@ export async function POST(request: NextRequest) {
               )
             : { ...tmdbResult, mediaType }
 
-        try {
-            const rateStatus = consumeGeminiRateLimit(rateLimitKey)
-            if (!rateStatus.allowed) {
-                return NextResponse.json(
-                    {
-                        ...mergedResult,
-                        error: 'AI naming limit reached. Please try again later.',
-                        retryAfterMs: rateStatus.retryAfterMs,
-                    },
-                    { status: 429 }
+        if (ai === 'used') {
+            try {
+                const nameResult = await generateCreativeRowName(
+                    request.nextUrl.origin,
+                    sanitizedRawText,
+                    mediaType,
+                    geminiInsights
                 )
+                if (nameResult) {
+                    mergedResult.rowNames = [nameResult, ...(mergedResult.rowNames || [])].slice(
+                        0,
+                        3
+                    )
+                }
+            } catch (error) {
+                apiWarn('Failed to generate creative name, using defaults:', error)
             }
-
-            const nameResult = await generateCreativeRowName(
-                request.nextUrl.origin,
-                sanitizedRawText,
-                mediaType,
-                geminiInsights
-            )
-            if (nameResult) {
-                mergedResult.rowNames = [nameResult, ...(mergedResult.rowNames || [])].slice(0, 3)
-            }
-        } catch (error) {
-            apiWarn('Failed to generate creative name, using defaults:', error)
         }
 
-        return NextResponse.json(mergedResult)
+        return NextResponse.json({ ...mergedResult, ai, quota })
     } catch (error) {
         apiError('Smart suggestions error:', error)
         return NextResponse.json({ error: 'Failed to generate suggestions' }, { status: 500 })
