@@ -85,7 +85,7 @@ async function testWeeklyDigest() {
             console.log('ℹ️  No emails sent. Possible reasons:')
             console.log('   - Users have not opted into email notifications')
             console.log('   - No users have matching watchlist items')
-            console.log('   - RESEND_API_KEY not configured')
+            console.log('   - No email binding here (email only sends on the Worker)')
         }
 
         console.log('\n🎉 Test completed successfully!')

@@ -4,7 +4,10 @@
  * Limits on email sign-in links against the in-memory libSQL database.
  */
 
-jest.mock('../../lib/email/resend', () => ({ resend: null }))
+jest.mock('../../lib/email/cloudflare', () => ({
+    EMAIL_FROM: 'nettrailers@n8builds.dev',
+    emailBinding: () => undefined,
+}))
 
 process.env.EMAIL_SIGNIN_PER_ADDRESS_DAILY = '2'
 process.env.EMAIL_SIGNIN_PER_IP_DAILY = '3'

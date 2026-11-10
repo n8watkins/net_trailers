@@ -21,6 +21,7 @@ function wrangler() {
         vars: Record<string, string>
         r2_buckets: { binding: string }[]
         services: { binding: string; service: string }[]
+        send_email: { name: string; allowed_sender_addresses?: string[] }[]
         name: string
     }
 }
@@ -42,6 +43,11 @@ describe('wrangler.jsonc', () => {
             service: config.name,
         })
         expect(config.vars.APP_ENV).toBe('production')
+        // Email only from the app's own address (lib/email/cloudflare.ts)
+        expect(config.send_email).toEqual([
+            { name: 'EMAIL', allowed_sender_addresses: [config.vars.EMAIL_FROM] },
+        ])
+        expect(config.vars.EMAIL_FROM).toBe('nettrailers@n8builds.dev')
     })
 })
 

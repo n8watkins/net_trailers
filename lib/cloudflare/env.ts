@@ -17,6 +17,8 @@ export interface AppBindings {
         ): Promise<unknown>
         delete(key: string): Promise<void>
     }
+    /** Cloudflare Email Service (lib/email/cloudflare.ts). */
+    EMAIL?: import('@/lib/email/cloudflare').EmailBinding
     /** The Worker itself, for the server's calls to its own API (lib/selfFetch.ts). */
     WORKER_SELF_REFERENCE?: { fetch(request: Request): Promise<Response> }
 }

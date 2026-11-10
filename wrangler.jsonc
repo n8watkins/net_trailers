@@ -7,7 +7,7 @@
     "main": "worker/index.ts",
     "compatibility_date": "2026-11-01",
     // nodejs_compat is required by OpenNext; global_fetch_strictly_public keeps
-    // the server's own fetches (TMDB, Turso, Gemini, Resend) on the public internet.
+    // the server's own fetches (TMDB, Turso, Gemini) on the public internet.
     "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
     "assets": {
         "directory": ".open-next/assets",
@@ -28,6 +28,11 @@
     // The revalidation queue, and the server's calls to its own API
     // (lib/selfFetch.ts), reach the Worker through this binding.
     "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "net-trailers" }],
+    // Every email (sign-in links, digests, forum replies, admin email) goes
+    // through Cloudflare Email Service from EMAIL_FROM on n8builds.dev, which
+    // is onboarded for sending (no API key). The app's own caps are in
+    // lib/email/gate.ts; the binding may send from this one address only.
+    "send_email": [{ "name": "EMAIL", "allowed_sender_addresses": ["nettrailers@n8builds.dev"] }],
     // The three Vercel crons, same schedules (worker/crons.ts), 02:00 UTC on
     // Monday, Sunday and Wednesday. Weekdays are named because Cloudflare
     // counts them from 1 = Sunday, unlike Vercel's 0 = Sunday.
@@ -38,11 +43,12 @@
         // "false" while Vercel still runs the same crons on the same database;
         // set it to "true" when the Vercel project is turned off (DEPLOY.md).
         "CRONS_ENABLED": "false",
+        // The sender for every email (lib/email/cloudflare.ts).
+        "EMAIL_FROM": "nettrailers@n8builds.dev",
     },
     // Secrets (npx wrangler secret put <NAME>, see DEPLOY.md): TURSO_DATABASE_URL,
     // TURSO_AUTH_TOKEN, AUTH_SECRET, AUTH_GITHUB_ID, AUTH_GITHUB_SECRET,
-    // TMDB_API_KEY, GEMINI_API_KEY, RESEND_API_KEY, BREVO_API_KEY, CRON_SECRET,
-    // TURNSTILE_SECRET_KEY.
+    // TMDB_API_KEY, GEMINI_API_KEY, CRON_SECRET, TURNSTILE_SECRET_KEY.
     "observability": { "enabled": true, "head_sampling_rate": 1 },
     "workers_dev": true,
     "preview_urls": false,

@@ -1,7 +1,8 @@
 /**
  * Auth.js (NextAuth v5) configuration.
  *
- * Authentication via GitHub OAuth and passwordless email magic links (Resend),
+ * Authentication via GitHub OAuth and passwordless email magic links (sent
+ * through Cloudflare Email Service by the email gate, lib/email/gate.ts),
  * backed by the Turso/Drizzle adapter. Replaces Firebase Auth. Database session
  * strategy so `session.user.id` is the canonical Turso user id used for all
  * ownership checks.
@@ -14,78 +15,41 @@ import { DrizzleAdapter } from '@auth/drizzle-adapter'
 import NextAuth from 'next-auth'
 import { headers } from 'next/headers'
 import GitHub from 'next-auth/providers/github'
-import Resend from 'next-auth/providers/resend'
 import type { Provider } from 'next-auth/providers'
 
 import { db } from '@/db'
 import { accounts, sessions, users, verificationTokens } from '@/db/schema'
 import { authLogger } from '@/lib/log'
 import { isTestMode } from '@/lib/testMode'
+import { deliverSignInLink } from '@/lib/email/gate'
 import { SIGN_IN_EMAIL_LIMIT_ERROR, reserveSignInEmail } from '@/lib/email/signInLimits'
 import { TestEmailProvider } from '@/lib/testEmailProvider'
 
 const adminLogin = process.env.ADMIN_GITHUB_LOGIN?.toLowerCase()
 
-// The "From" address for magic-link emails (a verified sender). Both providers
-// share it. Falls back to Resend's shared test sender for local dev.
-const emailFrom =
-    process.env.EMAIL_FROM || process.env.RESEND_SENDER_EMAIL || 'onboarding@resend.dev'
-
 /**
- * Brevo magic-link provider - delivers the sign-in link via Brevo's
- * transactional email HTTP API. Needs only BREVO_API_KEY + a verified sender
- * (no domain required). Tokens live in the verificationToken table (adapter).
+ * Passwordless email sign-in. The link is reserved against the email limits in
+ * the signIn callback below and delivered through Cloudflare Email Service
+ * (lib/email/gate.ts). The provider id "email" is what the client asks for.
  */
-function BrevoEmail(): Provider {
+function CloudflareEmail(): Provider {
     return {
         id: 'email',
         type: 'email',
         name: 'Email',
-        from: emailFrom,
+        from: process.env.EMAIL_FROM || 'nettrailers@n8builds.dev',
         server: {},
         maxAge: 24 * 60 * 60,
         options: {},
         async sendVerificationRequest({ identifier, url }) {
-            const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-                method: 'POST',
-                headers: {
-                    accept: 'application/json',
-                    'content-type': 'application/json',
-                    'api-key': process.env.BREVO_API_KEY ?? '',
-                },
-                body: JSON.stringify({
-                    sender: { email: emailFrom, name: 'NetTrailers' },
-                    to: [{ email: identifier }],
-                    subject: 'Your NetTrailers sign-in link',
-                    htmlContent: `<div style="font-family:sans-serif;max-width:480px;margin:auto">
-                        <h2 style="color:#dc2626">Sign in to NetTrailers</h2>
-                        <p>Click the button below to sign in. This link expires in 24 hours.</p>
-                        <p><a href="${url}" style="display:inline-block;background:#dc2626;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600">Sign in</a></p>
-                        <p style="color:#888;font-size:13px">Tip: open this link in the browser where you want to be signed in (e.g. Safari or Chrome), not inside an email app's preview.</p>
-                        <p style="color:#666;font-size:13px">Or paste this URL into your browser:<br>${url}</p>
-                    </div>`,
-                }),
-            })
-            if (!res.ok) {
-                const body = await res.text().catch(() => '')
-                throw new Error(`Brevo email send failed (${res.status}): ${body}`)
-            }
+            await deliverSignInLink(identifier, url)
         },
     }
 }
 
-// Email magic-link provider, selectable via EMAIL_PROVIDER without code changes.
-// Both providers use the same verificationToken table, so switching is seamless.
-// Default: Brevo (single API key, verify a single sender - no domain needed).
-// Set EMAIL_PROVIDER=resend to switch to Resend (requires a verified domain).
-// Both expose the stable provider id "email" so the client never changes.
 // APP_ENV=test (end-to-end tests with a local file database only) swaps in a
 // provider that writes the link to disk; lib/testMode.ts refuses it elsewhere.
-const emailProvider = isTestMode()
-    ? TestEmailProvider()
-    : process.env.EMAIL_PROVIDER === 'resend'
-      ? Resend({ id: 'email', apiKey: process.env.RESEND_API_KEY, from: emailFrom })
-      : BrevoEmail()
+const emailProvider = isTestMode() ? TestEmailProvider() : CloudflareEmail()
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
     adapter: DrizzleAdapter(db, {
@@ -114,7 +78,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 }
             },
         }),
-        // Passwordless email magic links (SendGrid or Resend - see emailProvider above).
+        // Passwordless email magic links (see emailProvider above).
         emailProvider,
     ],
     callbacks: {
