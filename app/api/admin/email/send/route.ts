@@ -15,7 +15,8 @@ import { db } from '@/db'
 import { adminEmails, profiles, users } from '@/db/schema'
 import { EmailService } from '@/lib/email/email-service'
 import { sanitizeEmailHtml, validateEmailTemplate } from '@/lib/email/email-validation'
-import { checkAdminEmailRateLimit, checkRecipientEmailRateLimit } from '@/lib/email/rate-limiter'
+import { EmailLimitError } from '@/lib/email/gate'
+import type { LimitRule } from '@/lib/durableLimit'
 import { batchEnsureUnsubscribeTokens } from '@/lib/email/unsubscribe-token'
 import {
     createForbiddenResponse,
@@ -79,32 +80,13 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: validation.error }, { status: 400 })
         }
 
-        const rateCheck = checkAdminEmailRateLimit(adminUserId)
-        if (!rateCheck.allowed) {
-            const retryAfter = rateCheck.resetAt
-                ? Math.ceil((rateCheck.resetAt - Date.now()) / 1000)
-                : 3600
-            return NextResponse.json(
-                {
-                    error: 'Rate limit exceeded',
-                    message: `You can send up to ${rateCheck.limit} emails per hour.`,
-                    limit: rateCheck.limit,
-                    remaining: 0,
-                    resetAt: rateCheck.resetAt,
-                },
-                {
-                    status: 429,
-                    headers: {
-                        'Retry-After': retryAfter.toString(),
-                        'X-RateLimit-Limit': rateCheck.limit.toString(),
-                        'X-RateLimit-Remaining': '0',
-                        'X-RateLimit-Reset': rateCheck.resetAt
-                            ? (rateCheck.resetAt / 1000).toString()
-                            : '',
-                    },
-                }
-            )
-        }
+        // Durable limits, checked per email by the email gate (lib/email/gate.ts)
+        // on top of the site-wide caps: this admin's hourly quota and each
+        // recipient's daily quota of admin emails.
+        const limitsFor = (recipientId: string): LimitRule[] => [
+            { key: `email:admin:${adminUserId}`, limit: 100, window: { ms: 60 * 60 * 1000 } },
+            { key: `email:admin-to:${recipientId}`, limit: 3, window: 'day' },
+        ]
 
         const sanitizedHtmlContent =
             template === 'custom' && customHtmlContent
@@ -166,24 +148,28 @@ export async function POST(request: NextRequest) {
                         errors.push(`Missing email for user: ${user.userId}`)
                         continue
                     }
-                    const rc = checkRecipientEmailRateLimit(user.userId)
-                    if (!rc.allowed) {
-                        errors.push(`User ${user.email} daily limit exceeded`)
-                        continue
-                    }
                     try {
-                        await EmailService.sendAnnouncement({
-                            to: user.email,
-                            userName: user.displayName,
-                            subject: subject!,
-                            message: customMessage!,
-                            unsubscribeToken: unsubscribeTokens.get(user.userId),
-                        })
+                        await EmailService.sendAnnouncement(
+                            {
+                                to: user.email,
+                                userName: user.displayName,
+                                subject: subject!,
+                                message: customMessage!,
+                                unsubscribeToken: unsubscribeTokens.get(user.userId),
+                            },
+                            limitsFor(user.userId)
+                        )
                         emailsSent++
                     } catch (err) {
                         errors.push(
                             `Failed to send to ${user.email}: ${err instanceof Error ? err.message : 'Unknown error'}`
                         )
+                        // The site-wide cap or this admin's quota stops the whole batch.
+                        if (
+                            err instanceof EmailLimitError &&
+                            !err.refusal.rule.key.startsWith('email:admin-to:')
+                        )
+                            break
                     }
                 }
                 break
@@ -194,24 +180,28 @@ export async function POST(request: NextRequest) {
                         errors.push(`Missing email for user: ${user.userId}`)
                         continue
                     }
-                    const rc = checkRecipientEmailRateLimit(user.userId)
-                    if (!rc.allowed) {
-                        errors.push(`User ${user.email} daily limit exceeded`)
-                        continue
-                    }
                     try {
-                        await EmailService.sendCustomEmail({
-                            to: user.email,
-                            userName: user.displayName,
-                            subject: subject!,
-                            htmlContent: sanitizedHtmlContent!,
-                            unsubscribeToken: unsubscribeTokens.get(user.userId),
-                        })
+                        await EmailService.sendCustomEmail(
+                            {
+                                to: user.email,
+                                userName: user.displayName,
+                                subject: subject!,
+                                htmlContent: sanitizedHtmlContent!,
+                                unsubscribeToken: unsubscribeTokens.get(user.userId),
+                            },
+                            limitsFor(user.userId)
+                        )
                         emailsSent++
                     } catch (err) {
                         errors.push(
                             `Failed to send to ${user.email}: ${err instanceof Error ? err.message : 'Unknown error'}`
                         )
+                        // The site-wide cap or this admin's quota stops the whole batch.
+                        if (
+                            err instanceof EmailLimitError &&
+                            !err.refusal.rule.key.startsWith('email:admin-to:')
+                        )
+                            break
                     }
                 }
                 break

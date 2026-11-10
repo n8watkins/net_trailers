@@ -5,46 +5,15 @@ import { withAuth } from '../../../../lib/auth-middleware'
 import { apiError, apiWarn } from '@/utils/debugLogger'
 import { generateUnsubscribeToken } from '@/lib/email/unsubscribe-token'
 import { isCurrentUserAdmin } from '@/db/queries/_helpers'
+import { eq } from 'drizzle-orm'
+import { db } from '@/db'
+import { users } from '@/db/schema'
+import { EmailLimitError } from '@/lib/email/gate'
+import { readLimit } from '@/lib/durableLimit'
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
-const EMAIL_RATE_LIMIT = Number(process.env.PILOT_EMAIL_MAX_PER_DAY || '3')
-
-type RateLimitEntry = { count: number; resetAt: number }
-const rateLimitCache = new Map<string, RateLimitEntry>()
-
-function enforceRateLimit(userId: string) {
-    if (EMAIL_RATE_LIMIT <= 0) return
-
-    const now = Date.now()
-    const windowMs = 24 * 60 * 60 * 1000
-    const entry = rateLimitCache.get(userId)
-
-    if (!entry || now > entry.resetAt) {
-        rateLimitCache.set(userId, { count: 1, resetAt: now + windowMs })
-        return
-    }
-
-    if (entry.count >= EMAIL_RATE_LIMIT) {
-        throw new Error('Rate limit exceeded for pilot emails')
-    }
-
-    entry.count += 1
-    rateLimitCache.set(userId, entry)
-}
-
-function isEmailAllowed(email: string): boolean {
-    const allowlist = (process.env.PILOT_EMAIL_ALLOWLIST || '')
-        .split(',')
-        .map((item) => item.trim().toLowerCase())
-        .filter(Boolean)
-
-    if (allowlist.length === 0) {
-        return true
-    }
-
-    return allowlist.includes(email.toLowerCase())
-}
+const EMAIL_RATE_LIMIT = readLimit('PILOT_EMAIL_MAX_PER_DAY', 3)
 
 /**
  * Fetch trending content from TMDB
@@ -93,35 +62,21 @@ async function handleSendPilot(request: NextRequest, userId: string): Promise<Ne
             )
         }
 
-        const body = await request.json()
-        const { email, userName } = body
+        const body = (await request.json().catch(() => ({}))) as { userName?: unknown }
+        const userName = typeof body.userName === 'string' ? body.userName : ''
 
+        // ADMIN ONLY: the pilot goes to the admin's own address, never to one
+        // taken from the request.
+        const [admin] = await db
+            .select({ email: users.email })
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1)
+        const email = admin?.email
         if (!email) {
-            return NextResponse.json({ error: 'Email is required' }, { status: 400 })
-        }
-
-        // ADMIN ONLY: Force email to be admin's email (ignore body.email for safety)
-        console.log('[PilotEmail] Forcing email to admin user email (ignoring body.email)')
-
-        // Validate email format
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        if (!emailRegex.test(email)) {
-            return NextResponse.json({ error: 'Invalid email format' }, { status: 400 })
-        }
-
-        if (!isEmailAllowed(email)) {
             return NextResponse.json(
-                { error: 'Recipient not permitted for pilot email' },
-                { status: 403 }
-            )
-        }
-
-        try {
-            enforceRateLimit(userId)
-        } catch (rateLimitError) {
-            return NextResponse.json(
-                { error: 'Pilot email limit reached. Try again later.' },
-                { status: 429 }
+                { error: 'Your account has no email address' },
+                { status: 400 }
             )
         }
 
@@ -144,20 +99,26 @@ async function handleSendPilot(request: NextRequest, userId: string): Promise<Ne
             // Continue without token - email will link to settings page instead
         }
 
-        // Send email using EmailService
-        const emailResult = await EmailService.sendTrendingContent({
-            to: email,
-            userName: userName || '',
-            movies,
-            tvShows,
-            unsubscribeToken,
-        })
+        // Through the email gate, with a durable daily limit for pilots.
+        let emailResult: { id: string | null } | null
+        try {
+            emailResult = await EmailService.sendTrendingContent(
+                { to: email, userName, movies, tvShows, unsubscribeToken },
+                [{ key: `email:pilot:${userId}`, limit: EMAIL_RATE_LIMIT, window: 'day' }]
+            )
+        } catch (sendError) {
+            if (sendError instanceof EmailLimitError) {
+                return NextResponse.json(
+                    { error: 'Pilot email limit reached. Try again later.' },
+                    { status: 429 }
+                )
+            }
+            apiError('Error sending email:', sendError)
+            return NextResponse.json({ error: 'Failed to send email' }, { status: 500 })
+        }
 
         if (!emailResult) {
             apiWarn('[PilotEmail] Email service unavailable - skipping send')
-        } else if (emailResult.error) {
-            apiError('Error sending email:', emailResult.error)
-            return NextResponse.json({ error: 'Failed to send email' }, { status: 500 })
         }
 
         return NextResponse.json({
@@ -166,7 +127,7 @@ async function handleSendPilot(request: NextRequest, userId: string): Promise<Ne
                 ? 'Pilot email sent successfully'
                 : 'Email service unavailable; pilot email skipped',
             emailSent: Boolean(emailResult),
-            emailId: emailResult?.data?.id,
+            emailId: emailResult?.id,
         })
     } catch (error) {
         apiError('Error in send-pilot route:', error)
