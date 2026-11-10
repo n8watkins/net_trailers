@@ -4,6 +4,7 @@ import { ChevronLeftIcon, ChevronRightIcon, PencilIcon } from '@heroicons/react/
 import { InformationCircleIcon } from '@heroicons/react/24/outline'
 import ContentCard from '../common/ContentCard'
 import { filterDislikedContent } from '../../utils/contentFilter'
+import { contentKey } from '../../utils/homeRowDedupe'
 import { uiLog, uiWarn } from '../../utils/debugLogger'
 import { Collection } from '../../types/collections'
 import CollectionEditorModal from '../modals/CollectionEditorModal'
@@ -19,7 +20,6 @@ const SYSTEM_RECOMMENDATION_IDS: SystemRecommendationId[] = [
     'top-rated',
     'recommended-for-you',
     'trending-actors',
-    'trending-directors',
 ]
 
 // Helper for infinite scroll logging with emoji prefix
@@ -34,8 +34,18 @@ interface Props {
     pageType?: 'home' | 'movies' | 'tv' // Page type for row editing
     collection?: Collection | null // Optional collection data for editing
     onInfoClick?: () => void // Optional info button click handler
+    /** Titles already shown by rows above (home page de-duplication) */
+    excludeKeys?: ReadonlySet<string>
 }
-function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onInfoClick }: Props) {
+function Row({
+    title,
+    content,
+    apiEndpoint,
+    pageType: _pageType,
+    collection,
+    onInfoClick,
+    excludeKeys,
+}: Props) {
     const rowRef = useRef<HTMLDivElement>(null)
     const sentinelRef = useRef<HTMLDivElement>(null)
     const isLoadingRef = useRef(false)
@@ -118,10 +128,12 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onI
     }, [content, title, apiEndpoint])
 
     // Filter out disliked content (memoized for performance)
-    const filteredContent = useMemo(
-        () => filterDislikedContent(allContent, hiddenMovies),
-        [allContent, hiddenMovies]
-    )
+    // and titles that a row above already shows
+    const filteredContent = useMemo(() => {
+        const visible = filterDislikedContent(allContent, hiddenMovies)
+        if (!excludeKeys || excludeKeys.size === 0) return visible
+        return visible.filter((item) => !excludeKeys.has(contentKey(item)))
+    }, [allContent, hiddenMovies, excludeKeys])
 
     // Load next page of content
     const loadMoreContent = useCallback(async () => {
@@ -530,6 +542,12 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onI
             }
         }
     }
+
+    // Nothing left to show (everything hidden or already in a row above) and nothing more to load
+    if (filteredContent.length === 0 && (!apiEndpoint || !hasMore)) {
+        return null
+    }
+
     return (
         <div>
             {/* Section Title with Edit Button */}

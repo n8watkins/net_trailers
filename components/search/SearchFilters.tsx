@@ -1,361 +1,363 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useId, useState } from 'react'
 import {
     useSearchStore,
     SearchFilters as SearchFiltersType,
-    PeopleSearchFilters,
-    SearchMode,
     DepartmentFilter,
 } from '../../stores/searchStore'
-import { ChevronDownIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { AdjustmentsHorizontalIcon, ChevronDownIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { FilmIcon, UserGroupIcon } from '@heroicons/react/24/solid'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 interface SearchFiltersProps {
     className?: string
-    isOpen?: boolean
-    onClose?: () => void
 }
 
-export default function SearchFilters({
-    className = '',
-    isOpen: _isOpen,
-    onClose: _onClose,
-}: SearchFiltersProps) {
+type Option = { value: string; label: string }
+
+export const CONTENT_TYPE_OPTIONS: Option[] = [
+    { value: 'all', label: 'All' },
+    { value: 'movie', label: 'Movies' },
+    { value: 'tv', label: 'TV' },
+]
+
+const RATING_OPTIONS: Option[] = [
+    { value: 'all', label: 'Any rating' },
+    { value: '7.0+', label: '7.0+' },
+    { value: '8.0+', label: '8.0+' },
+    { value: '9.0+', label: '9.0+' },
+]
+
+const YEAR_OPTIONS: Option[] = [
+    { value: 'all', label: 'Any year' },
+    { value: '2020s', label: '2020s' },
+    { value: '2010s', label: '2010s' },
+    { value: '2000s', label: '2000s' },
+    { value: '1990s', label: '1990s' },
+]
+
+const SORT_OPTIONS: Option[] = [
+    { value: 'popularity.desc', label: 'Most popular' },
+    { value: 'revenue.desc', label: 'Highest revenue' },
+    { value: 'vote_average.desc', label: 'Highest rated' },
+]
+
+const DEPARTMENT_OPTIONS: Option[] = [
+    { value: 'all', label: 'All departments' },
+    { value: 'acting', label: 'Actors' },
+    { value: 'directing', label: 'Directors' },
+    { value: 'writing', label: 'Writers' },
+]
+
+/** The filters that live in the dropdowns (desktop) or the bottom sheet (phones). */
+type DetailFilters = Pick<SearchFiltersType, 'rating' | 'year' | 'sortBy'>
+
+const DEFAULT_DETAIL_FILTERS: Required<DetailFilters> = {
+    rating: 'all',
+    year: 'all',
+    sortBy: 'popularity.desc',
+}
+
+/** How many of the dropdown filters differ from their default. */
+export function countActiveDetailFilters(filters: DetailFilters): number {
+    let count = 0
+    if ((filters.rating ?? 'all') !== 'all') count++
+    if ((filters.year ?? 'all') !== 'all') count++
+    if ((filters.sortBy ?? 'popularity.desc') !== 'popularity.desc') count++
+    return count
+}
+
+function FilterSelect({
+    label,
+    value,
+    onChange,
+    options,
+    fullWidth = false,
+}: {
+    label: string
+    value: string
+    onChange: (value: string) => void
+    options: Option[]
+    fullWidth?: boolean
+}) {
+    const id = useId()
+    const isActive = value !== options[0].value
+    return (
+        <div className={fullWidth ? 'w-full' : ''}>
+            <label htmlFor={id} className="block text-xs font-medium text-gray-400 mb-1">
+                {label}
+            </label>
+            <div className="relative">
+                <select
+                    id={id}
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    className={`appearance-none bg-gray-800 text-white rounded-lg pl-3 pr-9 h-10 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 transition-colors border ${
+                        fullWidth ? 'w-full' : 'min-w-[9.5rem]'
+                    } ${isActive ? 'border-amber-400' : 'border-gray-600 hover:border-gray-500'}`}
+                >
+                    {options.map((option) => (
+                        <option key={option.value} value={option.value}>
+                            {option.label}
+                        </option>
+                    ))}
+                </select>
+                <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
+        </div>
+    )
+}
+
+function SegmentedControl({
+    label,
+    options,
+    value,
+    onChange,
+}: {
+    label: string
+    options: { value: string; label: string; icon?: React.ReactNode }[]
+    value: string
+    onChange: (value: string) => void
+}) {
+    return (
+        <div
+            role="radiogroup"
+            aria-label={label}
+            className="inline-flex rounded-lg border border-gray-600 overflow-hidden"
+        >
+            {options.map((option) => {
+                const selected = option.value === value
+                return (
+                    <button
+                        key={option.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        onClick={() => onChange(option.value)}
+                        className={`flex items-center gap-1.5 h-10 px-3 sm:px-4 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-400 ${
+                            selected
+                                ? 'bg-amber-500 text-zinc-950'
+                                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                        }`}
+                    >
+                        {option.icon}
+                        {option.label}
+                    </button>
+                )
+            })}
+        </div>
+    )
+}
+
+/** Phone-only sheet that edits a draft of the dropdown filters and applies them at once. */
+function FiltersSheet({
+    initial,
+    onApply,
+    onClose,
+}: {
+    initial: Required<DetailFilters>
+    onApply: (filters: Required<DetailFilters>) => void
+    onClose: () => void
+}) {
+    // Mounted only while open, so the draft starts from the applied filters each time
+    const [draft, setDraft] = useState(initial)
+    const titleId = useId()
+    useEscapeKey(true, onClose)
+
+    const draftCount = countActiveDetailFilters(draft)
+
+    return (
+        <div className="md:hidden fixed inset-0 z-[120] flex items-end" data-testid="filters-sheet">
+            <div className="absolute inset-0 bg-black/70" onClick={onClose} aria-hidden="true" />
+            <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={titleId}
+                className="relative w-full max-h-[85vh] overflow-y-auto rounded-t-2xl border-t border-gray-700 bg-[#0f0f10] px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+            >
+                <div className="flex items-center justify-between mb-4">
+                    <h2 id={titleId} className="text-lg font-semibold text-white">
+                        Filters
+                    </h2>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        aria-label="Close filters"
+                        className="-mr-2 flex h-11 w-11 items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/10"
+                    >
+                        <XMarkIcon className="h-6 w-6" />
+                    </button>
+                </div>
+                <div className="space-y-4">
+                    <FilterSelect
+                        label="Rating"
+                        value={draft.rating}
+                        onChange={(rating) => setDraft((d) => ({ ...d, rating }))}
+                        options={RATING_OPTIONS}
+                        fullWidth
+                    />
+                    <FilterSelect
+                        label="Year"
+                        value={draft.year}
+                        onChange={(year) => setDraft((d) => ({ ...d, year }))}
+                        options={YEAR_OPTIONS}
+                        fullWidth
+                    />
+                    <FilterSelect
+                        label="Sort by"
+                        value={draft.sortBy}
+                        onChange={(sortBy) => setDraft((d) => ({ ...d, sortBy }))}
+                        options={SORT_OPTIONS}
+                        fullWidth
+                    />
+                </div>
+                <div className="mt-6 flex gap-3">
+                    <button
+                        type="button"
+                        onClick={() => setDraft(DEFAULT_DETAIL_FILTERS)}
+                        disabled={draftCount === 0}
+                        className="h-11 flex-1 rounded-lg border border-gray-600 text-sm font-medium text-gray-200 hover:bg-white/5 disabled:opacity-40"
+                    >
+                        Reset
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => onApply(draft)}
+                        className="h-11 flex-[2] rounded-lg bg-amber-500 text-sm font-semibold text-zinc-950 hover:bg-amber-400"
+                    >
+                        Apply
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+export default function SearchFilters({ className = '' }: SearchFiltersProps) {
     const searchMode = useSearchStore((state) => state.searchMode)
     const setSearchMode = useSearchStore((state) => state.setSearchMode)
     const filters = useSearchStore((state) => state.filters)
     const setSearchFilters = useSearchStore((state) => state.setSearchFilters)
     const peopleFilters = useSearchStore((state) => state.peopleFilters)
     const setPeopleFilters = useSearchStore((state) => state.setPeopleFilters)
+    const [sheetOpen, setSheetOpen] = useState(false)
 
-    const updateFilter = useCallback(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (key: keyof SearchFiltersType, value: any) => {
-            setSearchFilters({
-                ...filters,
-                [key]: value,
-            })
-        },
-        [filters, setSearchFilters]
-    )
-
-    const updatePeopleFilter = useCallback(
-        (key: keyof PeopleSearchFilters, value: DepartmentFilter) => {
-            setPeopleFilters({
-                ...peopleFilters,
-                [key]: value,
-            })
-        },
-        [peopleFilters, setPeopleFilters]
-    )
-
-    const clearAllFilters = () => {
-        if (searchMode === 'content') {
-            setSearchFilters({
-                contentType: 'all',
-                rating: 'all',
-                year: 'all',
-                sortBy: 'popularity.desc',
-            })
-        } else {
-            setPeopleFilters({
-                department: 'all',
-            })
-        }
+    const detailFilters: Required<DetailFilters> = {
+        rating: filters.rating || 'all',
+        year: filters.year || 'all',
+        sortBy: filters.sortBy || 'popularity.desc',
     }
+    const activeDetailCount = countActiveDetailFilters(detailFilters)
 
-    const removeFilter = useCallback(
-        (filterKey: keyof SearchFiltersType) => {
-            if (filterKey === 'sortBy') {
-                updateFilter(filterKey, 'popularity.desc')
-            } else {
-                updateFilter(filterKey, 'all')
-            }
-        },
-        [updateFilter]
+    const updateFilters = useCallback(
+        (partial: Partial<SearchFiltersType>) => setSearchFilters(partial),
+        [setSearchFilters]
     )
-
-    const removePeopleFilter = useCallback(
-        (filterKey: keyof PeopleSearchFilters) => {
-            updatePeopleFilter(filterKey, 'all')
-        },
-        [updatePeopleFilter]
-    )
-
-    const hasActiveContentFilters = Object.entries(filters).some(([key, value]) => {
-        if (key === 'sortBy') return value !== 'popularity.desc'
-        if (key === 'genres') return Array.isArray(value) && value.length > 0
-        return value !== 'all'
-    })
-
-    const hasActivePeopleFilters = peopleFilters.department !== 'all'
-
-    const hasActiveFilters =
-        searchMode === 'content' ? hasActiveContentFilters : hasActivePeopleFilters
-
-    const FilterDropdown = React.memo(function FilterDropdown({
-        label,
-        value,
-        onChange,
-        options,
-        isActive,
-    }: {
-        label: string
-        value: string
-        onChange: (value: string) => void
-        options: { value: string; label: string }[]
-        isActive?: boolean
-    }) {
-        const handleChange = useCallback(
-            (e: React.ChangeEvent<HTMLSelectElement>) => {
-                e.preventDefault()
-                onChange(e.target.value)
-            },
-            [onChange]
-        )
-
-        return (
-            <div className="relative">
-                <label className="block text-sm font-medium text-gray-300 mb-1">{label}</label>
-                <div className="relative">
-                    <select
-                        value={value}
-                        onChange={handleChange}
-                        className={`appearance-none bg-gray-800 text-white rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none transition-all min-w-[120px] border ${
-                            isActive
-                                ? 'border-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.4)] hover:shadow-[0_0_12px_rgba(251,191,36,0.5)] focus:shadow-[0_0_12px_rgba(251,191,36,0.5)]'
-                                : 'border-gray-600 hover:border-gray-500 focus:ring-2 focus:ring-amber-400 focus:border-amber-400'
-                        }`}
-                    >
-                        {options.map((option) => (
-                            <option key={option.value} value={option.value}>
-                                {option.label}
-                            </option>
-                        ))}
-                    </select>
-                    <ChevronDownIcon className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                </div>
-            </div>
-        )
-    })
-
-    const contentTypeOptions = [
-        { value: 'all', label: 'All Content' },
-        { value: 'movie', label: 'Movies' },
-        { value: 'tv', label: 'TV Shows' },
-    ]
-
-    const ratingOptions = [
-        { value: 'all', label: 'All Ratings' },
-        { value: '7.0+', label: '7.0+ ⭐' },
-        { value: '8.0+', label: '8.0+ ⭐' },
-        { value: '9.0+', label: '9.0+ ⭐' },
-    ]
-
-    const yearOptions = [
-        { value: 'all', label: 'All Years' },
-        { value: '2020s', label: '2020s' },
-        { value: '2010s', label: '2010s' },
-        { value: '2000s', label: '2000s' },
-        { value: '1990s', label: '1990s' },
-    ]
-
-    const sortOptions = [
-        { value: 'popularity.desc', label: 'Most Popular' },
-        { value: 'revenue.desc', label: 'Highest Revenue' },
-        { value: 'vote_average.desc', label: 'Most Voted' },
-    ]
-
-    // People search filter options
-    const departmentOptions = [
-        { value: 'all', label: 'All Departments' },
-        { value: 'acting', label: 'Actors' },
-        { value: 'directing', label: 'Directors' },
-        { value: 'writing', label: 'Writers' },
-    ]
 
     return (
-        <div className={`${className}`}>
-            {/* Search Mode Toggle */}
-            <div className="flex items-center gap-2 mb-4">
-                <span className="text-sm text-gray-400 mr-2">Search for:</span>
-                <div className="flex rounded-lg overflow-hidden border border-gray-600">
-                    <button
-                        onClick={() => setSearchMode('content')}
-                        className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
-                            searchMode === 'content'
-                                ? 'bg-amber-500 text-zinc-950'
-                                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                        }`}
-                    >
-                        <FilmIcon className="w-4 h-4" />
-                        Titles
-                    </button>
-                    <button
-                        onClick={() => setSearchMode('people')}
-                        className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
-                            searchMode === 'people'
-                                ? 'bg-amber-500 text-zinc-950'
-                                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                        }`}
-                    >
-                        <UserGroupIcon className="w-4 h-4" />
-                        People
-                    </button>
-                </div>
-            </div>
+        <div className={className}>
+            <div className="flex flex-wrap items-end gap-3">
+                <SegmentedControl
+                    label="Search for"
+                    value={searchMode}
+                    onChange={(mode) => setSearchMode(mode as 'content' | 'people')}
+                    options={[
+                        {
+                            value: 'content',
+                            label: 'Titles',
+                            icon: <FilmIcon className="w-4 h-4" />,
+                        },
+                        {
+                            value: 'people',
+                            label: 'People',
+                            icon: <UserGroupIcon className="w-4 h-4" />,
+                        },
+                    ]}
+                />
 
-            {/* Filters - Conditional based on search mode */}
-            <div className="flex flex-col space-y-4 lg:flex-row lg:space-y-0 lg:space-x-6 lg:items-end">
                 {searchMode === 'content' ? (
-                    /* Content Search Filters */
-                    <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0">
-                        <FilterDropdown
-                            label="Content Type"
+                    <>
+                        <SegmentedControl
+                            label="Type"
                             value={filters.contentType}
-                            onChange={(value) => updateFilter('contentType', value)}
-                            options={contentTypeOptions}
-                            isActive={filters.contentType !== 'all'}
-                        />
-
-                        <FilterDropdown
-                            label="Rating"
-                            value={filters.rating}
-                            onChange={(value) => updateFilter('rating', value)}
-                            options={ratingOptions}
-                            isActive={filters.rating !== 'all'}
-                        />
-
-                        <FilterDropdown
-                            label="Year"
-                            value={filters.year || 'all'}
-                            onChange={(value) => updateFilter('year', value)}
-                            options={yearOptions}
-                            isActive={filters.year !== 'all'}
-                        />
-
-                        <FilterDropdown
-                            label="Sort By"
-                            value={filters.sortBy || 'popularity.desc'}
-                            onChange={(value) => updateFilter('sortBy', value)}
-                            options={sortOptions}
-                            isActive={filters.sortBy !== 'popularity.desc'}
-                        />
-                    </div>
-                ) : (
-                    /* People Search Filters */
-                    <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0">
-                        <FilterDropdown
-                            label="Department"
-                            value={peopleFilters.department}
-                            onChange={(value) =>
-                                updatePeopleFilter('department', value as DepartmentFilter)
+                            onChange={(contentType) =>
+                                updateFilters({
+                                    contentType: contentType as SearchFiltersType['contentType'],
+                                })
                             }
-                            options={departmentOptions}
-                            isActive={peopleFilters.department !== 'all'}
+                            options={CONTENT_TYPE_OPTIONS}
                         />
-                    </div>
-                )}
 
-                {hasActiveFilters && (
-                    <button
-                        onClick={clearAllFilters}
-                        className="self-start lg:self-end px-4 py-2 text-sm text-amber-300 hover:text-amber-200 border border-amber-500 hover:border-amber-400 rounded-lg transition-colors"
-                    >
-                        Clear Filters
-                    </button>
+                        {/* Phones: one button opens the rest of the filters in a sheet */}
+                        <button
+                            type="button"
+                            onClick={() => setSheetOpen(true)}
+                            className={`md:hidden flex items-center gap-2 h-10 px-3 rounded-lg border text-sm font-medium transition-colors ${
+                                activeDetailCount > 0
+                                    ? 'border-amber-400 text-amber-300'
+                                    : 'border-gray-600 text-gray-200 hover:bg-white/5'
+                            }`}
+                        >
+                            <AdjustmentsHorizontalIcon className="w-5 h-5" />
+                            Filters
+                            {activeDetailCount > 0 && (
+                                <span className="ml-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-xs font-bold text-zinc-950">
+                                    {activeDetailCount}
+                                </span>
+                            )}
+                        </button>
+
+                        {/* Wider screens: the dropdowns inline */}
+                        <div className="hidden md:flex items-end gap-3">
+                            <FilterSelect
+                                label="Rating"
+                                value={detailFilters.rating}
+                                onChange={(rating) => updateFilters({ rating })}
+                                options={RATING_OPTIONS}
+                            />
+                            <FilterSelect
+                                label="Year"
+                                value={detailFilters.year}
+                                onChange={(year) => updateFilters({ year })}
+                                options={YEAR_OPTIONS}
+                            />
+                            <FilterSelect
+                                label="Sort by"
+                                value={detailFilters.sortBy}
+                                onChange={(sortBy) => updateFilters({ sortBy })}
+                                options={SORT_OPTIONS}
+                            />
+                            {activeDetailCount > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={() => updateFilters(DEFAULT_DETAIL_FILTERS)}
+                                    className="h-10 px-2 text-sm text-amber-300 hover:text-amber-200 underline-offset-4 hover:underline"
+                                >
+                                    Clear filters
+                                </button>
+                            )}
+                        </div>
+                    </>
+                ) : (
+                    <FilterSelect
+                        label="Department"
+                        value={peopleFilters.department}
+                        onChange={(value) =>
+                            setPeopleFilters({ department: value as DepartmentFilter })
+                        }
+                        options={DEPARTMENT_OPTIONS}
+                    />
                 )}
             </div>
 
-            {hasActiveFilters && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                    {searchMode === 'content' ? (
-                        /* Content filter badges */
-                        <>
-                            {filters.contentType !== 'all' && (
-                                <button
-                                    onClick={() => removeFilter('contentType')}
-                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors cursor-pointer group"
-                                    title="Click to remove Content Type filter"
-                                >
-                                    <span>
-                                        {
-                                            contentTypeOptions.find(
-                                                (opt) => opt.value === filters.contentType
-                                            )?.label
-                                        }
-                                    </span>
-                                    <XMarkIcon className="ml-1 w-3 h-3 group-hover:text-gray-200" />
-                                </button>
-                            )}
-                            {filters.rating !== 'all' && (
-                                <button
-                                    onClick={() => removeFilter('rating')}
-                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-600 hover:bg-yellow-700 text-white transition-colors cursor-pointer group"
-                                    title="Click to remove Rating filter"
-                                >
-                                    <span>
-                                        {
-                                            ratingOptions.find(
-                                                (opt) => opt.value === filters.rating
-                                            )?.label
-                                        }
-                                    </span>
-                                    <XMarkIcon className="ml-1 w-3 h-3 group-hover:text-gray-200" />
-                                </button>
-                            )}
-                            {filters.year !== 'all' && (
-                                <button
-                                    onClick={() => removeFilter('year')}
-                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-600 hover:bg-green-700 text-white transition-colors cursor-pointer group"
-                                    title="Click to remove Year filter"
-                                >
-                                    <span>
-                                        {
-                                            yearOptions.find((opt) => opt.value === filters.year)
-                                                ?.label
-                                        }
-                                    </span>
-                                    <XMarkIcon className="ml-1 w-3 h-3 group-hover:text-gray-200" />
-                                </button>
-                            )}
-                            {filters.sortBy !== 'popularity.desc' && (
-                                <button
-                                    onClick={() => removeFilter('sortBy')}
-                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-600 hover:bg-orange-700 text-white transition-colors cursor-pointer group"
-                                    title="Click to remove Sort filter"
-                                >
-                                    <span>
-                                        {
-                                            sortOptions.find((opt) => opt.value === filters.sortBy)
-                                                ?.label
-                                        }
-                                    </span>
-                                    <XMarkIcon className="ml-1 w-3 h-3 group-hover:text-gray-200" />
-                                </button>
-                            )}
-                        </>
-                    ) : (
-                        /* People filter badges */
-                        <>
-                            {peopleFilters.department !== 'all' && (
-                                <button
-                                    onClick={() => removePeopleFilter('department')}
-                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-600 hover:bg-purple-700 text-white transition-colors cursor-pointer group"
-                                    title="Click to remove Department filter"
-                                >
-                                    <span>
-                                        {
-                                            departmentOptions.find(
-                                                (opt) => opt.value === peopleFilters.department
-                                            )?.label
-                                        }
-                                    </span>
-                                    <XMarkIcon className="ml-1 w-3 h-3 group-hover:text-gray-200" />
-                                </button>
-                            )}
-                        </>
-                    )}
-                </div>
+            {sheetOpen && (
+                <FiltersSheet
+                    initial={detailFilters}
+                    onClose={() => setSheetOpen(false)}
+                    onApply={(next) => {
+                        updateFilters(next)
+                        setSheetOpen(false)
+                    }}
+                />
             )}
         </div>
     )

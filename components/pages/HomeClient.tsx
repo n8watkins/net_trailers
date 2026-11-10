@@ -11,7 +11,7 @@ import { CollectionRowLoader } from '../collections/CollectionRowLoader'
 import RecommendedForYouRow from '../recommendations/RecommendedForYouRow'
 import { TrendingRow, TopRatedRow } from '../recommendations/SystemRecommendationRow'
 import TrendingActorsRow from '../actors/TrendingActorsRow'
-import TrendingDirectorsRow from '../directors/TrendingDirectorsRow'
+import { HomeRowDedupeProvider } from '../home/HomeRowDedupe'
 import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
 import { useCacheStore } from '../../stores/cacheStore'
@@ -86,9 +86,12 @@ export default function HomeClient({ data }: HomeClientProps) {
     const systemRecommendations =
         sessionType === 'authenticated' ? authSystemRecommendations : guestSystemRecommendations
 
-    // Sort system recommendations by order
+    // Sort system recommendations by order. Trending Directors is retired from home
+    // (it repeated Trending Actors); older saved settings may still list it.
     const sortedSystemRecommendations = useMemo(() => {
-        return [...systemRecommendations].sort((a, b) => a.order - b.order)
+        return systemRecommendations
+            .filter((rec) => rec.id !== 'trending-directors')
+            .sort((a, b) => a.order - b.order)
     }, [systemRecommendations])
 
     const { trending } = data
@@ -176,7 +179,21 @@ export default function HomeClient({ data }: HomeClientProps) {
     }, [sessionType, authCollections, guestCollections])
 
     // Filter to enabled collections only
-    const enabledCollections = allCollections.filter((c) => c.enabled)
+    const enabledCollections = useMemo(
+        () => allCollections.filter((c) => c.enabled),
+        [allCollections]
+    )
+
+    // Title rows top to bottom: each title shows only in the first row that has it
+    const titleRowOrder = useMemo(
+        () => [
+            ...sortedSystemRecommendations
+                .filter((rec) => rec.enabled && rec.id !== 'trending-actors')
+                .map((rec) => rec.id),
+            ...enabledCollections.map((c) => c.id),
+        ],
+        [sortedSystemRecommendations, enabledCollections]
+    )
 
     return (
         <>
@@ -209,34 +226,34 @@ export default function HomeClient({ data }: HomeClientProps) {
                             </div>
                         )}
 
-                        {/* System Recommendation Rows (Trending, Top Rated, Recommended For You) */}
-                        {/* Rendered in user-defined order based on systemRecommendations settings */}
-                        {sortedSystemRecommendations.map((rec) => {
-                            if (!rec.enabled) return null
-                            switch (rec.id) {
-                                case 'trending':
-                                    return <TrendingRow key="trending" />
-                                case 'top-rated':
-                                    return <TopRatedRow key="top-rated" />
-                                case 'recommended-for-you':
-                                    return <RecommendedForYouRow key="recommended-for-you" />
-                                case 'trending-actors':
-                                    return <TrendingActorsRow key="trending-actors" />
-                                case 'trending-directors':
-                                    return <TrendingDirectorsRow key="trending-directors" />
-                                default:
-                                    return null
-                            }
-                        })}
+                        <HomeRowDedupeProvider order={titleRowOrder}>
+                            {/* System Recommendation Rows (Trending, Top Rated, Recommended For You) */}
+                            {/* Rendered in user-defined order based on systemRecommendations settings */}
+                            {sortedSystemRecommendations.map((rec) => {
+                                if (!rec.enabled) return null
+                                switch (rec.id) {
+                                    case 'trending':
+                                        return <TrendingRow key="trending" />
+                                    case 'top-rated':
+                                        return <TopRatedRow key="top-rated" />
+                                    case 'recommended-for-you':
+                                        return <RecommendedForYouRow key="recommended-for-you" />
+                                    case 'trending-actors':
+                                        return <TrendingActorsRow key="trending-actors" />
+                                    default:
+                                        return null
+                                }
+                            })}
 
-                        {/* User Collections (genre-based + manual) sorted by order */}
-                        {enabledCollections.map((collection) => (
-                            <CollectionRowLoader
-                                key={collection.id}
-                                collection={collection}
-                                pageType="home"
-                            />
-                        ))}
+                            {/* User Collections (genre-based + manual) sorted by order */}
+                            {enabledCollections.map((collection) => (
+                                <CollectionRowLoader
+                                    key={collection.id}
+                                    collection={collection}
+                                    pageType="home"
+                                />
+                            ))}
+                        </HomeRowDedupeProvider>
 
                         {/* Create Your Own Collection Button */}
                         <div className="flex justify-center pt-12 pb-8 px-4">

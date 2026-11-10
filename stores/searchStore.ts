@@ -102,7 +102,8 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
     isTruncated: false,
     filters: {
         genres: [],
-        contentType: 'movie',
+        // Default to everything so TV shows are never hidden by surprise
+        contentType: 'all',
         releaseYear: 'all',
         rating: 'all',
         sortBy: 'popularity.desc',

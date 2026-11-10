@@ -13,6 +13,7 @@ import {
     SystemRecommendation,
     createDefaultSystemRecommendations,
     DEFAULT_SYSTEM_RECOMMENDATIONS,
+    RETIRED_SYSTEM_RECOMMENDATION_IDS,
 } from '../types/recommendations'
 import type { RatedContent } from '../types/shared'
 
@@ -20,8 +21,11 @@ import type { RatedContent } from '../types/shared'
  * Merge existing system recommendations with any missing defaults.
  * This ensures existing users get new recommendation types when added.
  */
-function mergeSystemRecommendations(existing: SystemRecommendation[]): SystemRecommendation[] {
-    if (!existing || existing.length === 0) {
+export function mergeSystemRecommendations(saved: SystemRecommendation[]): SystemRecommendation[] {
+    const existing = (saved || []).filter(
+        (rec) => !RETIRED_SYSTEM_RECOMMENDATION_IDS.includes(rec.id)
+    )
+    if (existing.length === 0) {
         return createDefaultSystemRecommendations()
     }
 
@@ -912,9 +916,9 @@ export function createUserStore(options: CreateUserStoreOptions) {
                             )
                             // Check if we added new recommendations
                             const existingCount = (firebaseData.systemRecommendations || []).length
-                            if (systemRecommendations.length > existingCount) {
+                            if (systemRecommendations.length !== existingCount) {
                                 logger.log(
-                                    `🌱 [${trackingContext}] Added ${systemRecommendations.length - existingCount} new system recommendations for user: ${userId}`
+                                    `🌱 [${trackingContext}] Updated system recommendations (${existingCount} -> ${systemRecommendations.length}) for user: ${userId}`
                                 )
                                 needsSeedSave = true
                             } else if (existingCount === 0) {
@@ -1023,9 +1027,9 @@ export function createUserStore(options: CreateUserStoreOptions) {
                     )
                     // Check if we added new recommendations
                     const existingCount = (loadedData.systemRecommendations || []).length
-                    if (systemRecommendations.length > existingCount) {
+                    if (systemRecommendations.length !== existingCount) {
                         logger.log(
-                            `🌱 [${trackingContext}] Added ${systemRecommendations.length - existingCount} new system recommendations for guest: ${guestId}`
+                            `🌱 [${trackingContext}] Updated system recommendations (${existingCount} -> ${systemRecommendations.length}) for guest: ${guestId}`
                         )
                         needsSeedSave = true
                     } else if (existingCount === 0) {

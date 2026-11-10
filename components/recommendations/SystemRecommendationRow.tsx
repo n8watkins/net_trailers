@@ -10,10 +10,11 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { Content } from '../../typings'
 import Row from '../content/Row'
+import { useHomeRowDedupe } from '../home/HomeRowDedupe'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
-import { SystemRecommendation, SystemRecommendationId } from '../../types/recommendations'
+import { SystemRecommendationId } from '../../types/recommendations'
 import { Collection } from '../../types/collections'
 import {
     generateSystemRecommendationName,
@@ -77,7 +78,7 @@ export default function SystemRecommendationRow({
     })
     const emoji = getSystemRecommendationEmoji(recommendationId)
 
-    // Convert SystemRecommendation to Collection for Row's edit functionality
+    // Convert the system recommendation to a Collection for Row's edit functionality
     const collectionForEdit = useMemo((): Collection | null => {
         if (!recommendation) return null
         return {
@@ -224,13 +225,31 @@ export default function SystemRecommendationRow({
         }
     }, [isLoading, onLoadComplete])
 
+    // Share this row's titles with the rows below it, and skip titles the rows above show
+    const dedupe = useHomeRowDedupe(
+        recommendationId,
+        !isEnabled || error ? [] : isLoading ? undefined : content
+    )
+
+    // Links like /#trending land on this row once it has rendered (rows load after the page)
+    const isVisible = isEnabled && !isLoading && dedupe.ready && !error && content.length > 0
+    useEffect(() => {
+        if (!isVisible || window.location.hash !== `#${recommendationId}`) return
+        // Wait a beat so the router's own scroll-to-top after navigation has happened
+        const timer = setTimeout(() => {
+            document.getElementById(recommendationId)?.scrollIntoView({ block: 'start' })
+        }, 150)
+        return () => clearTimeout(timer)
+    }, [isVisible, recommendationId])
+
     // Don't render if disabled
     if (!isEnabled) {
         return null
     }
 
-    // While loading, hold the row's space so the rows below it don't jump
-    if (isLoading) {
+    // While loading, or until the rows above have settled, hold the row's space
+    // so the rows below it don't jump
+    if (isLoading || !dedupe.ready) {
         return <RowSkeleton />
     }
 
@@ -252,12 +271,15 @@ export default function SystemRecommendationRow({
     const apiEndpoint = params ? `${baseEndpoint}?${params}` : baseEndpoint
 
     return (
-        <Row
-            title={title}
-            content={content}
-            collection={collectionForEdit}
-            apiEndpoint={apiEndpoint}
-        />
+        <div id={recommendationId} className="scroll-mt-28">
+            <Row
+                title={title}
+                content={content}
+                collection={collectionForEdit}
+                apiEndpoint={apiEndpoint}
+                excludeKeys={dedupe.exclude}
+            />
+        </div>
     )
 }
 

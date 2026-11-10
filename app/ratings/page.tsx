@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { useRef } from 'react'
 import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
 import { useSessionStore } from '../../stores/sessionStore'
@@ -13,17 +12,18 @@ import ContentCard from '../../components/common/ContentCard'
 import ContentGridSpacer from '../../components/common/ContentGridSpacer'
 import {
     TrashIcon,
-    MagnifyingGlassIcon,
     FilmIcon,
     HandThumbUpIcon,
     HandThumbDownIcon,
     Cog6ToothIcon,
-    ChevronDownIcon,
 } from '@heroicons/react/24/solid'
-import { XMarkIcon, StarIcon, MicrophoneIcon } from '@heroicons/react/24/outline'
+import { StarIcon } from '@heroicons/react/24/outline'
 import PageLoader from '../../components/common/PageLoader'
+import PageHeader from '../../components/layout/PageHeader'
+import PageEmptyState, { emptyStateActionClass } from '../../components/layout/PageEmptyState'
+import { FilterPills, ListSearchInput, ManageMenu } from '../../components/layout/PageToolbar'
+import Link from 'next/link'
 import TitlePreferenceModal from '../../components/recommendations/TitlePreferenceModal'
-import { useVoiceInput } from '../../hooks/useVoiceInput'
 
 type RatingValue = 'like' | 'dislike'
 type FilterValue = RatingValue
@@ -32,19 +32,7 @@ type FilterValue = RatingValue
 export default function RatingsPage() {
     return (
         <SubPageLayout hideHeader>
-            <Suspense
-                fallback={
-                    <div className="relative -mt-20 -mx-6 sm:-mx-8 lg:-mx-12 min-h-screen">
-                        <div className="fixed inset-0 pointer-events-none">
-                            <div className="absolute inset-0 bg-black" />
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-purple-900/20 via-transparent to-transparent opacity-50" />
-                        </div>
-                        <div className="relative z-10 flex items-center justify-center py-32">
-                            <PageLoader />
-                        </div>
-                    </div>
-                }
-            >
+            <Suspense fallback={<PageLoader inline={true} message="Loading ratings..." />}>
                 <RatingsPageContent />
             </Suspense>
         </SubPageLayout>
@@ -92,25 +80,6 @@ function RatingsPageContent() {
     const [isResetting, setIsResetting] = useState(false)
     const [showTitleModal, setShowTitleModal] = useState(false)
     const [isLoadingRatings, setIsLoadingRatings] = useState(true)
-    const [showManageDropdown, setShowManageDropdown] = useState(false)
-    const [isMounted, setIsMounted] = useState(false)
-    const manageDropdownRef = useRef<HTMLDivElement>(null)
-
-    // Voice input
-    const { isListening, isSupported, transcript, startListening, stopListening } = useVoiceInput({
-        onResult: (transcript) => {
-            setSearchQuery(transcript)
-        },
-        onError: (error) => {
-            showError(error)
-        },
-        sourceId: 'ratings-search',
-    })
-
-    // Track client-side mount
-    useEffect(() => {
-        setIsMounted(true)
-    }, [])
 
     // Sync filter state with URL params
     useEffect(() => {
@@ -125,26 +94,6 @@ function RatingsPageContent() {
             setIsLoadingRatings(false)
         }
     }, [myRatings])
-
-    // Handle click outside to close dropdown
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (
-                manageDropdownRef.current &&
-                !manageDropdownRef.current.contains(event.target as Node)
-            ) {
-                setShowManageDropdown(false)
-            }
-        }
-
-        if (showManageDropdown) {
-            document.addEventListener('mousedown', handleClickOutside)
-        }
-
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside)
-        }
-    }, [showManageDropdown])
 
     // Update URL when filter changes
     const handleFilterChange = (newFilter: FilterValue) => {
@@ -229,259 +178,126 @@ function RatingsPageContent() {
         }
     }
 
+    const hasRatings = ratingStats.total > 0
+
     return (
-        <div className="relative -mt-20 -mx-6 sm:-mx-8 lg:-mx-12">
-            {/* Atmospheric Background */}
-            <div className="fixed inset-0 pointer-events-none">
-                <div className="absolute inset-0 bg-black" />
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-purple-900/20 via-transparent to-transparent opacity-50" />
-                <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black opacity-60" />
-            </div>
-
-            {/* Content Container */}
-            <div className="relative z-10">
-                {/* Cinematic Hero Header */}
-                <div className="relative overflow-hidden pt-12">
-                    {/* Animated Background Gradients */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900/80 to-black" />
-                    <div
-                        className="absolute inset-0 bg-gradient-to-t from-purple-900/20 via-violet-900/10 to-black/50 animate-pulse"
-                        style={{ animationDuration: '4s' }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-radial from-purple-500/10 via-purple-900/5 to-transparent" />
-
-                    {/* Soft edge vignetting for subtle blending */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/80" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60" />
-
-                    {/* Hero Content */}
-                    <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-4">
-                        {/* Title with inline icon */}
-                        <div className="flex items-center gap-4 mb-2">
-                            {/* Star Icon with glow */}
-                            <div className="relative">
-                                <div className="absolute inset-0 bg-purple-500/30 blur-2xl scale-150" />
-                                <StarIcon className="relative w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 text-purple-400 drop-shadow-[0_0_20px_rgba(168,85,247,0.5)]" />
-                            </div>
-
-                            {/* Title */}
-                            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white text-center tracking-tight">
-                                <span className="bg-gradient-to-r from-purple-200 via-violet-100 to-purple-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
-                                    My Ratings
-                                </span>
-                            </h1>
-                        </div>
-
-                        {/* Filter Row - Pills on left, Actions on right */}
-                        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between w-full max-w-4xl mb-5 px-4 mt-8">
-                            {/* Category Pills - Liked/Disliked */}
-                            <div className="flex gap-2 items-center">
-                                {[
+        <div className="space-y-6">
+            <PageHeader
+                title="My Ratings"
+                icon={<StarIcon />}
+                actions={
+                    hasRatings && (
+                        <>
+                            <button
+                                type="button"
+                                onClick={() => setShowTitleModal(true)}
+                                className="inline-flex h-9 items-center gap-2 rounded-full border border-zinc-700 bg-zinc-900 px-4 text-sm font-medium text-gray-300 transition-colors hover:border-zinc-500 hover:text-white"
+                            >
+                                <FilmIcon className="h-4 w-4 text-amber-400" />
+                                Rate titles
+                            </button>
+                            <ManageMenu
+                                items={[
                                     {
-                                        value: 'like',
-                                        label: 'Liked',
-                                        icon: HandThumbUpIcon,
-                                        count: ratingStats.liked,
+                                        label: 'Settings',
+                                        icon: Cog6ToothIcon,
+                                        onSelect: () => router.push('/settings/recommendations'),
                                     },
                                     {
-                                        value: 'dislike',
-                                        label: 'Disliked',
-                                        icon: HandThumbDownIcon,
-                                        count: ratingStats.disliked,
+                                        label: 'Reset all ratings',
+                                        icon: TrashIcon,
+                                        danger: true,
+                                        onSelect: () => setShowResetConfirm(true),
                                     },
-                                ].map((option) => {
-                                    const Icon = option.icon
-                                    const isSelected = filter === option.value
-
-                                    return (
-                                        <button
-                                            key={option.value}
-                                            onClick={() =>
-                                                handleFilterChange(option.value as FilterValue)
-                                            }
-                                            className={`group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 ${
-                                                isSelected
-                                                    ? 'bg-purple-500/90 text-white border-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.3)] scale-105'
-                                                    : 'bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105 hover:shadow-[0_0_8px_rgba(255,255,255,0.08)]'
-                                            }`}
-                                        >
-                                            <Icon
-                                                className={`w-4 h-4 ${isSelected ? 'text-white' : ''}`}
-                                            />
-                                            <span className="relative z-10">
-                                                {option.label} ({option.count})
-                                            </span>
-                                            {isSelected && (
-                                                <div className="absolute inset-0 rounded-full bg-purple-500 blur-md opacity-15 animate-pulse" />
-                                            )}
-                                        </button>
-                                    )
-                                })}
-                            </div>
-
-                            {/* Action Buttons - Rate Titles & Manage */}
-                            <div className="flex gap-2 items-center">
-                                {/* Rate Titles */}
-                                <button
-                                    onClick={() => setShowTitleModal(true)}
-                                    className="group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-pink-600/30 hover:border-pink-500 hover:scale-105 hover:shadow-[0_0_10px_rgba(236,72,153,0.2)]"
-                                    title="Rate Titles"
-                                >
-                                    <FilmIcon className="w-4 h-4 text-pink-400" />
-                                    <span>Rate Titles</span>
-                                </button>
-
-                                {/* Manage dropdown */}
-                                <div className="relative" ref={manageDropdownRef}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowManageDropdown(!showManageDropdown)}
-                                        className="group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105 hover:shadow-[0_0_8px_rgba(255,255,255,0.08)]"
-                                    >
-                                        <Cog6ToothIcon className="w-4 h-4 text-gray-400" />
-                                        <span>Manage</span>
-                                        <ChevronDownIcon
-                                            className={`w-4 h-4 transition-transform ${
-                                                showManageDropdown ? 'rotate-180' : ''
-                                            }`}
-                                        />
-                                    </button>
-
-                                    {/* Dropdown Menu */}
-                                    {showManageDropdown && (
-                                        <div className="absolute top-full mt-2 right-0 bg-zinc-900/95 backdrop-blur-lg border border-zinc-700/50 rounded-xl shadow-2xl z-50 min-w-[200px] overflow-hidden">
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    router.push('/settings/recommendations')
-                                                    setShowManageDropdown(false)
-                                                }}
-                                                className="w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-zinc-800/80 transition-colors"
-                                            >
-                                                <Cog6ToothIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                                                <span>Settings</span>
-                                            </button>
-                                            {ratingStats.total > 0 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setShowResetConfirm(true)
-                                                        setShowManageDropdown(false)
-                                                    }}
-                                                    className="w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-zinc-800/80 transition-colors"
-                                                >
-                                                    <TrashIcon className="w-5 h-5 text-red-400 flex-shrink-0" />
-                                                    <span>Reset All Ratings</span>
-                                                </button>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Enhanced Search Bar */}
-                        <div className="w-full max-w-4xl relative">
-                            <div className="relative group">
-                                <MagnifyingGlassIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 z-10 transition-colors group-focus-within:text-purple-400" />
-                                <input
-                                    type="text"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="Search your ratings..."
-                                    className={`w-full pl-14 ${isMounted && isSupported ? 'pr-24' : 'pr-14'} py-4 bg-zinc-900/40 backdrop-blur-lg border border-zinc-800/50 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:shadow-[0_0_25px_rgba(168,85,247,0.3)] transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700`}
-                                />
-                                <div className="absolute right-5 top-1/2 -translate-y-1/2 z-10 flex items-center gap-2">
-                                    {isMounted && isSupported && (
-                                        <button
-                                            type="button"
-                                            onClick={async () => {
-                                                if (isListening) {
-                                                    stopListening()
-                                                } else {
-                                                    await startListening()
-                                                }
-                                            }}
-                                            className={`p-1.5 rounded-lg transition-all ${
-                                                isListening
-                                                    ? 'bg-purple-500 text-white animate-pulse'
-                                                    : 'text-gray-400 hover:text-purple-400 hover:bg-purple-500/10'
-                                            }`}
-                                            title={isListening ? 'Stop listening' : 'Voice search'}
-                                        >
-                                            <MicrophoneIcon className="w-5 h-5" />
-                                        </button>
-                                    )}
-                                    {searchQuery && (
-                                        <button
-                                            onClick={() => setSearchQuery('')}
-                                            className="text-gray-400 hover:text-white transition-colors"
-                                        >
-                                            <XMarkIcon className="w-6 h-6" />
-                                        </button>
-                                    )}
-                                </div>
-
-                                {/* Glowing border effect on focus */}
-                                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500 to-violet-500 opacity-0 group-focus-within:opacity-20 blur-xl transition-opacity duration-300 -z-10" />
-                            </div>
-                        </div>
+                                ]}
+                            />
+                        </>
+                    )
+                }
+            >
+                {hasRatings && (
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <FilterPills<FilterValue>
+                            label="Show"
+                            value={filter}
+                            onChange={handleFilterChange}
+                            options={[
+                                {
+                                    value: 'like',
+                                    label: (
+                                        <>
+                                            <HandThumbUpIcon className="h-4 w-4" />
+                                            Liked ({ratingStats.liked})
+                                        </>
+                                    ),
+                                },
+                                {
+                                    value: 'dislike',
+                                    label: (
+                                        <>
+                                            <HandThumbDownIcon className="h-4 w-4" />
+                                            Disliked ({ratingStats.disliked})
+                                        </>
+                                    ),
+                                },
+                            ]}
+                        />
+                        <ListSearchInput
+                            value={searchQuery}
+                            onChange={setSearchQuery}
+                            placeholder="Search your ratings..."
+                            voiceSourceId="ratings-search"
+                        />
                     </div>
+                )}
+            </PageHeader>
+
+            {isLoadingRatings && (
+                <div className="py-16">
+                    <PageLoader inline={true} message="Loading ratings..." />
                 </div>
+            )}
 
-                {/* Main Content Area */}
-                <div className="px-6 sm:px-8 lg:px-12 py-4 space-y-6">
-                    {/* Loading state */}
-                    {isLoadingRatings && (
-                        <div className="py-16">
-                            <PageLoader inline={true} message="Loading ratings..." />
-                        </div>
-                    )}
+            {!isLoadingRatings && !hasRatings && (
+                <PageEmptyState
+                    icon={<StarIcon />}
+                    title="No ratings yet"
+                    description="Like or dislike titles and they show up here. Your ratings also shape your recommendations."
+                    action={
+                        <Link href="/#trending" className={emptyStateActionClass}>
+                            Rate a few titles
+                        </Link>
+                    }
+                />
+            )}
 
-                    {/* Empty state */}
-                    {!isLoadingRatings && filteredRatings.length === 0 && (
-                        <div className="flex flex-col items-center justify-center py-20 text-center">
-                            <div className="relative mb-6">
-                                <div className="absolute inset-0 bg-purple-500/20 blur-2xl scale-150" />
-                                <div className="relative w-24 h-24 rounded-full bg-zinc-900/60 backdrop-blur-lg flex items-center justify-center border-2 border-zinc-800/50">
-                                    <StarIcon className="w-12 h-12 text-purple-500" />
-                                </div>
-                            </div>
-                            <h3 className="text-2xl font-bold text-white mb-3">
-                                {searchQuery
-                                    ? 'No ratings match your search'
-                                    : `No ${filter === 'like' ? 'liked' : 'disliked'} titles`}
-                            </h3>
-                            <p className="text-gray-400 mb-8 max-w-md text-lg">
-                                {searchQuery
-                                    ? 'Try a different search term'
-                                    : filter === 'like'
-                                      ? 'Like titles from the content cards to add them here'
-                                      : 'Disliked titles will appear here'}
-                            </p>
-                        </div>
-                    )}
+            {!isLoadingRatings && hasRatings && filteredRatings.length === 0 && (
+                <p className="py-12 text-center text-gray-400">
+                    {searchQuery
+                        ? 'No ratings match your search.'
+                        : filter === 'like'
+                          ? 'No liked titles yet.'
+                          : 'No disliked titles yet.'}
+                </p>
+            )}
 
-                    {/* Content Grid */}
-                    {!isLoadingRatings && filteredRatings.length > 0 && (
-                        <div className="flex flex-wrap justify-between gap-x-6 sm:gap-x-8 md:gap-x-10 lg:gap-x-12 gap-y-3 sm:gap-y-4 md:gap-y-5 [&>*]:flex-none">
-                            {filteredRatings.map((rating, index) => (
-                                <div
-                                    key={rating.content.id}
-                                    className="overflow-visible animate-fadeInUp"
-                                    style={{
-                                        animationDelay: `${Math.min(index * 50, 500)}ms`,
-                                        animationFillMode: 'both',
-                                    }}
-                                >
-                                    <ContentCard content={rating.content} />
-                                </div>
-                            ))}
-                            <ContentGridSpacer />
+            {!isLoadingRatings && filteredRatings.length > 0 && (
+                <div className="flex flex-wrap justify-between gap-x-6 sm:gap-x-8 md:gap-x-10 lg:gap-x-12 gap-y-3 sm:gap-y-4 md:gap-y-5 [&>*]:flex-none">
+                    {filteredRatings.map((rating, index) => (
+                        <div
+                            key={rating.content.id}
+                            className="overflow-visible animate-fadeInUp"
+                            style={{
+                                animationDelay: `${Math.min(index * 50, 500)}ms`,
+                                animationFillMode: 'both',
+                            }}
+                        >
+                            <ContentCard content={rating.content} />
                         </div>
-                    )}
+                    ))}
+                    <ContentGridSpacer />
                 </div>
-            </div>
+            )}
 
             {/* Add keyframe animation for fade-in */}
             <style jsx>{`

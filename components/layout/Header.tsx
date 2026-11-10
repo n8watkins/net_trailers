@@ -4,32 +4,20 @@ import {
     MagnifyingGlassIcon,
     Bars3Icon,
     XMarkIcon,
-    HomeIcon,
-    TvIcon,
-    FilmIcon,
-    EyeIcon,
-    EyeSlashIcon,
-    CheckCircleIcon,
     UserIcon,
     ClockIcon,
-    HeartIcon,
     BellIcon,
     Cog6ToothIcon,
     RectangleStackIcon,
     TrophyIcon,
-    UsersIcon,
-    SparklesIcon,
-    ArrowPathIcon,
     HandThumbUpIcon,
 } from '@heroicons/react/24/outline'
 import {
     UserIcon as UserIconSolid,
     ClockIcon as ClockIconSolid,
-    HeartIcon as HeartIconSolid,
     BellIcon as BellIconSolid,
     Cog6ToothIcon as Cog6ToothIconSolid,
     RectangleStackIcon as RectangleStackIconSolid,
-    EyeSlashIcon as EyeSlashIconSolid,
     TrophyIcon as TrophyIconSolid,
     HandThumbUpIcon as HandThumbUpIconSolid,
 } from '@heroicons/react/24/solid'
@@ -41,6 +29,8 @@ import useAuth from '../../hooks/useAuth'
 import AuthModal from '../modals/AuthModal'
 import AvatarDropdown from '../auth/AvatarDropdown'
 import GenresDropdown from '../content/GenresDropdown'
+import MobileNavMenu from './MobileNavMenu'
+import { DESKTOP_START_NAV, PRIMARY_NAV, isNavItemActive } from './navigation'
 import ProfileDropdown from '../content/ProfileDropdown'
 import { useToast } from '../../hooks/useToast'
 import { useDebugSettings } from '../debug/DebugControls'
@@ -88,7 +78,7 @@ const subNavItems: NavItem[] = [
     },
     {
         label: 'Collections',
-        href: '/collections/watch-later',
+        href: '/collections',
         icon: RectangleStackIcon,
         iconSolid: RectangleStackIconSolid,
     },
@@ -351,7 +341,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                 devLog('🚀 First use detected, prefetching pool in background')
                 prefetchRandomPool()
             }
-        } catch (error) {
+        } catch {
             showError('Unable to find something to watch', 'Please try again')
         } finally {
             setIsRandomLoading(false)
@@ -427,30 +417,50 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                     </button>
                     <div className="hidden lg:flex items-center gap-5 flex-1 min-w-0">
                         <ul className="flex gap-5 items-center shrink-0 whitespace-nowrap">
-                            {/* The logo already links home, so the Home link only shows on wide screens */}
-                            <li
-                                className={`headerLink cursor-pointer hidden 2xl:flex items-center space-x-1 select-none ${pathname === '/' ? 'text-white hover:text-white font-semibold' : ''}`}
-                                onClick={() => router.push('/')}
-                            >
-                                <HomeIcon className="h-5 w-5 relative z-10" />
-                                <span className="relative z-10">Home</span>
-                            </li>
-                            <li>
-                                <GenresDropdown />
-                            </li>
-                            <li
-                                className={`headerLink cursor-pointer flex items-center space-x-1 select-none group relative overflow-visible ${
-                                    isRandomLoading ? 'cursor-wait' : ''
-                                }`}
-                                onClick={() => !isRandomLoading && handleRandomContent()}
-                                title="Jump to a random movie or TV show"
-                            >
-                                <span className="absolute -inset-3 opacity-0 group-hover:opacity-50 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-amber-300 via-amber-200/60 via-40% to-transparent rounded-md blur-lg transition-opacity duration-400" />
-                                <SparklesIcon
-                                    className={`h-5 w-5 relative z-10 ${isRandomLoading ? 'animate-pulse' : ''}`}
-                                />
-                                <span className="relative z-10">Surprise Me!</span>
-                            </li>
+                            {DESKTOP_START_NAV.map((item) => {
+                                const Icon = item.icon
+                                if (item.kind === 'genres') {
+                                    return (
+                                        <li key={item.id}>
+                                            <GenresDropdown />
+                                        </li>
+                                    )
+                                }
+                                if (item.kind === 'surprise') {
+                                    return (
+                                        <li
+                                            key={item.id}
+                                            className={`headerLink cursor-pointer flex items-center space-x-1 select-none group relative overflow-visible ${
+                                                isRandomLoading ? 'cursor-wait' : ''
+                                            }`}
+                                            onClick={() =>
+                                                !isRandomLoading && handleRandomContent()
+                                            }
+                                            title="Jump to a random movie or TV show"
+                                        >
+                                            <span className="absolute -inset-3 opacity-0 group-hover:opacity-50 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-amber-300 via-amber-200/60 via-40% to-transparent rounded-md blur-lg transition-opacity duration-400" />
+                                            <Icon
+                                                className={`h-5 w-5 relative z-10 ${isRandomLoading ? 'animate-pulse' : ''}`}
+                                            />
+                                            <span className="relative z-10">{item.label}</span>
+                                        </li>
+                                    )
+                                }
+                                const active = isNavItemActive(item, pathname)
+                                return (
+                                    // The logo already links home, so Home only shows on wide screens
+                                    <li
+                                        key={item.id}
+                                        className={`headerLink cursor-pointer items-center space-x-1 select-none ${
+                                            item.id === 'home' ? 'hidden 2xl:flex' : 'flex'
+                                        } ${active ? 'text-white hover:text-white font-semibold' : ''}`}
+                                        onClick={() => router.push(item.href!)}
+                                    >
+                                        <Icon className="h-5 w-5 relative z-10" />
+                                        <span className="relative z-10">{item.label}</span>
+                                    </li>
+                                )
+                            })}
                             {process.env.NODE_ENV === 'development' &&
                                 debugSettings.showToastTester && (
                                     <li>
@@ -486,18 +496,24 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                             <ProfileDropdown />
                         </div>
 
-                        {/* Community Link - After Profile */}
-                        <div
-                            className={`headerLink cursor-pointer flex shrink-0 items-center space-x-1 select-none whitespace-nowrap ${
-                                pathname?.startsWith('/community')
-                                    ? 'text-white hover:text-white font-semibold'
-                                    : ''
-                            }`}
-                            onClick={() => router.push('/community/rankings')}
-                        >
-                            <UsersIcon className="h-5 w-5 relative z-10" />
-                            <span className="relative z-10">Community</span>
-                        </div>
+                        {/* Desktop items after the profile menu (Community) */}
+                        {PRIMARY_NAV.filter((item) => item.desktop === 'end').map((item) => {
+                            const Icon = item.icon
+                            return (
+                                <Link
+                                    key={item.id}
+                                    href={item.href!}
+                                    className={`headerLink flex shrink-0 items-center space-x-1 select-none whitespace-nowrap ${
+                                        isNavItemActive(item, pathname)
+                                            ? 'text-white hover:text-white font-semibold'
+                                            : ''
+                                    }`}
+                                >
+                                    <Icon className="h-5 w-5 relative z-10" />
+                                    <span className="relative z-10">{item.label}</span>
+                                </Link>
+                            )
+                        })}
 
                         {/* Child Safety Indicator - After Community */}
                         <div className="flex items-center empty:hidden">
@@ -626,123 +642,24 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                     </div>
                 </div>
 
-                {/* Mobile Navigation Modal */}
+                {/* Mobile Navigation Menu (same items as desktop, from components/layout/navigation.ts) */}
                 {showMobileMenu && (
-                    <>
-                        {/* Modal Backdrop - Fixed near header */}
+                    <div
+                        className="lg:hidden fixed inset-0 z-[105] bg-black/80 backdrop-blur-sm flex items-start justify-center pt-20 px-4"
+                        onClick={() => setShowMobileMenu(false)}
+                    >
                         <div
-                            className="lg:hidden fixed inset-0 z-[105] bg-black/80 backdrop-blur-sm flex items-start justify-center pt-20 px-4"
-                            onClick={() => setShowMobileMenu(false)}
+                            className="bg-[#0a0a0a] border border-gray-600/50 rounded-xl w-full max-w-sm mx-auto"
+                            onClick={(e) => e.stopPropagation()}
                         >
-                            {/* Modal Content */}
-                            <div
-                                className="bg-[#0a0a0a] border border-gray-600/50 rounded-xl w-full max-w-sm mx-auto transform transition-all duration-300 ease-in-out scale-100 opacity-100"
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                {/* Navigation Items */}
-                                <nav className="p-6">
-                                    <ul className="space-y-4">
-                                        <li>
-                                            <button
-                                                className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
-                                                    pathname === '/'
-                                                        ? 'text-white font-semibold bg-amber-500/20'
-                                                        : 'hover:bg-white/10'
-                                                }`}
-                                                onClick={() => {
-                                                    router.push('/')
-                                                    setShowMobileMenu(false)
-                                                }}
-                                            >
-                                                <svg
-                                                    className="h-5 w-5"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                                                    />
-                                                </svg>
-                                                <span>Home</span>
-                                            </button>
-                                        </li>
-                                        <li>
-                                            <button
-                                                className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
-                                                    pathname.startsWith('/collections')
-                                                        ? 'text-white font-semibold bg-amber-500/20'
-                                                        : 'hover:bg-white/10'
-                                                }`}
-                                                onClick={() => {
-                                                    router.push('/collections/watch-later')
-                                                    setShowMobileMenu(false)
-                                                }}
-                                            >
-                                                <EyeIcon className="h-5 w-5" />
-                                                <span>Collections</span>
-                                            </button>
-                                        </li>
-                                        <li>
-                                            <button
-                                                className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
-                                                    pathname === '/ratings' ||
-                                                    pathname.startsWith('/ratings')
-                                                        ? 'text-white font-semibold bg-amber-500/20'
-                                                        : 'hover:bg-white/10'
-                                                }`}
-                                                onClick={() => {
-                                                    router.push('/ratings')
-                                                    setShowMobileMenu(false)
-                                                }}
-                                            >
-                                                <HandThumbUpIcon className="h-5 w-5" />
-                                                <span>My Ratings</span>
-                                            </button>
-                                        </li>
-                                        <li>
-                                            <button
-                                                className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
-                                                    pathname === '/search'
-                                                        ? 'text-white font-semibold bg-amber-500/20'
-                                                        : 'hover:bg-white/10'
-                                                }`}
-                                                onClick={() => {
-                                                    router.push('/search')
-                                                    setShowMobileMenu(false)
-                                                }}
-                                            >
-                                                <MagnifyingGlassIcon className="h-5 w-5" />
-                                                <span>Search</span>
-                                            </button>
-                                        </li>
-                                        <li>
-                                            <button
-                                                className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none group relative overflow-visible ${
-                                                    isRandomLoading
-                                                        ? 'cursor-wait'
-                                                        : 'hover:bg-white/10'
-                                                }`}
-                                                onClick={() =>
-                                                    handleRandomContent({ closeMenu: true })
-                                                }
-                                                disabled={isRandomLoading}
-                                            >
-                                                <span className="absolute -inset-3 opacity-0 group-hover:opacity-50 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-amber-300 via-amber-200/60 via-40% to-transparent rounded-lg blur-lg transition-opacity duration-400" />
-                                                <SparklesIcon
-                                                    className={`h-5 w-5 relative z-10 ${isRandomLoading ? 'animate-pulse' : ''}`}
-                                                />
-                                                <span className="relative z-10">Surprise Me!</span>
-                                            </button>
-                                        </li>
-                                    </ul>
-                                </nav>
-                            </div>
+                            <MobileNavMenu
+                                pathname={pathname}
+                                onClose={() => setShowMobileMenu(false)}
+                                onSurprise={() => handleRandomContent({ closeMenu: true })}
+                                isRandomLoading={isRandomLoading}
+                            />
                         </div>
-                    </>
+                    </div>
                 )}
             </header>
 

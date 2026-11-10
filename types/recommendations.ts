@@ -90,15 +90,15 @@ export const DEFAULT_SYSTEM_RECOMMENDATIONS: SystemRecommendation[] = [
         genres: [],
         emoji: '🎭',
     },
-    {
-        id: 'trending-directors',
-        name: 'Trending Directors',
-        enabled: true,
-        order: 4,
-        mediaType: 'both',
-        genres: [],
-        emoji: '🎬',
-    },
+]
+
+/**
+ * Rows that no longer exist. Saved settings from before may still list them;
+ * they are dropped when settings load. Trending Directors left the home page
+ * because it repeated Trending Actors.
+ */
+export const RETIRED_SYSTEM_RECOMMENDATION_IDS: readonly SystemRecommendationId[] = [
+    'trending-directors',
 ]
 
 /**

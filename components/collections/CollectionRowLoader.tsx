@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import Row from '../content/Row'
+import { useHomeRowDedupe } from '../home/HomeRowDedupe'
 import { Content } from '../../typings'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useChildSafety } from '../../hooks/useChildSafety'
@@ -233,6 +234,12 @@ export function CollectionRowLoader({ collection, pageType }: CollectionRowLoade
         userId,
     ])
 
+    // Share this row's titles with the rows below it, and skip titles the rows above show
+    const dedupe = useHomeRowDedupe(
+        collection.id,
+        !collection.enabled || error ? [] : isLoading ? undefined : content
+    )
+
     // Don't render if disabled
     if (!collection.enabled) {
         return null
@@ -256,8 +263,8 @@ export function CollectionRowLoader({ collection, pageType }: CollectionRowLoade
         return null
     }
 
-    // Don't render while loading
-    if (isLoading) {
+    // Don't render while loading, or until the rows above have settled
+    if (isLoading || !dedupe.ready) {
         return null
     }
 
@@ -372,6 +379,7 @@ export function CollectionRowLoader({ collection, pageType }: CollectionRowLoade
             apiEndpoint={apiEndpoint}
             pageType={pageType}
             collection={collection}
+            excludeKeys={dedupe.exclude}
         />
     )
 }

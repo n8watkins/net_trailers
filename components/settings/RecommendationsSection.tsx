@@ -32,11 +32,6 @@ const SYSTEM_REC_INFO: Record<string, { name: string; description: string; defau
             description: 'Popular actors trending this week',
             defaultEmoji: '🎭',
         },
-        'trending-directors': {
-            name: 'Trending Directors',
-            description: 'Popular directors trending this week',
-            defaultEmoji: '🎬',
-        },
     }
 
 // System Recommendations Manager Component

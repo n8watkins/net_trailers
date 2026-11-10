@@ -66,18 +66,17 @@ export default function SearchSuggestionsDropdown({
                     <div className="text-xs text-white font-bold">
                         {searchMode === 'people' ? (
                             <>
-                                Found {totalResults.toLocaleString()}{' '}
+                                {totalResults.toLocaleString()}{' '}
                                 {totalResults !== 1 ? 'people' : 'person'} for &ldquo;{query}&rdquo;
                             </>
                         ) : hasActiveFilters ? (
                             <>
-                                Showing {filteredCount.toLocaleString()} filtered result
-                                {filteredCount !== 1 ? 's' : ''} (of {totalResults.toLocaleString()}{' '}
-                                total)
+                                {filteredCount.toLocaleString()} result
+                                {filteredCount !== 1 ? 's' : ''} for &ldquo;{query}&rdquo;
                             </>
                         ) : (
                             <>
-                                Found {totalResults.toLocaleString()} result
+                                {totalResults.toLocaleString()} result
                                 {totalResults !== 1 ? 's' : ''} for &ldquo;{query}&rdquo;
                             </>
                         )}
@@ -139,7 +138,7 @@ export default function SearchSuggestionsDropdown({
                                     </>
                                 ) : hasActiveFilters ? (
                                     <>
-                                        See all {filteredCount.toLocaleString()} filtered result
+                                        See all {filteredCount.toLocaleString()} result
                                         {filteredCount !== 1 ? 's' : ''}
                                     </>
                                 ) : (

@@ -121,8 +121,8 @@ function SearchPageContent() {
         if (isTruncated && !hasShownTruncationToast.current) {
             hasShownTruncationToast.current = true
             showError(
-                'Search Results Incomplete',
-                'Some results could not be loaded due to API limits or errors. Try narrowing your search.'
+                'Some results could not load',
+                'Part of the search failed. Try again in a moment.'
             )
         }
 
@@ -183,16 +183,16 @@ function SearchPageContent() {
         >
             <Header />
 
-            <main className="relative pl-16 pb-32 lg:space-y-32 lg:pl-32 xl:pl-40">
-                <div className="pt-32 lg:pt-40">
+            <main className="relative px-4 pb-32 sm:px-6 md:px-8 lg:px-16">
+                <div className="mx-auto max-w-7xl pt-24 sm:pt-28 lg:pt-32">
                     {/* Search Filters */}
-                    <section className="mb-8">
-                        <SearchFilters className="pr-16 lg:pr-32 xl:pr-40 mx-auto max-w-7xl" />
+                    <section className="mb-6">
+                        <SearchFilters />
                     </section>
 
                     {/* Search Results */}
                     <section>
-                        <SearchResults className="pr-16 lg:pr-32 xl:pr-40 mx-auto max-w-7xl" />
+                        <SearchResults />
                     </section>
                 </div>
             </main>

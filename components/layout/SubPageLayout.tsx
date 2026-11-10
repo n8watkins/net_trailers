@@ -13,11 +13,12 @@
 
 import React, { ReactNode } from 'react'
 import Header from './Header'
+import PageHeader from './PageHeader'
 import { useModalStore } from '../../stores/modalStore'
 
 interface SubPageLayoutProps {
     /** Page title (e.g., "Watch History") */
-    title?: string
+    title?: ReactNode
     /** Icon element to display next to title */
     icon?: ReactNode
     /** Icon color class (e.g., "text-purple-400") */
@@ -63,45 +64,26 @@ export default function SubPageLayout({
             <Header />
 
             {/* Main content with top padding to account for taller fixed header (includes sub-nav) */}
-            <main className="relative pb-24 px-4 sm:px-6 lg:px-8 pt-36 sm:pt-40 md:pt-48">
+            <main className="relative pb-24 px-4 sm:px-6 md:px-8 lg:px-16 pt-36 sm:pt-40 md:pt-44">
                 <div className="max-w-[1800px] mx-auto flex flex-col space-y-6 py-8">
                     {/* Page Header */}
-                    {!hideHeader &&
-                        (title || icon || description || headerActions || titleActions) && (
-                            <div
-                                className={`space-y-4 ${headerBorder ? 'pb-6 border-b border-gray-700' : ''} ${headerClassName}`}
+                    {!hideHeader && (title || icon || headerActions || titleActions) && (
+                        <div
+                            className={`${headerBorder ? 'pb-6 border-b border-gray-700' : ''} ${headerClassName}`}
+                        >
+                            <PageHeader
+                                title={title}
+                                icon={icon}
+                                iconColor={iconColor}
+                                actions={titleActions}
                             >
-                                {/* Title Section with Actions */}
-                                {(title || icon || titleActions) && (
-                                    <div className="flex items-center justify-between">
-                                        {(title || icon) && (
-                                            <div className="flex items-center space-x-3">
-                                                {icon && (
-                                                    <div className={`w-8 h-8 ${iconColor}`}>
-                                                        {icon}
-                                                    </div>
-                                                )}
-                                                {title && (
-                                                    <h1 className="text-3xl font-bold text-white md:text-4xl">
-                                                        {title}
-                                                    </h1>
-                                                )}
-                                            </div>
-                                        )}
-                                        {/* Title Actions (e.g., manage dropdown) */}
-                                        {titleActions && <div>{titleActions}</div>}
-                                    </div>
-                                )}
-
-                                {/* Description */}
                                 {description && (
                                     <p className="text-gray-400 max-w-2xl">{description}</p>
                                 )}
-
-                                {/* Header Actions (search, filters, etc.) */}
-                                {headerActions && <div className="pt-2">{headerActions}</div>}
-                            </div>
-                        )}
+                                {headerActions}
+                            </PageHeader>
+                        </div>
+                    )}
 
                     {/* Main Content Area */}
                     <div className={contentClassName}>{children}</div>

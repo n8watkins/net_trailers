@@ -9,6 +9,7 @@ import {
 import { useRouter } from 'next/navigation'
 import { getUnifiedGenresByMediaType, UnifiedGenre } from '../../constants/unifiedGenres'
 import { useChildSafety } from '../../hooks/useChildSafety'
+import { genreHref } from '../layout/navigation'
 
 function GenresDropdown() {
     const [isOpen, setIsOpen] = useState(false)
@@ -60,19 +61,7 @@ function GenresDropdown() {
 
     // Handle clicking on a unified genre - translates to TMDB ID for the selected media type
     const handleGenreClick = (genre: UnifiedGenre) => {
-        if (mediaType === 'both') {
-            // For "both", we need to pass both movie and TV genre IDs
-            const movieIds = genre.movieIds.join(',')
-            const tvIds = genre.tvIds.join(',')
-            router.push(
-                `/genres/both/${movieIds}?tvGenres=${tvIds}&name=${encodeURIComponent(genre.name)}`
-            )
-        } else {
-            // Get the primary TMDB ID for the selected media type
-            const tmdbIds = mediaType === 'movie' ? genre.movieIds : genre.tvIds
-            const primaryId = tmdbIds[0] // Use the first/primary ID
-            router.push(`/genres/${mediaType}/${primaryId}?name=${encodeURIComponent(genre.name)}`)
-        }
+        router.push(genreHref(genre, mediaType))
         setIsOpen(false)
     }
 

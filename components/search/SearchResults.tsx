@@ -10,6 +10,28 @@ import ContentCard from '../common/ContentCard'
 import ActorCard from '../actors/ActorCard'
 import { getRoleFilterForDepartment } from '../../utils/personRole'
 
+/**
+ * "86 results for “inception”", "1 person for “nolan”". While filtered results
+ * are still loading the count is a lower bound, shown with a "+".
+ */
+export function formatResultsHeading({
+    count,
+    noun,
+    query,
+    isPartial = false,
+}: {
+    count: number
+    noun: 'result' | 'person'
+    query: string
+    isPartial?: boolean
+}): string {
+    const plural = noun === 'person' ? 'people' : 'results'
+    const label = count === 1 && !isPartial ? noun : plural
+    const number = `${count.toLocaleString('en-US')}${isPartial ? '+' : ''}`
+    const trimmed = query.trim()
+    return trimmed ? `${number} ${label} for “${trimmed}”` : `${number} ${label}`
+}
+
 interface SearchResultsProps {
     className?: string
 }
@@ -26,15 +48,19 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
         hasSearched,
         isEmpty,
         totalResults,
-        filteredTotalResults,
         hasMore,
         loadMore,
         query,
         performSearch,
         filters,
-        hasAllResults,
         isLoadingAll,
     } = useSearch()
+
+    const hasActiveFilters = Object.entries(filters).some(([key, value]) => {
+        if (key === 'sortBy') return value !== 'popularity.desc'
+        if (key === 'genres') return Array.isArray(value) && value.length > 0
+        return value !== 'all'
+    })
 
     // Get people search state from store
     const searchMode = useSearchStore((state) => state.searchMode)
@@ -257,61 +283,21 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
 
     return (
         <div className={className}>
-            {/* Results Header */}
+            {/* Results Header: the count lives in the heading */}
             {hasSearched && !isLoading && currentResultsLength > 0 && (
-                <div className="mb-6 animate-fade-in">
-                    <h2 className="text-xl font-semibold text-white mb-2">
-                        {searchMode === 'people' ? 'People Results' : 'Search Results'}
-                        {query && (
-                            <span className="text-gray-400 font-normal">
-                                {' '}
-                                for &quot;{query}&quot;
-                            </span>
-                        )}
-                    </h2>
-                    <div className="text-gray-400 text-sm">
-                        {searchMode === 'people' ? (
-                            <>Showing {peopleResults.length} people</>
-                        ) : (
-                            totalResults > 0 && (
-                                <>
-                                    {/* Check if any filters are active */}
-                                    {Object.entries(filters).some(([key, value]) => {
-                                        if (key === 'sortBy') return value !== 'popularity.desc'
-                                        if (key === 'genres')
-                                            return Array.isArray(value) && value.length > 0
-                                        return value !== 'all'
-                                    }) ? (
-                                        /* Filters are active - show filtered count */
-                                        hasAllResults ? (
-                                            /* We have all results cached */
-                                            <>
-                                                Showing {filteredTotalResults} results matching your
-                                                filters out of {totalResults} total
-                                            </>
-                                        ) : (
-                                            /* Still loading all results */
-                                            <>
-                                                Showing {filteredTotalResults} filtered results
-                                                {isLoadingAll && (
-                                                    <span className="text-yellow-400">
-                                                        {' '}
-                                                        (loading more...)
-                                                    </span>
-                                                )}
-                                            </>
-                                        )
-                                    ) : (
-                                        /* No filters active - show regular pagination count */
-                                        <>
-                                            Showing {results.length} of {totalResults} results
-                                        </>
-                                    )}
-                                </>
-                            )
-                        )}
-                    </div>
-                </div>
+                <h2 className="mb-6 text-xl font-semibold text-white animate-fade-in">
+                    {formatResultsHeading({
+                        count:
+                            searchMode === 'people'
+                                ? peopleResults.length
+                                : hasActiveFilters
+                                  ? filteredResults.length
+                                  : totalResults,
+                        noun: searchMode === 'people' ? 'person' : 'result',
+                        query,
+                        isPartial: searchMode === 'content' && hasActiveFilters && isLoadingAll,
+                    })}
+                </h2>
             )}
 
             {/* Results Grid - Conditional based on search mode */}
