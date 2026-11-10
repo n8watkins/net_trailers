@@ -34,7 +34,7 @@ interface iAuth {
     error: string | null
     signInWithGitHub: () => Promise<void>
     /** Send a passwordless magic-link sign-in email. Resolves once the email is sent. */
-    signInWithEmail: (email: string) => Promise<void>
+    signInWithEmail: (email: string, turnstileToken: string | null) => Promise<void>
     logOut: () => Promise<void>
 }
 
@@ -87,13 +87,16 @@ function AuthStateProvider({ children }: AuthProviderProps) {
                 // Return to the page the user started from after OAuth.
                 await signIn('github', { callbackUrl: window.location.href })
             },
-            signInWithEmail: async (email: string) => {
+            signInWithEmail: async (email: string, turnstileToken: string | null) => {
                 // Sends the magic-link email via the active provider (stable id
                 // "email"); redirect:false keeps the modal so it can show a
                 // "check your inbox" message. callbackUrl is embedded in the link
-                // so clicking it returns the user to this page, signed in.
+                // so clicking it returns the user to this page, signed in. The
+                // Turnstile token goes in the same form body; the server checks
+                // it before Auth.js runs (lib/turnstile.ts).
                 const res = await signIn('email', {
                     email,
+                    'cf-turnstile-response': turnstileToken ?? '',
                     redirect: false,
                     callbackUrl: window.location.href,
                 })

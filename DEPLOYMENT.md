@@ -53,12 +53,22 @@ Secrets are set with `npx wrangler secret put <NAME>` (it reads the value from s
 | `TMDB_API_KEY`                                                                   | every movie and TV page                                                                  |
 | `GEMINI_API_KEY`                                                                 | smart search and the other AI features                                                   |
 | `CRON_SECRET`                                                                    | the Cron Triggers                                                                        |
+| `TURNSTILE_SECRET_KEY`                                                           | the Turnstile check on the email sign-in form (`lib/turnstile.ts`)                       |
 
-Build-time values (inlined into the pages, all public) are set in the deploy workflow: `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_GA_MEASUREMENT_ID`, `NEXT_PUBLIC_SENTRY_DSN`, and `NEXT_PUBLIC_CF_WEB_ANALYTICS_TOKEN` from a repository variable.
+Build-time values (inlined into the pages, all public) are set in the deploy workflow: `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_GA_MEASUREMENT_ID`, `NEXT_PUBLIC_SENTRY_DSN`, and `NEXT_PUBLIC_CF_WEB_ANALYTICS_TOKEN` from a repository variable.
 For a deploy by hand, export the same values in the shell first.
 Never put a `.env` file in the project when building: OpenNext would bundle it into the Worker.
 
 After changing bindings in `wrangler.jsonc`, run `npm run cf-typegen` (CI checks it).
+
+## Turnstile on sign-in
+
+The email sign-in form runs Cloudflare Turnstile in the background as it opens (managed mode, "interaction-only" appearance: most people see nothing, and a small challenge appears only when Cloudflare is unsure).
+Its token goes with the request for a link, and the Auth.js route checks it with siteverify before anything else (`lib/turnstile.ts`), so a request without a valid token never spends the sign-in email limits or sends an email.
+The widget is "NetTrailers sign-in" in the Cloudflare dashboard (Turnstile), for `nettrailers.n8builds.dev`, `net-trailers.nathancwatkins23.workers.dev` and `localhost`.
+Its site key is public and set in the deploy workflow; its secret is the Worker secret `TURNSTILE_SECRET_KEY`.
+The production Worker refuses every request for a link while that secret is missing.
+Local runs and the end-to-end tests use Cloudflare's always-pass test keys.
 
 ## Automatic deploys
 
