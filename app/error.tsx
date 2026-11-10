@@ -95,7 +95,7 @@ export default function Error({
 
                 {/* Fun message */}
                 <div className="mt-12 text-gray-500 text-sm">
-                    <p>🎭 Meanwhile, somewhere in the NetTrailer universe...</p>
+                    <p>🎭 Meanwhile, somewhere in the NetTrailers universe...</p>
                     <p className="mt-2 italic">
                         &ldquo;Even the best streaming services need a coffee break
                         sometimes.&rdquo;

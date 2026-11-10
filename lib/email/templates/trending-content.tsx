@@ -10,7 +10,7 @@ interface TrendingContentEmailProps {
 }
 
 /**
- * Premium Netflix-caliber Weekly Trending Digest Email
+ * Premium Weekly Trending Digest Email
  * Redesigned with table-based layout for maximum email client compatibility
  */
 export const TrendingContentEmail = ({
@@ -179,7 +179,7 @@ export const TrendingContentEmail = ({
                                     <tr>
                                         <td
                                             style={{
-                                                backgroundColor: '#E50914',
+                                                backgroundColor: '#DC2626',
                                                 borderRadius: '4px',
                                                 padding: '6px 12px',
                                             }}
@@ -255,7 +255,7 @@ export const TrendingContentEmail = ({
                                         <a
                                             href={appUrl}
                                             style={{
-                                                color: '#E50914',
+                                                color: '#DC2626',
                                                 textDecoration: 'none',
                                                 fontWeight: '600',
                                             }}
@@ -271,14 +271,14 @@ export const TrendingContentEmail = ({
                                         align="center"
                                         style={{
                                             paddingBottom: '32px',
-                                            borderBottom: '3px solid #E50914',
+                                            borderBottom: '3px solid #DC2626',
                                         }}
                                     >
                                         <div
                                             style={{
                                                 fontSize: '36px',
                                                 fontWeight: '900',
-                                                color: '#E50914',
+                                                color: '#DC2626',
                                                 letterSpacing: '3px',
                                                 textTransform: 'uppercase',
                                             }}
@@ -342,7 +342,7 @@ export const TrendingContentEmail = ({
                                                         fontWeight: '700',
                                                         color: '#ffffff',
                                                         paddingBottom: '8px',
-                                                        borderBottom: '2px solid #E50914',
+                                                        borderBottom: '2px solid #DC2626',
                                                         display: 'inline-block',
                                                     }}
                                                 >
@@ -385,7 +385,7 @@ export const TrendingContentEmail = ({
                                                         fontWeight: '700',
                                                         color: '#ffffff',
                                                         paddingBottom: '8px',
-                                                        borderBottom: '2px solid #E50914',
+                                                        borderBottom: '2px solid #DC2626',
                                                         display: 'inline-block',
                                                     }}
                                                 >
@@ -435,7 +435,7 @@ export const TrendingContentEmail = ({
                                             <tr>
                                                 <td
                                                     style={{
-                                                        backgroundColor: '#E50914',
+                                                        backgroundColor: '#DC2626',
                                                         borderRadius: '9999px',
                                                         padding: '14px 36px',
                                                     }}

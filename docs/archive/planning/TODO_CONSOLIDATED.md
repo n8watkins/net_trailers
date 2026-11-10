@@ -108,9 +108,7 @@
 
 **Assets to replace:**
 
-1. **Logo/Icon** (`/public/netflix.png`)
-    - Create "Net Trailer" or custom logo
-    - Update references in `pages/_document.tsx`, `components/Header.tsx`
+1. **Logo/Icon**: done in November 2026 (`public/nettrailers-logo.svg`, `public/nettrailers-mark.svg`; the Netflix image was removed)
 
 2. **App Title**: Change "Netflix" to "Net Trailer" in browser tabs
 

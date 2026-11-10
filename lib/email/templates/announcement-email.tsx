@@ -31,7 +31,7 @@ export default function AnnouncementEmail({
                             cellSpacing="0"
                             style={{
                                 backgroundColor: '#222222',
-                                borderLeft: '4px solid #e50914',
+                                borderLeft: '4px solid #dc2626',
                                 borderRadius: '4px',
                             }}
                         >
@@ -67,7 +67,7 @@ export default function AnnouncementEmail({
                                 margin: '0',
                             }}
                         >
-                            This is an official announcement from the Net Trailers admin team.
+                            This is an official announcement from the NetTrailers admin team.
                         </p>
                     </td>
                 </tr>

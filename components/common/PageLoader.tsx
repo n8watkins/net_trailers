@@ -24,7 +24,7 @@ const LOADING_MESSAGES = [
 
 const getRandomMessage = () => LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)]
 
-const NetflixLoader: React.FC<Props> = ({
+const PageLoader: React.FC<Props> = ({
     message = 'Loading your movies...',
     inline = false,
     slowCounter = false,
@@ -103,9 +103,9 @@ const NetflixLoader: React.FC<Props> = ({
     const bouncingDots = useMemo(
         () => (
             <div className="flex space-x-3 justify-center mb-6">
-                <div className="w-6 h-6 bg-red-600 rounded-full bounce-dot-1"></div>
-                <div className="w-6 h-6 bg-red-600 rounded-full bounce-dot-2"></div>
-                <div className="w-6 h-6 bg-red-600 rounded-full bounce-dot-3"></div>
+                <div className="w-6 h-6 bg-amber-500 rounded-full bounce-dot-1"></div>
+                <div className="w-6 h-6 bg-amber-500 rounded-full bounce-dot-2"></div>
+                <div className="w-6 h-6 bg-amber-500 rounded-full bounce-dot-3"></div>
             </div>
         ),
         [] // Never re-create this element
@@ -130,4 +130,4 @@ const NetflixLoader: React.FC<Props> = ({
     )
 }
 
-export default NetflixLoader
+export default PageLoader

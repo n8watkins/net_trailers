@@ -11,6 +11,7 @@ import { useState } from 'react'
 import { XMarkIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { FORUM_CATEGORIES } from '@/utils/forumCategories'
 import { ForumCategory } from '@/types/forum'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 interface CreatePollModalProps {
     isOpen: boolean
@@ -64,6 +65,8 @@ export function CreatePollModal({ isOpen, onClose, onCreate }: CreatePollModalPr
         setOptions(['', ''])
         onClose()
     }
+
+    useEscapeKey(isOpen, onClose)
 
     if (!isOpen) return null
 

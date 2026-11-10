@@ -11,7 +11,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import SubPageLayout from '../../../../components/layout/SubPageLayout'
 import { RankingGrid } from '../../../../components/rankings/RankingGrid'
-import NetflixLoader from '../../../../components/common/NetflixLoader'
+import PageLoader from '../../../../components/common/PageLoader'
 import { TrophyIcon, UserIcon } from '@heroicons/react/24/outline'
 import type { Ranking } from '../../../../types/rankings'
 import type { PublicProfilePayload } from '@/lib/publicProfile'
@@ -76,7 +76,7 @@ export default function UserRankingsPage() {
                 icon={<TrophyIcon className="w-8 h-8" />}
                 iconColor="text-yellow-400"
             >
-                <NetflixLoader />
+                <PageLoader />
             </SubPageLayout>
         )
     }

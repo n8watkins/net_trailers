@@ -7,6 +7,7 @@ import { useToast } from '../../hooks/useToast'
 import { useSessionStore } from '../../stores/sessionStore'
 import ShareModal from './ShareModal'
 import { authenticatedFetch } from '../../lib/authenticatedFetch'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 interface ManageSharesModalProps {
     /** Whether modal is open */
@@ -88,6 +89,8 @@ export default function ManageSharesModal({ isOpen, onClose }: ManageSharesModal
         // Reload shares to reflect any changes made in the sub-modal.
         loadShares()
     }
+
+    useEscapeKey(isOpen, onClose)
 
     if (!isOpen) return null
 

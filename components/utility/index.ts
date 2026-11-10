@@ -1,5 +1,5 @@
 export { default as Analytics } from './Analytics'
-export { default as VercelAnalyticsWrapper } from './VercelAnalyticsWrapper'
+export { default as WebAnalytics } from './WebAnalytics'
 export { default as KeyboardShortcuts } from './KeyboardShortcuts'
 export { default as PostHydrationEffects } from './PostHydrationEffects'
 export { SessionSyncManager } from './SessionSyncManager'

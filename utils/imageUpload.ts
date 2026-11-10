@@ -1,13 +1,14 @@
 /**
  * Image Upload Utilities
  *
- * Images are compressed client-side then uploaded to **Vercel Blob** via the
- * server route `/api/upload` (which holds BLOB_READ_WRITE_TOKEN). The route
- * returns a public CDN URL that is stored in the relevant DB field.
+ * Images are compressed client-side then uploaded to the R2 bucket via the
+ * server route `/api/upload` (lib/uploads.ts). The route returns the image's
+ * site-relative URL (`/uploads/...`), which is stored in the relevant DB field.
  */
 
 import imageCompression from 'browser-image-compression'
 import { authenticatedFetch } from '../lib/authenticatedFetch'
+import { isUploadUrl } from '../lib/uploads'
 
 /**
  * Compress an image file to reduce size and improve performance.
@@ -48,9 +49,9 @@ export async function compressImage(file: File): Promise<File> {
 }
 
 /**
- * Upload an image - compresses it client-side, then uploads to Vercel Blob via
- * `/api/upload`. Returns the public CDN URL. The `path` parameter is used as a
- * grouping hint for the blob key.
+ * Upload an image - compresses it client-side, then uploads it to R2 via
+ * `/api/upload`. Returns its site-relative URL (`/uploads/...`). The `path`
+ * parameter is a grouping hint.
  */
 export async function uploadImage(file: File, path: string): Promise<string> {
     // Validate file type
@@ -98,11 +99,11 @@ export async function uploadImages(files: File[], path: string): Promise<string[
 }
 
 /**
- * Delete an image from Vercel Blob (best-effort; only the owner's blobs).
- * Ignores non-blob URLs (e.g. legacy data URLs).
+ * Delete an uploaded image (best-effort; only the owner's uploads).
+ * Ignores other URLs (e.g. legacy data URLs).
  */
 export async function deleteImage(imageUrl: string): Promise<void> {
-    if (!imageUrl || !imageUrl.includes('.blob.vercel-storage.com')) return
+    if (!imageUrl || !isUploadUrl(imageUrl)) return
     try {
         await authenticatedFetch(`/api/upload?url=${encodeURIComponent(imageUrl)}`, {
             method: 'DELETE',

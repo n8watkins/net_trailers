@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
-import fs from 'fs'
-import path from 'path'
+// Read at build time (Markdown is a raw module, next.config.js): the Worker
+// has no filesystem to read CHANGELOG.md from at runtime.
+import changelog from '../../../CHANGELOG.md'
 
 interface ChangelogVersion {
     version: string
@@ -83,18 +84,7 @@ function parseChangelog(content: string): ChangelogVersion[] {
 
 export async function GET() {
     try {
-        const changelogPath = path.join(process.cwd(), 'CHANGELOG.md')
-
-        // Check if file exists
-        if (!fs.existsSync(changelogPath)) {
-            return NextResponse.json({ error: 'CHANGELOG.md not found' }, { status: 404 })
-        }
-
-        // Read file
-        const content = fs.readFileSync(changelogPath, 'utf-8')
-
-        // Parse changelog
-        const versions = parseChangelog(content)
+        const versions = parseChangelog(changelog)
 
         return NextResponse.json(
             {

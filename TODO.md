@@ -92,3 +92,14 @@ Located in `/lib/email/templates/`:
 - The template fetches real-time trending data from TMDB API
 - Email design matches the app's dark theme and branding
 - Users can toggle email notifications and send test emails from Settings > Notifications
+
+## Keys
+
+Checked 2026-11-09 against the secret names on the Worker and in GitHub Actions (names only, no values).
+New values go into the owner's pass-env store and are sent with `pass-env pipe <entry> -- <command>`; never commit or paste a value.
+
+- [ ] `GEMINI_API_KEY`: missing on the Worker and the old key no longer works (PR #5).
+- [ ] `TMDB_API_KEY`: needs a new value (PR #7). Regenerate at themoviedb.org, set it on the Worker.
+- [ ] `AUTH_GITHUB_SECRET`, `BREVO_API_KEY` (missing on the Worker): the GitHub OAuth app's callback must cover the Worker address.
+- [ ] `TURSO_AUTH_TOKEN`: needs a new value once Vercel is gone (changing it earlier breaks the Vercel copy).
+- [x] `AUTH_SECRET`, `CRON_SECRET`, `RESEND_API_KEY`: set on the Worker.

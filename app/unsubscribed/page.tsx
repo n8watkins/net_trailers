@@ -4,7 +4,7 @@ import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
-import NetflixLoader from '../../components/common/NetflixLoader'
+import PageLoader from '../../components/common/PageLoader'
 
 function UnsubscribedContent() {
     const searchParams = useSearchParams()
@@ -22,7 +22,7 @@ function UnsubscribedContent() {
                             </h1>
                             <p className="text-[#b3b3b3] mb-6">
                                 You've been unsubscribed from all email notifications. You will no
-                                longer receive emails from Net Trailers.
+                                longer receive emails from NetTrailers.
                             </p>
                             <p className="text-sm text-[#808080] mb-6">
                                 You can re-enable email notifications anytime in your account
@@ -30,8 +30,8 @@ function UnsubscribedContent() {
                             </p>
                             <div className="space-y-3">
                                 <Link
-                                    href="/settings"
-                                    className="block w-full px-4 py-3 bg-red-600 text-white rounded-lg font-medium transition-all duration-200 hover:bg-red-700"
+                                    href="/settings/preferences"
+                                    className="block w-full px-4 py-3 bg-amber-500 text-zinc-950 rounded-lg font-medium transition-all duration-200 hover:bg-amber-600"
                                 >
                                     Go to Settings
                                 </Link>
@@ -59,8 +59,8 @@ function UnsubscribedContent() {
                             </p>
                             <div className="space-y-3">
                                 <Link
-                                    href="/settings"
-                                    className="block w-full px-4 py-3 bg-red-600 text-white rounded-lg font-medium transition-all duration-200 hover:bg-red-700"
+                                    href="/settings/preferences"
+                                    className="block w-full px-4 py-3 bg-amber-500 text-zinc-950 rounded-lg font-medium transition-all duration-200 hover:bg-amber-600"
                                 >
                                     Manage Email Settings
                                 </Link>
@@ -77,7 +77,7 @@ function UnsubscribedContent() {
 
                 <div className="mt-6 text-center">
                     <p className="text-xs text-[#808080]">
-                        © {new Date().getFullYear()} Net Trailers. All rights reserved.
+                        © {new Date().getFullYear()} NetTrailers. All rights reserved.
                     </p>
                 </div>
             </div>
@@ -87,7 +87,7 @@ function UnsubscribedContent() {
 
 export default function UnsubscribedPage() {
     return (
-        <Suspense fallback={<NetflixLoader message="Loading preference update..." />}>
+        <Suspense fallback={<PageLoader message="Loading preference update..." />}>
             <UnsubscribedContent />
         </Suspense>
     )

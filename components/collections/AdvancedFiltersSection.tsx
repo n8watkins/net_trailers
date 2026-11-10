@@ -187,7 +187,7 @@ export function AdvancedFiltersSection({ filters, onChange }: AdvancedFiltersSec
                                     e.target.value ? parseInt(e.target.value) : undefined
                                 )
                             }
-                            className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                            className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
                         />
                     </div>
                     <div>
@@ -204,7 +204,7 @@ export function AdvancedFiltersSection({ filters, onChange }: AdvancedFiltersSec
                                     e.target.value ? parseInt(e.target.value) : undefined
                                 )
                             }
-                            className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                            className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
                         />
                     </div>
                 </div>
@@ -218,7 +218,7 @@ export function AdvancedFiltersSection({ filters, onChange }: AdvancedFiltersSec
                     <div>
                         <div className="flex justify-between text-xs text-gray-400 mb-2">
                             <span>Minimum</span>
-                            <span className="text-red-400 font-medium">
+                            <span className="text-amber-300 font-medium">
                                 {filters.ratingMin !== undefined
                                     ? `${filters.ratingMin}/10`
                                     : 'Any'}
@@ -233,7 +233,7 @@ export function AdvancedFiltersSection({ filters, onChange }: AdvancedFiltersSec
                             onChange={(e) =>
                                 updateFilter('ratingMin', parseInt(e.target.value) || undefined)
                             }
-                            className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-red-600 [&::-webkit-slider-thumb]:cursor-pointer"
+                            className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-amber-500 [&::-webkit-slider-thumb]:cursor-pointer"
                         />
                         <div className="flex justify-between text-xs text-gray-500 mt-1">
                             <span>0</span>
@@ -245,7 +245,7 @@ export function AdvancedFiltersSection({ filters, onChange }: AdvancedFiltersSec
                     <div>
                         <div className="flex justify-between text-xs text-gray-400 mb-2">
                             <span>Maximum</span>
-                            <span className="text-red-400 font-medium">
+                            <span className="text-amber-300 font-medium">
                                 {filters.ratingMax !== undefined
                                     ? `${filters.ratingMax}/10`
                                     : 'Any'}
@@ -260,7 +260,7 @@ export function AdvancedFiltersSection({ filters, onChange }: AdvancedFiltersSec
                             onChange={(e) =>
                                 updateFilter('ratingMax', parseInt(e.target.value) || undefined)
                             }
-                            className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-red-600 [&::-webkit-slider-thumb]:cursor-pointer"
+                            className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-amber-500 [&::-webkit-slider-thumb]:cursor-pointer"
                         />
                         <div className="flex justify-between text-xs text-gray-500 mt-1">
                             <span>0</span>
@@ -289,7 +289,7 @@ export function AdvancedFiltersSection({ filters, onChange }: AdvancedFiltersSec
                         value={peopleInput}
                         onChange={(e) => handlePeopleInputChange(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                        className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
                     />
 
                     {/* Search Results Dropdown */}
@@ -303,7 +303,7 @@ export function AdvancedFiltersSection({ filters, onChange }: AdvancedFiltersSec
                                         onClick={() => addPerson(person)}
                                         className={`w-full flex items-center gap-3 p-3 transition-colors text-left ${
                                             index === selectedIndex
-                                                ? 'bg-red-600/20 border-l-2 border-red-500'
+                                                ? 'bg-amber-500/20 border-l-2 border-amber-400'
                                                 : 'hover:bg-gray-700'
                                         }`}
                                     >
@@ -344,7 +344,7 @@ export function AdvancedFiltersSection({ filters, onChange }: AdvancedFiltersSec
 
                     {isSearchingPeople && (
                         <div className="absolute right-3 top-2.5">
-                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-600"></div>
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-amber-500"></div>
                         </div>
                     )}
                 </div>
@@ -387,7 +387,7 @@ export function AdvancedFiltersSection({ filters, onChange }: AdvancedFiltersSec
                                 <button
                                     type="button"
                                     onClick={() => removePerson(person.id)}
-                                    className="absolute top-1 right-1 p-1 bg-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                    className="absolute top-1 right-1 p-1 bg-amber-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                                 >
                                     <XMarkIcon className="w-3 h-3 text-white" />
                                 </button>

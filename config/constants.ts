@@ -34,8 +34,10 @@ export const CACHE_CONFIG = {
  * Theme colors used throughout the application
  */
 export const THEME_COLORS = {
-    /** Primary Netflix red */
-    NETFLIX_RED: '#E50914',
+    /** NetTrailers brand accent (logo amber) */
+    BRAND_ACCENT: '#F59E0B',
+    /** Primary red for UI actions (Tailwind red-600) */
+    UI_RED: '#DC2626',
     /** Primary blue for actions */
     PRIMARY_BLUE: '#3B82F6',
     /** Success state green */
@@ -63,7 +65,7 @@ export const LIST_CONFIG = {
     /** Default watchlist emoji */
     DEFAULT_WATCHLIST_EMOJI: '📺',
     /** Default watchlist color */
-    DEFAULT_WATCHLIST_COLOR: '#E50914',
+    DEFAULT_WATCHLIST_COLOR: '#F59E0B',
 } as const
 
 /**

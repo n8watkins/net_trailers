@@ -23,7 +23,7 @@ export default function SearchResultItem({
             ref={onRef}
             className={`flex items-center rounded-lg p-3 cursor-pointer group border transition-all duration-300 ease-in-out ${
                 isSelected
-                    ? 'bg-red-600/30 border-red-500/50 shadow-lg shadow-red-500/20'
+                    ? 'bg-amber-500/30 border-amber-400/50 shadow-lg shadow-amber-400/20'
                     : 'bg-gray-700/30 border-transparent hover:bg-gray-600/30 hover:border-gray-500/30'
             }`}
             onClick={() => onClick(item)}
@@ -56,7 +56,7 @@ export default function SearchResultItem({
                 {/* Title and Year */}
                 <div className="flex items-start justify-between mb-1">
                     <div className="flex-1 min-w-0">
-                        <h4 className="text-white font-medium text-sm truncate group-hover:text-red-400 transition-colors">
+                        <h4 className="text-white font-medium text-sm truncate group-hover:text-amber-300 transition-colors">
                             {getTitle(item)}
                         </h4>
                         <p className="text-gray-400 text-xs">{getYear(item)}</p>

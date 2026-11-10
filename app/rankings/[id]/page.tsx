@@ -15,7 +15,7 @@ import { useRankingStore } from '../../../stores/rankingStore'
 import { useSessionStore } from '../../../stores/sessionStore'
 import { useProfileStore } from '../../../stores/profileStore'
 import { useAuthStatus } from '../../../hooks/useAuthStatus'
-import NetflixLoader from '../../../components/common/NetflixLoader'
+import PageLoader from '../../../components/common/PageLoader'
 import { TrophyIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
 import { useToast } from '../../../hooks/useToast'
 import useAuth from '../../../hooks/useAuth'
@@ -140,7 +140,7 @@ export default function RankingDetailPage() {
                 icon={<TrophyIcon className="w-8 h-8" />}
                 iconColor="text-yellow-500"
             >
-                <NetflixLoader />
+                <PageLoader />
             </SubPageLayout>
         )
     }

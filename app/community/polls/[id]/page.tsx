@@ -14,7 +14,7 @@ import { useForumStore } from '@/stores/forumStore'
 import { useSessionStore } from '@/stores/sessionStore'
 import { useAuthStatus } from '@/hooks/useAuthStatus'
 import { getCategoryInfo } from '@/utils/forumCategories'
-import NetflixLoader from '@/components/common/NetflixLoader'
+import PageLoader from '@/components/common/PageLoader'
 import { formatDistanceToNow } from 'date-fns'
 import {
     ChartBarIcon,
@@ -241,7 +241,7 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
     if (isLoadingPolls || !currentPoll) {
         return (
             <SubPageLayout title="Loading..." icon={<ChartBarIcon className="w-8 h-8" />}>
-                <NetflixLoader />
+                <PageLoader />
             </SubPageLayout>
         )
     }
@@ -281,7 +281,7 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
                                 className="rounded-full"
                             />
                         ) : (
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-red-500 flex items-center justify-center text-lg font-bold">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-amber-400 flex items-center justify-center text-lg font-bold">
                                 {currentPoll.userName[0]?.toUpperCase() || '?'}
                             </div>
                         )}
@@ -385,7 +385,7 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
                             </span>
                         )}
                         {isExpired ? (
-                            <span className="px-3 py-1 bg-red-500/10 border border-red-500/30 rounded-full text-sm text-red-400 flex items-center gap-1">
+                            <span className="px-3 py-1 bg-amber-400/10 border border-amber-400/30 rounded-full text-sm text-amber-300 flex items-center gap-1">
                                 <XCircleIcon className="w-4 h-4" />
                                 Expired
                             </span>

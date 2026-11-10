@@ -19,6 +19,7 @@ import type { Provider } from 'next-auth/providers'
 
 import { db } from '@/db'
 import { accounts, sessions, users, verificationTokens } from '@/db/schema'
+import { authLogger } from '@/lib/log'
 
 const adminLogin = process.env.ADMIN_GITHUB_LOGIN?.toLowerCase()
 
@@ -55,13 +56,13 @@ function BrevoEmail(): Provider {
                     'api-key': process.env.BREVO_API_KEY ?? '',
                 },
                 body: JSON.stringify({
-                    sender: { email: emailFrom, name: 'NetTrailer' },
+                    sender: { email: emailFrom, name: 'NetTrailers' },
                     to: [{ email: identifier }],
-                    subject: 'Your NetTrailer sign-in link',
+                    subject: 'Your NetTrailers sign-in link',
                     htmlContent: `<div style="font-family:sans-serif;max-width:480px;margin:auto">
-                        <h2 style="color:#e50914">Sign in to NetTrailer</h2>
+                        <h2 style="color:#dc2626">Sign in to NetTrailers</h2>
                         <p>Click the button below to sign in. This link expires in 24 hours.</p>
-                        <p><a href="${url}" style="display:inline-block;background:#e50914;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600">Sign in</a></p>
+                        <p><a href="${url}" style="display:inline-block;background:#dc2626;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600">Sign in</a></p>
                         <p style="color:#888;font-size:13px">Tip: open this link in the browser where you want to be signed in (e.g. Safari or Chrome), not inside an email app's preview.</p>
                         <p style="color:#666;font-size:13px">Or paste this URL into your browser:<br>${url}</p>
                     </div>`,
@@ -96,6 +97,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     // Required when running behind a proxy (Vercel) so Auth.js trusts the
     // X-Forwarded-Host header for callback URL construction.
     trustHost: true,
+    // Error type and a masked message only; see lib/log.ts.
+    logger: authLogger,
     providers: [
         GitHub({
             // AUTH_GITHUB_ID / AUTH_GITHUB_SECRET are read from env automatically.

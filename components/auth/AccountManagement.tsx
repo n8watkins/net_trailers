@@ -204,7 +204,7 @@ export default function AccountManagement() {
         return (
             <div className="p-6 bg-[#141414] rounded-lg">
                 <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-4"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500 mx-auto mb-4"></div>
                     <p className="text-gray-400">
                         {userData.sessionType === 'initializing'
                             ? 'Initializing session...'
@@ -251,7 +251,7 @@ export default function AccountManagement() {
             {dataSummary && (
                 <div className="mb-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     <div className="p-3 bg-[#1a1a1a] rounded-lg border border-gray-700">
-                        <div className="text-2xl font-bold text-red-600">
+                        <div className="text-2xl font-bold text-amber-500">
                             {dataSummary.watchlistCount}
                         </div>
                         <div className="text-sm text-gray-400">Watchlist Items</div>
@@ -263,7 +263,7 @@ export default function AccountManagement() {
                         <div className="text-sm text-gray-400">Liked</div>
                     </div>
                     <div className="p-3 bg-[#1a1a1a] rounded-lg border border-gray-700">
-                        <div className="text-2xl font-bold text-red-600">
+                        <div className="text-2xl font-bold text-amber-500">
                             {dataSummary.hiddenCount}
                         </div>
                         <div className="text-sm text-gray-400">Hidden</div>

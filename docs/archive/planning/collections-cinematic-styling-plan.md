@@ -72,7 +72,7 @@ SubPageLayout (hideHeader={true})
       │   ├─ Filter Pills (All, Auto-Update, Manual, AI-Generated)
       │   └─ Enhanced Search Bar
       └─ Main Content Area
-          ├─ Loading State (NetflixLoader with blue theme)
+          ├─ Loading State (PageLoader with blue theme)
           ├─ Empty State (styled with blue theme)
           └─ Collections Grid (improved layout with cards)
 ```
@@ -207,7 +207,7 @@ Features:
 {
     isLoading && (
         <div className="py-16">
-            <NetflixLoader inline={true} message="Loading collections..." />
+            <PageLoader inline={true} message="Loading collections..." />
         </div>
     )
 }
@@ -282,7 +282,7 @@ Add fadeInUp keyframe animation:
 
 ### Phase 4: Enhanced States & Polish
 
-11. Implement styled loading state with NetflixLoader
+11. Implement styled loading state with PageLoader
 12. Implement styled empty state with blue theme
 13. Add fadeInUp animations to collection cards
 14. Test responsive layout (mobile, tablet, desktop)

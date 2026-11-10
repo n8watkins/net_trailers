@@ -1,7 +1,7 @@
 /**
  * Watch History Section Component - Cinematic Edition
  *
- * Netflix-style carousel row with:
+ * Streaming-style carousel row with:
  * - Glassmorphic container with ambient glow
  * - Soft neon rim light on posters
  * - Hover lift animations

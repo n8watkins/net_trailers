@@ -22,6 +22,7 @@ import { and, desc, eq, sql } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { profiles, shares, users } from '@/db/schema'
+import { requestOrigin } from '@/lib/requestOrigin'
 import type { UserList } from '@/types/collections'
 import type {
     CreateShareRequest,
@@ -50,29 +51,6 @@ function isValidShareId(shareId: string): boolean {
     if (!shareId || typeof shareId !== 'string') return false
     const len = shareId.length
     return len >= 8 && len <= 32 && /^[A-Za-z0-9_-]+$/.test(shareId)
-}
-
-/** Resolve the public base URL (copied from the old utils module). */
-function resolveShareBaseUrl(): string {
-    if (typeof window !== 'undefined' && window.location) {
-        return window.location.origin
-    }
-    const envUrl =
-        process.env.NEXT_PUBLIC_APP_URL ||
-        process.env.APP_URL ||
-        process.env.VERCEL_URL ||
-        process.env.VERCEL_PROJECT_PRODUCTION_URL ||
-        ''
-
-    if (envUrl.startsWith('http://') || envUrl.startsWith('https://')) {
-        return envUrl.replace(/\/$/, '')
-    }
-
-    if (envUrl) {
-        return `https://${envUrl}`.replace(/\/$/, '')
-    }
-
-    return 'http://localhost:3000'
 }
 
 /**
@@ -184,7 +162,8 @@ export async function createShare(
     const row = inserted[0]
     const share = rowToShareableLink(row)
 
-    const baseUrl = resolveShareBaseUrl()
+    // The address the owner is using right now (lib/requestOrigin.ts).
+    const baseUrl = await requestOrigin()
     return {
         shareId: share.id,
         shareUrl: `${baseUrl}/shared/${share.id}`,

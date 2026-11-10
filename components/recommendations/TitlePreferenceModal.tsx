@@ -459,7 +459,7 @@ export default function TitlePreferenceModal({
 
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center py-16">
-                            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-red-600 mb-4" />
+                            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-amber-500 mb-4" />
                             <p className="text-gray-400 text-sm">
                                 Finding titles for you to rate...
                             </p>
@@ -499,14 +499,14 @@ export default function TitlePreferenceModal({
                                     className={`absolute inset-0 z-10 flex items-center justify-center pointer-events-none rounded-lg ${
                                         swipeIndicator === 'like'
                                             ? 'bg-green-500/20'
-                                            : 'bg-red-500/20'
+                                            : 'bg-amber-400/20'
                                     }`}
                                 >
                                     <div
                                         className={`px-4 py-2 rounded-lg border-4 rotate-[-15deg] ${
                                             swipeIndicator === 'like'
                                                 ? 'border-green-500 text-green-500'
-                                                : 'border-red-500 text-red-500'
+                                                : 'border-amber-400 text-amber-400'
                                         }`}
                                     >
                                         <span className="text-2xl font-bold uppercase tracking-wider">
@@ -544,7 +544,7 @@ export default function TitlePreferenceModal({
                                             className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${
                                                 animatingVote === 'like'
                                                     ? 'bg-green-500/50'
-                                                    : 'bg-red-500/50'
+                                                    : 'bg-amber-400/50'
                                             }`}
                                         >
                                             {animatingVote === 'like' && (
@@ -624,7 +624,7 @@ export default function TitlePreferenceModal({
                                                         ? 'Director'
                                                         : 'Creator'}
                                                 </p>
-                                                <p className="text-sm sm:text-base lg:text-xl xl:text-2xl text-white font-medium hover:text-red-400 transition-colors">
+                                                <p className="text-sm sm:text-base lg:text-xl xl:text-2xl text-white font-medium hover:text-amber-300 transition-colors">
                                                     {person.name}
                                                 </p>
                                             </div>
@@ -672,7 +672,7 @@ export default function TitlePreferenceModal({
                                                             </div>
                                                         )}
                                                     </div>
-                                                    <span className="text-xs sm:text-sm lg:text-base xl:text-lg text-gray-400 group-hover:text-red-400 text-center leading-tight line-clamp-2 transition-colors">
+                                                    <span className="text-xs sm:text-sm lg:text-base xl:text-lg text-gray-400 group-hover:text-amber-300 text-center leading-tight line-clamp-2 transition-colors">
                                                         {actor.name}
                                                     </span>
                                                 </button>
@@ -701,8 +701,8 @@ export default function TitlePreferenceModal({
                                     <div
                                         className={`w-14 h-14 sm:w-16 sm:h-16 md:w-[70px] md:h-[70px] rounded-full flex items-center justify-center border-2 transition-all ${
                                             currentVote === 'dislike'
-                                                ? 'bg-red-600 border-red-600'
-                                                : 'bg-transparent border-gray-500 hover:border-red-500 hover:bg-red-500/10'
+                                                ? 'bg-amber-500 border-amber-500'
+                                                : 'bg-transparent border-gray-500 hover:border-amber-400 hover:bg-amber-400/10'
                                         }`}
                                     >
                                         <HandThumbDownIcon

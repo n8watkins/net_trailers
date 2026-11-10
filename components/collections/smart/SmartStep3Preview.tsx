@@ -103,7 +103,7 @@ export function SmartStep3Preview({
     if (isLoadingPreview) {
         return (
             <div className="flex flex-col items-center justify-center py-16">
-                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-red-600 mb-4"></div>
+                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-amber-500 mb-4"></div>
                 <p className="text-white text-lg font-medium">Loading preview...</p>
                 <p className="text-gray-400 text-sm mt-2">Fetching content from TMDB</p>
             </div>
@@ -120,7 +120,7 @@ export function SmartStep3Preview({
                         type="text"
                         value={rowName}
                         onChange={(e) => handleRowNameChange(e.target.value)}
-                        className="flex-1 bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-500 transition-colors"
+                        className="flex-1 bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-amber-400 transition-colors"
                         placeholder="Enter row name..."
                     />
                     <SparklesIcon className="w-5 h-5 text-yellow-400" />
@@ -160,7 +160,7 @@ export function SmartStep3Preview({
                         {previewContent.map((item) => (
                             <div
                                 key={item.id}
-                                className="group relative aspect-[2/3] rounded-lg overflow-hidden bg-gray-800 hover:ring-2 hover:ring-red-500 transition-all cursor-pointer"
+                                className="group relative aspect-[2/3] rounded-lg overflow-hidden bg-gray-800 hover:ring-2 hover:ring-amber-400 transition-all cursor-pointer"
                             >
                                 {item.poster_path ? (
                                     <img
@@ -216,7 +216,7 @@ export function SmartStep3Preview({
                 <button
                     onClick={handleCreate}
                     disabled={isCreating || !rowName.trim() || previewContent.length === 0}
-                    className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-lg flex items-center justify-center gap-2"
+                    className="flex-1 px-6 py-3 bg-amber-500 text-zinc-950 rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-lg flex items-center justify-center gap-2"
                 >
                     {isCreating ? (
                         <>

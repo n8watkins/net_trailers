@@ -36,7 +36,7 @@ export default function SmartSearchInput() {
             onFocus={handleFocus}
             onBlur={handleBlur}
             isActive={isActive}
-            showTypewriter={true}
+            showExamplePlaceholder={true}
             size="default"
             variant="transparent"
             shimmer="wave"

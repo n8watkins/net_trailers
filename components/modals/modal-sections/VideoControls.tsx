@@ -87,31 +87,35 @@ function VideoControls({
                 </ToolTipMod>
             </div>
 
-            {/* YouTube Link Button */}
-            <ToolTipMod title="Watch on YouTube">
-                <button
-                    className="group p-2 sm:p-3 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-colors"
-                    onClick={() =>
-                        window.open(`https://www.youtube.com/watch?v=${trailer}`, '_blank')
-                    }
-                >
-                    <ArrowTopRightOnSquareIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
-                </button>
-            </ToolTipMod>
+            {/* YouTube and fullscreen: phones use the player's own controls, so the
+                action row fits on one line under the video */}
+            <div className="hidden sm:flex gap-4 items-center">
+                {/* YouTube Link Button */}
+                <ToolTipMod title="Watch on YouTube">
+                    <button
+                        className="group p-2 sm:p-3 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-colors"
+                        onClick={() =>
+                            window.open(`https://www.youtube.com/watch?v=${trailer}`, '_blank')
+                        }
+                    >
+                        <ArrowTopRightOnSquareIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
+                    </button>
+                </ToolTipMod>
 
-            {/* Fullscreen Button */}
-            <ToolTipMod title={fullScreen ? 'Exit Fullscreen' : 'Fullscreen'}>
-                <button
-                    className="group p-2 sm:p-3 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-colors"
-                    onClick={onToggleFullscreen}
-                >
-                    {fullScreen ? (
-                        <ArrowsPointingInIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
-                    ) : (
-                        <ArrowsPointingOutIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
-                    )}
-                </button>
-            </ToolTipMod>
+                {/* Fullscreen Button */}
+                <ToolTipMod title={fullScreen ? 'Exit Fullscreen' : 'Fullscreen'}>
+                    <button
+                        className="group p-2 sm:p-3 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-colors"
+                        onClick={onToggleFullscreen}
+                    >
+                        {fullScreen ? (
+                            <ArrowsPointingInIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
+                        ) : (
+                            <ArrowsPointingOutIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
+                        )}
+                    </button>
+                </ToolTipMod>
+            </div>
         </div>
     )
 }

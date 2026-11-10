@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { AVAILABLE_EMOJIS } from '../../config/constants'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 interface IconPickerModalProps {
     isOpen: boolean
@@ -23,7 +24,7 @@ function IconPickerModal({ isOpen, selectedIcon, onSelectIcon, onClose }: IconPi
         entertainment: 'bg-purple-900',
         fantasy: 'bg-blue-900',
         achievements: 'bg-yellow-900',
-        action: 'bg-red-900',
+        action: 'bg-amber-800',
     }
 
     const categories: IconCategory[] = [
@@ -62,6 +63,8 @@ function IconPickerModal({ isOpen, selectedIcon, onSelectIcon, onClose }: IconPi
         document.addEventListener('mousedown', handleClickOutside)
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [isOpen, onClose])
+
+    useEscapeKey(isOpen, onClose)
 
     if (!isOpen) return null
 

@@ -13,7 +13,7 @@ import { RankingCreator } from '../../../components/rankings/RankingCreator'
 import SmartRankingCreator from '../../../components/rankings/SmartRankingCreator'
 import { useAuthStatus } from '../../../hooks/useAuthStatus'
 import { GuestModeNotification } from '../../../components/auth/GuestModeNotification'
-import NetflixLoader from '../../../components/common/NetflixLoader'
+import PageLoader from '../../../components/common/PageLoader'
 import { TrophyIcon, ArrowLeftIcon, SparklesIcon } from '@heroicons/react/24/outline'
 import { useToast } from '../../../hooks/useToast'
 
@@ -46,7 +46,7 @@ export default function NewRankingPage() {
                 icon={<TrophyIcon className="w-8 h-8" />}
                 iconColor="text-yellow-500"
             >
-                <NetflixLoader />
+                <PageLoader />
             </SubPageLayout>
         )
     }

@@ -418,7 +418,7 @@ export default function DebugControls() {
         setExpandedCategories((prev) => ({ ...prev, [category]: !prev[category] }))
     }
 
-    // Clear NetTrailer localStorage and reload
+    // Clear NetTrailers localStorage and reload
     const handleClearLocalStorage = () => {
         Object.keys(localStorage)
             .filter((key) => key.startsWith('nettrailer'))
@@ -853,7 +853,7 @@ export default function DebugControls() {
                                 <button
                                     onClick={handleClearLocalStorage}
                                     className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-amber-600/20 text-amber-400 border border-amber-500/30 hover:bg-amber-600/40"
-                                    title="Clear NetTrailer localStorage data and reload"
+                                    title="Clear NetTrailers localStorage data and reload"
                                 >
                                     <TrashIcon className="w-3 h-3" />
                                     <span className="text-xs">Clear Storage</span>

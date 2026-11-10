@@ -1,11 +1,14 @@
 import { Metadata } from 'next'
 
+import { requestOrigin } from '@/lib/requestOrigin'
+import { selfFetch } from '@/lib/selfFetch'
+
 interface Props {
-    params: { shareId: string }
+    params: Promise<{ shareId: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-    const { shareId } = params
+    const { shareId } = await params
 
     // Fetch share data for metadata
     let collectionName = 'Shared Collection'
@@ -14,10 +17,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     let ownerName = ''
 
     try {
-        const baseUrl =
-            process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL || 'http://localhost:3000'
-
-        const response = await fetch(`${baseUrl}/api/shares/${shareId}`, {
+        const response = await selfFetch(`/api/shares/${encodeURIComponent(shareId)}`, {
             cache: 'no-store', // Don't cache to ensure fresh data
         })
 
@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         console.error('Error fetching share metadata:', error)
     }
 
-    const url = `https://nettrailers.com/shared/${shareId}`
+    const url = `${await requestOrigin()}/shared/${shareId}`
 
     return {
         title: `${collectionName} | Shared Collection`,

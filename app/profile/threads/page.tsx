@@ -15,7 +15,7 @@ import { useRouter } from 'next/navigation'
 import { useForumStore } from '@/stores/forumStore'
 import { useSessionStore } from '@/stores/sessionStore'
 import { useAuthStatus } from '@/hooks/useAuthStatus'
-import NetflixLoader from '@/components/common/NetflixLoader'
+import PageLoader from '@/components/common/PageLoader'
 import Header from '@/components/layout/Header'
 import { ThreadCard } from '@/components/forum/ThreadCard'
 import { CreateThreadModal } from '@/components/forum/CreateThreadModal'
@@ -162,7 +162,7 @@ export default function UserThreadsPage() {
             <div className="min-h-screen bg-black">
                 <Header />
                 <div className="flex items-center justify-center min-h-screen">
-                    <NetflixLoader inline message="Loading your threads..." />
+                    <PageLoader inline message="Loading your threads..." />
                 </div>
             </div>
         )
@@ -294,7 +294,7 @@ export default function UserThreadsPage() {
                         {/* Loading state */}
                         {isLoadingActiveThreads && (
                             <div className="py-16">
-                                <NetflixLoader inline={true} message="Loading threads..." />
+                                <PageLoader inline={true} message="Loading threads..." />
                             </div>
                         )}
 

@@ -31,7 +31,10 @@ export async function POST(request: NextRequest) {
         const apiKey = process.env.GEMINI_API_KEY
         if (!apiKey) {
             apiError('GEMINI_API_KEY not configured')
-            return NextResponse.json({ error: 'AI service unavailable' }, { status: 503 })
+            return NextResponse.json(
+                { error: 'AI search is unavailable right now', code: 'AI_UNAVAILABLE' },
+                { status: 503 }
+            )
         }
 
         const rateStatus = consumeGeminiRateLimit(rateLimitKey)
@@ -71,8 +74,13 @@ export async function POST(request: NextRequest) {
         )
 
         if (!result.success) {
+            // Upstream failure (invalid key, quota, outage): log the detail, tell the
+            // client only that AI search is unavailable so it can offer regular search.
             apiError('[AI Suggestions] Gemini router error:', result.error)
-            throw new Error(result.error || 'Gemini request failed')
+            return NextResponse.json(
+                { error: 'AI search is unavailable right now', code: 'AI_UNAVAILABLE' },
+                { status: 503 }
+            )
         }
 
         const text = extractGeminiText(result.data)
@@ -114,9 +122,6 @@ export async function POST(request: NextRequest) {
         })
     } catch (error: any) {
         apiError('[AI Suggestions] Error:', error)
-        return NextResponse.json(
-            { error: error.message || 'Failed to generate suggestions' },
-            { status: 500 }
-        )
+        return NextResponse.json({ error: 'Failed to generate suggestions' }, { status: 500 })
     }
 }

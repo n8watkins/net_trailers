@@ -12,7 +12,7 @@ import { useParams } from 'next/navigation'
 import SubPageLayout from '../../../../components/layout/SubPageLayout'
 import ContentCard from '../../../../components/common/ContentCard'
 import ContentGridSpacer from '../../../../components/common/ContentGridSpacer'
-import NetflixLoader from '../../../../components/common/NetflixLoader'
+import PageLoader from '../../../../components/common/PageLoader'
 import { HeartIcon, UserIcon } from '@heroicons/react/24/outline'
 import type { Movie, TVShow } from '../../../../typings'
 import type { PublicProfilePayload } from '@/lib/publicProfile'
@@ -77,7 +77,7 @@ export default function UserLikedContentPage() {
                 icon={<HeartIcon className="w-8 h-8" />}
                 iconColor="text-red-400"
             >
-                <NetflixLoader />
+                <PageLoader />
             </SubPageLayout>
         )
     }

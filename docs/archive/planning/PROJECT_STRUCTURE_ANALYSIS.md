@@ -95,7 +95,7 @@ net_trailers/
 
 #### Utility Components (10)
 
-- Analytics, ErrorBoundary, NetflixError, NetflixLoader
+- Analytics, ErrorBoundary, PageError, PageLoader
 - PostHydrationEffects, Toast, ToastContainer, ToastManager
 - VercelAnalyticsWrapper, WebVitalsHUD
 

@@ -52,6 +52,7 @@ import NotificationBell from '../notifications/NotificationBell'
 import NotificationPanel from '../notifications/NotificationPanel'
 import { useChildSafety } from '../../hooks/useChildSafety'
 import type { Content } from '../../typings'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 interface HeaderProps {
     onOpenAboutModal?: () => void
@@ -121,6 +122,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
     const [isScrolled, setIsScrolled] = useState(false)
     const [showSearch, setShowSearch] = useState(false)
     const [showMobileMenu, setShowMobileMenu] = useState(false)
+    useEscapeKey(showMobileMenu, () => setShowMobileMenu(false))
     const [isSearchExpanded, setIsSearchExpanded] = useState(false)
     const [isRandomLoading, setIsRandomLoading] = useState(false)
     const { authModal, openAuthModal, closeAuthModal, openModal } = useModalStore()
@@ -397,15 +399,11 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                 }`}
             >
                 {/* Main Navigation Bar */}
-                <div className="flex w-full items-center justify-between space-x-2 md:space-x-6 px-4 py-4">
-                    <Image
-                        src="/nettrailers-logo.png"
-                        width={140}
-                        height={70}
-                        alt="NetTrailers Logo"
-                        style={{ height: 'auto' }}
-                        className="cursor-pointer object-contain select-none w-[100px] sm:w-[120px] md:w-[140px]"
-                        priority
+                <div className="flex w-full items-center justify-between gap-2 md:gap-6 px-4 py-4 lg:px-6">
+                    <button
+                        type="button"
+                        aria-label="NetTrailers home"
+                        className="shrink-0 select-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
                         onClick={() => {
                             if (pathname === '/') {
                                 // Already on home page - smooth scroll to top
@@ -415,11 +413,22 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                 router.push('/')
                             }
                         }}
-                    />
-                    <div className="hidden lg:flex items-center space-x-8 flex-1">
-                        <ul className="flex space-x-6 items-center">
+                    >
+                        <Image
+                            src="/nettrailers-logo.svg"
+                            width={274}
+                            height={52}
+                            alt="NetTrailers"
+                            unoptimized
+                            priority
+                            className="h-6 w-auto sm:h-7"
+                        />
+                    </button>
+                    <div className="hidden lg:flex items-center gap-5 flex-1 min-w-0">
+                        <ul className="flex gap-5 items-center shrink-0 whitespace-nowrap">
+                            {/* The logo already links home, so the Home link only shows on wide screens */}
                             <li
-                                className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${pathname === '/' ? 'text-white hover:text-white font-semibold' : ''}`}
+                                className={`headerLink cursor-pointer hidden 2xl:flex items-center space-x-1 select-none ${pathname === '/' ? 'text-white hover:text-white font-semibold' : ''}`}
                                 onClick={() => router.push('/')}
                             >
                                 <HomeIcon className="h-5 w-5 relative z-10" />
@@ -435,7 +444,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                 onClick={() => !isRandomLoading && handleRandomContent()}
                                 title="Jump to a random movie or TV show"
                             >
-                                <span className="absolute -inset-3 opacity-0 group-hover:opacity-50 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-red-400 via-red-300/60 via-40% to-transparent rounded-md blur-lg transition-opacity duration-400" />
+                                <span className="absolute -inset-3 opacity-0 group-hover:opacity-50 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-amber-300 via-amber-200/60 via-40% to-transparent rounded-md blur-lg transition-opacity duration-400" />
                                 <SparklesIcon
                                     className={`h-5 w-5 relative z-10 ${isRandomLoading ? 'animate-pulse' : ''}`}
                                 />
@@ -459,25 +468,26 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                         </ul>
 
                         {/* Search Bar in Navigation */}
-                        <div className="flex items-center search-container">
-                            <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl">
+                        <div className="flex flex-1 min-w-[18rem] items-center search-container">
+                            <div className="w-full max-w-xl">
                                 <SearchBar
-                                    placeholder="Search movies and shows..."
+                                    placeholder="Search movies & TV..."
                                     className="w-full"
                                     inputId="navbar-search-input"
                                     voiceSourceId="header-desktop-search"
+                                    showVoice={false}
                                 />
                             </div>
                         </div>
 
                         {/* Profile Dropdown - After Search Bar */}
-                        <div className="ml-4">
+                        <div className="shrink-0 whitespace-nowrap">
                             <ProfileDropdown />
                         </div>
 
                         {/* Community Link - After Profile */}
                         <div
-                            className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${
+                            className={`headerLink cursor-pointer flex shrink-0 items-center space-x-1 select-none whitespace-nowrap ${
                                 pathname?.startsWith('/community')
                                     ? 'text-white hover:text-white font-semibold'
                                     : ''
@@ -489,13 +499,13 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                         </div>
 
                         {/* Child Safety Indicator - After Community */}
-                        <div className="flex items-center ml-4">
+                        <div className="flex items-center empty:hidden">
                             <ChildSafetyIndicator />
                         </div>
                     </div>
 
                     {/* Right side: Mobile menu, Avatar, Notifications */}
-                    <div className="flex items-center space-x-4 text-sm font-light">
+                    <div className="flex shrink-0 items-center gap-3 lg:gap-4 text-sm font-light">
                         {/* Mobile Layout: Search + Hamburger + Avatar */}
                         <div className="lg:hidden flex items-center space-x-1">
                             {/* Mobile Search Icon */}
@@ -578,7 +588,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                             data-tour={dataTourAttr}
                                             className={`group relative flex items-center justify-center gap-2 whitespace-nowrap border-b-2 px-2 sm:px-1 py-2 sm:py-3 text-sm font-medium transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 ${
                                                 isActive
-                                                    ? 'border-red-600 text-red-600'
+                                                    ? 'border-amber-500 text-amber-500'
                                                     : 'border-transparent text-gray-400 hover:text-gray-200'
                                             }`}
                                         >
@@ -634,7 +644,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                             <button
                                                 className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
                                                     pathname === '/'
-                                                        ? 'text-white font-semibold bg-red-600/20'
+                                                        ? 'text-white font-semibold bg-amber-500/20'
                                                         : 'hover:bg-white/10'
                                                 }`}
                                                 onClick={() => {
@@ -662,7 +672,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                             <button
                                                 className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
                                                     pathname.startsWith('/collections')
-                                                        ? 'text-white font-semibold bg-red-600/20'
+                                                        ? 'text-white font-semibold bg-amber-500/20'
                                                         : 'hover:bg-white/10'
                                                 }`}
                                                 onClick={() => {
@@ -679,7 +689,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                                 className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
                                                     pathname === '/ratings' ||
                                                     pathname.startsWith('/ratings')
-                                                        ? 'text-white font-semibold bg-red-600/20'
+                                                        ? 'text-white font-semibold bg-amber-500/20'
                                                         : 'hover:bg-white/10'
                                                 }`}
                                                 onClick={() => {
@@ -695,7 +705,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                             <button
                                                 className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
                                                     pathname === '/search'
-                                                        ? 'text-white font-semibold bg-red-600/20'
+                                                        ? 'text-white font-semibold bg-amber-500/20'
                                                         : 'hover:bg-white/10'
                                                 }`}
                                                 onClick={() => {
@@ -719,7 +729,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                                 }
                                                 disabled={isRandomLoading}
                                             >
-                                                <span className="absolute -inset-3 opacity-0 group-hover:opacity-50 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-red-400 via-red-300/60 via-40% to-transparent rounded-lg blur-lg transition-opacity duration-400" />
+                                                <span className="absolute -inset-3 opacity-0 group-hover:opacity-50 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-amber-300 via-amber-200/60 via-40% to-transparent rounded-lg blur-lg transition-opacity duration-400" />
                                                 <SparklesIcon
                                                     className={`h-5 w-5 relative z-10 ${isRandomLoading ? 'animate-pulse' : ''}`}
                                                 />

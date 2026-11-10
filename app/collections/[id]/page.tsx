@@ -20,11 +20,12 @@ import { Content } from '../../../typings'
 import { getTitle } from '../../../typings'
 import ContentCard from '../../../components/common/ContentCard'
 import ContentGridSpacer from '../../../components/common/ContentGridSpacer'
-import NetflixLoader from '../../../components/common/NetflixLoader'
+import PageLoader from '../../../components/common/PageLoader'
 import { UserList } from '../../../types/collections'
 import CollectionEditorModal from '../../../components/modals/CollectionEditorModal'
 import { useChildSafety } from '../../../hooks/useChildSafety'
 import Link from 'next/link'
+import { readableTextOn } from '../../../utils/readableText'
 
 interface CollectionPageProps {
     params: Promise<{
@@ -504,7 +505,7 @@ const CollectionPage = ({ params }: CollectionPageProps) => {
                                                                       listColor,
                                                                       0.85
                                                                   ),
-                                                                  color: 'white',
+                                                                  color: readableTextOn(listColor),
                                                               }
                                                             : {
                                                                   borderColor: hexToRgba(
@@ -629,7 +630,7 @@ const CollectionPage = ({ params }: CollectionPageProps) => {
                             {/* Loading state */}
                             {isLoading && (
                                 <div className="py-16">
-                                    <NetflixLoader inline={true} message="Loading collection..." />
+                                    <PageLoader inline={true} message="Loading collection..." />
                                 </div>
                             )}
 

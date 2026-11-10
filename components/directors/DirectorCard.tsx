@@ -76,14 +76,14 @@ export default function DirectorCard({
             <div
                 className={`relative w-[120px] h-[120px] sm:w-[150px] sm:h-[150px] md:w-[180px] md:h-[180px] lg:w-[200px] lg:h-[200px] rounded-full overflow-hidden transition-all duration-300 ${
                     isHovered
-                        ? 'scale-105 shadow-[0_0_20px_rgba(220,38,38,0.5)] ring-2 ring-red-500'
+                        ? 'scale-105 shadow-[0_0_20px_rgba(245,158,11,0.5)] ring-2 ring-amber-400'
                         : 'shadow-lg'
                 }`}
             >
                 {/* Loading skeleton */}
                 {!imageLoaded && profileImage && !imageError && (
                     <div className="absolute inset-0 bg-gray-800 animate-pulse flex items-center justify-center">
-                        <div className="w-6 h-6 border-2 border-gray-600 border-t-red-600 rounded-full animate-spin" />
+                        <div className="w-6 h-6 border-2 border-gray-600 border-t-amber-500 rounded-full animate-spin" />
                     </div>
                 )}
 

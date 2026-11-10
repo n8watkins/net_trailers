@@ -58,11 +58,11 @@ export default function SearchSuggestionsDropdown({
         <div
             ref={suggestionsRef}
             onMouseDown={onMouseDown}
-            className="absolute z-[110] w-full mt-1 bg-[#0a0a0a] border border-gray-600/50 rounded-lg shadow-lg max-h-96 overflow-y-auto scrollbar-thin scrollbar-track-gray-800 scrollbar-thumb-red-600 hover:scrollbar-thumb-red-500 scrollbar-thumb-rounded-full scrollbar-track-rounded-full animate-dropdown-enter"
+            className="absolute z-[110] w-full lg:min-w-[26rem] mt-1 bg-[#0a0a0a] border border-gray-600/50 rounded-lg shadow-lg max-h-96 overflow-y-auto scrollbar-thin scrollbar-track-gray-800 scrollbar-thumb-amber-500 hover:scrollbar-thumb-amber-400 scrollbar-thumb-rounded-full scrollbar-track-rounded-full animate-dropdown-enter"
         >
             {/* Results Count Header */}
             {totalResults > 0 && (
-                <div className="px-4 py-2 border-b border-gray-600/50 bg-gradient-to-r from-black to-[#2a0a0a]">
+                <div className="px-4 py-2 border-b border-gray-600/50 bg-gradient-to-r from-black to-zinc-900">
                     <div className="text-xs text-white font-bold">
                         {searchMode === 'people' ? (
                             <>
@@ -126,12 +126,12 @@ export default function SearchSuggestionsDropdown({
                         onClick={onSeeAllResults}
                         className={`w-full flex items-center justify-center rounded-lg p-3 cursor-pointer group border transition-all duration-300 ease-in-out ${
                             isSeeAllButtonSelected
-                                ? 'bg-red-600/30 border-red-500/50 shadow-lg shadow-red-500/20'
+                                ? 'bg-amber-500/30 border-amber-400/50 shadow-lg shadow-amber-400/20'
                                 : 'bg-gray-700/30 border-transparent hover:bg-gray-600/30 hover:border-gray-500/30'
                         }`}
                     >
                         <div className="flex items-center gap-2">
-                            <span className="text-white text-sm font-medium group-hover:text-red-400 transition-colors">
+                            <span className="text-white text-sm font-medium group-hover:text-amber-300 transition-colors">
                                 {searchMode === 'people' ? (
                                     <>
                                         See all {totalResults.toLocaleString()}{' '}
@@ -146,7 +146,7 @@ export default function SearchSuggestionsDropdown({
                                     <>See all {totalResults.toLocaleString()} results</>
                                 )}
                             </span>
-                            <ArrowRightIcon className="h-4 w-4 text-gray-400 group-hover:text-red-400 transition-colors" />
+                            <ArrowRightIcon className="h-4 w-4 text-gray-400 group-hover:text-amber-300 transition-colors" />
                         </div>
                     </button>
                 </div>

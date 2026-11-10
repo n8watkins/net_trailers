@@ -160,7 +160,7 @@ export default function ChangelogPage() {
 
                                 {/* Subtitle */}
                                 <p className="text-base sm:text-lg text-gray-300 mb-6 text-center max-w-2xl">
-                                    Version history and release notes for NetTrailer
+                                    Version history and release notes for NetTrailers
                                 </p>
                             </div>
                         </div>
@@ -218,7 +218,7 @@ export default function ChangelogPage() {
                                             className="flex items-center gap-2 px-4 py-2 bg-purple-500/20 text-purple-400 rounded-lg border border-purple-500/30 hover:bg-purple-500/30 transition-colors"
                                         >
                                             <InformationCircleIcon className="w-5 h-5" />
-                                            <span>About NetTrailer</span>
+                                            <span>About NetTrailers</span>
                                         </button>
                                         <a
                                             href="https://github.com/n8watkins/net_trailers"
@@ -273,7 +273,7 @@ export default function ChangelogPage() {
                                             </button>
                                             <button
                                                 onClick={collapseAll}
-                                                className="text-sm px-3 py-1.5 bg-red-500/20 text-red-400 rounded border border-red-500/30 hover:bg-red-500/30 transition-colors"
+                                                className="text-sm px-3 py-1.5 bg-amber-400/20 text-amber-300 rounded border border-amber-400/30 hover:bg-amber-400/30 transition-colors"
                                             >
                                                 Collapse All
                                             </button>
@@ -380,7 +380,7 @@ function VersionRelease({
                                 {version.isUnreleased ? 'Unreleased' : `v${version.version}`}
                             </div>
                             {isFirst && !version.isUnreleased && (
-                                <span className="px-3 py-1 bg-red-500/20 text-red-400 text-xs font-semibold rounded-full border border-red-500/30">
+                                <span className="px-3 py-1 bg-amber-400/20 text-amber-300 text-xs font-semibold rounded-full border border-amber-400/30">
                                     Latest
                                 </span>
                             )}

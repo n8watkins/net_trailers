@@ -77,7 +77,7 @@ export default function SearchFiltersDropdown({
                     <h3 className="text-white font-semibold text-lg">Search Filters</h3>
                     <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-900/20"
+                        className="text-gray-400 hover:text-amber-400 transition-colors p-1 rounded-full hover:bg-amber-800/20"
                     >
                         <XMarkIcon className="h-5 w-5" />
                     </button>
@@ -94,7 +94,7 @@ export default function SearchFiltersDropdown({
                                 onClick={() => handleModeChange('content')}
                                 className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-md transition-all duration-200 ${
                                     searchMode === 'content'
-                                        ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
+                                        ? 'bg-amber-500 text-zinc-950 shadow-lg shadow-amber-500/30'
                                         : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
                                 }`}
                             >
@@ -105,7 +105,7 @@ export default function SearchFiltersDropdown({
                                 onClick={() => handleModeChange('people')}
                                 className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-md transition-all duration-200 ${
                                     searchMode === 'people'
-                                        ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
+                                        ? 'bg-amber-500 text-zinc-950 shadow-lg shadow-amber-500/30'
                                         : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
                                 }`}
                             >
@@ -130,7 +130,7 @@ export default function SearchFiltersDropdown({
                                             onClick={() => updateFilter('contentType', type)}
                                             className={`flex-1 px-3 py-2 text-sm rounded-md transition-all duration-200 ${
                                                 filters.contentType === type
-                                                    ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
+                                                    ? 'bg-amber-500 text-zinc-950 shadow-lg shadow-amber-500/30'
                                                     : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
                                             }`}
                                         >
@@ -155,8 +155,8 @@ export default function SearchFiltersDropdown({
                                         onChange={(e) => updateFilter('rating', e.target.value)}
                                         className={`w-full bg-[#0a0a0a] text-white rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none appearance-none transition-all duration-200 border ${
                                             filters.rating !== 'all'
-                                                ? 'border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)] hover:shadow-[0_0_12px_rgba(239,68,68,0.5)] focus:shadow-[0_0_12px_rgba(239,68,68,0.5)]'
-                                                : 'border-gray-600/50 focus:ring-2 focus:ring-red-500 focus:border-red-500'
+                                                ? 'border-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.4)] hover:shadow-[0_0_12px_rgba(251,191,36,0.5)] focus:shadow-[0_0_12px_rgba(251,191,36,0.5)]'
+                                                : 'border-gray-600/50 focus:ring-2 focus:ring-amber-400 focus:border-amber-400'
                                         }`}
                                     >
                                         <option value="all">All Ratings</option>
@@ -180,8 +180,8 @@ export default function SearchFiltersDropdown({
                                             onChange={(e) => updateFilter('year', e.target.value)}
                                             className={`w-full bg-[#0a0a0a] text-white rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none appearance-none transition-all duration-200 border ${
                                                 filters.year !== 'all'
-                                                    ? 'border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)] hover:shadow-[0_0_12px_rgba(239,68,68,0.5)] focus:shadow-[0_0_12px_rgba(239,68,68,0.5)]'
-                                                    : 'border-gray-600/50 focus:ring-2 focus:ring-red-500 focus:border-red-500'
+                                                    ? 'border-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.4)] hover:shadow-[0_0_12px_rgba(251,191,36,0.5)] focus:shadow-[0_0_12px_rgba(251,191,36,0.5)]'
+                                                    : 'border-gray-600/50 focus:ring-2 focus:ring-amber-400 focus:border-amber-400'
                                             }`}
                                         >
                                             <option value="all">All Years</option>
@@ -204,8 +204,8 @@ export default function SearchFiltersDropdown({
                                             onChange={(e) => updateFilter('sortBy', e.target.value)}
                                             className={`w-full bg-[#0a0a0a] text-white rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none appearance-none transition-all duration-200 border ${
                                                 filters.sortBy !== 'popularity.desc'
-                                                    ? 'border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)] hover:shadow-[0_0_12px_rgba(239,68,68,0.5)] focus:shadow-[0_0_12px_rgba(239,68,68,0.5)]'
-                                                    : 'border-gray-600/50 focus:ring-2 focus:ring-red-500 focus:border-red-500'
+                                                    ? 'border-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.4)] hover:shadow-[0_0_12px_rgba(251,191,36,0.5)] focus:shadow-[0_0_12px_rgba(251,191,36,0.5)]'
+                                                    : 'border-gray-600/50 focus:ring-2 focus:ring-amber-400 focus:border-amber-400'
                                             }`}
                                         >
                                             <option value="popularity.desc">Most Popular</option>
@@ -228,7 +228,7 @@ export default function SearchFiltersDropdown({
                                     onClick={() => updatePeopleFilter('department', 'all')}
                                     className={`flex items-center justify-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-all duration-200 border ${
                                         peopleFilters.department === 'all'
-                                            ? 'bg-red-600 text-white shadow-lg shadow-red-600/30 border-red-600'
+                                            ? 'bg-amber-500 text-zinc-950 shadow-lg shadow-amber-500/30 border-amber-500'
                                             : 'bg-[#0a0a0a] text-gray-400 hover:text-white hover:bg-gray-700/50 border-gray-600/30'
                                     }`}
                                 >
@@ -239,7 +239,7 @@ export default function SearchFiltersDropdown({
                                     onClick={() => updatePeopleFilter('department', 'acting')}
                                     className={`flex items-center justify-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-all duration-200 border ${
                                         peopleFilters.department === 'acting'
-                                            ? 'bg-red-600 text-white shadow-lg shadow-red-600/30 border-red-600'
+                                            ? 'bg-amber-500 text-zinc-950 shadow-lg shadow-amber-500/30 border-amber-500'
                                             : 'bg-[#0a0a0a] text-gray-400 hover:text-white hover:bg-gray-700/50 border-gray-600/30'
                                     }`}
                                 >
@@ -250,7 +250,7 @@ export default function SearchFiltersDropdown({
                                     onClick={() => updatePeopleFilter('department', 'directing')}
                                     className={`flex items-center justify-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-all duration-200 border ${
                                         peopleFilters.department === 'directing'
-                                            ? 'bg-red-600 text-white shadow-lg shadow-red-600/30 border-red-600'
+                                            ? 'bg-amber-500 text-zinc-950 shadow-lg shadow-amber-500/30 border-amber-500'
                                             : 'bg-[#0a0a0a] text-gray-400 hover:text-white hover:bg-gray-700/50 border-gray-600/30'
                                     }`}
                                 >
@@ -261,7 +261,7 @@ export default function SearchFiltersDropdown({
                                     onClick={() => updatePeopleFilter('department', 'writing')}
                                     className={`flex items-center justify-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-all duration-200 border ${
                                         peopleFilters.department === 'writing'
-                                            ? 'bg-red-600 text-white shadow-lg shadow-red-600/30 border-red-600'
+                                            ? 'bg-amber-500 text-zinc-950 shadow-lg shadow-amber-500/30 border-amber-500'
                                             : 'bg-[#0a0a0a] text-gray-400 hover:text-white hover:bg-gray-700/50 border-gray-600/30'
                                     }`}
                                 >

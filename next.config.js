@@ -5,9 +5,17 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    // Next 16.4 `next dev` writes agent rules into AGENTS.md when a coding agent runs it; keep the tree clean.
+    agentRules: false,
     reactStrictMode: true,
     typescript: {
         ignoreBuildErrors: false,
+    },
+    // Markdown imports are their text, read at build time (app/api/changelog).
+    turbopack: {
+        rules: {
+            '*.md': { type: 'raw' },
+        },
     },
     // Exclude packages from server bundling optimization
     serverExternalPackages: ['@libsql/client'],
@@ -28,23 +36,7 @@ const nextConfig = {
             },
             {
                 protocol: 'https',
-                hostname: 'assets.nflxext.com',
-            },
-            {
-                protocol: 'https',
-                hostname: 'occ-0-3997-3996.1.nflxso.net',
-            },
-            {
-                protocol: 'https',
-                hostname: '*.nflxso.net',
-            },
-            {
-                protocol: 'https',
                 hostname: 'avatars.githubusercontent.com',
-            },
-            {
-                protocol: 'https',
-                hostname: '*.public.blob.vercel-storage.com',
             },
             {
                 protocol: 'https',
@@ -71,6 +63,13 @@ const nextConfig = {
                 source: '/movies',
                 destination: '/',
                 permanent: true, // 301 redirect
+            },
+            {
+                // An HTTP redirect lands at the top of the page; an in-app redirect
+                // scrolled phones down to the nested settings panel
+                source: '/settings',
+                destination: '/settings/preferences',
+                permanent: false,
             },
         ]
     },
@@ -105,12 +104,12 @@ const nextConfig = {
                         key: 'Content-Security-Policy',
                         value: [
                             "default-src 'self'",
-                            "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://www.youtube.com https://www.gstatic.com https://vercel.live https://va.vercel-scripts.com",
-                            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://vercel.live",
+                            "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://www.youtube.com https://www.gstatic.com https://static.cloudflareinsights.com",
+                            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
                             "img-src 'self' data: https: blob:",
-                            "font-src 'self' data: https://fonts.gstatic.com https://vercel.live https://assets.vercel.com",
-                            "connect-src 'self' https://api.themoviedb.org https://www.google-analytics.com https://*.sentry.io https://vercel.live https://va.vercel-scripts.com https://vitals.vercel-insights.com https://www.youtube.com https://youtubei.googleapis.com https://*.pusher.com wss://*.pusher.com",
-                            "frame-src 'self' https://www.youtube.com https://vercel.live",
+                            "font-src 'self' data: https://fonts.gstatic.com",
+                            "connect-src 'self' https://api.themoviedb.org https://www.google-analytics.com https://*.sentry.io https://cloudflareinsights.com https://www.youtube.com https://youtubei.googleapis.com https://*.pusher.com wss://*.pusher.com",
+                            "frame-src 'self' https://www.youtube.com",
                             "media-src 'self' https:",
                             "object-src 'none'",
                             "base-uri 'self'",
@@ -137,7 +136,6 @@ const sentryWebpackPluginOptions = {
     widenClientFileUpload: true,
     hideSourceMaps: true,
     disableLogger: true,
-    automaticVercelMonitors: true,
 }
 
 module.exports = withSentryConfig(withBundleAnalyzer(nextConfig), sentryWebpackPluginOptions)

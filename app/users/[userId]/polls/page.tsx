@@ -10,7 +10,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import SubPageLayout from '../../../../components/layout/SubPageLayout'
-import NetflixLoader from '../../../../components/common/NetflixLoader'
+import PageLoader from '../../../../components/common/PageLoader'
 import { ChartBarIcon, UserIcon, CheckCircleIcon, ClockIcon } from '@heroicons/react/24/outline'
 import type { Poll } from '../../../../types/forum'
 import type { PublicProfilePayload } from '@/lib/publicProfile'
@@ -100,7 +100,7 @@ export default function UserPollsPage() {
             tv: 'bg-purple-600',
             recommendations: 'bg-green-600',
             rankings: 'bg-yellow-600',
-            announcements: 'bg-red-600',
+            announcements: 'bg-amber-500',
         }
         return colors[category] || 'bg-gray-600'
     }
@@ -121,7 +121,7 @@ export default function UserPollsPage() {
                 icon={<ChartBarIcon className="w-8 h-8" />}
                 iconColor="text-green-400"
             >
-                <NetflixLoader />
+                <PageLoader />
             </SubPageLayout>
         )
     }
@@ -183,7 +183,7 @@ export default function UserPollsPage() {
                                                 {poll.category}
                                             </span>
                                             {expired ? (
-                                                <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-900/50 text-red-400">
+                                                <span className="px-2 py-0.5 rounded text-xs font-medium bg-amber-800/50 text-amber-300">
                                                     Closed
                                                 </span>
                                             ) : (

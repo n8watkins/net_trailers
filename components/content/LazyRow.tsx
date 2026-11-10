@@ -211,7 +211,7 @@ function StreamingRow({ title, content, hideTitles: _hideTitles = false, batchSi
                                                bg-gray-800 rounded-md flex items-center justify-center"
                                 >
                                     <div className="text-center">
-                                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-600 mx-auto mb-2"></div>
+                                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-500 mx-auto mb-2"></div>
                                         <div className="text-xs text-gray-400">
                                             Checking trailer...
                                         </div>
@@ -233,7 +233,7 @@ function StreamingRow({ title, content, hideTitles: _hideTitles = false, batchSi
                                        xl:w-[220px] xl:h-[330px]"
                         >
                             <div className="text-center">
-                                <div className="animate-pulse rounded-full h-8 w-8 bg-red-600 mx-auto mb-2"></div>
+                                <div className="animate-pulse rounded-full h-8 w-8 bg-amber-500 mx-auto mb-2"></div>
                                 <div className="text-xs text-gray-400">Loading batch...</div>
                             </div>
                         </div>

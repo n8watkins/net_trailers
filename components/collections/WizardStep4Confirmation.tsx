@@ -43,15 +43,15 @@ export function WizardStep4Confirmation({
 
                 <p className="text-lg text-gray-300 mb-2">
                     Your {itemTypeLower}{' '}
-                    <span className="text-red-400 font-semibold">"{rowName}"</span>
+                    <span className="text-amber-300 font-semibold">"{rowName}"</span>
                 </p>
                 <p className="text-gray-400">is now live and ready to enjoy</p>
             </div>
 
             {/* Info Card */}
-            <div className="bg-gradient-to-r from-red-600/10 to-pink-600/10 border border-red-500/30 rounded-lg p-6">
+            <div className="bg-gradient-to-r from-amber-500/10 to-pink-600/10 border border-amber-400/30 rounded-lg p-6">
                 <div className="flex items-start gap-3">
-                    <SparklesIcon className="w-6 h-6 text-red-400 flex-shrink-0 mt-0.5" />
+                    <SparklesIcon className="w-6 h-6 text-amber-300 flex-shrink-0 mt-0.5" />
                     <div className="space-y-2">
                         <h4 className="text-white font-semibold">What's Next?</h4>
                         <ul className="text-gray-300 text-sm space-y-1.5">
@@ -86,7 +86,7 @@ export function WizardStep4Confirmation({
                 <button
                     type="button"
                     onClick={onViewHomepage}
-                    className="flex-1 px-6 py-4 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold text-lg shadow-lg shadow-red-600/20"
+                    className="flex-1 px-6 py-4 bg-amber-500 text-zinc-950 rounded-lg hover:bg-amber-600 transition-colors font-semibold text-lg shadow-lg shadow-amber-500/20"
                 >
                     {type === 'collection' ? '📚 View Collections' : '🏠 View on Homepage'}
                 </button>

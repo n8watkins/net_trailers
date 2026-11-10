@@ -467,7 +467,7 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
                             {/* Progress bar */}
                             <div className="w-full h-1.5 bg-zinc-800 rounded-full mb-4 overflow-hidden">
                                 <div
-                                    className="h-full bg-gradient-to-r from-orange-500 to-red-600 transition-all duration-300 ease-out"
+                                    className="h-full bg-gradient-to-r from-orange-500 to-amber-500 transition-all duration-300 ease-out"
                                     style={{
                                         width: `${((currentTourStep + 1) / TOTAL_TOUR_STEPS) * 100}%`,
                                     }}
@@ -515,7 +515,7 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
                                     {isLastStep ? (
                                         <button
                                             onClick={handleFinish}
-                                            className="flex items-center gap-2 px-6 py-2 text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-red-600 rounded-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-lg hover:shadow-orange-500/50"
+                                            className="flex items-center gap-2 px-6 py-2 text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 rounded-lg hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg hover:shadow-orange-500/50"
                                         >
                                             <CheckIcon className="h-4 w-4" />
                                             Finish
@@ -523,7 +523,7 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
                                     ) : (
                                         <button
                                             onClick={handleNext}
-                                            className="flex items-center gap-2 px-6 py-2 text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-red-600 rounded-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-lg hover:shadow-orange-500/50"
+                                            className="flex items-center gap-2 px-6 py-2 text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 rounded-lg hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg hover:shadow-orange-500/50"
                                         >
                                             Next
                                             <ChevronRightIcon className="h-4 w-4" />
@@ -593,7 +593,7 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
                         {/* Progress bar */}
                         <div className="w-full h-1.5 bg-zinc-800 rounded-full mb-4 overflow-hidden">
                             <div
-                                className="h-full bg-gradient-to-r from-orange-500 to-red-600 transition-all duration-300 ease-out"
+                                className="h-full bg-gradient-to-r from-orange-500 to-amber-500 transition-all duration-300 ease-out"
                                 style={{
                                     width: `${((currentTourStep + 1) / TOTAL_TOUR_STEPS) * 100}%`,
                                 }}
@@ -641,7 +641,7 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
                                 {isLastStep ? (
                                     <button
                                         onClick={handleFinish}
-                                        className="flex items-center gap-2 px-6 py-2 text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-red-600 rounded-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-lg hover:shadow-orange-500/50"
+                                        className="flex items-center gap-2 px-6 py-2 text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 rounded-lg hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg hover:shadow-orange-500/50"
                                     >
                                         <CheckIcon className="h-4 w-4" />
                                         Finish
@@ -649,7 +649,7 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ isActive, onComplete,
                                 ) : (
                                     <button
                                         onClick={handleNext}
-                                        className="flex items-center gap-2 px-6 py-2 text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-red-600 rounded-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-lg hover:shadow-orange-500/50"
+                                        className="flex items-center gap-2 px-6 py-2 text-sm font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 rounded-lg hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg hover:shadow-orange-500/50"
                                     >
                                         Next
                                         <ChevronRightIcon className="h-4 w-4" />

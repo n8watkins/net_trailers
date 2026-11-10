@@ -282,7 +282,7 @@ Multiple toasts appear:
         output: 'Floating HUD (bottom right) showing all Web Vitals with color-coded ratings. Updates in real-time.',
         relatedOptions: ['ui-logs', 'api-server', 'next-server'],
         file: 'components/debug/WebVitalsHUD.tsx',
-        usedIn: ['utils/performance.ts', 'components/utility/VercelAnalyticsWrapper.tsx'],
+        usedIn: ['utils/performance.ts'],
         keyboardShortcut: 'Alt+Shift+V',
         isCurrentlyActive: true,
         note: undefined,
@@ -642,7 +642,7 @@ export default async function DebugDetailPage({ params }: { params: Promise<{ sl
         rose: 'bg-rose-500/20 border-rose-500/30',
         yellow: 'bg-yellow-500/20 border-yellow-500/30',
         pink: 'bg-pink-500/20 border-pink-500/30',
-        red: 'bg-red-500/20 border-red-500/30',
+        red: 'bg-amber-400/20 border-amber-400/30',
         violet: 'bg-violet-500/20 border-violet-500/30',
     }
 
@@ -668,7 +668,7 @@ export default async function DebugDetailPage({ params }: { params: Promise<{ sl
         rose: 'bg-rose-500/10 text-rose-400 border-rose-500/30 hover:bg-rose-500/20',
         yellow: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/20',
         pink: 'bg-pink-500/10 text-pink-400 border-pink-500/30 hover:bg-pink-500/20',
-        red: 'bg-red-500/10 text-red-400 border-red-500/30 hover:bg-red-500/20',
+        red: 'bg-amber-400/10 text-amber-300 border-amber-400/30 hover:bg-amber-400/20',
         violet: 'bg-violet-500/10 text-violet-400 border-violet-500/30 hover:bg-violet-500/20',
     }
 

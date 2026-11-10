@@ -7,7 +7,7 @@ import { ThreadCard } from '@/components/forum/ThreadCard'
 import { useForumStore } from '@/stores/forumStore'
 import { useSessionStore } from '@/stores/sessionStore'
 import { ChatBubbleLeftRightIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
-import NetflixLoader from '@/components/common/NetflixLoader'
+import PageLoader from '@/components/common/PageLoader'
 
 export default function MyThreadsPage() {
     const router = useRouter()
@@ -41,7 +41,7 @@ export default function MyThreadsPage() {
             {/* Loading State */}
             {isLoadingThreads && (
                 <div className="flex justify-center py-20">
-                    <NetflixLoader />
+                    <PageLoader />
                 </div>
             )}
 

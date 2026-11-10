@@ -43,6 +43,7 @@ import {
 } from '@/utils/recommendations/feedbackProcessor'
 import { getInteractionSummary } from '@/db/queries/interactions'
 import { loadUserPreferences } from '@/db/queries/userPreferences'
+import { selfFetch } from '@/lib/selfFetch'
 
 /* -------------------------------------------------------------------------- */
 /*  Helper: load Phase 2 feedback signals from Drizzle                        */
@@ -476,8 +477,8 @@ async function handlePersonalizedRecommendationsGet(
                         ? '/api/tv/trending'
                         : '/api/movies/trending'
                     const trendingPage = Math.ceil(page / 2)
-                    const trendingResponse = await fetch(
-                        `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}${trendingEndpoint}?page=${trendingPage}`
+                    const trendingResponse = await selfFetch(
+                        `${trendingEndpoint}?page=${trendingPage}`
                     )
                     if (trendingResponse.ok) {
                         const trendingData = await trendingResponse.json()

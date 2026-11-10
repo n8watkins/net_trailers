@@ -6,6 +6,7 @@ import { XMarkIcon, PlusIcon } from '@heroicons/react/24/outline'
 import Image from 'next/image'
 import { AdvancedFilters } from '../../types/collections'
 import { YearPicker } from './YearPicker'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 interface Person {
     id: number
@@ -78,6 +79,8 @@ export function AdvancedFiltersModal({
     }, [isOpen, filters])
 
     const mouseDownTargetRef = React.useRef<EventTarget | null>(null)
+
+    useEscapeKey(isOpen, onClose)
 
     if (!isOpen || !mounted || typeof window === 'undefined') return null
 
@@ -302,7 +305,7 @@ export function AdvancedFiltersModal({
                                             )
                                         }}
                                         placeholder="0"
-                                        className="w-16 px-2 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-center text-base focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                                        className="w-16 px-2 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-center text-base focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
                                     />
                                     <span className="text-gray-400">to</span>
                                     <input
@@ -319,7 +322,7 @@ export function AdvancedFiltersModal({
                                             )
                                         }}
                                         placeholder="10"
-                                        className="w-16 px-2 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-center text-base focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                                        className="w-16 px-2 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-center text-base focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
                                     />
                                 </div>
                             </div>
@@ -328,7 +331,7 @@ export function AdvancedFiltersModal({
                                 <div>
                                     <div className="flex justify-between text-xs text-gray-400 mb-2">
                                         <span>Minimum Rating</span>
-                                        <span className="text-red-400 font-semibold text-sm">
+                                        <span className="text-amber-300 font-semibold text-sm">
                                             {localFilters.ratingMin !== undefined
                                                 ? `${localFilters.ratingMin}/10`
                                                 : 'Any'}
@@ -346,7 +349,7 @@ export function AdvancedFiltersModal({
                                                 parseFloat(e.target.value) || undefined
                                             )
                                         }
-                                        className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-red-600 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:hover:bg-red-500 [&::-webkit-slider-thumb]:transition-colors"
+                                        className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-amber-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:hover:bg-amber-400 [&::-webkit-slider-thumb]:transition-colors"
                                     />
                                     <div className="flex justify-between text-xs text-gray-500 mt-1">
                                         <span>0</span>
@@ -358,7 +361,7 @@ export function AdvancedFiltersModal({
                                 <div>
                                     <div className="flex justify-between text-xs text-gray-400 mb-2">
                                         <span>Maximum Rating</span>
-                                        <span className="text-red-400 font-semibold text-sm">
+                                        <span className="text-amber-300 font-semibold text-sm">
                                             {localFilters.ratingMax !== undefined
                                                 ? `${localFilters.ratingMax}/10`
                                                 : 'Any'}
@@ -376,7 +379,7 @@ export function AdvancedFiltersModal({
                                                 parseFloat(e.target.value) || undefined
                                             )
                                         }
-                                        className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-red-600 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:hover:bg-red-500 [&::-webkit-slider-thumb]:transition-colors"
+                                        className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-amber-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:hover:bg-amber-400 [&::-webkit-slider-thumb]:transition-colors"
                                     />
                                     <div className="flex justify-between text-xs text-gray-500 mt-1">
                                         <span>0</span>
@@ -401,7 +404,7 @@ export function AdvancedFiltersModal({
                                             <span className="text-sm text-white">{actorName}</span>
                                             <button
                                                 onClick={() => removeActor(actorName)}
-                                                className="text-gray-400 hover:text-red-400 transition-colors"
+                                                className="text-gray-400 hover:text-amber-300 transition-colors"
                                             >
                                                 <XMarkIcon className="w-4 h-4" />
                                             </button>
@@ -425,7 +428,7 @@ export function AdvancedFiltersModal({
                                         value={actorInput}
                                         onChange={(e) => handleActorInputChange(e.target.value)}
                                         placeholder="Search for an actor..."
-                                        className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                                        className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
                                         autoFocus
                                     />
                                     {actorSearchResults.length > 0 && (
@@ -479,7 +482,7 @@ export function AdvancedFiltersModal({
                                             </span>
                                             <button
                                                 onClick={() => removeDirector(directorName)}
-                                                className="text-gray-400 hover:text-red-400 transition-colors"
+                                                className="text-gray-400 hover:text-amber-300 transition-colors"
                                             >
                                                 <XMarkIcon className="w-4 h-4" />
                                             </button>
@@ -503,7 +506,7 @@ export function AdvancedFiltersModal({
                                         value={directorInput}
                                         onChange={(e) => handleDirectorInputChange(e.target.value)}
                                         placeholder="Search for a director..."
-                                        className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                                        className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
                                         autoFocus
                                     />
                                     {directorSearchResults.length > 0 && (

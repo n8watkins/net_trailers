@@ -12,7 +12,7 @@ import {
     PlusIcon,
 } from '@heroicons/react/24/solid'
 import { XMarkIcon, MicrophoneIcon } from '@heroicons/react/24/outline'
-import NetflixLoader from '../../components/common/NetflixLoader'
+import PageLoader from '../../components/common/PageLoader'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import CollectionBrowseCard from '../../components/collections/CollectionBrowseCard'
 import { useVoiceInput } from '../../hooks/useVoiceInput'
@@ -260,7 +260,7 @@ const Collections = () => {
                         {/* Loading state */}
                         {isLoading && (
                             <div className="py-16">
-                                <NetflixLoader inline={true} message="Loading collections..." />
+                                <PageLoader inline={true} message="Loading collections..." />
                             </div>
                         )}
 

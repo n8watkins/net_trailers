@@ -166,7 +166,7 @@ function ListSelectionModal() {
             setShowCreateList(false)
         } catch (error) {
             if (error instanceof z.ZodError) {
-                showError('Invalid List Name', error.errors[0].message)
+                showError('Invalid List Name', error.issues[0].message)
             }
         }
     }
@@ -231,7 +231,7 @@ function ListSelectionModal() {
             setEditingDisplayAsRow(true)
         } catch (error) {
             if (error instanceof z.ZodError) {
-                showError('Invalid List Name', error.errors[0].message)
+                showError('Invalid List Name', error.issues[0].message)
             }
         }
     }

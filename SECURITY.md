@@ -1,6 +1,6 @@
 # Security Documentation
 
-This document outlines the security measures implemented in NetTrailer to protect user data and ensure application integrity.
+This document outlines the security measures implemented in NetTrailers to protect user data and ensure application integrity.
 
 **Last Updated:** December 3, 2025
 **Security Review Status:** Production Ready - Enhanced Email Security
@@ -26,7 +26,7 @@ This document outlines the security measures implemented in NetTrailer to protec
 
 ### Auth.js Authentication
 
-NetTrailer uses **Auth.js (NextAuth v5)** for secure user identity management:
+NetTrailers uses **Auth.js (NextAuth v5)** for secure user identity management:
 
 - **Providers**: GitHub OAuth and passwordless email magic-link (Brevo by default, Resend optional)
 - **Database sessions**: Sessions are persisted in Turso via `@auth/drizzle-adapter`
@@ -406,7 +406,6 @@ Only approved domains allowed:
 - `image.tmdb.org` - TMDB images
 - `avatars.githubusercontent.com` - GitHub profile pictures
 - `*.public.blob.vercel-storage.com` - User uploads (Vercel Blob)
-- Netflix CDN domains for fallbacks
 
 ### Third-Party API Security
 
@@ -518,7 +517,7 @@ Only approved domains allowed:
 
 ## About This Project
 
-NetTrailer is a portfolio project demonstrating modern web security practices in a Next.js application. The security measures documented here represent real implementations used throughout the codebase, showcasing production-grade security patterns.
+NetTrailers is a portfolio project demonstrating modern web security practices in a Next.js application. The security measures documented here represent real implementations used throughout the codebase, showcasing production-grade security patterns.
 
 ---
 

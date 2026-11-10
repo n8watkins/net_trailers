@@ -51,7 +51,7 @@ export default function PersonSearchResultItem({
             ref={onRef}
             className={`flex items-center rounded-lg p-3 cursor-pointer group border transition-all duration-300 ease-in-out ${
                 isSelected
-                    ? 'bg-red-600/30 border-red-500/50 shadow-lg shadow-red-500/20'
+                    ? 'bg-amber-500/30 border-amber-400/50 shadow-lg shadow-amber-400/20'
                     : 'bg-gray-700/30 border-transparent hover:bg-gray-600/30 hover:border-gray-500/30'
             }`}
             onClick={() => onClick(person)}
@@ -76,11 +76,11 @@ export default function PersonSearchResultItem({
             {/* Person Details */}
             <div className="flex-1 ml-3 min-w-0">
                 {/* Name */}
-                <h4 className="text-white font-medium text-sm truncate group-hover:text-red-400 transition-colors">
+                <h4 className="text-white font-medium text-sm truncate group-hover:text-amber-300 transition-colors">
                     {person.name}
                 </h4>
                 {/* Department Badge */}
-                <span className="px-2.5 py-0.5 text-xs font-medium rounded-full bg-red-900 border border-red-500 text-white inline-block mt-1">
+                <span className="px-2.5 py-0.5 text-xs font-medium rounded-full bg-amber-800 border border-amber-400 text-white inline-block mt-1">
                     {getDepartmentLabel(person.known_for_department)}
                 </span>
             </div>

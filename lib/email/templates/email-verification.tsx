@@ -27,7 +27,7 @@ export const EmailVerificationEmail = ({
             }}
         >
             <p style={{ marginBottom: '20px' }}>
-                Thanks for joining Net Trailers! To get started, please verify your email address by
+                Thanks for joining NetTrailers! To get started, please verify your email address by
                 clicking the button below.
             </p>
 
@@ -35,7 +35,7 @@ export const EmailVerificationEmail = ({
                 <p style={{ margin: 0, fontSize: '14px', color: '#b3b3b3' }}>
                     <strong style={{ color: '#ffffff' }}>Email to verify:</strong>
                     <br />
-                    <span style={{ color: '#e50914', fontSize: '16px', fontWeight: '600' }}>
+                    <span style={{ color: '#dc2626', fontSize: '16px', fontWeight: '600' }}>
                         {email}
                     </span>
                 </p>
@@ -81,7 +81,7 @@ export const EmailVerificationEmail = ({
                 <strong style={{ color: '#ffffff' }}>Didn't create an account?</strong>
             </p>
             <p style={{ fontSize: '14px', color: '#b3b3b3', lineHeight: '1.6' }}>
-                If you didn't sign up for Net Trailers, you can safely ignore this email. No account
+                If you didn't sign up for NetTrailers, you can safely ignore this email. No account
                 will be created until you verify this email address.
             </p>
         </BaseEmail>

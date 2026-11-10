@@ -2,9 +2,9 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-    title: 'Terms of Service - NetTrailer',
+    title: 'Terms of Service - NetTrailers',
     description:
-        'NetTrailer terms of service - Terms and conditions for using our movie and TV discovery platform',
+        'NetTrailers terms of service - Terms and conditions for using our movie and TV discovery platform',
     keywords: ['terms', 'service', 'conditions', 'legal'],
 }
 
@@ -30,10 +30,10 @@ export default function TermsPage() {
                                     1. Acceptance of Terms
                                 </h2>
                                 <p className="mb-4">
-                                    By accessing and using NetTrailer (&quot;the Service&quot;), you
-                                    accept and agree to be bound by the terms and provision of this
-                                    agreement. If you do not agree to abide by the above, please do
-                                    not use this service.
+                                    By accessing and using NetTrailers (&quot;the Service&quot;),
+                                    you accept and agree to be bound by the terms and provision of
+                                    this agreement. If you do not agree to abide by the above,
+                                    please do not use this service.
                                 </p>
                             </section>
 
@@ -42,8 +42,8 @@ export default function TermsPage() {
                                     2. Description of Service
                                 </h2>
                                 <p className="mb-4">
-                                    NetTrailer is a movie and TV show discovery platform that allows
-                                    users to:
+                                    NetTrailers is a movie and TV show discovery platform that
+                                    allows users to:
                                 </p>
                                 <ul className="list-disc pl-6 mb-4 space-y-2">
                                     <li>Browse and search for movies and TV shows</li>
@@ -53,7 +53,7 @@ export default function TermsPage() {
                                     <li>Access genre-based browsing</li>
                                 </ul>
                                 <p className="mb-4">
-                                    <strong>Important:</strong> NetTrailer is a discovery platform
+                                    <strong>Important:</strong> NetTrailers is a discovery platform
                                     only. We do not host, stream, or provide access to copyrighted
                                     content. All media information is provided by The Movie Database
                                     (TMDB) API.
@@ -137,7 +137,7 @@ export default function TermsPage() {
                                     5.3 Platform Content
                                 </h3>
                                 <p className="mb-4">
-                                    The NetTrailer platform, including its design, code, and
+                                    The NetTrailers platform, including its design, code, and
                                     original content, is protected by copyright and other
                                     intellectual property laws.
                                 </p>
@@ -151,7 +151,7 @@ export default function TermsPage() {
                                     Your privacy is important to us. Please review our{' '}
                                     <Link
                                         href="/privacy"
-                                        className="text-red-400 hover:text-red-300 underline"
+                                        className="text-amber-300 hover:text-amber-200 underline"
                                     >
                                         Privacy Policy
                                     </Link>
@@ -189,7 +189,7 @@ export default function TermsPage() {
                                     7.3 Limitation of Liability
                                 </h3>
                                 <p className="mb-4">
-                                    To the maximum extent permitted by law, NetTrailer shall not be
+                                    To the maximum extent permitted by law, NetTrailers shall not be
                                     liable for any indirect, incidental, special, or consequential
                                     damages arising from your use of the service.
                                 </p>
@@ -298,7 +298,7 @@ export default function TermsPage() {
                                         Through our support page:{' '}
                                         <a
                                             href="/support"
-                                            className="text-red-400 hover:text-red-300 underline"
+                                            className="text-amber-300 hover:text-amber-200 underline"
                                         >
                                             /support
                                         </a>
@@ -307,7 +307,7 @@ export default function TermsPage() {
                                         Email:{' '}
                                         <a
                                             href="mailto:legal@nettrailer.app"
-                                            className="text-red-400 hover:text-red-300 underline"
+                                            className="text-amber-300 hover:text-amber-200 underline"
                                         >
                                             legal@nettrailer.app
                                         </a>
@@ -318,7 +318,7 @@ export default function TermsPage() {
                                             href="https://github.com/n8watkins/net_trailer"
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="text-red-400 hover:text-red-300 underline"
+                                            className="text-amber-300 hover:text-amber-200 underline"
                                         >
                                             Project Repository
                                         </a>
@@ -344,7 +344,7 @@ export default function TermsPage() {
                                 </h3>
                                 <div className="text-sm text-gray-400 space-y-2">
                                     <p>
-                                        <strong>Discovery Platform:</strong> NetTrailer is for
+                                        <strong>Discovery Platform:</strong> NetTrailers is for
                                         content discovery only - we do not host or stream movies/TV
                                         shows.
                                     </p>

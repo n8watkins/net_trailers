@@ -5,6 +5,7 @@ import { XMarkIcon, DevicePhoneMobileIcon, ComputerDesktopIcon } from '@heroicon
 import { useToast } from '@/hooks/useToast'
 import { authenticatedFetch } from '@/lib/authenticatedFetch'
 import type { EmailTemplate } from './EmailComposer'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 interface EmailPreviewModalProps {
     isOpen: boolean
@@ -79,6 +80,8 @@ export default function EmailPreviewModal({
             setLoading(false)
         }
     }
+
+    useEscapeKey(isOpen, onClose)
 
     if (!isOpen) return null
 

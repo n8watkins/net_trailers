@@ -348,7 +348,7 @@ export default function SystemRecommendationEditorModal({
                                                 type="button"
                                                 onClick={() => handleMediaTypeToggle('movie')}
                                                 className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                                    isMovieEnabled ? 'bg-red-600' : 'bg-gray-600'
+                                                    isMovieEnabled ? 'bg-amber-500' : 'bg-gray-600'
                                                 }`}
                                             >
                                                 <span
@@ -371,7 +371,7 @@ export default function SystemRecommendationEditorModal({
                                                 type="button"
                                                 onClick={() => handleMediaTypeToggle('tv')}
                                                 className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                                    isTVEnabled ? 'bg-red-600' : 'bg-gray-600'
+                                                    isTVEnabled ? 'bg-amber-500' : 'bg-gray-600'
                                                 }`}
                                             >
                                                 <span
@@ -402,14 +402,14 @@ export default function SystemRecommendationEditorModal({
                                     </div>
                                     <div className="flex flex-wrap gap-2">
                                         {selectedGenres.length === 0 ? (
-                                            <span className="px-4 py-2 rounded-full text-sm font-medium bg-red-600 text-white">
+                                            <span className="px-4 py-2 rounded-full text-sm font-medium bg-amber-500 text-zinc-950">
                                                 All Genres
                                             </span>
                                         ) : (
                                             selectedGenres.map((genreId, index) => (
                                                 <span
                                                     key={`${genreId}-${index}`}
-                                                    className="group relative px-4 py-2 rounded-full text-sm font-medium bg-red-600 text-white"
+                                                    className="group relative px-4 py-2 rounded-full text-sm font-medium bg-amber-500 text-zinc-950"
                                                 >
                                                     {selectedGenreNames[index]}
                                                     <button

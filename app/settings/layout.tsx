@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -12,17 +12,12 @@ import {
     BellIcon,
     RectangleStackIcon,
     SparklesIcon,
-    MagnifyingGlassIcon,
     ShieldCheckIcon,
-    MicrophoneIcon,
 } from '@heroicons/react/24/outline'
-import { XMarkIcon } from '@heroicons/react/24/outline'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import SubPageLayout from '../../components/layout/SubPageLayout'
-import NetflixLoader from '../../components/common/NetflixLoader'
+import PageLoader from '../../components/common/PageLoader'
 import { useSessionStore } from '../../stores/sessionStore'
-import { useVoiceInput } from '../../hooks/useVoiceInput'
-import { useToast } from '../../hooks/useToast'
 
 type SettingsSection =
     | 'profile'
@@ -44,7 +39,6 @@ interface SidebarItem {
     priority: 'low' | 'medium' | 'high' | 'danger'
     guestOnly?: boolean
     authenticatedOnly?: boolean
-    searchKeywords?: string[] // Additional keywords for searching section content
 }
 
 const SettingsLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -54,27 +48,6 @@ const SettingsLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
     // Show loading state while initializing
     const isLoading = !isInitialized || isAuthLoading
-
-    // Search state
-    const [searchQuery, setSearchQuery] = useState('')
-    const [isMounted, setIsMounted] = useState(false)
-    const { showError } = useToast()
-
-    // Voice input
-    const { isListening, isSupported, transcript, startListening, stopListening } = useVoiceInput({
-        onResult: (transcript) => {
-            setSearchQuery(transcript)
-        },
-        onError: (error) => {
-            showError(error)
-        },
-        sourceId: 'settings-search',
-    })
-
-    // Track client-side mount
-    useEffect(() => {
-        setIsMounted(true)
-    }, [])
 
     // Define all possible sidebar items
     const allSidebarItems: SidebarItem[] = [
@@ -86,25 +59,6 @@ const SettingsLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
             icon: UserCircleIcon,
             priority: 'medium',
             authenticatedOnly: true,
-            searchKeywords: [
-                'display name',
-                'name',
-                'photo',
-                'avatar',
-                'picture',
-                'privacy',
-                'visibility',
-                'public profile',
-                'hide',
-                'show',
-                'liked',
-                'rankings',
-                'collections',
-                'forum',
-                'threads',
-                'polls',
-                'watch later',
-            ],
         },
         {
             id: 'account-management',
@@ -114,20 +68,6 @@ const SettingsLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
             icon: ShieldCheckIcon,
             priority: 'high',
             authenticatedOnly: true,
-            searchKeywords: [
-                'email',
-                'password',
-                'security',
-                'credentials',
-                'login',
-                'authentication',
-                'change email',
-                'change password',
-                'update email',
-                'update password',
-                'verify email',
-                'verification',
-            ],
         },
         {
             id: 'preferences',
@@ -136,19 +76,6 @@ const SettingsLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
             description: 'Content filters and playback settings',
             icon: Cog6ToothIcon,
             priority: 'low',
-            searchKeywords: [
-                'child safety',
-                'parental controls',
-                'family friendly',
-                'mute',
-                'volume',
-                'autoplay',
-                'recommendations',
-                'personalized',
-                'tracking',
-                'pin',
-                'lock',
-            ],
         },
         {
             id: 'notifications',
@@ -157,14 +84,6 @@ const SettingsLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
             description: 'Manage notification preferences',
             icon: BellIcon,
             priority: 'low',
-            searchKeywords: [
-                'alerts',
-                'email notifications',
-                'push notifications',
-                'updates',
-                'newsletter',
-                'marketing',
-            ],
         },
         {
             id: 'recommendations',
@@ -173,18 +92,6 @@ const SettingsLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
             description: 'Manage Trending, Top Rated, and For You rows',
             icon: SparklesIcon,
             priority: 'low',
-            searchKeywords: [
-                'trending',
-                'top rated',
-                'recommended',
-                'for you',
-                'personalized',
-                'system rows',
-                'homepage rows',
-                'enable',
-                'disable',
-                'reorder',
-            ],
         },
         {
             id: 'collections',
@@ -193,18 +100,6 @@ const SettingsLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
             description: 'Manage and organize your collections',
             icon: RectangleStackIcon,
             priority: 'low',
-            searchKeywords: [
-                'rows',
-                'lists',
-                'watchlists',
-                'custom collections',
-                'hide',
-                'show',
-                'enable',
-                'disable',
-                'system collections',
-                'genres',
-            ],
         },
         {
             id: 'share',
@@ -214,15 +109,6 @@ const SettingsLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
             icon: ShareIcon,
             priority: 'low',
             authenticatedOnly: true,
-            searchKeywords: [
-                'share',
-                'export',
-                'download',
-                'csv',
-                'backup',
-                'collections',
-                'shareable links',
-            ],
         },
         {
             id: 'account',
@@ -231,36 +117,13 @@ const SettingsLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
             description: 'Export, clear, or manage your data',
             icon: TrashIcon,
             priority: 'danger',
-            searchKeywords: [
-                'delete',
-                'clear',
-                'remove',
-                'erase',
-                'delete account',
-                'clear data',
-                'export',
-                'download',
-                'backup',
-            ],
         },
     ]
 
-    // Filter sidebar items based on authentication status and search query
+    // Filter sidebar items based on authentication status
     const sidebarItems = allSidebarItems.filter((item) => {
         if (isGuest && item.authenticatedOnly) return false
         if (!isGuest && item.guestOnly) return false
-
-        // Apply search filter
-        if (searchQuery.trim()) {
-            const query = searchQuery.toLowerCase()
-            const matchesTitle = item.title.toLowerCase().includes(query)
-            const matchesDescription = item.description.toLowerCase().includes(query)
-            const matchesKeywords = item.searchKeywords?.some((keyword) =>
-                keyword.toLowerCase().includes(query)
-            )
-            return matchesTitle || matchesDescription || matchesKeywords
-        }
-
         return true
     })
 
@@ -269,7 +132,7 @@ const SettingsLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
         switch (priority) {
             case 'danger':
-                return 'border-l-red-600'
+                return 'border-l-red-500'
             case 'high':
                 return 'border-l-orange-500'
             case 'medium':
@@ -284,7 +147,7 @@ const SettingsLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
         switch (priority) {
             case 'danger':
-                return 'text-red-500'
+                return 'text-red-400'
             case 'high':
                 return 'text-orange-500'
             case 'medium':
@@ -339,58 +202,9 @@ const SettingsLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
                             </div>
 
                             {/* Subtitle */}
-                            <p className="text-base sm:text-lg text-gray-300 mb-4 text-center max-w-2xl">
+                            <p className="text-base sm:text-lg text-gray-300 mb-2 text-center max-w-2xl">
                                 Manage your account preferences and data
                             </p>
-
-                            {/* Enhanced Search Bar */}
-                            <div className="w-full max-w-2xl relative mb-4">
-                                <div className="relative group">
-                                    <MagnifyingGlassIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 z-10 transition-colors group-focus-within:text-gray-300" />
-                                    <input
-                                        type="text"
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        placeholder="Search settings..."
-                                        className={`w-full pl-14 ${isMounted && isSupported ? 'pr-24' : 'pr-14'} py-4 bg-zinc-900/40 backdrop-blur-lg border border-zinc-800/50 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-gray-500 focus:shadow-[0_0_25px_rgba(156,163,175,0.3)] transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700`}
-                                    />
-                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 z-10 flex items-center gap-2">
-                                        {isMounted && isSupported && (
-                                            <button
-                                                type="button"
-                                                onClick={async () => {
-                                                    if (isListening) {
-                                                        stopListening()
-                                                    } else {
-                                                        await startListening()
-                                                    }
-                                                }}
-                                                className={`p-1.5 rounded-lg transition-all ${
-                                                    isListening
-                                                        ? 'bg-gray-500 text-white animate-pulse'
-                                                        : 'text-gray-400 hover:text-gray-300 hover:bg-gray-500/10'
-                                                }`}
-                                                title={
-                                                    isListening ? 'Stop listening' : 'Voice search'
-                                                }
-                                            >
-                                                <MicrophoneIcon className="w-5 h-5" />
-                                            </button>
-                                        )}
-                                        {searchQuery && (
-                                            <button
-                                                onClick={() => setSearchQuery('')}
-                                                className="text-gray-400 hover:text-white transition-colors"
-                                            >
-                                                <XMarkIcon className="w-6 h-6" />
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    {/* Glowing border effect on focus */}
-                                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-gray-500 to-slate-500 opacity-0 group-focus-within:opacity-20 blur-xl transition-opacity duration-300 -z-10" />
-                                </div>
-                            </div>
                         </div>
                     </div>
 
@@ -399,7 +213,7 @@ const SettingsLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
                         {/* Loading state */}
                         {isLoading ? (
                             <div className="py-16">
-                                <NetflixLoader inline={true} message="Loading settings..." />
+                                <PageLoader inline={true} message="Loading settings..." />
                             </div>
                         ) : (
                             /* Unified Settings Container */

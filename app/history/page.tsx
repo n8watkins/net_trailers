@@ -19,7 +19,7 @@ import {
 import { useVoiceInput } from '../../hooks/useVoiceInput'
 import ContentCard from '../../components/common/ContentCard'
 import ContentGridSpacer from '../../components/common/ContentGridSpacer'
-import NetflixLoader from '../../components/common/NetflixLoader'
+import PageLoader from '../../components/common/PageLoader'
 import { useWatchHistory } from '../../hooks/useWatchHistory'
 import { getTitle } from '../../typings'
 import { useSessionStore } from '../../stores/sessionStore'
@@ -219,10 +219,7 @@ export default function WatchHistoryPage() {
                                                     onClick={() =>
                                                         setFilter(
                                                             option.value as
-                                                                | 'all'
-                                                                | 'today'
-                                                                | 'week'
-                                                                | 'month'
+                                                                'all' | 'today' | 'week' | 'month'
                                                         )
                                                     }
                                                     className={`group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border ${
@@ -351,10 +348,7 @@ export default function WatchHistoryPage() {
                         {/* Loading state */}
                         {isLoading && (
                             <div className="py-16">
-                                <NetflixLoader
-                                    inline={true}
-                                    message="Loading your watch history..."
-                                />
+                                <PageLoader inline={true} message="Loading your watch history..." />
                             </div>
                         )}
 
