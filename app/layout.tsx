@@ -1,9 +1,11 @@
 import '../styles/globals.css'
 import type { Metadata, Viewport } from 'next'
+import { headers } from 'next/headers'
 import { Providers } from './providers'
 import ClientLayout from '../components/layout/ClientLayout'
 import Analytics from '../components/utility/Analytics'
 import WebAnalytics from '../components/utility/WebAnalytics'
+import { NONCE_HEADER } from '../lib/csp'
 
 export const viewport: Viewport = {
     themeColor: '#f59e0b',
@@ -41,15 +43,18 @@ export const metadata: Metadata = {
     },
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+    // The proxy's per-request script nonce (lib/csp.ts). Reading it renders
+    // every page per request, which a nonce needs.
+    const nonce = (await headers()).get(NONCE_HEADER) ?? undefined
     return (
         <html lang="en">
             <body>
                 <Providers>
                     <ClientLayout>{children}</ClientLayout>
                 </Providers>
-                <Analytics />
-                <WebAnalytics />
+                <Analytics nonce={nonce} />
+                <WebAnalytics nonce={nonce} />
             </body>
         </html>
     )

@@ -61,6 +61,14 @@ Never put a `.env` file in the project when building: OpenNext would bundle it i
 
 After changing bindings in `wrangler.jsonc`, run `npm run cf-typegen` (CI checks it).
 
+## Content Security Policy
+
+Every page gets a fresh script nonce and its Content-Security-Policy from the proxy (`proxy.ts`, `lib/csp.ts`).
+Scripts run only with that nonce, plus what those scripts load themselves (`'strict-dynamic'`: YouTube's player, Google Analytics, Turnstile, lazily loaded chunks), so production allows neither `'unsafe-inline'` nor `'unsafe-eval'` for scripts.
+Next puts the nonce on its own scripts; the root layout reads it (which renders every page per request) and passes it to the analytics scripts.
+Styles keep `'unsafe-inline'` for React style attributes and MUI.
+A new third-party script must be loaded by a nonced script or get the nonce; a new host the browser talks to goes in `connect-src` or `frame-src`.
+
 ## Turnstile on sign-in
 
 The email sign-in form runs Cloudflare Turnstile in the background as it opens (managed mode, "interaction-only" appearance: most people see nothing, and a small challenge appears only when Cloudflare is unsure).
