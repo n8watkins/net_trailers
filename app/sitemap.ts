@@ -1,6 +1,6 @@
 import { MetadataRoute } from 'next'
 
-const BASE_URL = 'https://net-trailers.vercel.app'
+const BASE_URL = 'https://nettrailers.n8builds.dev'
 
 export default function sitemap(): MetadataRoute.Sitemap {
     const currentDate = new Date().toISOString()

@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://net-trailers.vercel.app/sitemap.xml
+Sitemap: https://nettrailers.n8builds.dev/sitemap.xml
 
 # Common crawlers
 User-agent: Googlebot

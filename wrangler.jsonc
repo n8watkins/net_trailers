@@ -43,12 +43,20 @@
         // "false" while Vercel still runs the same crons on the same database;
         // set it to "true" when the Vercel project is turned off (DEPLOY.md).
         "CRONS_ENABLED": "false",
+        // The site's one public address; the workers.dev address forwards to it
+        // (worker/canonical.ts).
+        "PUBLIC_URL": "https://nettrailers.n8builds.dev",
+        // The admin's GitHub login (public, so a var rather than a secret).
+        "ADMIN_GITHUB_LOGIN": "n8watkins",
         // The sender for every email (lib/email/cloudflare.ts).
         "EMAIL_FROM": "nettrailers@n8builds.dev",
     },
     // Secrets (npx wrangler secret put <NAME>, see DEPLOY.md): TURSO_DATABASE_URL,
-    // TURSO_AUTH_TOKEN, AUTH_SECRET, AUTH_GITHUB_ID, AUTH_GITHUB_SECRET,
+    // TURSO_AUTH_TOKEN, AUTH_SECRET, AUTH_GITHUB_ID and AUTH_GITHUB_SECRET (optional),
     // TMDB_API_KEY, GEMINI_API_KEY, CRON_SECRET, TURNSTILE_SECRET_KEY.
+    // nettrailers.n8builds.dev as a Workers custom domain: Cloudflare creates and
+    // manages its DNS record and certificate on deploy.
+    "routes": [{ "pattern": "nettrailers.n8builds.dev", "custom_domain": true }],
     "observability": { "enabled": true, "head_sampling_rate": 1 },
     "workers_dev": true,
     "preview_urls": false,

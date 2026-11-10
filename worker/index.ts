@@ -9,6 +9,7 @@
 // @ts-ignore
 import openNext from '../.open-next/worker.js'
 import { errorSummary, logError, pathOf } from '../lib/log'
+import { canonicalRedirect } from './canonical'
 import { runCron, type FetchHandler, type WorkerEnv } from './crons'
 import { assetsWithUploads, isUploadPath, serveUpload } from './uploads'
 
@@ -40,6 +41,9 @@ function withUploads(env: WorkerEnv): WorkerEnv {
 export default {
     async fetch(request, env, ctx) {
         try {
+            // The workers.dev address forwards to the site's own (worker/canonical.ts).
+            const canonical = canonicalRedirect(request.url, env.PUBLIC_URL)
+            if (canonical) return Response.redirect(canonical, 308)
             if (isUploadPath(new URL(request.url).pathname))
                 return await serveUpload(request, env.UPLOADS)
             return forBrowsers(await app.fetch(request, withUploads(env), ctx))
