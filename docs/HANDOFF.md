@@ -60,6 +60,12 @@ Setup and features: `README.md`; architecture and conventions for agents: `CLAUD
 
 ### Blocked on the owner
 
+- **Regenerate the TMDB API key (urgent).**
+  The key was publicly exposed in `docs/archive/security/SECURITY_AUDIT.md` from 2025-11-09 until it was redacted on 2026-11-01, and it still worked on 2026-11-01.
+  Git history still contains it, so regenerating the key is the real fix.
+  Regenerate it at https://www.themoviedb.org/settings/api.
+  Update `TMDB_API_KEY` in the local `.env.local` and in the Vercel project's environment variables (Production, Preview and Development), then redeploy.
+  The old Gemini key quoted in the same doc is already dead (Google returns `API_KEY_INVALID`), so it needs no action beyond the new Gemini key below.
 - A new Gemini API key, set as `GEMINI_API_KEY` in the Vercel project env (Production and Preview) and in `.env.local`; never with a `NEXT_PUBLIC_` prefix.
 - Switching Vercel to Node 24 (project setting).
 - Turning off the GitHub Pages and Netlify integrations.
@@ -68,9 +74,10 @@ Setup and features: `README.md`; architecture and conventions for agents: `CLAUD
 
 ### Next steps in order
 
-1. Upgrade `next` to the latest 16.x and clear the other production advisories (problem 1); verify on the live site.
-2. Owner adds the new Gemini key and checks it with the curl above.
-3. Merge PR #5, then on the live site sign in, run a smart search and generate a collection name; the Vercel logs should show `[Gemini Router] ✓ Success with gemini-3.5-flash-lite`.
-4. Confirm PRs #3 and #4 are live once Vercel deploys again.
-5. Add CI, then work through the cleanup list (problem 4).
-6. Move Vercel to Node 24 once the build passes on it.
+1. Owner regenerates the TMDB key and updates it locally and in Vercel (see "Blocked on the owner").
+2. Upgrade `next` to the latest 16.x and clear the other production advisories (problem 1); verify on the live site.
+3. Owner adds the new Gemini key and checks it with the curl above.
+4. Merge PR #5, then on the live site sign in, run a smart search and generate a collection name; the Vercel logs should show `[Gemini Router] ✓ Success with gemini-3.5-flash-lite`.
+5. Confirm PRs #3 and #4 are live once Vercel deploys again.
+6. Add CI, then work through the cleanup list (problem 4).
+7. Move Vercel to Node 24 once the build passes on it.
