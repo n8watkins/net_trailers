@@ -141,8 +141,12 @@ export async function GET(
 
             // Fetch both in parallel
             const [movieResponse, tvResponse] = await Promise.all([
-                fetch(`https://api.themoviedb.org/3/discover/movie?${movieParams.toString()}`),
-                fetch(`https://api.themoviedb.org/3/discover/tv?${tvParams.toString()}`),
+                fetch(`https://api.themoviedb.org/3/discover/movie?${movieParams.toString()}`, {
+                    next: { revalidate: 3600 },
+                }),
+                fetch(`https://api.themoviedb.org/3/discover/tv?${tvParams.toString()}`, {
+                    next: { revalidate: 3600 },
+                }),
             ])
 
             if (!movieResponse.ok || !tvResponse.ok) {
@@ -331,7 +335,7 @@ export async function GET(
         // Debug logging
         csDebugTMDB(endpoint, childSafeMode)
 
-        const response = await fetch(endpoint)
+        const response = await fetch(endpoint, { next: { revalidate: 3600 } })
 
         if (!response.ok) {
             apiError(`TMDB API error: ${response.status} ${response.statusText}`)

@@ -25,7 +25,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         // Fetch combined credits (movies + TV shows) for this person
         const url = `${BASE_URL}/person/${personId}/combined_credits?api_key=${API_KEY}&language=en-US`
 
-        const response = await fetch(url)
+        // TMDB data changes slowly: keep it in the data cache (R2 on the Worker) for an hour
+        const response = await fetch(url, { next: { revalidate: 3600 } })
 
         if (!response.ok) {
             throw new Error(`TMDB API error: ${response.status}`)
