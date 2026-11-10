@@ -21,7 +21,7 @@ You need to **deploy the updated Firestore rules** to your Firebase project.
 ### Option 1: Deploy via Firebase Console (Easiest)
 
 1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Select your project: `netflix-clone-15862`
+2. Select your project: `<your-firebase-project-id>`
 3. Navigate to **Firestore Database** → **Rules**
 4. Copy the contents of `firestore.rules` from this project
 5. Paste it into the Firebase Console rules editor
@@ -39,7 +39,7 @@ firebase login
 # Initialize Firebase in your project (if not done)
 firebase init firestore
 # Select: Use existing project
-# Select: netflix-clone-15862
+# Select: <your-firebase-project-id>
 # Accept default firestore.rules location
 
 # Deploy the rules
