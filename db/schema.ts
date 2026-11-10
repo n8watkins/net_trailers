@@ -577,3 +577,25 @@ export const aiHealth = sqliteTable('ai_health', {
     reason: text('reason'),
     checkedAt: integer('checkedAt').notNull(),
 })
+
+/**
+ * Durable rate-limit and usage counters (lib/durableLimit.ts): request limits
+ * that must hold across Worker isolates (email sends, sign-in links, PIN
+ * attempts, public lookups). One row per key and window, e.g. `d:2026-11-10`
+ * (UTC day), `m:2026-11` (UTC month) or `w60000:29780123` (fixed window of
+ * 60 s). Keys never hold a raw email address or IP, only hashes.
+ */
+export const rateLimits = sqliteTable(
+    'rate_limits',
+    {
+        key: text('key').notNull(),
+        period: text('period').notNull(),
+        count: integer('count').notNull().default(0),
+        expiresAt: integer('expiresAt').notNull(),
+        updatedAt: integer('updatedAt').notNull(),
+    },
+    (t) => [
+        primaryKey({ columns: [t.key, t.period] }),
+        index('rate_limits_expires_idx').on(t.expiresAt),
+    ]
+)
