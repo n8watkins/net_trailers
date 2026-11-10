@@ -2,29 +2,40 @@
  * /api/rankings/[id]/view
  *
  * POST - Increment the view counter for a ranking.
- *         No auth required. The viewer's user ID may be sent in the body so the
- *         server can skip incrementing when the viewer is the ranking owner
- *         (matching the old Firestore behaviour).
+ *         No auth required. The owner's own views are not counted (the
+ *         session says who the viewer is).
+ *         Counted at most once an hour per viewer (signed-in user, or guest
+ *         IP from CF-Connecting-IP), so the count cannot be inflated by a
+ *         script.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 
-import { currentUserId } from '@/db/queries/_helpers'
 import { incrementRankingView } from '@/db/queries/rankings'
+import { consumeLimits } from '@/lib/durableLimit'
+import { getRequestIdentity } from '@/lib/requestIdentity'
 
-export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         const { id: rankingId } = await params
 
-        if (!rankingId) {
+        if (!rankingId || rankingId.length > 64) {
             return NextResponse.json(
                 { success: false, error: 'Ranking ID is required' },
                 { status: 400 }
             )
         }
 
-        // Use the session user id if available (to skip owner views)
-        const viewerId = await currentUserId()
+        // The session user (to skip owner views), or the guest's IP key.
+        const { userId: viewerId, rateLimitKey } = await getRequestIdentity(request)
+        const once = await consumeLimits([
+            {
+                key: `view:${rankingId}:${rateLimitKey}`,
+                limit: 1,
+                window: { ms: 60 * 60 * 1000 },
+            },
+        ])
+        if (!once.allowed) return NextResponse.json({ success: true, counted: false })
 
         await incrementRankingView(rankingId, viewerId)
         return NextResponse.json({ success: true })
