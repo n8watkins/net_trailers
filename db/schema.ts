@@ -553,3 +553,27 @@ export const signupLog = sqliteTable(
     },
     (t) => [index('signup_log_user_idx').on(t.userId)]
 )
+
+/**
+ * Daily AI usage counters (lib/aiQuota.ts). One row per visitor key and UTC day,
+ * plus a `global` key for the site-wide cap. Visitor keys are `user:<id>` or
+ * `ip:<sha-256 of the Cloudflare client IP>`, never the raw address.
+ */
+export const aiUsage = sqliteTable(
+    'ai_usage',
+    {
+        key: text('key').notNull(),
+        day: text('day').notNull(),
+        count: integer('count').notNull().default(0),
+        updatedAt: integer('updatedAt').notNull(),
+    },
+    (t) => [primaryKey({ columns: [t.key, t.day] })]
+)
+
+/** Last result of the AI health check (lib/aiHealth.ts), so frequent checks cost nothing. */
+export const aiHealth = sqliteTable('ai_health', {
+    id: text('id').primaryKey(),
+    ok: integer('ok', { mode: 'boolean' }).notNull(),
+    reason: text('reason'),
+    checkedAt: integer('checkedAt').notNull(),
+})

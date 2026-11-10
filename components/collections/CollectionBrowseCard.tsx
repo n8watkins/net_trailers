@@ -91,7 +91,11 @@ export default function CollectionBrowseCard({ collection }: CollectionBrowseCar
                 <div className="flex items-center justify-between mt-auto pt-3 border-t border-zinc-800/50">
                     <div className="flex items-center gap-1.5 text-gray-400 text-sm">
                         <FilmIcon className="w-4 h-4" />
-                        <span>{collection.items.length} items</span>
+                        <span>
+                            {collection.collectionType === 'tmdb-genre'
+                                ? 'Fills itself by genre'
+                                : `${collection.items.length} ${collection.items.length === 1 ? 'title' : 'titles'}`}
+                        </span>
                     </div>
                 </div>
             </div>

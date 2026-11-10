@@ -15,6 +15,13 @@
             "when": 1782040070491,
             "tag": "0001_mean_shadowcat",
             "breakpoints": true
+        },
+        {
+            "idx": 2,
+            "version": "6",
+            "when": 1794193763647,
+            "tag": "0002_ai_usage_and_health",
+            "breakpoints": true
         }
     ]
 }

@@ -15,6 +15,10 @@ import SmartSearchActions from '../smartSearch/SmartSearchActions'
 import PageLoader from '../common/PageLoader'
 import { useSmartSearchStore } from '../../stores/smartSearchStore'
 import { fetchWithOptionalAuth } from '@/lib/authenticatedFetch'
+import { getExampleMood } from '../../constants/exampleMoods'
+import { useAiQuotaStore } from '../../stores/aiQuotaStore'
+import ExampleMoodChips from '../smartSearch/ExampleMoodChips'
+import type { Content } from '../../typings'
 
 type AiSearchFailure = 'unavailable' | 'limit' | 'invalid'
 
@@ -31,8 +35,8 @@ const FAILURE_COPY: Record<AiSearchFailure, { title: string; body: string }> = {
         body: 'Regular search still works: look titles up by name, actor or keyword.',
     },
     limit: {
-        title: 'AI search limit reached',
-        body: "You've used up the AI searches for now. Regular search still works.",
+        title: 'No AI searches left today',
+        body: 'The example moods below still work, and so does regular search.',
     },
     invalid: {
         title: "AI search couldn't use that description",
@@ -43,7 +47,9 @@ const FAILURE_COPY: Record<AiSearchFailure, { title: string; body: string }> = {
 export default function SmartSearchClient() {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const queryParam = searchParams?.get('q')
+    const exampleMood = getExampleMood(searchParams?.get('example'))
+    const queryParam = exampleMood ? exampleMood.label : searchParams?.get('q')
+    const setAiQuota = useAiQuotaStore((state) => state.setQuota)
 
     // Track last searched query to prevent duplicate API calls (React StrictMode runs effects twice)
     const lastSearchedQuery = useRef<string | null>(null)
@@ -131,6 +137,31 @@ export default function SmartSearchClient() {
             return
         }
 
+        // Example moods load their saved results: instant, and no AI quota spent
+        if (exampleMood) {
+            lastSearchedQuery.current = null
+            setFailure(null)
+            setQuery(exampleMood.label)
+            setLoading(true)
+            fetch(`/example-moods/${exampleMood.id}.json`)
+                .then((response) => {
+                    if (!response.ok) throw new Error(`Example ${response.status}`)
+                    return response.json() as Promise<{ results: Content[] }>
+                })
+                .then((data) => {
+                    setResults(data.results, {
+                        generatedName: exampleMood.label,
+                        genreFallback: [],
+                        mediaType: 'both',
+                        emoji: exampleMood.emoji,
+                        color: '#f59e0b',
+                    })
+                })
+                .catch(() => setFailure('unavailable'))
+                .finally(() => setLoading(false))
+            return
+        }
+
         // Prevent duplicate API calls for the same query (React StrictMode protection)
         if (lastSearchedQuery.current === queryParam) {
             return
@@ -168,7 +199,11 @@ export default function SmartSearchClient() {
                 })
 
                 if (!response.ok) {
-                    if (response.status === 429) throw new AiSearchError('limit')
+                    if (response.status === 429) {
+                        const body = await response.json().catch(() => null)
+                        setAiQuota(body?.quota)
+                        throw new AiSearchError('limit')
+                    }
                     if (response.status >= 400 && response.status < 500) {
                         throw new AiSearchError('invalid')
                     }
@@ -176,6 +211,7 @@ export default function SmartSearchClient() {
                 }
 
                 const data = await response.json()
+                setAiQuota(data.quota)
 
                 setResults(data.results, {
                     generatedName: data.generatedName,
@@ -214,7 +250,7 @@ export default function SmartSearchClient() {
                 abortControllerRef.current.abort()
             }
         }
-    }, [queryParam, retryToken]) // Only trigger on query param change or an explicit retry
+    }, [queryParam, retryToken]) // Only trigger on query (or example) change or an explicit retry
 
     return (
         <div className="relative min-h-screen bg-gradient-to-b from-black via-gray-900 to-black">
@@ -232,7 +268,7 @@ export default function SmartSearchClient() {
                         {/* Editable Search Query */}
                         <div className="group flex items-baseline gap-3" ref={editContainerRef}>
                             <span className="text-gray-400 text-lg leading-none">
-                                Searching for:
+                                {exampleMood ? 'Example mood:' : 'Searching for:'}
                             </span>
                             {isEditingQuery ? (
                                 <>
@@ -332,7 +368,7 @@ export default function SmartSearchClient() {
                                     <MagnifyingGlassIcon className="h-4 w-4" aria-hidden="true" />
                                     Search titles instead
                                 </Link>
-                                {failure !== 'invalid' && (
+                                {failure === 'unavailable' && (
                                     <button
                                         type="button"
                                         onClick={() => setRetryToken((n) => n + 1)}
@@ -342,6 +378,12 @@ export default function SmartSearchClient() {
                                     </button>
                                 )}
                             </div>
+                            {failure !== 'invalid' && (
+                                <ExampleMoodChips
+                                    label="Example moods:"
+                                    className="mt-8 sm:justify-center"
+                                />
+                            )}
                         </div>
                     )}
 

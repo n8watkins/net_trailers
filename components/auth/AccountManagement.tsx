@@ -254,7 +254,7 @@ export default function AccountManagement() {
                         <div className="text-2xl font-bold text-amber-500">
                             {dataSummary.watchlistCount}
                         </div>
-                        <div className="text-sm text-gray-400">Watchlist Items</div>
+                        <div className="text-sm text-gray-400">Watch Later Items</div>
                     </div>
                     <div className="p-3 bg-[#1a1a1a] rounded-lg border border-gray-700">
                         <div className="text-2xl font-bold text-green-600">
@@ -318,7 +318,7 @@ export default function AccountManagement() {
                                 </div>
                                 <p className="text-gray-300 mb-4">This will permanently remove:</p>
                                 <ul className="list-disc list-inside text-sm text-gray-400 mb-6 space-y-1">
-                                    <li>{dataSummary.watchlistCount} watchlist items</li>
+                                    <li>{dataSummary.watchlistCount} Watch Later items</li>
                                     <li>{dataSummary.likedCount} liked items</li>
                                     <li>{dataSummary.hiddenCount} hidden items</li>
                                     <li>{dataSummary.listsCount} custom lists</li>

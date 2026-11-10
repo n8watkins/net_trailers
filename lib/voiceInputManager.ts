@@ -75,6 +75,26 @@ interface VoiceSessionOptions {
 
 type VoiceListener = (state: VoiceInputState) => void
 
+/** Errors that mean speech recognition cannot work in this browser at all. */
+const UNAVAILABLE_ERRORS = new Set(['network', 'service-not-allowed', 'language-not-supported'])
+const BROKEN_KEY = 'nettrailers_voice_unavailable'
+
+function voiceKnownBroken(): boolean {
+    try {
+        return window.sessionStorage.getItem(BROKEN_KEY) === '1'
+    } catch {
+        return false
+    }
+}
+
+function markVoiceBroken(): void {
+    try {
+        window.sessionStorage.setItem(BROKEN_KEY, '1')
+    } catch {
+        // Storage blocked: the mic still hides for this page view.
+    }
+}
+
 class VoiceInputManager {
     private listeners = new Set<VoiceListener>()
     private state: VoiceInputState = {
@@ -220,7 +240,12 @@ class VoiceInputManager {
         if (this.recognition || typeof window === 'undefined') return
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-        this.state.isSupported = Boolean(SpeechRecognition)
+        // Feature-detect: the API, a secure context (browsers refuse the mic
+        // otherwise), and no earlier proof this browser can't use it (some expose
+        // the API but have no speech service). Unsupported browsers get no mic
+        // button at all instead of an error.
+        this.state.isSupported =
+            Boolean(SpeechRecognition) && window.isSecureContext !== false && !voiceKnownBroken()
 
         if (!SpeechRecognition) {
             devLog('🎙️ VoiceInput: SpeechRecognition unavailable')
@@ -259,6 +284,14 @@ class VoiceInputManager {
         }
 
         this.recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+            // No speech service in this browser: hide the mic everywhere from now on,
+            // without an error toast.
+            if (UNAVAILABLE_ERRORS.has(event.error)) {
+                markVoiceBroken()
+                this.stopCurrentSession()
+                this.setState({ isSupported: false, lastError: undefined })
+                return
+            }
             const errorMessage =
                 event.error === 'no-speech'
                     ? 'No speech detected. Please try again.'

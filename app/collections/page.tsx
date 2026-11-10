@@ -10,6 +10,7 @@ import {
     PencilSquareIcon,
     Squares2X2Icon,
     PlusIcon,
+    FilmIcon,
 } from '@heroicons/react/24/solid'
 import { XMarkIcon, MicrophoneIcon } from '@heroicons/react/24/outline'
 import PageLoader from '../../components/common/PageLoader'
@@ -19,7 +20,7 @@ import { useVoiceInput } from '../../hooks/useVoiceInput'
 import { useToast } from '../../hooks/useToast'
 import { useModalStore } from '../../stores/modalStore'
 
-type FilterValue = 'all' | 'manual' | 'ai'
+type FilterValue = 'all' | 'manual' | 'ai' | 'genre'
 
 const Collections = () => {
     const userData = useUserData()
@@ -63,6 +64,8 @@ const Collections = () => {
             filtered = filtered.filter((list) => list.collectionType === 'manual')
         } else if (collectionFilter === 'ai') {
             filtered = filtered.filter((list) => list.collectionType === 'ai-generated')
+        } else if (collectionFilter === 'genre') {
+            filtered = filtered.filter((list) => list.collectionType === 'tmdb-genre')
         }
 
         // Apply search filter
@@ -89,6 +92,9 @@ const Collections = () => {
             total: allLists.length,
             manual: allLists.filter((list) => list.collectionType === 'manual').length,
             ai: allLists.filter((list) => list.collectionType === 'ai-generated').length,
+            // Genre rows (Action-Packed, Comedy...) fill themselves from TMDB; counting
+            // them makes All = Manual + AI + Genre
+            genre: allLists.filter((list) => list.collectionType === 'tmdb-genre').length,
         }
     }, [allLists])
 
@@ -167,6 +173,7 @@ const Collections = () => {
                                         label: 'AI-Generated',
                                         icon: SparklesIcon,
                                     },
+                                    { value: 'genre', label: 'Genre', icon: FilmIcon },
                                 ].map((option) => {
                                     const Icon = option.icon
                                     const isSelected = collectionFilter === option.value
@@ -277,7 +284,7 @@ const Collections = () => {
                                     {searchQuery
                                         ? 'No collections match your search'
                                         : collectionFilter !== 'all'
-                                          ? `No ${collectionFilter === 'ai' ? 'AI-generated' : 'manual'} collections`
+                                          ? `No ${collectionFilter === 'ai' ? 'AI-generated' : collectionFilter === 'genre' ? 'genre' : 'manual'} collections`
                                           : 'No collections yet'}
                                 </h3>
                                 <p className="text-gray-400 mb-8 max-w-md text-lg">

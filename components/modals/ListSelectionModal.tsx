@@ -60,7 +60,7 @@ function ListSelectionModal() {
 
     // Count custom lists (exclude default lists)
     const customLists = allLists.filter(
-        (list) => !['Liked', 'Not For Me', 'Watchlist'].includes(list.name)
+        (list) => list.id !== 'default-watchlist' && !['Liked', 'Not For Me'].includes(list.name)
     )
     const hasNoCustomLists = customLists.length === 0
 
@@ -85,7 +85,7 @@ function ListSelectionModal() {
         }
 
         // Default icons for system lists
-        if (list.name === 'Watchlist') {
+        if (list.id === 'default-watchlist') {
             return <EyeIcon className={iconClass} />
         }
 
