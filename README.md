@@ -274,10 +274,8 @@ A streaming-style trailer browser and discovery platform built with modern web t
     - Activity filtering by user, type, and timeframe
     - Timeline visualization grouped by day
 
-- **Account Limits**
-    - Configurable account cap (default: 50 accounts) enforced in the `auth.ts` `signIn` callback
-    - Usage tracking via Turso
-    - Demo reset to 5 accounts for portfolio demos
+- **Account and signup stats**
+    - Total accounts and signups this week and month (no cap on accounts; the email limits guard costs, see `docs/costs-and-limits.md`)
     - Signup velocity monitoring (daily/weekly/monthly)
 
 ## 🛠 Developer Features
@@ -389,9 +387,6 @@ _Experience all features or continue as guest to explore the platform_
     # Vercel Blob (Required for forum/thread image uploads)
     # Create a Blob store in your Vercel project; token is provided automatically there.
     BLOB_READ_WRITE_TOKEN=your_blob_read_write_token
-
-    # Account Limits (Optional - defaults to 50)
-    NEXT_PUBLIC_MAX_TOTAL_ACCOUNTS=50
 
     # App Configuration (Optional)
     NEXT_PUBLIC_APP_NAME=NetTrailers

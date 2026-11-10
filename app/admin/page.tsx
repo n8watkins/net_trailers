@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSessionStore } from '@/stores/sessionStore'
-import { getAccountStats } from '@/utils/accountLimits'
 import { Users, Settings, PlayCircle, RefreshCw, CalendarDays, Eye } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import type { AdminStats, ActivityStats, ActiveUser } from '@/types/admin'
@@ -105,9 +104,23 @@ export default function AdminDashboard() {
     const loadAllStats = async () => {
         setStatsLoading(true)
         try {
-            // Load account stats
-            const accountData = await getAccountStats()
-            setStats(accountData as AdminStats)
+            // Account counts, from the database on the server
+            try {
+                const accountResponse = await fetch('/api/admin/init-stats', { method: 'POST' })
+                if (accountResponse.ok) {
+                    const accountData = await accountResponse.json()
+                    setStats({
+                        totalAccounts: accountData.userCount,
+                        signupsThisWeek: accountData.signupsThisWeek,
+                        signupsThisMonth: accountData.signupsThisMonth,
+                        lastSignup: accountData.lastSignup,
+                    })
+                } else {
+                    console.error('Failed to load account stats')
+                }
+            } catch (_error) {
+                console.error('Error loading account stats:', _error)
+            }
 
             // Load trending stats
             try {
@@ -217,28 +230,6 @@ export default function AdminDashboard() {
         }
     }
 
-    const resetDemoAccounts = async () => {
-        if (!confirm('Reset demo accounts to 5? This will delete test accounts.')) return
-
-        setLoading(true)
-        try {
-            const response = await fetch('/api/admin/reset-demo', {
-                method: 'POST',
-            })
-
-            if (response.ok) {
-                showSuccess('Demo accounts reset to 5')
-                await loadAllStats()
-            } else {
-                showError('Failed to reset accounts')
-            }
-        } catch (_error) {
-            showError('Failed to reset accounts')
-        } finally {
-            setLoading(false)
-        }
-    }
-
     // Debug render state
     console.log('🎨 Render state:', {
         isInitialized,
@@ -309,14 +300,9 @@ export default function AdminDashboard() {
                             </span>
                         </div>
                         <h3 className="text-gray-400 text-sm mb-1">Total Accounts →</h3>
-                        <div className="flex items-center justify-between">
-                            <span className="text-xs text-gray-500">
-                                Limit: {stats?.maxAccounts || 50}
-                            </span>
-                            <span className="text-xs text-green-500">
-                                {(stats?.maxAccounts || 50) - (stats?.totalAccounts || 0)} remaining
-                            </span>
-                        </div>
+                        <span className="text-xs text-gray-500">
+                            {stats?.signupsThisWeek || 0} new this week
+                        </span>
                     </button>
 
                     {/* Monthly Signups - Clickable */}
@@ -448,58 +434,6 @@ export default function AdminDashboard() {
                         </h2>
 
                         <div className="space-y-4">
-                            {/* Account Graph */}
-                            <div className="p-4 bg-gray-900 rounded-lg">
-                                <h3 className="text-sm font-medium text-gray-300 mb-3">
-                                    Account Usage
-                                </h3>
-                                <div className="relative pt-1">
-                                    <div className="flex mb-2 items-center justify-between">
-                                        <div>
-                                            <span className="text-xs font-semibold inline-block text-blue-400">
-                                                {Math.round(
-                                                    ((stats?.totalAccounts || 0) /
-                                                        (stats?.maxAccounts || 50)) *
-                                                        100
-                                                )}
-                                                %
-                                            </span>
-                                        </div>
-                                        <div className="text-right">
-                                            <span className="text-xs font-semibold inline-block text-gray-400">
-                                                {stats?.totalAccounts || 0} /{' '}
-                                                {stats?.maxAccounts || 50}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-gray-700">
-                                        <div
-                                            style={{
-                                                width: `${((stats?.totalAccounts || 0) / (stats?.maxAccounts || 50)) * 100}%`,
-                                            }}
-                                            className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Demo Reset */}
-                            <div className="p-4 bg-gray-900 rounded-lg">
-                                <h3 className="text-sm font-medium text-gray-300 mb-2">
-                                    Demo Reset
-                                </h3>
-                                <p className="text-xs text-gray-500 mb-3">
-                                    Reset account count for portfolio demos (keeps first 5 accounts)
-                                </p>
-                                <button
-                                    onClick={resetDemoAccounts}
-                                    disabled={loading}
-                                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 text-white rounded-lg transition"
-                                >
-                                    Reset to 5 Accounts
-                                </button>
-                            </div>
-
                             {/* Recent Activity */}
                             <div className="p-4 bg-gray-900 rounded-lg">
                                 <h3 className="text-sm font-medium text-gray-300 mb-2">

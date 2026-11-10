@@ -4,7 +4,6 @@
 
 export interface AdminStats {
     totalAccounts: number
-    maxAccounts: number
     signupsThisWeek: number
     signupsThisMonth: number
     signupsToday?: number

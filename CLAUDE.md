@@ -394,7 +394,6 @@ Required environment variables are documented in the file with setup instruction
 - Google Analytics measurement ID
 - Email (magic-link sign-in + admin emails): `BREVO_API_KEY` + `EMAIL_FROM` (a verified sender — Brevo needs only a single verified sender, no domain). `EMAIL_PROVIDER` selects the provider — `brevo` (default) or `resend` (then set `RESEND_API_KEY`)
 - `BLOB_READ_WRITE_TOKEN` (Vercel Blob — image uploads)
-- `NEXT_PUBLIC_MAX_TOTAL_ACCOUNTS` (optional, default 50 — total-signup cap enforced in the `auth.ts` `signIn` callback)
 
 ### Next.js Configuration
 
