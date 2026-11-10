@@ -8,6 +8,7 @@ import {
     HandThumbUpIcon,
     RectangleStackIcon,
     TrophyIcon,
+    SparklesIcon,
 } from '@heroicons/react/24/outline'
 
 function ProfileDropdown() {
@@ -144,6 +145,19 @@ function ProfileDropdown() {
                             >
                                 <HandThumbUpIcon className="h-4 w-4" />
                                 <span>My Ratings</span>
+                            </div>
+                        </Link>
+
+                        <Link href="/recommendations" onClick={handleLinkClick}>
+                            <div
+                                className={`w-full text-left px-4 py-3 hover:bg-white/10 transition-colors flex items-center space-x-3 ${
+                                    isCurrentPath('/recommendations')
+                                        ? 'bg-white/10 text-white font-semibold'
+                                        : 'text-gray-300'
+                                }`}
+                            >
+                                <SparklesIcon className="h-4 w-4" />
+                                <span>For you</span>
                             </div>
                         </Link>
                     </div>

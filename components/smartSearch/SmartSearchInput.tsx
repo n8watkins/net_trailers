@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation'
 import { useSmartSearchStore } from '../../stores/smartSearchStore'
 import { SmartInput } from '../common/SmartInput'
+import ExampleMoodChips from './ExampleMoodChips'
+import AiQuotaLine from './AiQuotaLine'
 
 export default function SmartSearchInput() {
     const router = useRouter()
@@ -29,18 +31,22 @@ export default function SmartSearchInput() {
     }
 
     return (
-        <SmartInput
-            value={query}
-            onChange={handleChange}
-            onSubmit={handleSubmit}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            isActive={isActive}
-            showExamplePlaceholder={true}
-            size="default"
-            variant="transparent"
-            shimmer="wave"
-            showSurpriseMe={true}
-        />
+        <div>
+            <SmartInput
+                value={query}
+                onChange={handleChange}
+                onSubmit={handleSubmit}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                isActive={isActive}
+                showExamplePlaceholder={true}
+                size="default"
+                variant="transparent"
+                shimmer="wave"
+                showSurpriseMe={true}
+            />
+            <AiQuotaLine className="mt-2 px-1" />
+            <ExampleMoodChips className="mt-3" />
+        </div>
     )
 }
