@@ -701,7 +701,7 @@ net_trailers/
 │   └── queries/          # Typed query helpers (one module per domain)
 ├── auth.ts               # Auth.js (NextAuth v5) config - GitHub + magic link
 ├── drizzle.config.ts     # drizzle-kit configuration
-├── sentry.client.config.ts   # Sentry client config
+├── instrumentation-client.ts # Sentry client config
 ├── instrumentation.ts    # Sentry server config (Next.js 15+)
 ├── next.config.mjs       # Next.js configuration
 ├── vercel.json           # Vercel deployment config (cron jobs)
@@ -872,7 +872,7 @@ npm run test:ci       # CI mode (used in GitHub Actions)
 
 ### Sentry Error Monitoring
 
-- **Client-side**: Configured via `sentry.client.config.ts`
+- **Client-side**: Configured via `instrumentation-client.ts`
 - **Server-side**: Configured via `instrumentation.ts` (Next.js 15+ standard)
 - **Features**:
     - Automatic error capture and stack traces

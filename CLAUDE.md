@@ -406,7 +406,7 @@ Required environment variables are documented in the file with setup instruction
 ### Sentry Monitoring
 
 - **Server-side**: Configured via `instrumentation.ts` (Next.js 15 standard)
-- **Client-side**: Configured via `sentry.client.config.ts`
+- **Client-side**: Configured via `instrumentation-client.ts`
 - **Error filtering**: Ignores common browser errors and protects user privacy
 
 ### Vercel Configuration (vercel.json)

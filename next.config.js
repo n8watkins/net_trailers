@@ -99,25 +99,8 @@ const nextConfig = {
                         key: 'Permissions-Policy',
                         value: 'camera=(), microphone=(self), geolocation=(), interest-cohort=()',
                     },
-                    // Content Security Policy
-                    {
-                        key: 'Content-Security-Policy',
-                        value: [
-                            "default-src 'self'",
-                            "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://www.youtube.com https://www.gstatic.com https://static.cloudflareinsights.com https://challenges.cloudflare.com",
-                            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-                            "img-src 'self' data: https: blob:",
-                            "font-src 'self' data: https://fonts.gstatic.com",
-                            "connect-src 'self' https://api.themoviedb.org https://www.google-analytics.com https://*.sentry.io https://cloudflareinsights.com https://www.youtube.com https://youtubei.googleapis.com https://*.pusher.com wss://*.pusher.com",
-                            "frame-src 'self' https://www.youtube.com https://challenges.cloudflare.com",
-                            "media-src 'self' https:",
-                            "object-src 'none'",
-                            "base-uri 'self'",
-                            "form-action 'self'",
-                            "frame-ancestors 'none'",
-                            'upgrade-insecure-requests',
-                        ].join('; '),
-                    },
+                    // The Content-Security-Policy is set per request with a fresh
+                    // script nonce by the proxy (proxy.ts, lib/csp.ts).
                     // HTTP Strict Transport Security
                     {
                         key: 'Strict-Transport-Security',

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { applyCsrfProtection } from './lib/csrfProtection'
 import { hasCronSecret } from './lib/cronAuth'
+import { buildContentSecurityPolicy, createNonce, NONCE_HEADER } from './lib/csp'
 
 /**
  * Global proxy for security and request validation
@@ -14,6 +15,25 @@ const MAX_JSON_PAYLOAD_SIZE = 500 * 1024 // 500KB for JSON payloads
  * Safe HTTP methods that don't require CSRF protection.
  */
 const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS']
+
+/**
+ * A fresh nonce and Content-Security-Policy for every request (lib/csp.ts).
+ * Next reads the nonce from the request's CSP header and puts it on the
+ * scripts it renders; the response carries the same policy.
+ */
+function withContentSecurityPolicy(request: NextRequest): NextResponse {
+    const nonce = createNonce()
+    const policy = buildContentSecurityPolicy({
+        nonce,
+        dev: process.env.NODE_ENV === 'development',
+    })
+    const requestHeaders = new Headers(request.headers)
+    requestHeaders.set(NONCE_HEADER, nonce)
+    requestHeaders.set('Content-Security-Policy', policy)
+    const response = NextResponse.next({ request: { headers: requestHeaders } })
+    response.headers.set('Content-Security-Policy', policy)
+    return response
+}
 
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl
@@ -88,8 +108,8 @@ export async function proxy(request: NextRequest) {
         }
     }
 
-    // Continue to the route handler
-    return NextResponse.next()
+    // Continue to the page or route handler
+    return withContentSecurityPolicy(request)
 }
 
 // Configure which routes this proxy applies to
@@ -97,7 +117,7 @@ export const config = {
     matcher: [
         // Apply to all API routes
         '/api/:path*',
-        // Exclude static files and images
+        // Every page (for its CSP nonce), but not static files and images
         '/((?!_next/static|_next/image|favicon.ico).*)',
     ],
 }
