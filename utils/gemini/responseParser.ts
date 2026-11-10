@@ -62,11 +62,25 @@ function validateColor(color: string | undefined): string {
 /**
  * Parses Gemini JSON response
  */
-export function parseGeminiResponse(responseText: string): GeminiResponse {
-    const cleaned = stripMarkdown(responseText)
-
+/**
+ * The JSON object in a reply: the whole reply, or else the text from its first
+ * "{" to its last "}" (a reply with a sentence before or after the object).
+ */
+export function extractJsonObject(text: string): unknown {
+    const cleaned = stripMarkdown(text)
     try {
-        const parsed = JSON.parse(cleaned)
+        return JSON.parse(cleaned)
+    } catch (error) {
+        const start = cleaned.indexOf('{')
+        const end = cleaned.lastIndexOf('}')
+        if (start === -1 || end <= start) throw error
+        return JSON.parse(cleaned.slice(start, end + 1))
+    }
+}
+
+export function parseGeminiResponse(responseText: string): GeminiResponse {
+    try {
+        const parsed = extractJsonObject(responseText) as Record<string, any>
 
         // Validate required fields
         if (!parsed.movies || !Array.isArray(parsed.movies)) {
@@ -94,8 +108,13 @@ export function parseGeminiResponse(responseText: string): GeminiResponse {
             color,
         }
     } catch (error) {
-        console.error('Failed to parse Gemini response:', error)
-        console.error('Raw response:', responseText)
+        // One line with the reason and the end of the reply (where JSON breaks),
+        // short enough that Workers Logs keeps it whole.
+        console.error(
+            `[ResponseParser] Failed to parse Gemini response (${responseText.length} chars): ${
+                error instanceof Error ? error.message : String(error)
+            }; ends with: ${JSON.stringify(responseText.slice(-200))}`
+        )
         throw new Error('Failed to parse AI response')
     }
 }
