@@ -26,6 +26,8 @@ const customJestConfig = {
         '!**/node_modules/**',
     ],
     testMatch: ['**/__tests__/**/*.(ts|tsx|js)', '**/*.(test|spec).(ts|tsx|js)'],
+    // e2e/ holds the Playwright suite (npm run test:e2e)
+    testPathIgnorePatterns: ['/node_modules/', '<rootDir>/e2e/'],
     moduleNameMapper: {
         // Handle module aliases (if you use them in your Next.js app)
         '^@/components/(.*)$': '<rootDir>/components/$1',

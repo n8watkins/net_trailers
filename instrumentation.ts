@@ -2,6 +2,12 @@ import type { Instrumentation } from 'next'
 import { errorSummary, logError, pathOf, safeCode } from './lib/log'
 
 export async function register() {
+    // End-to-end tests only (APP_ENV=test): answer TMDB from recorded fixtures.
+    if (process.env.APP_ENV === 'test' && process.env.NEXT_RUNTIME === 'nodejs') {
+        const { installTmdbFixtures } = await import('./lib/e2eTmdbFixtures')
+        installTmdbFixtures()
+    }
+
     // Only initialize Sentry if we have a valid DSN
     const sentryDsn = process.env.NEXT_PUBLIC_SENTRY_DSN
     if (!sentryDsn || sentryDsn === 'YOUR_SENTRY_DSN_HERE') {

@@ -20,6 +20,8 @@ import type { Provider } from 'next-auth/providers'
 import { db } from '@/db'
 import { accounts, sessions, users, verificationTokens } from '@/db/schema'
 import { authLogger } from '@/lib/log'
+import { isTestMode } from '@/lib/testMode'
+import { TestEmailProvider } from '@/lib/testEmailProvider'
 
 const adminLogin = process.env.ADMIN_GITHUB_LOGIN?.toLowerCase()
 
@@ -81,10 +83,13 @@ function BrevoEmail(): Provider {
 // Default: Brevo (single API key, verify a single sender - no domain needed).
 // Set EMAIL_PROVIDER=resend to switch to Resend (requires a verified domain).
 // Both expose the stable provider id "email" so the client never changes.
-const emailProvider =
-    process.env.EMAIL_PROVIDER === 'resend'
-        ? Resend({ id: 'email', apiKey: process.env.RESEND_API_KEY, from: emailFrom })
-        : BrevoEmail()
+// APP_ENV=test (end-to-end tests with a local file database only) swaps in a
+// provider that writes the link to disk; lib/testMode.ts refuses it elsewhere.
+const emailProvider = isTestMode()
+    ? TestEmailProvider()
+    : process.env.EMAIL_PROVIDER === 'resend'
+      ? Resend({ id: 'email', apiKey: process.env.RESEND_API_KEY, from: emailFrom })
+      : BrevoEmail()
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
     adapter: DrizzleAdapter(db, {
