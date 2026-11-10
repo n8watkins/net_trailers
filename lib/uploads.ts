@@ -68,3 +68,23 @@ export function ownUploads(urls: unknown, userId: string, max = 4): string[] {
         .map((key) => `/${key}`)
         .slice(0, max)
 }
+
+/** Outside hosts an avatar may come from (GitHub sign-in, generated defaults). */
+const AVATAR_HOSTS = new Set(['avatars.githubusercontent.com', 'api.dicebear.com'])
+
+/**
+ * The URL to store for a new avatar, or null when it is not allowed: one of
+ * the user's own uploads (stored as the site path) or an https URL on a known
+ * avatar host.
+ */
+export function allowedAvatarUrl(url: string, userId: string): string | null {
+    const own = ownedUploadKey(url, userId)
+    if (own) return `/${own}`
+    try {
+        const parsed = new URL(url)
+        if (parsed.protocol === 'https:' && AVATAR_HOSTS.has(parsed.hostname)) return parsed.href
+    } catch {
+        // Not an absolute URL.
+    }
+    return null
+}
