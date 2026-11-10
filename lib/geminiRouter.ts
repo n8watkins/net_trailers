@@ -39,6 +39,8 @@ interface GeminiRequestConfig {
     generationConfig: {
         temperature: number
         maxOutputTokens: number
+        /** 'application/json' asks Gemini for JSON only (no prose or code fences). */
+        responseMimeType?: string
     }
 }
 
