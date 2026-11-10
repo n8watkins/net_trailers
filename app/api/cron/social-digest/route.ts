@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import crypto from 'crypto'
+import { hasCronSecret } from '@/lib/cronAuth'
 import { validateAdminRequest } from '@/utils/adminMiddleware'
 import { EmailService } from '@/lib/email/email-service'
 import { generateUnsubscribeToken } from '@/lib/email/unsubscribe-token'
@@ -13,43 +13,11 @@ import {
 import { loadUserPreferences } from '@/db/queries/userPreferences'
 import { getAdminUserId } from '@/db/queries/_helpers'
 
-const CRON_SECRET = process.env.CRON_SECRET
-
-/**
- * Timing-safe comparison of cron secret tokens.
- * Prevents timing attacks by using constant-time comparison.
- */
-function isValidCronSecret(token: string | null | undefined): boolean {
-    if (!token || !CRON_SECRET) return false
-    try {
-        const encoder = new TextEncoder()
-        const tokenBytes = encoder.encode(token)
-        const secretBytes = encoder.encode(CRON_SECRET)
-        if (tokenBytes.length !== secretBytes.length) return false
-        return crypto.timingSafeEqual(tokenBytes, secretBytes)
-    } catch {
-        return false
-    }
-}
-
-/**
- * Weekly Social Digest Cron Job
- *
- * Runs weekly (Wednesdays at 2 AM) to batch all ranking comments and likes from the past 7 days
- * and send a single digest email per user with all their social interactions.
- *
- * Migration note: the original route used a Firestore collectionGroup('notifications') query
- * with an 'emailSent == false' filter. That field lives in the JSON `data` column in Turso,
- * so we use the listUnsentNotificationsByTypes helper (db/queries/notifications.ts) which
- * issues a json_extract-based WHERE clause against the notifications table.
- */
 export async function GET(req: NextRequest) {
     try {
         // Auth check - allow cron or admin
-        const authHeader = req.headers.get('authorization')
-        const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : authHeader
 
-        const isCron = isValidCronSecret(token)
+        const isCron = hasCronSecret(req.headers)
 
         let isAdmin = false
         if (!isCron) {

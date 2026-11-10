@@ -7,6 +7,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+
+import { devOnlyNotFound, isDevOnlyAllowed } from '@/lib/devOnly'
 import fs from 'fs'
 import path from 'path'
 
@@ -14,9 +16,7 @@ const FLAG_FILE = path.join(process.cwd(), '.next-logs-enabled')
 
 export async function POST(request: NextRequest) {
     // Only allow in development
-    if (process.env.NODE_ENV !== 'development') {
-        return NextResponse.json({ error: 'Not available in production' }, { status: 403 })
-    }
+    if (!isDevOnlyAllowed()) return devOnlyNotFound()
 
     try {
         const { enabled } = await request.json()
@@ -39,9 +39,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
     // Only allow in development
-    if (process.env.NODE_ENV !== 'development') {
-        return NextResponse.json({ error: 'Not available in production' }, { status: 403 })
-    }
+    if (!isDevOnlyAllowed()) return devOnlyNotFound()
 
     try {
         if (fs.existsSync(FLAG_FILE)) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withAuth } from '../../../../lib/auth-middleware'
 import { isCurrentUserAdmin } from '@/db/queries/_helpers'
+import { selfFetch } from '@/lib/selfFetch'
 
 const CRON_SECRET = process.env.CRON_SECRET
 
@@ -32,17 +33,14 @@ async function handleTestWeeklyDigest(request: NextRequest, userId: string): Pro
             )
         }
 
-        // Call the cron endpoint internally with CRON_SECRET and adminOnly=true
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+        // Call the cron route on this same deployment with CRON_SECRET and
+        // adminOnly=true. selfFetch stays inside the Worker (service binding):
+        // the secret is never sent to a configured URL that may point elsewhere.
         const params = new URLSearchParams()
         params.set('adminOnly', 'true') // ADMIN ONLY: Only process admin user
         if (demoMode) params.set('demo', 'true')
 
-        const cronUrl = `${baseUrl}/api/cron/update-trending?${params.toString()}`
-
-        console.log(`[TestWeeklyDigest] Calling trending cron with adminOnly=true: ${cronUrl}`)
-
-        const response = await fetch(cronUrl, {
+        const response = await selfFetch(`/api/cron/update-trending?${params.toString()}`, {
             method: 'GET',
             headers: {
                 Authorization: `Bearer ${CRON_SECRET}`,
