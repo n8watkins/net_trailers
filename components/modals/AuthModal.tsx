@@ -49,8 +49,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         try {
             await signInWithEmail(trimmed)
             setEmailSent(true)
-        } catch {
-            setEmailError('Could not send the sign-in link. Please try again.')
+        } catch (error) {
+            setEmailError(
+                error instanceof Error && error.message === 'EmailLimit'
+                    ? 'Too many sign-in emails for now. Use the last link we sent, or try again tomorrow.'
+                    : 'Could not send the sign-in link. Please try again.'
+            )
         } finally {
             setIsWorking(false)
         }
