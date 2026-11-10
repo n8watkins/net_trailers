@@ -392,7 +392,7 @@ Required environment variables are documented in the file with setup instruction
 - ADMIN_GITHUB_LOGIN (server-side only, not NEXT_PUBLIC\* — the admin's GitHub username)
 - Sentry DSN (for error monitoring)
 - Google Analytics measurement ID
-- Email (magic-link sign-in + admin emails): `BREVO_API_KEY` + `EMAIL_FROM` (a verified sender — Brevo needs only a single verified sender, no domain). `EMAIL_PROVIDER` selects the provider — `brevo` (default) or `resend` (then set `RESEND_API_KEY`)
+- Email (magic-link sign-in and every other email): Cloudflare Email Service through the Worker's `send_email` binding `EMAIL`, from `EMAIL_FROM` (`nettrailers@n8builds.dev`, a `wrangler.jsonc` var); no API key. Every send goes through the capped email gate (`lib/email/gate.ts`)
 - `BLOB_READ_WRITE_TOKEN` (Vercel Blob — image uploads)
 
 ### Next.js Configuration
@@ -656,7 +656,7 @@ export async function myAction() {
 - **Trending/Social templates**: Not implemented (returns 501 Not Implemented)
 - **Announcement/Custom templates**: Fully functional and production-ready
 - **Batch optimization**: 100+ per-user lookups → 1 batched DB read
-- **Graceful degradation**: Returns null when the email provider (Brevo/Resend) is unavailable
+- **Graceful degradation**: Returns null when there is no email binding (off Workers)
 - **Template system**: React Email components prevent injection
 
 ## Key Metrics

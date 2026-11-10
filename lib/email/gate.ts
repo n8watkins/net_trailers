@@ -1,8 +1,9 @@
 /**
  * The email gate: every email the app sends is counted here first.
  *
- * The provider has no spending cap of its own (Amazon SES, planned, has none),
- * so the app's own cap is the hard stop. Each send spends one unit from:
+ * Email goes out through Cloudflare Email Service (lib/email/cloudflare.ts),
+ * which bills past its included monthly amount and has no per-app cap of its
+ * own, so the app's own cap is the hard stop. Each send spends one unit from:
  *  - any per-caller rules the sender passes (per address, per IP, per user),
  *  - the site-wide daily cap (EMAIL_DAILY_CAP, default 200),
  *  - the site-wide monthly cap (EMAIL_MONTHLY_CAP, default 2,000).
@@ -13,12 +14,12 @@
  * address or the body) for `getEmailUsage`.
  *
  * Sign-in links are reserved in auth.ts's signIn callback, where a refusal can
- * be shown to the visitor, and delivered by the email provider right after;
+ * be shown to the visitor, and delivered right after by `deliverSignInLink`;
  * every other email goes through `sendEmail`, which reserves and delivers.
- * Switching providers (to SES) means changing `deliver` only.
  */
 
 import type { ReactElement } from 'react'
+import { render, toPlainText } from '@react-email/render'
 
 import {
     consumeLimits,
@@ -28,7 +29,8 @@ import {
     type LimitResult,
     type LimitRule,
 } from '@/lib/durableLimit'
-import { resend } from './resend'
+import { EMAIL_FROM, emailBinding } from './cloudflare'
+import { signInEmail } from './templates/sign-in'
 
 export type EmailKind =
     'sign-in' | 'forum-reply' | 'social-digest' | 'trending' | 'announcement' | 'custom'
@@ -112,21 +114,33 @@ export interface EmailMessage {
     fromName?: string
 }
 
-const SENDER_EMAIL = process.env.RESEND_SENDER_EMAIL || 'onboarding@resend.dev'
-
-/** Whether a provider is configured; without one nothing is reserved or sent. */
+/** Whether email can be sent here (the Worker's binding); otherwise nothing is reserved or sent. */
 export function emailConfigured(): boolean {
-    return resend !== null
+    return emailBinding() !== undefined
 }
 
-async function deliver(message: EmailMessage): Promise<{ id: string | null }> {
-    const from = `${message.fromName ?? 'NetTrailers'} <${SENDER_EMAIL}>`
-    const base = { from, to: message.to, subject: message.subject }
-    const { data, error } = message.react
-        ? await resend!.emails.send({ ...base, react: message.react })
-        : await resend!.emails.send({ ...base, html: message.html ?? '' })
-    if (error) throw new Error(`Email provider refused the message: ${error.message}`)
-    return { id: data?.id ?? null }
+/** Sends one message that has already been reserved. Throws when Cloudflare refuses it. */
+async function deliver(message: EmailMessage & { text?: string }): Promise<{ id: string | null }> {
+    const binding = emailBinding()
+    if (!binding) throw new Error('No email binding on this deployment')
+    const html = message.react ? await render(message.react) : (message.html ?? '')
+    const text = message.text ?? toPlainText(html)
+    const result = await binding.send({
+        to: message.to,
+        from: { email: EMAIL_FROM, name: message.fromName ?? 'NetTrailers' },
+        subject: message.subject,
+        html,
+        text,
+    })
+    return { id: result?.messageId ?? null }
+}
+
+/**
+ * Delivers a sign-in link that auth.ts's signIn callback has already reserved
+ * (lib/email/signInLimits.ts), so it spends nothing more here.
+ */
+export async function deliverSignInLink(to: string, url: string): Promise<void> {
+    await deliver({ to, ...signInEmail(url) })
 }
 
 /**

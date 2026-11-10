@@ -5,8 +5,11 @@
  * the provider mocked.
  */
 
-const send = jest.fn(async () => ({ data: { id: 'msg-1' }, error: null }))
-jest.mock('../../lib/email/resend', () => ({ resend: { emails: { send } } }))
+const send = jest.fn(async (_message: Record<string, unknown>) => ({ messageId: 'msg-1' }))
+jest.mock('../../lib/email/cloudflare', () => ({
+    EMAIL_FROM: 'nettrailers@n8builds.dev',
+    emailBinding: () => ({ send: (message: Record<string, unknown>) => send(message) }),
+}))
 
 process.env.EMAIL_DAILY_CAP = '3'
 process.env.EMAIL_MONTHLY_CAP = '4'
@@ -64,5 +67,40 @@ describe('email gate', () => {
             )
         ).rejects.toBeInstanceOf(gate.EmailLimitError)
         expect(send).not.toHaveBeenCalled()
+    })
+
+    it('sends through the Cloudflare binding from the app address, as HTML and text', async () => {
+        // A later month, so the caps used up above don't apply (only Date is faked)
+        jest.useFakeTimers({
+            now: new Date('2026-12-15T09:00:00Z'),
+            doNotFake: ['nextTick', 'setImmediate', 'setTimeout', 'setInterval', 'queueMicrotask'],
+        })
+        const result = await gate.sendEmail('announcement', {
+            to: 'a@example.com',
+            subject: 'Hi',
+            html: '<p>Hello <b>there</b></p>',
+        })
+        jest.useRealTimers()
+        expect(result).toEqual({ id: 'msg-1' })
+        expect(send).toHaveBeenCalledWith({
+            to: 'a@example.com',
+            from: { email: 'nettrailers@n8builds.dev', name: 'NetTrailers' },
+            subject: 'Hi',
+            html: '<p>Hello <b>there</b></p>',
+            text: expect.stringContaining('Hello there'),
+        })
+    })
+
+    it('delivers a reserved sign-in link without spending another unit', async () => {
+        const before = await gate.getEmailUsage()
+        await gate.deliverSignInLink(
+            'b@example.com',
+            'https://x.test/api/auth/callback/email?token=a&b=<c>'
+        )
+        const message = send.mock.calls[0][0] as { subject: string; html: string; text: string }
+        expect(message.subject).toBe('Your NetTrailers sign-in link')
+        expect(message.html).toContain('token=a&#38;b=&#60;c&#62;')
+        expect(message.text).toContain('https://x.test/api/auth/callback/email?token=a&b=<c>')
+        expect((await gate.getEmailUsage()).today).toBe(before.today)
     })
 })

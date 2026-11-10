@@ -13,7 +13,7 @@ A streaming-style trailer browser and discovery platform built with modern web t
 | Frontend          | Backend                              | Database           | APIs             | Styling             | State Management | Monitoring              | Testing     |
 | ----------------- | ------------------------------------ | ------------------ | ---------------- | ------------------- | ---------------- | ----------------------- | ----------- |
 | ▲ **Next.js 16**  | 🗄️ **Turso (libSQL)**                | 🌿 **Drizzle ORM** | 🎬 **TMDB**      | 🎨 **Tailwind CSS** | 🐻 **Zustand**   | 🛡️ **Sentry**           | 🧪 **Jest** |
-| **TS TypeScript** | 🔐 **Auth.js (GitHub + magic link)** | 📧 **Brevo**       | 🤖 **Gemini AI** | 🎭 **Material-UI**  |                  | 📊 **GA4**              | 🧪 **RTL**  |
+| **TS TypeScript** | 🔐 **Auth.js (GitHub + magic link)** | 📧 **CF Email**    | 🤖 **Gemini AI** | 🎭 **Material-UI**  |                  | 📊 **GA4**              | 🧪 **RTL**  |
 | ⚛️ **React 19**   |                                      |                    |                  | 🦸 **Heroicons**    |                  | 📈 **Vercel Analytics** |             |
 
 </div>
@@ -24,7 +24,7 @@ A streaming-style trailer browser and discovery platform built with modern web t
 
 - **Auth.js (NextAuth v5) Authentication**
     - GitHub OAuth sign-in
-    - Passwordless email magic-link sign-in (delivered via Brevo by default, or Resend)
+    - Passwordless email magic-link sign-in (delivered through Cloudflare Email Service)
     - Database sessions with secure, cookie-based session management
     - Guest mode for demo access (no registration required)
     - Seamless user switching between authenticated and guest accounts
@@ -205,7 +205,7 @@ A streaming-style trailer browser and discovery platform built with modern web t
     - Mark as read (individual or bulk)
     - Auto-dismiss after 30 days
     - Click actions (navigate to content/collection)
-    - Future: Email digests via the configured email provider (Brevo/Resend)
+    - Future: Email digests through Cloudflare Email Service
 
 ### 👤 User Experience
 
@@ -247,7 +247,7 @@ A streaming-style trailer browser and discovery platform built with modern web t
     - `/admin/activity` - Activity analytics with login and page view tracking
     - `/admin/trending-stats` - Trending notification statistics
 
-- **Email System** (Brevo / Resend Integration)
+- **Email System** (Cloudflare Email Service, behind one capped email gate)
     - **Announcement Emails** - Send plain text announcements with subject and message
     - **Custom HTML Emails** - Rich text editor with TipTap for formatted content
     - **User Filtering** - Send to all users, authenticated only, or guest users only
@@ -316,7 +316,7 @@ _Experience all features or continue as guest to explore the platform_
 - npm (project migrated from pnpm to npm)
 - Turso database (free tier available)
 - GitHub OAuth App (for sign-in)
-- Brevo account (free tier) for magic-link email delivery
+- Nothing for email: it goes through the Worker's Cloudflare Email Service binding (no key)
 - TMDB API key (free from themoviedb.org)
 - Google Gemini API key (free from ai.google.dev)
 
@@ -370,16 +370,8 @@ _Experience all features or continue as guest to explore the platform_
     # IMPORTANT: This is intentionally NOT prefixed with NEXT_PUBLIC_ to keep it server-side only.
     ADMIN_GITHUB_LOGIN=your_github_username
 
-    # Magic-Link Email (Required for passwordless email sign-in)
-    # Brevo is the default provider - get an API key at https://app.brevo.com/
-    BREVO_API_KEY=your_brevo_api_key
-    # The "From" address - must be a sender you've verified in Brevo (no domain required)
-    EMAIL_FROM=noreply@yourdomain.com
-    # Optional: switch the email provider. Default is brevo; set to `resend` to use Resend.
-    EMAIL_PROVIDER=brevo
-    # Resend (only needed if EMAIL_PROVIDER=resend) - https://resend.com/
-    RESEND_API_KEY=your_resend_api_key
-    # RESEND_SENDER_EMAIL=noreply@yourdomain.com  # alternate "From" if EMAIL_FROM unset
+    # Email needs no key: the Worker sends through its Cloudflare Email Service
+    # binding (wrangler.jsonc). Locally there is no binding and nothing is sent.
 
     # Cron Job Security (Required for auto-updating collections)
     CRON_SECRET=your_random_secret_string
@@ -425,10 +417,8 @@ _Experience all features or continue as guest to explore the platform_
       (add your production URL's callback as well)
     - Copy the Client ID and Client Secret into `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET`
 
-    c. **Set up magic-link email** (Brevo by default):
-    - Create a Brevo account, generate an API key → `BREVO_API_KEY`
-    - Verify a single sender email and set it as `EMAIL_FROM` (no domain required)
-    - To use Resend instead, set `EMAIL_PROVIDER=resend` and provide `RESEND_API_KEY`
+    c. **Email:** nothing to set up locally. The deployed Worker sends every email
+    through Cloudflare Email Service from `nettrailers@n8builds.dev` (DEPLOYMENT.md).
 
     > There is no Firebase project, Firestore rules deploy, or Firebase Admin SDK
     > service account to configure - all data access is server-mediated through
@@ -1014,7 +1004,7 @@ NetTrailers implements comprehensive security measures. See the full [Security D
 - [ ] Set all required environment variables
 - [ ] Create the Turso database and apply migrations (`npm run db:migrate`)
 - [ ] Configure the GitHub OAuth App callback URL for production
-- [ ] Set up the magic-link email provider (Brevo `BREVO_API_KEY` + verified `EMAIL_FROM`, or Resend)
+- [ ] Email: the `send_email` binding in `wrangler.jsonc` (domain onboarded for Cloudflare Email Service)
 - [ ] Set `ADMIN_GITHUB_LOGIN` for admin access
 - [ ] Create a Vercel Blob store and set `BLOB_READ_WRITE_TOKEN` (for image uploads)
 - [ ] Enable Sentry error monitoring
@@ -1049,7 +1039,7 @@ NetTrailers implements comprehensive security measures. See the full [Security D
 
 From roadmap and TODO.md:
 
-- [ ] User-facing email digests (admin email system already shipped via Brevo/Resend)
+- [ ] User-facing email digests (admin email system already shipped via Cloudflare Email Service)
 - [ ] PWA implementation (offline support)
 - [ ] Analytics dashboard (user-facing)
 - [ ] Advanced search facets and sorting

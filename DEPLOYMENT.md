@@ -43,23 +43,30 @@ Set it to `"true"` in `wrangler.jsonc` in the same change that turns off the Ver
 Plain values live in `wrangler.jsonc` (`vars`).
 Secrets are set with `npx wrangler secret put <NAME>` (it reads the value from stdin) and listed with `npx wrangler secret list`:
 
-| Secret                                                                           | Used for                                                                                 |
-| -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`                                         | the database (`turso db show net-trailers --url`, `turso db tokens create net-trailers`) |
-| `AUTH_SECRET`                                                                    | Auth.js                                                                                  |
-| `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`                                           | GitHub sign-in (the OAuth App's callback must be `<app-url>/api/auth/callback/github`)   |
-| `ADMIN_GITHUB_LOGIN`                                                             | the admin's GitHub login                                                                 |
-| `BREVO_API_KEY`, `EMAIL_FROM` (or `EMAIL_PROVIDER=resend` with `RESEND_API_KEY`) | magic-link and notification email                                                        |
-| `TMDB_API_KEY`                                                                   | every movie and TV page                                                                  |
-| `GEMINI_API_KEY`                                                                 | smart search and the other AI features                                                   |
-| `CRON_SECRET`                                                                    | the Cron Triggers                                                                        |
-| `TURNSTILE_SECRET_KEY`                                                           | the Turnstile check on the email sign-in form (`lib/turnstile.ts`)                       |
+| Secret                                   | Used for                                                                                 |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` | the database (`turso db show net-trailers --url`, `turso db tokens create net-trailers`) |
+| `AUTH_SECRET`                            | Auth.js                                                                                  |
+| `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`   | GitHub sign-in (the OAuth App's callback must be `<app-url>/api/auth/callback/github`)   |
+| `ADMIN_GITHUB_LOGIN`                     | the admin's GitHub login                                                                 |
+| `TMDB_API_KEY`                           | every movie and TV page                                                                  |
+| `GEMINI_API_KEY`                         | smart search and the other AI features                                                   |
+| `CRON_SECRET`                            | the Cron Triggers                                                                        |
+| `TURNSTILE_SECRET_KEY`                   | the Turnstile check on the email sign-in form (`lib/turnstile.ts`)                       |
 
 Build-time values (inlined into the pages, all public) are set in the deploy workflow: `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_GA_MEASUREMENT_ID`, `NEXT_PUBLIC_SENTRY_DSN`, and `NEXT_PUBLIC_CF_WEB_ANALYTICS_TOKEN` from a repository variable.
 For a deploy by hand, export the same values in the shell first.
 Never put a `.env` file in the project when building: OpenNext would bundle it into the Worker.
 
 After changing bindings in `wrangler.jsonc`, run `npm run cf-typegen` (CI checks it).
+
+## Email
+
+Every email (sign-in links, digests, forum replies, admin email) goes through Cloudflare Email Service: the `send_email` binding `EMAIL` in `wrangler.jsonc`, from `nettrailers@n8builds.dev` (the `EMAIL_FROM` var).
+`n8builds.dev` is onboarded for sending (`npx wrangler email sending list`), so there is no API key, and the binding may send from that one address only.
+Before anything is sent, the email gate (`lib/email/gate.ts`) spends one unit from the site-wide caps (200 a day, 2,000 a month) and any per-caller limits (sign-in links: 5 a day per address, 20 per IP), kept in Turso.
+Cloudflare includes 3,000 emails a month across the whole account, then charges $0.35 per 1,000; the site cap keeps this app inside that on its own.
+Off Workers (`next dev`, `next start`, tests) there is no binding, so nothing is sent; the end-to-end tests write sign-in links to disk instead.
 
 ## Content Security Policy
 

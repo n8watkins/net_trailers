@@ -12,13 +12,11 @@ import path from 'path'
 
 import { sql } from 'drizzle-orm'
 
-const send = jest.fn(async (_message: Record<string, unknown>) => ({
-    data: { id: 'msg' },
-    error: null,
-}))
+const send = jest.fn(async (_message: Record<string, unknown>) => ({ messageId: 'msg' }))
 // Imports are hoisted above `send`, so the mock reads it lazily.
-jest.mock('../../lib/email/resend', () => ({
-    resend: { emails: { send: (message: Record<string, unknown>) => send(message) } },
+jest.mock('../../lib/email/cloudflare', () => ({
+    EMAIL_FROM: 'nettrailers@n8builds.dev',
+    emailBinding: () => ({ send: (message: Record<string, unknown>) => send(message) }),
 }))
 
 // createReply runs in a transaction, and libSQL gives a transaction its own
