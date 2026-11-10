@@ -221,7 +221,7 @@ function Banner({ trending, variant = 'default' }: Props) {
 
                 {/* AI mood search sits under the actions so it never covers the title.
                     Outside the fading block so typing is not interrupted by slide changes. */}
-                <div className="relative z-20 w-full max-w-2xl pt-5 md:pt-8">
+                <div id="mood-search" className="relative z-20 w-full max-w-2xl pt-5 md:pt-8">
                     <SmartSearchInput />
                 </div>
 

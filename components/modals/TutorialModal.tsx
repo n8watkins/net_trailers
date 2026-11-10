@@ -23,9 +23,16 @@ interface TutorialModalProps {
     isOpen: boolean
     onClose: () => void
     onStartTour?: () => void
+    /** Reopen the short first-visit welcome */
+    onOpenWelcome?: () => void
 }
 
-const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartTour }) => {
+const TutorialModal: React.FC<TutorialModalProps> = ({
+    isOpen,
+    onClose,
+    onStartTour,
+    onOpenWelcome,
+}) => {
     const router = useRouter()
     const pathname = usePathname()
     const { isGuest } = useAuthStatus()
@@ -96,6 +103,18 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose, onStartT
                     </div>
                     <p className="text-center text-gray-400 text-sm">
                         Your complete guide to discovering amazing content
+                        {onOpenWelcome && (
+                            <>
+                                {' · '}
+                                <button
+                                    type="button"
+                                    onClick={onOpenWelcome}
+                                    className="font-medium text-amber-400 underline-offset-2 hover:underline"
+                                >
+                                    Show the welcome
+                                </button>
+                            </>
+                        )}
                     </p>
                 </div>
 

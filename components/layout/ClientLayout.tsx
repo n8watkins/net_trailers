@@ -1,10 +1,12 @@
 'use client'
 
-import React, { useState, useRef, useCallback, useMemo } from 'react'
+import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
 import { usePageViewTracking } from '../../hooks/useActivityTracking'
 import dynamic from 'next/dynamic'
 import Footer from './Footer'
+import { hasSeenWelcome, isWelcomeSuppressedPath, markWelcomeSeen } from '../../lib/welcome'
 import ScrollToTopButton from '../common/ScrollToTopButton'
 import CustomScrollbar from '../common/CustomScrollbar'
 import { useModalStore } from '../../stores/modalStore'
@@ -20,6 +22,7 @@ const KeyboardShortcutsModal = dynamic(() => import('../modals/KeyboardShortcuts
 const TutorialModal = dynamic(() => import('../modals/TutorialModal'), { ssr: false })
 const InteractiveTour = dynamic(() => import('../onboarding/InteractiveTour'), { ssr: false })
 const AboutModal = dynamic(() => import('../modals/AboutModal'), { ssr: false })
+const WelcomeModal = dynamic(() => import('../modals/WelcomeModal'), { ssr: false })
 
 interface ClientLayoutProps {
     children: React.ReactNode
@@ -29,7 +32,7 @@ interface ClientLayoutProps {
  * ClientLayout provides the shell around all pages in the App Router.
  * It manages:
  * - Footer
- * - Global modals (About, Tutorial, Keyboard Shortcuts), opened only on request
+ * - Global modals (About, Tutorial, Keyboard Shortcuts, first-visit Welcome), loaded only when opened
  * - Scroll to top button
  * - Global keyboard shortcuts
  * - Onboarding persistence
@@ -41,6 +44,9 @@ function ClientLayout({ children }: ClientLayoutProps) {
     const [showAboutModal, setShowAboutModal] = useState(false)
     const [showTutorial, setShowTutorial] = useState(false)
     const [isTourActive, setIsTourActive] = useState(false)
+    const [showWelcome, setShowWelcome] = useState(false)
+    const pathname = usePathname()
+    const router = useRouter()
     const { modal } = useModalStore()
     const isModalOpen = modal.isOpen
     const searchInputRef = useRef<HTMLInputElement>(null)
@@ -69,6 +75,47 @@ function ClientLayout({ children }: ClientLayoutProps) {
     const handleCloseTutorial = useCallback(() => {
         setShowTutorial(false)
     }, [])
+
+    // First visit: show the welcome once (not over sign-in links, legal pages or deep links)
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        if (isWelcomeSuppressedPath(window.location.pathname)) return
+        if (new URLSearchParams(window.location.search).has('modal')) return
+        if (!hasSeenWelcome(window.localStorage)) setShowWelcome(true)
+    }, [])
+
+    const handleCloseWelcome = useCallback(() => {
+        markWelcomeSeen(typeof window === 'undefined' ? null : window.localStorage)
+        setShowWelcome(false)
+    }, [])
+
+    const handleOpenWelcome = useCallback(() => {
+        setShowAboutModal(false)
+        setShowTutorial(false)
+        setShowWelcome(true)
+    }, [])
+
+    const handleWelcomeTryMood = useCallback(() => {
+        handleCloseWelcome()
+        if (pathname !== '/') router.push('/')
+        // The mood box renders with the home hero; focus it once it is there
+        let tries = 0
+        const focusMoodBox = () => {
+            const box = document.querySelector<HTMLTextAreaElement>('#mood-search textarea')
+            if (box) {
+                box.scrollIntoView({ block: 'center', behavior: 'smooth' })
+                box.focus({ preventScroll: true })
+            } else if (tries++ < 40) {
+                setTimeout(focusMoodBox, 100)
+            }
+        }
+        focusMoodBox()
+    }, [handleCloseWelcome, pathname, router])
+
+    const handleWelcomeOpenAbout = useCallback(() => {
+        handleCloseWelcome()
+        setShowAboutModal(true)
+    }, [handleCloseWelcome])
 
     const handleStartTour = useCallback(() => {
         setCurrentTourStep(0) // Reset to first step
@@ -134,8 +181,9 @@ function ClientLayout({ children }: ClientLayoutProps) {
             onOpenAboutModal: handleOpenAboutModal,
             onOpenTutorial: handleOpenTutorial,
             onOpenKeyboardShortcuts: handleOpenShortcuts,
+            onOpenWelcome: handleOpenWelcome,
         }),
-        [handleOpenAboutModal, handleOpenTutorial, handleOpenShortcuts]
+        [handleOpenAboutModal, handleOpenTutorial, handleOpenShortcuts, handleOpenWelcome]
     )
 
     return (
@@ -149,6 +197,7 @@ function ClientLayout({ children }: ClientLayoutProps) {
                 onCloseAboutModal={handleCloseAboutModal}
                 onOpenKeyboardShortcuts={handleOpenShortcuts}
                 onOpenTutorial={handleOpenTutorial}
+                onOpenWelcome={handleOpenWelcome}
             />
             {showAboutModal && (
                 <AboutModal
@@ -163,6 +212,15 @@ function ClientLayout({ children }: ClientLayoutProps) {
                     isOpen={showTutorial}
                     onClose={handleCloseTutorial}
                     onStartTour={handleStartTour}
+                    onOpenWelcome={handleOpenWelcome}
+                />
+            )}
+            {showWelcome && (
+                <WelcomeModal
+                    isOpen={showWelcome}
+                    onClose={handleCloseWelcome}
+                    onTryMood={handleWelcomeTryMood}
+                    onOpenAbout={handleWelcomeOpenAbout}
                 />
             )}
             {showKeyboardShortcuts && (
