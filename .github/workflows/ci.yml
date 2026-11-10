@@ -1,52 +1,92 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
-  pull_request:
+    push:
+        branches: [main]
+    pull_request:
 
 permissions:
-  contents: read
+    contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+    group: ci-${{ github.ref }}
+    cancel-in-progress: true
 
 jobs:
-  check:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    env:
-      NEXT_TELEMETRY_DISABLED: 1
-      HUSKY: 0
-    steps:
-      - uses: actions/checkout@v4
+    check:
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        env:
+            NEXT_TELEMETRY_DISABLED: 1
+            HUSKY: 0
+        steps:
+            - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: npm
 
-      - name: Install
-        run: npm ci
+            - name: Install
+              run: npm ci
 
-      - name: Lint
-        run: npm run lint
+            - name: Lint
+              run: npm run lint
 
-      - name: Typecheck
-        run: npm run type-check
+            - name: Typecheck
+              run: npm run type-check
 
-      - name: Test
-        run: npm test
+            - name: Test
+              run: npm test
 
-      # cloudflare-env.d.ts and worker/runtime.d.ts must match wrangler.jsonc.
-      - name: Cloudflare types
-        run: npm run check:cf-types
+            # cloudflare-env.d.ts and worker/runtime.d.ts must match wrangler.jsonc.
+            - name: Cloudflare types
+              run: npm run check:cf-types
 
-      # next build, turned into the Worker bundle by OpenNext, then a dry-run
-      # deploy, so a change that breaks the Cloudflare build fails here.
-      - name: Build
-        run: npm run build:worker
+            # next build, turned into the Worker bundle by OpenNext, then a dry-run
+            # deploy, so a change that breaks the Cloudflare build fails here.
+            - name: Build
+              run: npm run build:worker
 
-      - name: Deploy dry run
-        run: npm run check:deploy
+            - name: Deploy dry run
+              run: npm run check:deploy
+
+    # Signed-in flows in a real browser: email magic-link sign-in (test-mode
+    # provider), My List, like/hide, ratings, collections, history, settings and
+    # sign-out. Uses a local libSQL file database and recorded TMDB fixtures, so
+    # it needs no secrets.
+    e2e:
+        runs-on: ubuntu-latest
+        timeout-minutes: 25
+        env:
+            NEXT_TELEMETRY_DISABLED: 1
+            HUSKY: 0
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: npm
+
+            - name: Install
+              run: npm ci
+
+            - name: Install Chromium
+              run: npx playwright install --with-deps chromium
+
+            - name: Build
+              run: npx next build
+
+            - name: End-to-end tests
+              run: npm run test:e2e
+
+            - name: Upload report
+              if: failure()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: playwright-report
+                  path: |
+                      playwright-report/
+                      test-results/
+                  retention-days: 7

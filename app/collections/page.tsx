@@ -12,13 +12,14 @@ import {
     PencilSquareIcon,
     Squares2X2Icon,
     PlusIcon,
+    FilmIcon,
 } from '@heroicons/react/24/solid'
 import PageLoader from '../../components/common/PageLoader'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import CollectionBrowseCard from '../../components/collections/CollectionBrowseCard'
 import { useModalStore } from '../../stores/modalStore'
 
-type FilterValue = 'all' | 'manual' | 'ai'
+type FilterValue = 'all' | 'manual' | 'ai' | 'genre'
 
 const Collections = () => {
     const userData = useUserData()
@@ -44,6 +45,8 @@ const Collections = () => {
             filtered = filtered.filter((list) => list.collectionType === 'manual')
         } else if (collectionFilter === 'ai') {
             filtered = filtered.filter((list) => list.collectionType === 'ai-generated')
+        } else if (collectionFilter === 'genre') {
+            filtered = filtered.filter((list) => list.collectionType === 'tmdb-genre')
         }
 
         // Apply search filter
@@ -70,6 +73,9 @@ const Collections = () => {
             total: allLists.length,
             manual: allLists.filter((list) => list.collectionType === 'manual').length,
             ai: allLists.filter((list) => list.collectionType === 'ai-generated').length,
+            // Genre rows (Action-Packed, Comedy...) fill themselves from TMDB; counting
+            // them makes All = Manual + AI + Genre
+            genre: allLists.filter((list) => list.collectionType === 'tmdb-genre').length,
         }
     }, [allLists])
 
@@ -126,6 +132,15 @@ const Collections = () => {
                                             </>
                                         ),
                                     },
+                                    {
+                                        value: 'genre',
+                                        label: (
+                                            <>
+                                                <FilmIcon className="h-4 w-4" />
+                                                Genre ({collectionStats.genre})
+                                            </>
+                                        ),
+                                    },
                                 ]}
                             />
                             <ListSearchInput
@@ -165,7 +180,7 @@ const Collections = () => {
                     <p className="py-12 text-center text-gray-400">
                         {searchQuery
                             ? 'No collections match your search.'
-                            : `No ${collectionFilter === 'ai' ? 'AI-generated' : 'manual'} collections yet.`}
+                            : `No ${collectionFilter === 'ai' ? 'AI-generated' : collectionFilter === 'genre' ? 'genre' : 'manual'} collections yet.`}
                     </p>
                 )}
 

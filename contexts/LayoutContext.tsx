@@ -6,6 +6,7 @@ interface LayoutContextType {
     onOpenAboutModal?: () => void
     onOpenTutorial?: () => void
     onOpenKeyboardShortcuts?: () => void
+    onOpenWelcome?: () => void
 }
 
 const LayoutContext = createContext<LayoutContextType>({})

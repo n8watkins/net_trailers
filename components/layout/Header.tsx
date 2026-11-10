@@ -109,6 +109,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
     const handleOpenTutorial = onOpenTutorial || layoutContext.onOpenTutorial
     const handleOpenKeyboardShortcuts =
         onOpenKeyboardShortcuts || layoutContext.onOpenKeyboardShortcuts
+    const handleOpenWelcome = layoutContext.onOpenWelcome
     const [isScrolled, setIsScrolled] = useState(false)
     const [showSearch, setShowSearch] = useState(false)
     const [showMobileMenu, setShowMobileMenu] = useState(false)
@@ -565,6 +566,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                             onOpenAboutModal={handleOpenAboutModal}
                             onOpenTutorial={handleOpenTutorial}
                             onOpenKeyboardShortcuts={handleOpenKeyboardShortcuts}
+                            onOpenWelcome={handleOpenWelcome}
                         />
                     </div>
                 </div>

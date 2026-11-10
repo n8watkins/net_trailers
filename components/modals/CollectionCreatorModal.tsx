@@ -138,7 +138,7 @@ export default function CollectionCreatorModal() {
         removeFromCollectionCreator,
     } = useModalStore()
     const getUserId = useSessionStore((state) => state.getUserId)
-    const { createList, addToList } = useUserData()
+    const { createList } = useUserData()
     const { showSuccess, showError } = useToast()
     const {
         query,
@@ -426,15 +426,12 @@ export default function CollectionCreatorModal() {
                 advancedFilters: {
                     contentIds: collectionCreatorModal.content.map((item) => item.id),
                 },
+                // Saved with the collection in one write, not one save per title
+                items: collectionCreatorModal.content,
             })
 
             // Handle both sync and async returns
             const listId = typeof newListResult === 'string' ? newListResult : await newListResult
-
-            // Add all content items to the list and wait for completion
-            await Promise.all(
-                collectionCreatorModal.content.map((contentItem) => addToList(listId, contentItem))
-            )
 
             showSuccess(
                 'Collection saved!',
