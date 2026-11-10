@@ -20,6 +20,17 @@ export default defineConfig({
     reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
     use: {
         baseURL,
+        // The first-visit welcome pop-up (lib/welcome.ts) is marked seen so it
+        // does not cover the pages under test
+        storageState: {
+            cookies: [],
+            origins: [
+                {
+                    origin: baseURL,
+                    localStorage: [{ name: 'nettrailers-welcome-seen-v1', value: 'e2e' }],
+                },
+            ],
+        },
         trace: 'retain-on-failure',
         screenshot: 'only-on-failure',
     },
