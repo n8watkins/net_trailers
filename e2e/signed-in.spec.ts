@@ -100,7 +100,7 @@ test('likes a title, and the like shows in My Ratings', async () => {
 
     await page.goto('/ratings')
     await expect(page.getByText(heroTitle).first()).toBeVisible()
-    await expect(page.getByRole('button', { name: /Liked \(1\)/ })).toBeVisible()
+    await expect(page.getByRole('radio', { name: /Liked \(1\)/ })).toBeVisible()
 })
 
 test('hides a title and shows it again', async () => {
@@ -124,7 +124,7 @@ test('hiding a liked title keeps the like', async () => {
     await page.waitForLoadState('networkidle')
 
     await page.reload()
-    await expect(page.getByRole('button', { name: /Liked \(1\)/ })).toBeVisible()
+    await expect(page.getByRole('radio', { name: /Liked \(1\)/ })).toBeVisible()
     await expect(page.getByText(heroTitle).first()).toBeVisible()
 })
 
