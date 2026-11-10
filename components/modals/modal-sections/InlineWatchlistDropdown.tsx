@@ -47,7 +47,7 @@ function InlineWatchlistDropdown({
     const allLists = React.useMemo(() => {
         const watchlistVirtual = {
             id: 'default-watchlist',
-            name: 'Watchlist',
+            name: 'Watch Later',
             items: defaultWatchlist,
             emoji: '📺',
             color: '#F59E0B',
@@ -83,7 +83,7 @@ function InlineWatchlistDropdown({
                             return <HandThumbUpIcon className="w-5 h-5 text-green-400" />
                         } else if (list.name === 'Not For Me') {
                             return <HandThumbDownIcon className="w-5 h-5 text-amber-300" />
-                        } else if (list.name === 'Watchlist') {
+                        } else if (list.id === 'default-watchlist') {
                             return <EyeIcon className="w-5 h-5 text-blue-400" />
                         }
                         return <EyeIcon className="w-5 h-5 text-white" />

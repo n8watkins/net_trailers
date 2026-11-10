@@ -75,8 +75,8 @@ test('adds a title to My List and removes it', async () => {
         .getByRole('button', { name: 'Add to lists' })
         .first()
         .click()
-    // Signed-in users call the default list "Watchlist", guests "Watch Later"
-    const watchlist = page.getByRole('button', { name: /^(Watchlist|Watch Later)/ })
+    // The default list is called "Watch Later" for everyone
+    const watchlist = page.getByRole('button', { name: /^Watch Later/ })
     await watchlist.click()
     await expect(page.getByText(`Added ${heroTitle} to`).first()).toBeVisible()
 
@@ -113,6 +113,21 @@ test('hides a title and shows it again', async () => {
     await closeModal(page)
 })
 
+test('hiding a liked title keeps the like', async () => {
+    // heroTitle was liked above; hiding it must not remove the like
+    await page.goto('/ratings')
+    await page.getByText(heroTitle).first().click()
+    const modal = page.locator('.MuiModal-root')
+    await modal.getByRole('button', { name: 'Hide from recommendations' }).click()
+    await expect(page.getByText(`${heroTitle} Hidden`)).toBeVisible()
+    await closeModal(page)
+    await page.waitForLoadState('networkidle')
+
+    await page.reload()
+    await expect(page.getByRole('button', { name: /Liked \(1\)/ })).toBeVisible()
+    await expect(page.getByText(heroTitle).first()).toBeVisible()
+})
+
 test('creates a collection and adds a title to it', async () => {
     heroTitle = await openHeroTitle(page)
     const modal = page.locator('.MuiModal-root')
@@ -129,25 +144,23 @@ test('creates a collection and adds a title to it', async () => {
     await page.getByRole('button', { name: /^Create Collection$/ }).click()
     await expect(page.getByRole('heading', { name: 'E2E Favorites' })).toBeHidden()
 
-    // The creator saves its titles one by one; let that finish, then add a title
-    // from a fresh page load
-    await page.waitForLoadState('networkidle')
-    heroTitle = await openHeroTitle(page)
-    await page
-        .locator('.MuiModal-root')
-        .getByRole('button', { name: 'Add to lists' })
-        .first()
-        .click()
-    await page
-        .locator('.MuiModal-root')
-        .getByRole('button', { name: /E2E Favorites/ })
-        .click()
+    // Change the new collection straight away, with no reload. It starts with this
+    // title, so take it out and put it back. The collection used to lose such edits
+    // when its ~14 per-title saves landed after them; it now saves in one write.
+    const titleModal = page.locator('.MuiModal-root')
+    await titleModal.getByRole('button', { name: 'Add to lists' }).first().click()
+    const favorites = titleModal.getByRole('button', { name: /E2E Favorites/ })
+    await favorites.click()
+    await expect(page.getByText(`Removed ${heroTitle} from "E2E Favorites"`)).toBeVisible()
+    await favorites.click()
     await expect(page.getByText(`Added ${heroTitle} to "E2E Favorites"`)).toBeVisible()
     await closeModal(page)
     await page.waitForLoadState('networkidle')
 
+    // A fresh load reads the saved collection back from the server
     await page.goto('/collections')
-    await expect(page.getByText('E2E Favorites').first()).toBeVisible()
+    await page.getByText('E2E Favorites').first().click()
+    await expect(page.getByText(heroTitle).first()).toBeVisible()
 })
 
 test('records watch history', async () => {

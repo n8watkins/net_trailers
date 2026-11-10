@@ -35,7 +35,7 @@ function CollectionBuilderModal() {
     const getUserId = useSessionStore((state: any) => state.getUserId)
     const sessionType = useSessionStore((state: any) => state.sessionType)
     const { showSuccess, showError } = useToast()
-    const { createList, addToList } = useUserData()
+    const { createList } = useUserData()
 
     const [mode, setMode] = useState<CreationMode>('smart')
     const [mouseDownOnBackdrop, setMouseDownOnBackdrop] = useState(false)
@@ -102,17 +102,12 @@ function CollectionBuilderModal() {
                 mediaType: derivedMediaType,
                 advancedFilters: formData.advancedFilters,
                 canGenerateMore: infiniteEnabled,
+                // Saved with the collection in one write, not one save per title
+                items: formData.previewContent ?? [],
             })
 
             // Handle both sync and async returns
             const listId = typeof newListResult === 'string' ? newListResult : await newListResult
-
-            // Add preview content to the collection if it exists
-            if (formData.previewContent && formData.previewContent.length > 0) {
-                await Promise.all(
-                    formData.previewContent.map((content) => addToList(listId, content))
-                )
-            }
 
             const itemCount = formData.previewContent?.length || 0
             showSuccess(
