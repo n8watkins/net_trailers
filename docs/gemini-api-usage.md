@@ -1,14 +1,14 @@
 # Gemini API Usage Documentation
 
 **Last Updated**: 2025-01-18
-**Model**: `gemini-3.1-flash-lite` (only — no fallbacks)
+**Model**: `gemini-3.5-flash-lite`, with `gemini-3.1-flash-lite` as the backup when the first is rate limited, overloaded or unreachable
 **Total Endpoints**: 6
 
 ---
 
 ## Overview
 
-NetTrailers uses Google Gemini AI across 6 API endpoints to power intelligent content discovery, creative naming, and semantic search. All endpoints use **Gemini 3.1 Flash Lite** (only — no fallbacks) for fast, cost-effective responses.
+NetTrailers uses Google Gemini AI across 6 API endpoints to power intelligent content discovery, creative naming, and semantic search. All endpoints use **Gemini 3.5 Flash-Lite**, with Gemini 3.1 Flash-Lite as the backup, for fast, cost-effective responses.
 
 ### Rate Limiting
 

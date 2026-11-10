@@ -1,20 +1,18 @@
 /**
  * Gemini Model Router
  *
- * Standardized on a single model: gemini-3.1-flash-lite. There are no fallback
- * models. The retry/backoff logic remains so rate-limit errors are retried
- * against the same model. Tracks timing and metadata for each attempt.
- *
- * Model: gemini-3.1-flash-lite (only - no fallbacks)
+ * gemini-3.5-flash-lite first, with gemini-3.1-flash-lite as the backup. The
+ * backup is tried when the first model is rate limited, overloaded (5xx) or
+ * unreachable; a rejected key or a bad request is never retried on another
+ * model. Tracks timing and metadata for each attempt.
  */
 
 import { apiLog, apiWarn, apiError } from '@/utils/debugLogger'
 
-// Standardized on a single model - no fallbacks.
-const DEFAULT_MODEL_PRIORITY = ['gemini-3.1-flash-lite'] as const
+const DEFAULT_MODEL_PRIORITY = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'] as const
 
-// Kept as a separate export for endpoints that import it; same single model.
-const FLASH_LITE_PRIORITY = ['gemini-3.1-flash-lite'] as const
+// Kept as a separate export for endpoints that import it; same order.
+const FLASH_LITE_PRIORITY = DEFAULT_MODEL_PRIORITY
 
 type GeminiModel = (typeof DEFAULT_MODEL_PRIORITY)[number]
 
@@ -67,12 +65,14 @@ async function callGeminiModel(
     config: GeminiRequestConfig,
     apiKey: string
 ): Promise<{ success: boolean; data?: any; status: number; errorData?: any }> {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
+    // The key goes in a header, not the URL: newer AI Studio keys (AQ.) are
+    // accepted there, and a key in a URL can end up in logs.
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
 
     try {
         const response = await fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
             body: JSON.stringify(config),
         })
 
@@ -153,9 +153,12 @@ async function tryModels(
             errorMessage: result.errorData?.error?.message || `HTTP ${result.status}`,
         })
 
-        if (wasRateLimited) {
+        // Overloaded or unreachable: the backup model may still answer.
+        const unavailable = result.status === 0 || result.status >= 500
+
+        if (wasRateLimited || unavailable) {
             apiWarn(
-                `[Gemini Router] ✗ Rate limit hit on ${model} (${durationMs}ms) - falling back to next model`
+                `[Gemini Router] ✗ ${wasRateLimited ? 'Rate limit' : `HTTP ${result.status}`} on ${model} (${durationMs}ms) - falling back to next model`
             )
             // Continue to next model
         } else {
