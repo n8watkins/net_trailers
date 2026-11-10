@@ -1002,7 +1002,7 @@ const AboutModal: React.FC<AboutModalProps> = ({
                             <p className="text-sm text-gray-400 leading-relaxed mb-3">
                                 Check out my{' '}
                                 <a
-                                    href="https://n8sportfolio.vercel.app/"
+                                    href="https://portfolio.n8builds.dev/"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-400/20 hover:bg-amber-400/30 rounded-full text-xs font-medium text-amber-200 hover:text-amber-100 border border-amber-400/40 hover:border-amber-300 transition-all"

@@ -1,7 +1,9 @@
 # Deploying NetTrailers
 
 NetTrailers runs on Cloudflare Workers as the `net-trailers` Worker in the owner's Cloudflare account, built by the OpenNext adapter (`@opennextjs/cloudflare`).
-Until a custom domain is attached, it is served at https://net-trailers.nathancwatkins23.workers.dev, and https://net-trailers.vercel.app keeps serving the Vercel deployment.
+It is served at https://nettrailers.n8builds.dev, a Workers custom domain (`routes` in `wrangler.jsonc`; Cloudflare manages its DNS record and certificate).
+The workers.dev address, https://net-trailers.nathancwatkins23.workers.dev, forwards there with a 308 that keeps the path and query (`worker/canonical.ts`), so sign-in cookies, magic links and the GitHub callback all live on one address.
+https://net-trailers.vercel.app still serves an old Vercel deployment until the owner turns it into a redirect ("Moving off Vercel" below).
 
 ## How it fits together
 
@@ -40,19 +42,18 @@ Set it to `"true"` in `wrangler.jsonc` in the same change that turns off the Ver
 
 ## Configuration
 
-Plain values live in `wrangler.jsonc` (`vars`).
+Plain values live in `wrangler.jsonc` (`vars`): `APP_ENV`, `CRONS_ENABLED`, `PUBLIC_URL`, `ADMIN_GITHUB_LOGIN` (the admin's GitHub login, public) and `EMAIL_FROM`.
 Secrets are set with `npx wrangler secret put <NAME>` (it reads the value from stdin) and listed with `npx wrangler secret list`:
 
-| Secret                                   | Used for                                                                                 |
-| ---------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` | the database (`turso db show net-trailers --url`, `turso db tokens create net-trailers`) |
-| `AUTH_SECRET`                            | Auth.js                                                                                  |
-| `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`   | GitHub sign-in (the OAuth App's callback must be `<app-url>/api/auth/callback/github`)   |
-| `ADMIN_GITHUB_LOGIN`                     | the admin's GitHub login                                                                 |
-| `TMDB_API_KEY`                           | every movie and TV page                                                                  |
-| `GEMINI_API_KEY`                         | smart search and the other AI features                                                   |
-| `CRON_SECRET`                            | the Cron Triggers                                                                        |
-| `TURNSTILE_SECRET_KEY`                   | the Turnstile check on the email sign-in form (`lib/turnstile.ts`)                       |
+| Secret                                   | Used for                                                                                                                              |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` | the database (`turso db show net-trailers --url`, `turso db tokens create net-trailers`)                                              |
+| `AUTH_SECRET`                            | Auth.js                                                                                                                               |
+| `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`   | optional GitHub sign-in (callback `https://nettrailers.n8builds.dev/api/auth/callback/github`); without them only email sign-in shows |
+| `TMDB_API_KEY`                           | every movie and TV page                                                                                                               |
+| `GEMINI_API_KEY`                         | smart search and the other AI features                                                                                                |
+| `CRON_SECRET`                            | the Cron Triggers                                                                                                                     |
+| `TURNSTILE_SECRET_KEY`                   | the Turnstile check on the email sign-in form (`lib/turnstile.ts`)                                                                    |
 
 Build-time values (inlined into the pages, all public) are set in the deploy workflow: `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_GA_MEASUREMENT_ID`, `NEXT_PUBLIC_SENTRY_DSN`, and `NEXT_PUBLIC_CF_WEB_ANALYTICS_TOKEN` from a repository variable.
 For a deploy by hand, export the same values in the shell first.
@@ -118,11 +119,43 @@ Fix forward afterwards by reverting the commit and deploying again.
 
 ## Moving off Vercel
 
-1. Set the remaining secrets (the table above).
-2. Pick the domain (the planned `trailers.n8builds.dev`), add it as a Workers custom domain in `wrangler.jsonc`, and point the GitHub OAuth App's callback at it.
-3. Set `NEXT_PUBLIC_APP_URL` in the deploy workflow to the new address, and `CRONS_ENABLED` to `"true"`.
-4. Turn off the Vercel project (its crons stop with it), leaving a redirect from net-trailers.vercel.app if people use that address.
-5. Remove `vercel.json` afterwards; `__tests__/worker/crons.test.ts` compares against it, so move the schedules into the test then.
+Done on the Cloudflare side: the custom domain, `NEXT_PUBLIC_APP_URL` (email links, sitemap, metadata), the workers.dev forward, optional GitHub sign-in, email through Cloudflare, and the Cron Triggers (off until step 2).
+The Vercel project `net-trailers` stopped deploying on 2026-11-03, but its last production deployment still serves https://net-trailers.vercel.app and still runs the three crons against the same database.
+The ops decision is to keep Vercel projects as redirect-only (they hold the `*.vercel.app` name), not to delete them.
+Owner steps, in order:
+
+1. **Turn the Vercel project into a redirect.**
+   In an empty folder, save this as `vercel.json`:
+    ```json
+    {
+        "$schema": "https://openapi.vercel.sh/vercel.json",
+        "framework": null,
+        "buildCommand": "",
+        "installCommand": "",
+        "redirects": [
+            {
+                "source": "/:path(.*)",
+                "destination": "https://nettrailers.n8builds.dev/:path",
+                "permanent": true
+            }
+        ]
+    }
+    ```
+    Then run `vercel link --yes --project net-trailers` and `vercel deploy --prod --yes` there.
+    Check with `curl -sI https://net-trailers.vercel.app/search?q=x`: a 308 to `https://nettrailers.n8builds.dev/search?q=x`.
+    The new deployment has no crons, so Vercel's crons stop with it.
+    In the Vercel project settings, disconnect the Git repository so a push never redeploys the app there.
+2. **Turn on the Worker's crons:** merge the waiting pull request that sets `CRONS_ENABLED` to `"true"` and removes `vercel.json` (an agent can do it once step 1 is done).
+   Never before step 1: Vercel's and the Worker's social digests would both email people.
+3. **Rotate the Turso token**, which also cuts off the old Vercel deployment:
+    ```
+    turso db tokens invalidate net-trailers
+    turso db tokens create net-trailers | npx wrangler secret put TURSO_AUTH_TOKEN --name net-trailers
+    ```
+    The site errors for the seconds between the two commands.
+4. **GitHub sign-in (optional):** in the GitHub OAuth App, set the callback to `https://nettrailers.n8builds.dev/api/auth/callback/github`, make a new client secret, then `npx wrangler secret put AUTH_GITHUB_ID --name net-trailers` and `AUTH_GITHUB_SECRET`.
+   The "Continue with GitHub" button appears once both are set; the admin dashboard needs it, because the admin is identified by GitHub login.
+5. **Delete leftover email secrets:** `npx wrangler secret delete RESEND_API_KEY --name net-trailers`, and remove Resend and Brevo variables from the Vercel project if it keeps any.
 
 ## Taking it down
 

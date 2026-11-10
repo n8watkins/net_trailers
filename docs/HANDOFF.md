@@ -9,10 +9,10 @@ Where older docs disagree with it, this section wins.
 
 NetTrailers is a Netflix-style movie and TV discovery app: TMDB browsing and trailers, Gemini-powered smart search, collections, rankings, polls and notifications.
 Stack: Next.js 16, React 19, Turso (libSQL) with Drizzle, Auth.js (GitHub and magic link), Sentry, Tailwind 4 plus MUI.
-Live at https://net-trailers.vercel.app (Vercel; every push to `main` deploys to production).
+Live at https://nettrailers.n8builds.dev (Cloudflare Worker; every push to `main` deploys). 2026-11-10: Turnstile on sign-in, a nonce-based CSP, no account cap, email through Cloudflare Email Service; the owner's remaining Vercel steps are in DEPLOYMENT.md, "Moving off Vercel".
 2026-11-03: the app also runs on Cloudflare Workers at https://net-trailers.nathancwatkins23.workers.dev (DEPLOYMENT.md), on the same Turso database; uploads are in R2, the crons are Cron Triggers (off until Vercel is turned off), and Cloudflare Web Analytics replaces Vercel Analytics.
 The owner's remaining steps for the move are in DEPLOYMENT.md, "Moving off Vercel".
-The planned address is `trailers.n8builds.dev`; that DNS step belongs to the owner and is not done.
+The address is `nettrailers.n8builds.dev` (a Workers custom domain); the workers.dev address forwards to it.
 Setup and features: `README.md`; architecture and conventions for agents: `CLAUDE.md`; deploy and env vars: `DEPLOYMENT.md`; AI endpoints: `docs/gemini-api-usage.md`.
 
 ### Status today
@@ -69,7 +69,7 @@ Setup and features: `README.md`; architecture and conventions for agents: `CLAUD
 - A new Gemini API key, set as `GEMINI_API_KEY` in the Vercel project env (Production and Preview) and in `.env.local`; never with a `NEXT_PUBLIC_` prefix.
 - Switching Vercel to Node 24 (project setting).
 - Turning off the GitHub Pages and Netlify integrations.
-- The `trailers.n8builds.dev` DNS record and Vercel domain.
+- Turning the Vercel project into a redirect (DEPLOYMENT.md, "Moving off Vercel").
 - Optionally, deciding whether to unify the GA4 property.
 
 ### Next steps in order
