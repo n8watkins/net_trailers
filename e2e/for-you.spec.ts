@@ -1,10 +1,16 @@
 import { test, expect, type Page } from '@playwright/test'
 
+import { stubExternalMedia } from './stub-media'
+
 /**
  * For you as a guest. Tests run without a Gemini key, so this covers the
  * honest fallback: TMDB picks labelled "Similar to ..." and a notice saying
  * why there are no AI reasons. The AI path is covered by __tests__/lib/forYou.test.ts.
  */
+
+test.beforeEach(async ({ page }) => {
+    await stubExternalMedia(page)
+})
 
 async function pickAndShow(page: Page) {
     await page.goto('/recommendations')

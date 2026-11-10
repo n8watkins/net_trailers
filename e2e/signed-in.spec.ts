@@ -3,6 +3,8 @@ import { join } from 'node:path'
 
 import { expect, test, type Page } from '@playwright/test'
 
+import { stubExternalMedia } from './stub-media'
+
 /**
  * Signed-in flows through the real email magic-link sign-in (test-mode
  * provider writes the link to .e2e/magic-links). One user, one page, in order.
@@ -49,6 +51,7 @@ let heroTitle = ''
 
 test.beforeAll(async ({ browser }) => {
     page = await browser.newPage()
+    await stubExternalMedia(page)
 })
 
 test.afterAll(async () => {
