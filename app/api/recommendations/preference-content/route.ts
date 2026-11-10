@@ -124,10 +124,20 @@ async function fetchContentWithCredits(
 export async function POST(request: NextRequest): Promise<NextResponse> {
     try {
         const body: RequestBody = await request.json()
-        const excludeIds = new Set(body.excludeIds || [])
-        const limit = Math.min(body.limit || 20, 50)
-        const includeCredits = body.includeCredits || false
-        const priorityContent = body.priorityContent || []
+        const excludeIds = new Set(Array.isArray(body.excludeIds) ? body.excludeIds : [])
+        const limit = Math.min(Math.max(Number(body.limit) || 20, 1), 50)
+        const includeCredits = body.includeCredits === true
+        // Only well-formed TMDB references: the id and media type go into the
+        // TMDB request path.
+        const priorityContent = (Array.isArray(body.priorityContent) ? body.priorityContent : [])
+            .filter(
+                (p) =>
+                    p &&
+                    Number.isSafeInteger(p.id) &&
+                    p.id > 0 &&
+                    (p.mediaType === 'movie' || p.mediaType === 'tv')
+            )
+            .slice(0, 50)
 
         // Process priority content first (watchlist items)
         let priorityResults: ContentWithCredits[] = []

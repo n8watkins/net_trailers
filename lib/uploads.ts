@@ -53,3 +53,38 @@ export function ownedUploadKey(url: string, userId: string): string | null {
 export function isUploadUrl(url: string): boolean {
     return url.startsWith(UPLOAD_PREFIX)
 }
+
+/**
+ * The site paths of this user's own uploads among `urls` (at most `max`),
+ * for images attached to posts. Anything else (other users' uploads, outside
+ * URLs that would load from a third party for every viewer) is dropped.
+ */
+export function ownUploads(urls: unknown, userId: string, max = 4): string[] {
+    if (!Array.isArray(urls)) return []
+    return urls
+        .filter((u): u is string => typeof u === 'string')
+        .map((u) => ownedUploadKey(u, userId))
+        .filter((key): key is string => key !== null)
+        .map((key) => `/${key}`)
+        .slice(0, max)
+}
+
+/** Outside hosts an avatar may come from (GitHub sign-in, generated defaults). */
+const AVATAR_HOSTS = new Set(['avatars.githubusercontent.com', 'api.dicebear.com'])
+
+/**
+ * The URL to store for a new avatar, or null when it is not allowed: one of
+ * the user's own uploads (stored as the site path) or an https URL on a known
+ * avatar host.
+ */
+export function allowedAvatarUrl(url: string, userId: string): string | null {
+    const own = ownedUploadKey(url, userId)
+    if (own) return `/${own}`
+    try {
+        const parsed = new URL(url)
+        if (parsed.protocol === 'https:' && AVATAR_HOSTS.has(parsed.hostname)) return parsed.href
+    } catch {
+        // Not an absolute URL.
+    }
+    return null
+}

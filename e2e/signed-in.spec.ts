@@ -39,6 +39,32 @@ async function openHeroTitle(page: Page): Promise<string> {
     return (await title.textContent())?.trim() ?? ''
 }
 
+/**
+ * Open the hero slide at `index` (1-based) by its thumbnail, so the title does
+ * not depend on where the 8-second auto-advance happens to be.
+ */
+async function openHeroSlide(page: Page, index: number): Promise<string> {
+    await page.goto('/')
+    await page.waitForLoadState('networkidle')
+    const thumb = page.getByRole('button', { name: new RegExp(`^Go to slide ${index}: `) })
+    const label = (await thumb.getAttribute('aria-label')) ?? ''
+    const slideTitle = label.replace(/^Go to slide \d+: /, '')
+    const title = page.locator('.MuiModal-root h3').first()
+    await expect(async () => {
+        if (await title.isVisible()) await page.keyboard.press('Escape')
+        await thumb.click()
+        await expect(page.locator('h1', { hasText: slideTitle }).first()).toBeVisible({
+            timeout: 3_000,
+        })
+        await page
+            .getByRole('button', { name: /More Info/i })
+            .first()
+            .click()
+        await expect(title).toHaveText(slideTitle, { timeout: 3_000 })
+    }).toPass({ timeout: 30_000 })
+    return slideTitle
+}
+
 async function closeModal(page: Page) {
     await page.keyboard.press('Escape')
     await expect(page.getByRole('button', { name: 'Close modal' })).toBeHidden()
@@ -132,13 +158,22 @@ test('hiding a liked title keeps the like', async () => {
 })
 
 test('creates a collection and adds a title to it', async () => {
-    heroTitle = await openHeroTitle(page)
+    // "More Like <title>  + New Collection" needs similar titles, which the
+    // recorded TMDB fixtures have for some hero titles only: take the first
+    // slide that has them, instead of whichever slide the carousel is on.
     const modal = page.locator('.MuiModal-root')
-    // "More Like <title>  + New Collection" starts a manual collection from those titles
-    await modal
-        .getByRole('button', { name: /New Collection/ })
-        .first()
-        .click()
+    const newCollection = modal.getByRole('button', { name: /New Collection/ }).first()
+    for (let slide = 1; slide <= 5; slide++) {
+        heroTitle = await openHeroSlide(page, slide)
+        const found = await newCollection.waitFor({ state: 'visible', timeout: 8_000 }).then(
+            () => true,
+            () => false
+        )
+        if (found) break
+        await closeModal(page)
+    }
+    // Starts a manual collection from those titles
+    await newCollection.click()
     // Rename it: click the title, type, press Enter
     await page.getByRole('heading', { name: `More Like ${heroTitle}`, level: 1 }).click()
     const name = page.getByPlaceholder('Collection name')

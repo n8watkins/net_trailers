@@ -24,14 +24,13 @@ import { apiError, apiLog } from '@/utils/debugLogger'
  * Safe from CSRF because it performs no state change.
  */
 export async function GET(request: NextRequest) {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    // Same site the link was opened on (not a configured URL that may point
+    // at an old host), and the token passed on encoded.
+    const page = new URL('/unsubscribe', request.nextUrl.origin)
     const token = request.nextUrl.searchParams.get('token')
-
-    if (!token) {
-        return NextResponse.redirect(`${appUrl}/unsubscribe?error=missing-token`)
-    }
-
-    return NextResponse.redirect(`${appUrl}/unsubscribe?token=${token}`)
+    if (token) page.searchParams.set('token', token)
+    else page.searchParams.set('error', 'missing-token')
+    return NextResponse.redirect(page)
 }
 
 /**
@@ -43,7 +42,7 @@ export async function POST(request: NextRequest) {
         const body = await request.json()
         const { token } = body
 
-        if (!token) {
+        if (typeof token !== 'string' || !token) {
             return NextResponse.json({ error: 'Missing unsubscribe token' }, { status: 400 })
         }
 
@@ -67,9 +66,13 @@ export async function POST(request: NextRequest) {
         const { userId, data: currentData } = match
         const now = Date.now()
 
-        // Merge unsubscribe flags into the existing prefs blob.
+        // Turn email off where every sender reads it (notifications.email: the
+        // digests, the trending email and forum replies all check it). The
+        // old notificationPreferences key is kept for history only.
+        const current = currentData as unknown as Record<string, any>
         const updatedData = {
-            ...(currentData as unknown as Record<string, unknown>),
+            ...current,
+            notifications: { ...(current?.notifications ?? {}), email: false },
             notificationPreferences: {
                 ...((currentData as any)?.notificationPreferences ?? {}),
                 email: false,
@@ -90,12 +93,4 @@ export async function POST(request: NextRequest) {
         apiError('[Unsubscribe] Error:', error)
         return NextResponse.json({ error: 'Failed to unsubscribe' }, { status: 500 })
     }
-}
-
-/**
- * Get unsubscribe URL for a token.
- */
-export function getUnsubscribeUrl(token: string): string {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    return `${appUrl}/api/email/unsubscribe?token=${token}`
 }

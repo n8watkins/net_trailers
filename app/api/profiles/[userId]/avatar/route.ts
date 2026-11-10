@@ -17,6 +17,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { withAuth } from '@/lib/auth-middleware'
 import { isCurrentUserAdmin } from '@/db/queries/_helpers'
 import { updateProfileAvatar } from '@/db/queries/profiles'
+import { allowedAvatarUrl } from '@/lib/uploads'
 
 type RouteContext = { params: Promise<{ userId: string }> }
 
@@ -61,14 +62,23 @@ export const PUT = withAuth(
             )
         }
 
-        try {
-            await updateProfileAvatar(
-                targetUserId,
-                avatarUrl,
-                (avatarSource as 'google' | 'custom' | 'generated') ?? 'custom'
+        // Shown to everyone who sees this user's posts, so only the user's own
+        // uploads or a known avatar host: an outside URL would let its owner
+        // log every viewer's IP, and data: URLs bloat every page.
+        const storedUrl = allowedAvatarUrl(avatarUrl, targetUserId)
+        if (!storedUrl) {
+            return NextResponse.json(
+                { success: false, error: 'avatarUrl must be an uploaded image or a GitHub avatar' },
+                { status: 400 }
             )
+        }
+        const source =
+            avatarSource === 'google' || avatarSource === 'generated' ? avatarSource : 'custom'
 
-            return NextResponse.json({ success: true, avatarUrl })
+        try {
+            await updateProfileAvatar(targetUserId, storedUrl, source)
+
+            return NextResponse.json({ success: true, avatarUrl: storedUrl })
         } catch (error) {
             console.error('[profiles/avatar PUT] Error:', error)
             return NextResponse.json(

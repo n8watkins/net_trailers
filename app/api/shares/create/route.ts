@@ -25,7 +25,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 import { withAuth } from '@/lib/auth-middleware'
-import { applyRateLimit, strictLimiter } from '@/lib/apiRateLimiting'
+import { consumeLimits, tooManyRequests } from '@/lib/durableLimit'
 import { createShare } from '@/db/queries/shares'
 import { loadUserPreferences } from '@/db/queries/userPreferences'
 import { apiError } from '@/utils/debugLogger'
@@ -34,9 +34,11 @@ import type { UserList } from '@/types/collections'
 
 async function handleCreateShare(request: NextRequest, userId: string): Promise<NextResponse> {
     // Apply strict rate limiting for share creation.
-    const rateLimitResponse = applyRateLimit(request, strictLimiter, 'share-create')
-    if (rateLimitResponse) {
-        return rateLimitResponse
+    const limited = await consumeLimits([
+        { key: `share-create:user:${userId}`, limit: 10, window: { ms: 60_000 } },
+    ])
+    if (!limited.allowed) {
+        return tooManyRequests(limited)
     }
 
     try {

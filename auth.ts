@@ -13,6 +13,7 @@
 import { DrizzleAdapter } from '@auth/drizzle-adapter'
 import { and, eq, sql } from 'drizzle-orm'
 import NextAuth from 'next-auth'
+import { headers } from 'next/headers'
 import GitHub from 'next-auth/providers/github'
 import Resend from 'next-auth/providers/resend'
 import type { Provider } from 'next-auth/providers'
@@ -21,6 +22,7 @@ import { db } from '@/db'
 import { accounts, sessions, users, verificationTokens } from '@/db/schema'
 import { authLogger } from '@/lib/log'
 import { isTestMode } from '@/lib/testMode'
+import { SIGN_IN_EMAIL_LIMIT_ERROR, reserveSignInEmail } from '@/lib/email/signInLimits'
 import { TestEmailProvider } from '@/lib/testEmailProvider'
 
 const adminLogin = process.env.ADMIN_GITHUB_LOGIN?.toLowerCase()
@@ -91,6 +93,51 @@ const emailProvider = isTestMode()
       ? Resend({ id: 'email', apiKey: process.env.RESEND_API_KEY, from: emailFrom })
       : BrevoEmail()
 
+/**
+ * The total-account cap (a cost guard): returning users always pass, a
+ * brand-new signup is refused once the cap is reached. 0 / unset disables it.
+ */
+async function accountCapAllows(
+    user: { email?: string | null },
+    account: { provider?: string; providerAccountId?: string } | null | undefined
+): Promise<boolean> {
+    if (!Number.isFinite(maxTotalAccounts) || maxTotalAccounts <= 0) return true
+
+    // Returning user via a linked OAuth account?
+    if (account?.provider && account.providerAccountId) {
+        const linked = await db
+            .select({ userId: accounts.userId })
+            .from(accounts)
+            .where(
+                and(
+                    eq(accounts.provider, account.provider),
+                    eq(accounts.providerAccountId, account.providerAccountId)
+                )
+            )
+            .limit(1)
+        if (linked.length > 0) return true
+    }
+
+    // Returning user by email (covers the email magic-link provider)?
+    if (user.email) {
+        const existing = await db
+            .select({ id: users.id })
+            .from(users)
+            .where(eq(users.email, user.email))
+            .limit(1)
+        if (existing.length > 0) return true
+    }
+
+    // Brand-new signup - enforce the hard cap.
+    const [row] = await db.select({ count: sql<number>`count(*)` }).from(users)
+    if (Number(row?.count ?? 0) >= maxTotalAccounts) {
+        console.warn('[auth] Signup blocked - account cap reached:', maxTotalAccounts)
+        return false
+    }
+
+    return true
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
     adapter: DrizzleAdapter(db, {
         usersTable: users,
@@ -129,42 +176,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
          *  - returning OAuth user → an `accounts` row already matches → allow.
          *  - returning email user → a `users` row already matches by email → allow.
          *  - otherwise it's a new signup → block once count >= cap.
+         *
+         * Then, for a request to email a sign-in link, the email limits: per
+         * address, per IP and site-wide (lib/email/signInLimits.ts).
          */
-        async signIn({ user, account }) {
-            if (!Number.isFinite(maxTotalAccounts) || maxTotalAccounts <= 0) return true
-
-            // Returning user via a linked OAuth account?
-            if (account?.provider && account.providerAccountId) {
-                const linked = await db
-                    .select({ userId: accounts.userId })
-                    .from(accounts)
-                    .where(
-                        and(
-                            eq(accounts.provider, account.provider),
-                            eq(accounts.providerAccountId, account.providerAccountId)
-                        )
-                    )
-                    .limit(1)
-                if (linked.length > 0) return true
+        async signIn({ user, account, email }) {
+            if (!(await accountCapAllows(user, account))) return false
+            if (email?.verificationRequest && user.email) {
+                const reservation = await reserveSignInEmail(user.email, await headers())
+                if (!reservation.allowed) {
+                    // Auth.js redirects here; the sign-in form reads `error`.
+                    return `/?error=${SIGN_IN_EMAIL_LIMIT_ERROR}`
+                }
             }
-
-            // Returning user by email (covers the email magic-link provider)?
-            if (user.email) {
-                const existing = await db
-                    .select({ id: users.id })
-                    .from(users)
-                    .where(eq(users.email, user.email))
-                    .limit(1)
-                if (existing.length > 0) return true
-            }
-
-            // Brand-new signup - enforce the hard cap.
-            const [row] = await db.select({ count: sql<number>`count(*)` }).from(users)
-            if (Number(row?.count ?? 0) >= maxTotalAccounts) {
-                console.warn('[auth] Signup blocked - account cap reached:', maxTotalAccounts)
-                return false
-            }
-
             return true
         },
         session({ session, user }) {

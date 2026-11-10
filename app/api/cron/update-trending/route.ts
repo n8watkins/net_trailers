@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import crypto from 'crypto'
+import { hasCronSecret } from '@/lib/cronAuth'
 import { validateAdminRequest } from '@/utils/adminMiddleware'
 import { EmailService } from '@/lib/email/email-service'
 import { Content } from '@/typings'
@@ -10,35 +10,13 @@ import { createNotification } from '@/db/queries/notifications'
 import { getAdminUserId } from '@/db/queries/_helpers'
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY
-const CRON_SECRET = process.env.CRON_SECRET
-
-/**
- * Timing-safe comparison of cron secret tokens.
- * Prevents timing attacks by using constant-time comparison.
- */
-function isValidCronSecret(token: string | null | undefined): boolean {
-    if (!token || !CRON_SECRET) return false
-    try {
-        // Use TextEncoder for consistent UTF-8 encoding
-        const encoder = new TextEncoder()
-        const tokenBytes = encoder.encode(token)
-        const secretBytes = encoder.encode(CRON_SECRET)
-        // Lengths must match for timingSafeEqual
-        if (tokenBytes.length !== secretBytes.length) return false
-        return crypto.timingSafeEqual(tokenBytes, secretBytes)
-    } catch {
-        return false
-    }
-}
 
 export async function GET(req: NextRequest) {
     try {
         // Auth check - allow cron or admin
-        const authHeader = req.headers.get('authorization')
-        const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : authHeader
 
         // Check if it's a cron request (timing-safe comparison)
-        const isCron = isValidCronSecret(token)
+        const isCron = hasCronSecret(req.headers)
 
         // Check if it's an admin request via Auth.js session
         let isAdmin = false

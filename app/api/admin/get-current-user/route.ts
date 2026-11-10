@@ -7,13 +7,13 @@
 
 import { NextResponse } from 'next/server'
 
+import { devOnlyNotFound, isDevOnlyAllowed } from '@/lib/devOnly'
+
 import { verifyAuthentication } from '@/lib/auth-middleware'
 
 export async function GET() {
     // Only allow in development
-    if (process.env.NODE_ENV !== 'development') {
-        return NextResponse.json({ error: 'Only available in development' }, { status: 403 })
-    }
+    if (!isDevOnlyAllowed()) return devOnlyNotFound()
 
     try {
         const result = await verifyAuthentication()

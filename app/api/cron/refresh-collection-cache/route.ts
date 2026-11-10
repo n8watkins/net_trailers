@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { hasCronSecret } from '@/lib/cronAuth'
 import { UserList, CacheMetadata } from '../../../../types/collections'
 import { buildInitialCache, CascadingConfig } from '../../../../utils/unifiedCascadingFetch'
 import { apiError, apiWarn } from '../../../../utils/debugLogger'
@@ -8,7 +9,6 @@ import { loadUserPreferences, saveUserPreferences } from '@/db/queries/userPrefe
 import { createNotification } from '@/db/queries/notifications'
 import { getAdminUserId } from '@/db/queries/_helpers'
 
-const CRON_SECRET = process.env.CRON_SECRET
 const API_KEY = process.env.TMDB_API_KEY
 
 /**
@@ -26,8 +26,7 @@ const API_KEY = process.env.TMDB_API_KEY
 export async function GET(request: NextRequest) {
     try {
         // Verify cron secret
-        const authHeader = request.headers.get('authorization')
-        if (authHeader !== `Bearer ${CRON_SECRET}`) {
+        if (!hasCronSecret(request.headers)) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 

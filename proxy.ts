@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { applyCsrfProtection } from './lib/csrfProtection'
-import crypto from 'crypto'
+import { hasCronSecret } from './lib/cronAuth'
 
 /**
  * Global proxy for security and request validation
@@ -15,33 +15,6 @@ const MAX_JSON_PAYLOAD_SIZE = 500 * 1024 // 500KB for JSON payloads
  */
 const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS']
 
-/**
- * Timing-safe comparison of cron secret
- */
-function isValidCronSecret(token: string | null | undefined): boolean {
-    const cronSecret = process.env.CRON_SECRET
-    if (!token || !cronSecret) return false
-    try {
-        const encoder = new TextEncoder()
-        const tokenBytes = encoder.encode(token)
-        const secretBytes = encoder.encode(cronSecret)
-        if (tokenBytes.length !== secretBytes.length) return false
-        return crypto.timingSafeEqual(tokenBytes, secretBytes)
-    } catch {
-        return false
-    }
-}
-
-/**
- * Check if request has valid CRON_SECRET in Authorization header
- */
-function hasCronSecret(request: NextRequest): boolean {
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader) return false
-    const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader
-    return isValidCronSecret(token)
-}
-
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl
     const method = request.method
@@ -54,7 +27,7 @@ export async function proxy(request: NextRequest) {
 
         if (isCronRoute) {
             // Cron routes MUST have valid CRON_SECRET regardless of HTTP method
-            if (!hasCronSecret(request)) {
+            if (!hasCronSecret(request.headers)) {
                 return NextResponse.json(
                     { error: 'Unauthorized - valid CRON_SECRET required' },
                     { status: 401 }

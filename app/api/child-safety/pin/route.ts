@@ -29,53 +29,34 @@ import { NextRequest, NextResponse } from 'next/server'
 import { withAuth } from '@/lib/auth-middleware'
 import { getPINStatus, hasPIN, setPIN, verifyPIN, clearPIN } from '@/db/queries/childSafety'
 import { PIN_CONSTRAINTS } from '@/types/childSafety'
+import { countEvent, readCount, resetLimit, windowInfo } from '@/lib/durableLimit'
 
 /* -------------------------------------------------------------------------- */
-/*  In-memory rate limiter                                                     */
+/*  Failed-attempt limit (durable: a Map would not hold across Worker isolates) */
 /* -------------------------------------------------------------------------- */
 
-interface RateEntry {
-    count: number
-    resetAt: number
-}
-
-const rateLimitMap = new Map<string, RateEntry>()
-const RATE_WINDOW_MS = PIN_CONSTRAINTS.RATE_LIMIT_DURATION * 1_000 // 300 s → ms
+const RATE_WINDOW = { ms: PIN_CONSTRAINTS.RATE_LIMIT_DURATION * 1_000 } // 300 s
 const MAX_ATTEMPTS = PIN_CONSTRAINTS.MAX_FAILED_ATTEMPTS
+const attemptsKey = (userId: string) => `pin-fail:${userId}`
 
-function checkRateLimit(userId: string): { limited: boolean; retryAfterSeconds?: number } {
-    const now = Date.now()
-    const entry = rateLimitMap.get(userId)
-
-    if (!entry || now >= entry.resetAt) {
-        // No entry or window expired - start fresh.
-        rateLimitMap.set(userId, { count: 0, resetAt: now + RATE_WINDOW_MS })
-        return { limited: false }
-    }
-
-    if (entry.count >= MAX_ATTEMPTS) {
-        return {
-            limited: true,
-            retryAfterSeconds: Math.ceil((entry.resetAt - now) / 1_000),
-        }
-    }
-
-    return { limited: false }
-}
-
-function incrementRateLimit(userId: string): void {
-    const now = Date.now()
-    const entry = rateLimitMap.get(userId)
-
-    if (!entry || now >= entry.resetAt) {
-        rateLimitMap.set(userId, { count: 1, resetAt: now + RATE_WINDOW_MS })
-    } else {
-        entry.count += 1
+async function checkRateLimit(
+    userId: string
+): Promise<{ limited: boolean; retryAfterSeconds?: number }> {
+    const failures = await readCount(attemptsKey(userId), RATE_WINDOW)
+    if (failures < MAX_ATTEMPTS) return { limited: false }
+    const endsAt = windowInfo(RATE_WINDOW).endsAt
+    return {
+        limited: true,
+        retryAfterSeconds: Math.max(1, Math.ceil((endsAt - Date.now()) / 1_000)),
     }
 }
 
-function resetRateLimit(userId: string): void {
-    rateLimitMap.delete(userId)
+async function incrementRateLimit(userId: string): Promise<void> {
+    await countEvent(attemptsKey(userId), RATE_WINDOW)
+}
+
+async function resetRateLimit(userId: string): Promise<void> {
+    await resetLimit(attemptsKey(userId), RATE_WINDOW)
 }
 
 /* -------------------------------------------------------------------------- */
@@ -124,7 +105,7 @@ export const POST = withAuth(async (request: NextRequest, userId: string) => {
         }
 
         // Rate-limit check.
-        const rl = checkRateLimit(userId)
+        const rl = await checkRateLimit(userId)
         if (rl.limited) {
             return NextResponse.json(
                 {
@@ -143,10 +124,10 @@ export const POST = withAuth(async (request: NextRequest, userId: string) => {
         try {
             const result = await verifyPIN(userId, pin)
             if (result.success) {
-                resetRateLimit(userId)
+                await resetRateLimit(userId)
                 return NextResponse.json({ success: true })
             } else {
-                incrementRateLimit(userId)
+                await incrementRateLimit(userId)
                 return NextResponse.json(
                     { success: false, error: result.error ?? 'Incorrect PIN' },
                     { status: 401 }
@@ -184,7 +165,7 @@ export const POST = withAuth(async (request: NextRequest, userId: string) => {
         }
 
         // Verify current PIN first.
-        const rl = checkRateLimit(userId)
+        const rl = await checkRateLimit(userId)
         if (rl.limited) {
             return NextResponse.json(
                 {
@@ -203,7 +184,7 @@ export const POST = withAuth(async (request: NextRequest, userId: string) => {
         try {
             const verifyResult = await verifyPIN(userId, currentPin)
             if (!verifyResult.success) {
-                incrementRateLimit(userId)
+                await incrementRateLimit(userId)
                 return NextResponse.json(
                     { success: false, error: verifyResult.error ?? 'Current PIN is incorrect' },
                     { status: 401 }
@@ -212,7 +193,7 @@ export const POST = withAuth(async (request: NextRequest, userId: string) => {
 
             // Current PIN verified - set the new one.
             await setPIN(userId, newPin)
-            resetRateLimit(userId)
+            await resetRateLimit(userId)
             return NextResponse.json({ success: true })
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to change PIN'
@@ -269,7 +250,7 @@ export const DELETE = withAuth(async (request: NextRequest, userId: string) => {
     }
 
     // Rate-limit check.
-    const rl = checkRateLimit(userId)
+    const rl = await checkRateLimit(userId)
     if (rl.limited) {
         return NextResponse.json(
             {
@@ -289,7 +270,7 @@ export const DELETE = withAuth(async (request: NextRequest, userId: string) => {
         // Verify before deleting.
         const verifyResult = await verifyPIN(userId, pin)
         if (!verifyResult.success) {
-            incrementRateLimit(userId)
+            await incrementRateLimit(userId)
             return NextResponse.json(
                 { success: false, error: verifyResult.error ?? 'Incorrect PIN' },
                 { status: 401 }
@@ -297,7 +278,7 @@ export const DELETE = withAuth(async (request: NextRequest, userId: string) => {
         }
 
         await clearPIN(userId)
-        resetRateLimit(userId)
+        await resetRateLimit(userId)
         return NextResponse.json({ success: true })
     } catch (err) {
         console.error('[DELETE /api/child-safety/pin] error:', err)

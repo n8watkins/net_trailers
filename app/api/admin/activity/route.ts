@@ -11,6 +11,8 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { db } from '@/db'
 import { userActivity, users } from '@/db/schema'
+import { currentUserId } from '@/db/queries/_helpers'
+import { consumeLimits, tooManyRequests } from '@/lib/durableLimit'
 import {
     createForbiddenResponse,
     createUnauthorizedResponse,
@@ -114,110 +116,50 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * Record activity (login or page view).
- *
- * Intentionally public - no admin check needed. Includes validation and
- * in-memory rate limiting to prevent abuse.
+ * Record a signed-in user's page view or login. The user is the session's,
+ * never one named in the request (anyone could otherwise write activity rows,
+ * with any email, for any user). Guests' views are accepted and not stored.
+ * Limited durably to 30 a minute per user.
  */
-
-// Global declaration so the rate-limit map survives hot-reloads in dev.
-declare global {
-    var activityRateLimits: Map<string, { count: number; windowStart: number }> | undefined
-}
-
 export async function POST(request: NextRequest) {
     try {
-        const body = await request.json()
-        const { type, userId, guestId, userEmail, page, userAgent } = body
-
-        if (!type || (!userId && !guestId)) {
-            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
-        }
-        if (type !== 'login' && type !== 'view') {
-            return NextResponse.json({ error: 'Invalid activity type' }, { status: 400 })
-        }
-        if (userId && typeof userId !== 'string') {
-            return NextResponse.json({ error: 'Invalid userId format' }, { status: 400 })
-        }
-        if (guestId && typeof guestId !== 'string') {
-            return NextResponse.json({ error: 'Invalid guestId format' }, { status: 400 })
-        }
-        if (userEmail) {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-            if (typeof userEmail !== 'string' || !emailRegex.test(userEmail)) {
-                return NextResponse.json({ error: 'Invalid email format' }, { status: 400 })
-            }
-        }
-        if (page && (typeof page !== 'string' || !page.startsWith('/'))) {
-            return NextResponse.json({ error: 'Invalid page format' }, { status: 400 })
-        }
-
-        const sanitizedUserAgent = userAgent ? String(userAgent).slice(0, 500) : null
-        const ip =
-            request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
-        const rateLimitKey = `activity:${ip}`
-        const now = Date.now()
-
-        if (!global.activityRateLimits) {
-            global.activityRateLimits = new Map()
-        }
-
-        const ipData = global.activityRateLimits.get(rateLimitKey)
-        if (ipData) {
-            const { count, windowStart } = ipData
-            if (now - windowStart < 60_000) {
-                if (count >= 30) {
-                    return NextResponse.json(
-                        { error: 'Rate limit exceeded. Please try again later.' },
-                        { status: 429 }
-                    )
-                }
-                global.activityRateLimits.set(rateLimitKey, {
-                    count: count + 1,
-                    windowStart,
-                })
-            } else {
-                global.activityRateLimits.set(rateLimitKey, { count: 1, windowStart: now })
-            }
-        } else {
-            global.activityRateLimits.set(rateLimitKey, { count: 1, windowStart: now })
-        }
-
-        if (global.activityRateLimits.size > 100) {
-            for (const [key, value] of global.activityRateLimits.entries()) {
-                if (now - value.windowStart > 60_000) global.activityRateLimits.delete(key)
-            }
-        }
-
-        // user_activity rows belong to a user (userId is NOT NULL and references
-        // users), so a guest's page view has nowhere to go: accept it without
-        // storing it, instead of failing the insert with a 500 on every page.
+        const userId = await currentUserId()
         if (!userId) {
             return NextResponse.json({ success: true, stored: false })
         }
+
+        const limited = await consumeLimits([
+            { key: `activity:user:${userId}`, limit: 30, window: { ms: 60_000 } },
+        ])
+        if (!limited.allowed) return tooManyRequests(limited)
+
+        const body = (await request.json().catch(() => null)) as Record<string, unknown> | null
+        const type = body?.type
+        const page = body?.page
+        const userAgent = body?.userAgent
+
+        if (type !== 'login' && type !== 'view') {
+            return NextResponse.json({ error: 'Invalid activity type' }, { status: 400 })
+        }
+        if (page !== undefined && (typeof page !== 'string' || !page.startsWith('/'))) {
+            return NextResponse.json({ error: 'Invalid page format' }, { status: 400 })
+        }
+
+        const sanitizedUserAgent = typeof userAgent === 'string' ? userAgent.slice(0, 500) : null
 
         // Store in user_activity: referenceId = page, referenceType = 'page'.
         await db.insert(userActivity).values({
             userId,
             type,
-            timestamp: now,
-            referenceId: page ?? null,
+            timestamp: Date.now(),
+            referenceId: typeof page === 'string' ? page.slice(0, 500) : null,
             referenceType: 'page',
-            preview:
-                sanitizedUserAgent || userEmail
-                    ? { userAgent: sanitizedUserAgent, userEmail: userEmail ?? null }
-                    : null,
+            preview: sanitizedUserAgent ? { userAgent: sanitizedUserAgent, userEmail: null } : null,
         })
 
         return NextResponse.json({ success: true })
     } catch (error) {
         console.error('Activity POST error:', error)
-        return NextResponse.json(
-            {
-                error: 'Failed to record activity',
-                details: error instanceof Error ? error.message : 'Unknown error',
-            },
-            { status: 500 }
-        )
+        return NextResponse.json({ error: 'Failed to record activity' }, { status: 500 })
     }
 }
