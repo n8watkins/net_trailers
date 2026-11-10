@@ -408,9 +408,9 @@ Required environment variables are documented in the file with setup instruction
 - **Client-side**: Configured via `instrumentation-client.ts`
 - **Error filtering**: Ignores common browser errors and protects user privacy
 
-### Vercel Configuration (vercel.json)
+### Cron Triggers (wrangler.jsonc, worker/crons.ts)
 
-- **Cron job**: Daily at 2 AM UTC for auto-updating collections
+- **Three crons**, 02:00 UTC: trending (Monday), collection cache (Sunday), social digest (Wednesday), each calling its `/api/cron/*` route
 - **CRON_SECRET**: Security token to prevent unauthorized cron job execution
 
 ## Key Development Patterns

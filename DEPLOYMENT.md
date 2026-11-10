@@ -37,7 +37,7 @@ The three Vercel crons are Cron Triggers with the same times (`worker/crons.ts`)
 | `/api/cron/social-digest`            | `0 2 * * 3` | `0 2 * * WED` |
 
 Weekdays are named because Cloudflare counts them from 1 = Sunday, so Vercel's numbers would run a day early or be refused.
-They do nothing while the `CRONS_ENABLED` var is `"false"`: Vercel still runs the same crons against the same database, and two social digests at once could email people twice.
+They run while the `CRONS_ENABLED` var is `"true"`, and do nothing otherwise; never run them on two platforms against the same database, or the social digest emails people twice.
 Set it to `"true"` in `wrangler.jsonc` in the same change that turns off the Vercel project.
 
 ## Configuration
@@ -119,8 +119,8 @@ Fix forward afterwards by reverting the commit and deploying again.
 
 ## Moving off Vercel
 
-Done on the Cloudflare side: the custom domain, `NEXT_PUBLIC_APP_URL` (email links, sitemap, metadata), the workers.dev forward, optional GitHub sign-in, email through Cloudflare, and the Cron Triggers (off until step 2).
-The Vercel project `net-trailers` stopped deploying on 2026-11-03, but its last production deployment still serves https://net-trailers.vercel.app and still runs the three crons against the same database.
+Done on the Cloudflare side: the custom domain, `NEXT_PUBLIC_APP_URL` (email links, sitemap, metadata), the workers.dev forward, optional GitHub sign-in, email through Cloudflare, and the Cron Triggers.
+The Vercel project `net-trailers` stopped deploying on 2026-11-03, and its production deployment became a redirect (step 1), which ended its crons; the Worker now runs them.
 The ops decision is to keep Vercel projects as redirect-only (they hold the `*.vercel.app` name), not to delete them.
 Owner steps, in order:
 
@@ -145,17 +145,15 @@ Owner steps, in order:
     Check with `curl -sI https://net-trailers.vercel.app/search?q=x`: a 308 to `https://nettrailers.n8builds.dev/search?q=x`.
     The new deployment has no crons, so Vercel's crons stop with it.
     In the Vercel project settings, disconnect the Git repository so a push never redeploys the app there.
-2. **Turn on the Worker's crons:** merge the waiting pull request that sets `CRONS_ENABLED` to `"true"` and removes `vercel.json` (an agent can do it once step 1 is done).
-   Never before step 1: Vercel's and the Worker's social digests would both email people.
-3. **Rotate the Turso token**, which also cuts off the old Vercel deployment:
+2. **Rotate the Turso token**, which also cuts off the old Vercel deployment:
     ```
     turso db tokens invalidate net-trailers
     turso db tokens create net-trailers | npx wrangler secret put TURSO_AUTH_TOKEN --name net-trailers
     ```
     The site errors for the seconds between the two commands.
-4. **GitHub sign-in (optional):** in the GitHub OAuth App, set the callback to `https://nettrailers.n8builds.dev/api/auth/callback/github`, make a new client secret, then `npx wrangler secret put AUTH_GITHUB_ID --name net-trailers` and `AUTH_GITHUB_SECRET`.
+3. **GitHub sign-in (optional):** in the GitHub OAuth App, set the callback to `https://nettrailers.n8builds.dev/api/auth/callback/github`, make a new client secret, then `npx wrangler secret put AUTH_GITHUB_ID --name net-trailers` and `AUTH_GITHUB_SECRET`.
    The "Continue with GitHub" button appears once both are set; the admin dashboard needs it, because the admin is identified by GitHub login.
-5. **Delete leftover email secrets:** `npx wrangler secret delete RESEND_API_KEY --name net-trailers`, and remove Resend and Brevo variables from the Vercel project if it keeps any.
+4. **Delete leftover email secrets:** `npx wrangler secret delete RESEND_API_KEY --name net-trailers`, and remove Resend and Brevo variables from the Vercel project if it keeps any.
 
 ## Taking it down
 
