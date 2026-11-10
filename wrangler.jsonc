@@ -41,7 +41,8 @@
     },
     // Secrets (npx wrangler secret put <NAME>, see DEPLOY.md): TURSO_DATABASE_URL,
     // TURSO_AUTH_TOKEN, AUTH_SECRET, AUTH_GITHUB_ID, AUTH_GITHUB_SECRET,
-    // TMDB_API_KEY, GEMINI_API_KEY, RESEND_API_KEY, BREVO_API_KEY, CRON_SECRET.
+    // TMDB_API_KEY, GEMINI_API_KEY, RESEND_API_KEY, BREVO_API_KEY, CRON_SECRET,
+    // TURNSTILE_SECRET_KEY.
     "observability": { "enabled": true, "head_sampling_rate": 1 },
     "workers_dev": true,
     "preview_urls": false,

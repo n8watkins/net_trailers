@@ -3,6 +3,7 @@ import { XMarkIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 import useAuth from '../../hooks/useAuth'
 import { isInAppBrowser } from '../../utils/isInAppBrowser'
 import { useEscapeKey } from '../../hooks/useEscapeKey'
+import { useTurnstile } from '../../hooks/useTurnstile'
 
 interface AuthModalProps {
     isOpen: boolean
@@ -27,6 +28,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     const [inApp, setInApp] = React.useState(false)
     React.useEffect(() => setInApp(isInAppBrowser()), [])
 
+    // The human check runs in the background while the email form shows
+    // (hooks/useTurnstile.ts); a challenge appears here only when needed.
+    const turnstileBox = React.useRef<HTMLDivElement>(null)
+    const showEmailForm = isOpen && !loading && !user && !emailSent
+    const { takeToken, challengeShown } = useTurnstile(turnstileBox, showEmailForm)
+
     const handleSignIn = async () => {
         setIsWorking(true)
         try {
@@ -47,13 +54,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         setEmailError(null)
         setIsWorking(true)
         try {
-            await signInWithEmail(trimmed)
+            await signInWithEmail(trimmed, await takeToken())
             setEmailSent(true)
         } catch (error) {
+            const code = error instanceof Error ? error.message : ''
             setEmailError(
-                error instanceof Error && error.message === 'EmailLimit'
+                code === 'EmailLimit'
                     ? 'Too many sign-in emails for now. Use the last link we sent, or try again tomorrow.'
-                    : 'Could not send the sign-in link. Please try again.'
+                    : code === 'Turnstile'
+                      ? "We couldn't confirm you're not a bot. Please try again, or reload the page."
+                      : 'Could not send the sign-in link. Please try again.'
             )
         } finally {
             setIsWorking(false)
@@ -183,6 +193,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                                         placeholder="you@example.com"
                                         autoComplete="email"
                                         className="w-full px-4 py-3 bg-gray-800 text-white rounded-md border border-gray-700 focus:border-amber-400 focus:outline-none"
+                                    />
+                                    <div
+                                        ref={turnstileBox}
+                                        className={`flex justify-center ${challengeShown ? '' : '!mt-0'}`}
                                     />
                                     {emailError && (
                                         <p className="text-red-400 text-sm">{emailError}</p>
