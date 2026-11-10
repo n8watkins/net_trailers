@@ -7,15 +7,19 @@
  * Creating a reply also atomically bumps the thread's replyCount / lastReply
  * (handled inside createReply in the query layer).
  *
- * Side effect: a fire-and-forget POST to /api/forum/send-reply-notification is
- * made on successful creation so the notifications agent's route is left
- * untouched. The reply still succeeds even if the notification fails.
+ * After a reply is stored, the person it answers may get an email, built on
+ * the server from the stored reply (lib/email/forumReply.ts). The reply still
+ * succeeds if the email fails.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 
-import { withAuth } from '@/lib/auth-middleware'
+import { getAuthorIdentity } from '@/db/queries/profiles'
 import { createReply, getReplyById, getThreadById, listReplies } from '@/db/queries/threads'
+import { withAuth } from '@/lib/auth-middleware'
+import { notifyReply } from '@/lib/email/forumReply'
+import { requestOrigin } from '@/lib/requestOrigin'
+import { ownUploads } from '@/lib/uploads'
 
 interface RouteContext {
     params: Promise<{ id: string }>
@@ -57,10 +61,7 @@ export const POST = withAuth(
             )
         }
 
-        const { content, userName, userAvatar, parentReplyId, images } = body as Record<
-            string,
-            unknown
-        >
+        const { content, parentReplyId, images } = body as Record<string, unknown>
 
         if (typeof content !== 'string' || !content.trim()) {
             return NextResponse.json(
@@ -75,45 +76,34 @@ export const POST = withAuth(
             return NextResponse.json({ success: false, error: 'Thread not found' }, { status: 404 })
         }
 
-        const reply = await createReply({
-            threadId,
-            userId,
-            userName: typeof userName === 'string' ? userName : null,
-            userAvatar: typeof userAvatar === 'string' ? userAvatar : null,
-            content: content.trim().slice(0, 2000),
-            parentReplyId: typeof parentReplyId === 'string' ? parentReplyId : undefined,
-            images: Array.isArray(images) ? (images as string[]).slice(0, 4) : [],
-        })
-
-        // Determine notification recipient (reply-to-reply vs reply-to-thread)
-        let recipientUserId: string = thread.userId
-        let isReplyToReply = false
-
+        // A reply can only answer a reply in the same thread.
         if (typeof parentReplyId === 'string' && parentReplyId) {
-            const parentReply = await getReplyById(parentReplyId)
-            if (parentReply) {
-                recipientUserId = parentReply.userId
-                isReplyToReply = true
+            const parent = await getReplyById(parentReplyId)
+            if (!parent || parent.threadId !== threadId) {
+                return NextResponse.json(
+                    { success: false, error: 'Parent reply not found in this thread' },
+                    { status: 400 }
+                )
             }
         }
 
-        // Fire-and-forget email notification (owned by notifications agent - leave route as-is)
-        if (recipientUserId !== userId) {
-            fetch('/api/forum/send-reply-notification', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    recipientUserId,
-                    replierUserId: userId,
-                    replierName: typeof userName === 'string' ? userName : 'Anonymous',
-                    threadTitle: thread.title,
-                    threadId,
-                    replyContent: content.trim().slice(0, 200),
-                    isReplyToReply,
-                }),
-            }).catch((err: unknown) => {
-                console.error('[threads/replies] notification error:', err)
-            })
+        // Name and avatar come from the author's profile, never from the request.
+        const author = await getAuthorIdentity(userId)
+        const reply = await createReply({
+            threadId,
+            userId,
+            userName: author.name,
+            userAvatar: author.avatar,
+            content: content.trim().slice(0, 2000),
+            parentReplyId:
+                typeof parentReplyId === 'string' && parentReplyId ? parentReplyId : undefined,
+            images: ownUploads(images, userId),
+        })
+
+        try {
+            await notifyReply(reply.id, userId, await requestOrigin())
+        } catch (error) {
+            console.error('[threads/replies] reply notification failed:', error)
         }
 
         return NextResponse.json({ success: true, reply }, { status: 201 })
