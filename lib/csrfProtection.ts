@@ -7,14 +7,19 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 
-// Allowed origins for CSRF protection, besides the request's own origin
-// (same-origin requests are always allowed, on whatever address serves the
-// app: the workers.dev address, a custom domain, Vercel).
-const ALLOWED_ORIGINS = [
-    process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-    'http://localhost:3000',
-    'http://localhost:3001',
-]
+/**
+ * Allowed origins for CSRF protection, besides the request's own origin
+ * (same-origin requests are always allowed, on whatever address serves the
+ * app: the workers.dev address or the custom domain). The localhost dev
+ * servers are allowed only under `next dev`.
+ */
+export function allowedOrigins(env: NodeJS.ProcessEnv = process.env): string[] {
+    const origins = env.NEXT_PUBLIC_APP_URL ? [env.NEXT_PUBLIC_APP_URL] : []
+    if (env.NODE_ENV === 'development') {
+        origins.push('http://localhost:3000', 'http://localhost:3001')
+    }
+    return origins
+}
 
 /**
  * Parse and extract origin from a URL string
@@ -42,7 +47,7 @@ export function validateOrigin(request: NextRequest): boolean {
     const referer = request.headers.get('referer')
 
     // Normalize allowed origins for comparison
-    const normalizedAllowedOrigins = [...ALLOWED_ORIGINS, request.url]
+    const normalizedAllowedOrigins = [...allowedOrigins(), request.url]
         .map((o) => parseOrigin(o))
         .filter((o): o is string => o !== null)
 
@@ -155,7 +160,7 @@ export function validateServerActionOrigin(headersList: Headers): boolean {
     const ownOrigin = host
         ? `${/^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host) ? 'http' : 'https'}://${host}`
         : null
-    const normalizedAllowedOrigins = [...ALLOWED_ORIGINS, ...(ownOrigin ? [ownOrigin] : [])]
+    const normalizedAllowedOrigins = [...allowedOrigins(), ...(ownOrigin ? [ownOrigin] : [])]
         .map((o) => parseOrigin(o))
         .filter((o): o is string => o !== null)
 

@@ -23,6 +23,7 @@ import { authLogger } from '@/lib/log'
 import { isAdminEmail } from '@/lib/admin'
 import { isGitHubAuthConfigured } from '@/lib/authConfig'
 import { githubUser, isGitHubSignInAllowed } from '@/lib/githubAuth'
+import { recordSignIn, recordSignUp } from '@/lib/authEvents'
 import { isTestMode } from '@/lib/testMode'
 import { deliverSignInLink } from '@/lib/email/gate'
 import { SIGN_IN_EMAIL_LIMIT_ERROR, reserveSignInEmail } from '@/lib/email/signInLimits'
@@ -107,8 +108,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             if (session.user) {
                 session.user.id = user.id
                 session.user.isAdmin = isAdminEmail(user.email)
+                // When this session was created, for the admin fresh sign-in check
+                // (lib/admin/guard.ts). The adapter passes the whole session row.
+                session.user.signedInAt =
+                    (session as unknown as { createdAt?: number | null }).createdAt ?? null
             }
             return session
+        },
+    },
+    // Sign-up counts, last sign-in and login events for the admin pages, for
+    // every provider (lib/authEvents.ts).
+    events: {
+        async createUser({ user }) {
+            await recordSignUp(user.id)
+        },
+        async signIn({ user, account }) {
+            await recordSignIn(user.id, account?.provider)
         },
     },
 })

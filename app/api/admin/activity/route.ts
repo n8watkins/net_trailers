@@ -6,33 +6,25 @@
  *        events; the userId FK is null for guests.
  */
 
-import { and, desc, eq, gte } from 'drizzle-orm'
+import { and, desc, eq, gte, inArray } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
 
 import { db } from '@/db'
 import { userActivity, users } from '@/db/schema'
 import { currentUserId } from '@/db/queries/_helpers'
 import { consumeLimits, tooManyRequests } from '@/lib/durableLimit'
-import {
-    createForbiddenResponse,
-    createUnauthorizedResponse,
-    validateAdminRequest,
-} from '@/utils/adminMiddleware'
+import { badRequest, requireAdmin, serverError } from '@/lib/admin/guard'
+import { activityQuery } from '@/lib/admin/schemas'
 
 export async function GET(request: NextRequest) {
+    const guard = await requireAdmin()
+    if (!guard.ok) return guard.response
+
+    const query = activityQuery.safeParse(Object.fromEntries(new URL(request.url).searchParams))
+    if (!query.success) return badRequest('Invalid activity query')
+    const { type, period, userId: filterUserId } = query.data
+
     try {
-        const authResult = await validateAdminRequest(request)
-        if (!authResult.authorized) {
-            return authResult.error?.includes('not an administrator')
-                ? createForbiddenResponse(authResult.error)
-                : createUnauthorizedResponse(authResult.error)
-        }
-
-        const url = new URL(request.url)
-        const type = url.searchParams.get('type') || 'all'
-        const period = url.searchParams.get('period') || 'month'
-        const filterUserId = url.searchParams.get('userId') ?? undefined
-
         const now = Date.now()
         let periodStart: number
 
@@ -65,7 +57,10 @@ export async function GET(request: NextRequest) {
         const uniqueUserIds = [...new Set(rows.map((r) => r.userId).filter(Boolean))] as string[]
         const emailMap = new Map<string, string>()
         if (uniqueUserIds.length > 0) {
-            const userRows = await db.select({ id: users.id, email: users.email }).from(users)
+            const userRows = await db
+                .select({ id: users.id, email: users.email })
+                .from(users)
+                .where(inArray(users.id, uniqueUserIds))
             userRows.forEach((u) => {
                 if (u.email) emailMap.set(u.id, u.email)
             })
@@ -105,13 +100,7 @@ export async function GET(request: NextRequest) {
         })
     } catch (error) {
         console.error('Admin activity GET error:', error)
-        return NextResponse.json(
-            {
-                error: 'Failed to fetch activity',
-                details: error instanceof Error ? error.message : 'Unknown error',
-            },
-            { status: 500 }
-        )
+        return serverError('Failed to fetch activity')
     }
 }
 

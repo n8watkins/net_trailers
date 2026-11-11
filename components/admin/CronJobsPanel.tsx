@@ -2,115 +2,122 @@
 
 import { useState } from 'react'
 import {
-    Clock,
-    Play,
-    Users,
-    Mail,
-    RefreshCw,
-    Database,
     AlertCircle,
     CheckCircle2,
+    Clock,
+    Database,
+    Mail,
+    Play,
+    RefreshCw,
+    Users,
 } from 'lucide-react'
+
 import { useToast } from '@/hooks/useToast'
 
-interface CronJobStatus {
-    running: boolean
-    lastRun?: Date
-    lastResult?: {
-        success: boolean
-        emailsSent?: number
-        usersProcessed?: number
-        collectionsUpdated?: number
-        notificationsCreated?: number
-    }
+import { adminPost, ConfirmDialog, useReauthDialog } from './AdminDialogs'
+
+export type JobName = 'trending' | 'cache' | 'social'
+
+export type JobInfo = {
+    name: JobName
+    title: string
+    schedule: string
+    nextRun: number
+    lastRun: {
+        trigger: string
+        scope: string
+        startedAt: number
+        finishedAt: number | null
+        ok: boolean | null
+        summary: Record<string, number> | null
+    } | null
 }
 
-export default function CronJobsPanel() {
+const ICONS: Record<JobName, React.ReactNode> = {
+    trending: <Mail className="h-5 w-5 text-blue-500" />,
+    cache: <RefreshCw className="h-5 w-5 text-teal-500" />,
+    social: <Users className="h-5 w-5 text-purple-500" />,
+}
+
+const DETAILS: Record<JobName, { summary: string; does: string[]; needs: string[] }> = {
+    trending: {
+        summary: 'Emails the week’s trending titles to opted-in users',
+        does: [
+            'Fetches the current trending movies and TV shows from TMDB',
+            'Emails the top 5 of each to users with trending updates and email on',
+            'Creates in-app notifications for the top 3 of each',
+        ],
+        needs: ['notifications.email = true', 'notifications.types.trending_update = true'],
+    },
+    cache: {
+        summary: 'Refreshes collection caches; deletes page views older than 90 days',
+        does: [
+            'Re-fetches the top 50 of TMDB genre collections with actor or director filters',
+            'Skips collections refreshed in the last 7 days',
+            'Notifies owners when new titles appear',
+            'Deletes signed-in page views older than 90 days (all-users runs only)',
+        ],
+        needs: [],
+    },
+    social: {
+        summary: 'Batches the week’s comments and likes into one email per user',
+        does: [
+            'Collects unsent comment and like notifications from the past 7 days',
+            'Sends one digest per user and marks them as emailed',
+        ],
+        needs: ['notifications.email = true', 'notifications.types.system is not false'],
+    },
+}
+
+const formatTime = (ms: number) => new Date(ms).toLocaleString(undefined, { timeZoneName: 'short' })
+
+function summaryText(summary: Record<string, number> | null): string {
+    if (!summary) return ''
+    return Object.entries(summary)
+        .map(([key, value]) => `${value} ${key.replace(/([A-Z])/g, ' $1').toLowerCase()}`)
+        .join(', ')
+}
+
+export function LastRunLine({ job }: { job: JobInfo }) {
+    const run = job.lastRun
+    if (!run) return <span className="text-gray-500">No run recorded yet</span>
+    const status = run.ok === null ? 'running' : run.ok ? 'ok' : 'failed'
+    return (
+        <span className={run.ok === false ? 'text-amber-400' : 'text-gray-400'}>
+            {formatTime(run.startedAt)} ({status},{' '}
+            {run.trigger === 'cron' ? 'scheduled' : 'by admin'}
+            {run.scope === 'admin' ? ', admin only' : ''})
+        </span>
+    )
+}
+
+export default function CronJobsPanel({ jobs, onRan }: { jobs: JobInfo[]; onRan: () => void }) {
     const { showSuccess, showError } = useToast()
-    const [expandedSection, setExpandedSection] = useState<string | null>('overview')
-    const [jobStatuses, setJobStatuses] = useState<Record<string, CronJobStatus>>({
-        'trending-all': { running: false },
-        'cache-all': { running: false },
-        'social-all': { running: false },
-    })
+    const { needReauth, dialog: reauthDialog } = useReauthDialog()
+    const [expanded, setExpanded] = useState<string | null>('overview')
+    const [running, setRunning] = useState<string | null>(null)
+    const [confirmAll, setConfirmAll] = useState<JobInfo | null>(null)
 
-    const runCronJob = async (jobType: 'trending' | 'cache' | 'social', adminOnly: boolean) => {
-        const jobKey = `${jobType}-${adminOnly ? 'admin' : 'all'}`
-
-        setJobStatuses((prev) => ({
-            ...prev,
-            [jobKey]: { ...prev[jobKey], running: true },
-        }))
-
-        try {
-            let endpoint = ''
-            const params = new URLSearchParams()
-
-            if (!adminOnly) {
-                // All users mode - no adminOnly parameter or set to false
-                params.set('adminOnly', 'false')
-            }
-
-            switch (jobType) {
-                case 'trending':
-                    endpoint = `/api/cron/update-trending${!adminOnly ? `?${params}` : ''}`
-                    break
-                case 'cache':
-                    endpoint = `/api/cron/refresh-collection-cache${!adminOnly ? `?${params}` : ''}`
-                    break
-                case 'social':
-                    endpoint = `/api/cron/social-digest${!adminOnly ? `?${params}` : ''}`
-                    break
-            }
-
-            // Session cookie sent automatically - no Authorization header needed
-            const response = await fetch(endpoint, {
-                method: 'GET',
-            })
-
-            const result = await response.json()
-
-            if (response.ok) {
-                setJobStatuses((prev) => ({
-                    ...prev,
-                    [jobKey]: {
-                        running: false,
-                        lastRun: new Date(),
-                        lastResult: {
-                            success: true,
-                            emailsSent: result.emailsSent,
-                            usersProcessed: result.totalUsers,
-                            collectionsUpdated: result.collectionsUpdated,
-                            notificationsCreated: result.notificationsCreated,
-                        },
-                    },
-                }))
-
-                const details = []
-                if (result.emailsSent) details.push(`${result.emailsSent} emails sent`)
-                if (result.totalUsers) details.push(`${result.totalUsers} users processed`)
-                if (result.collectionsUpdated)
-                    details.push(`${result.collectionsUpdated} collections updated`)
-                if (result.notificationsCreated)
-                    details.push(`${result.notificationsCreated} notifications`)
-
-                showSuccess(
-                    `${jobType.charAt(0).toUpperCase() + jobType.slice(1)} job complete! ${details.join(', ')}`
-                )
-            } else {
-                throw new Error(result.error || 'Job failed')
-            }
-        } catch (error) {
-            console.error(`Cron job error (${jobType}):`, error)
-            setJobStatuses((prev) => ({
-                ...prev,
-                [jobKey]: {
-                    running: false,
-                    lastResult: { success: false },
-                },
-            }))
-            showError(error instanceof Error ? error.message : `Failed to run ${jobType} job`)
+    const run = async (job: JobInfo, scope: 'admin' | 'all') => {
+        setRunning(`${job.name}-${scope}`)
+        const result = await adminPost<Record<string, number>>(`/api/admin/jobs/${job.name}`, {
+            scope,
+        })
+        setRunning(null)
+        setConfirmAll(null)
+        if (!result.ok) {
+            if (result.reauth) needReauth()
+            else showError(result.error)
+            return
         }
+        const {
+            success: _s,
+            job: _j,
+            scope: _sc,
+            ...counts
+        } = result.data as Record<string, unknown>
+        showSuccess(`${job.title} done: ${summaryText(counts as Record<string, number>) || 'ok'}`)
+        onRan()
     }
 
     const Section = ({
@@ -124,13 +131,13 @@ export default function CronJobsPanel() {
         icon: React.ReactNode
         children: React.ReactNode
     }) => {
-        const isExpanded = expandedSection === id
-
+        const isExpanded = expanded === id
         return (
             <div className="bg-gray-800 rounded-xl overflow-hidden">
                 <button
-                    onClick={() => setExpandedSection(isExpanded ? null : id)}
-                    className="w-full flex items-center justify-between p-6 hover:bg-gray-750 transition-colors"
+                    onClick={() => setExpanded(isExpanded ? null : id)}
+                    aria-expanded={isExpanded}
+                    className="w-full flex items-center justify-between p-6 hover:bg-gray-700/50 transition-colors"
                 >
                     <div className="flex items-center gap-3">
                         {icon}
@@ -143,106 +150,26 @@ export default function CronJobsPanel() {
         )
     }
 
-    const JobCard = ({
-        title,
-        description,
-        jobType,
-        schedule,
-        lastRun,
-        lastResult,
-        running,
-    }: {
-        title: string
-        description: string
-        jobType: 'trending' | 'cache' | 'social'
-        schedule: string
-        lastRun?: Date
-        lastResult?: any
-        running: boolean
-    }) => {
-        return (
-            <div className="bg-gray-900 rounded-lg p-5">
-                <div className="flex items-start justify-between mb-4">
-                    <div>
-                        <h4 className="text-white font-medium mb-1">{title}</h4>
-                        <p className="text-sm text-gray-400">{description}</p>
-                    </div>
-                    {lastResult && (
-                        <div
-                            className={`flex items-center gap-1 ${lastResult.success ? 'text-green-500' : 'text-amber-400'}`}
-                        >
-                            {lastResult.success ? (
-                                <CheckCircle2 className="h-4 w-4" />
-                            ) : (
-                                <AlertCircle className="h-4 w-4" />
-                            )}
-                        </div>
-                    )}
-                </div>
-
-                <div className="space-y-3">
-                    {/* Schedule Info */}
-                    <div className="p-3 bg-blue-900/20 border border-blue-800 rounded">
-                        <p className="text-xs text-blue-400 flex items-center gap-2">
-                            <Clock className="h-3 w-3" />
-                            <strong>Vercel Schedule:</strong> {schedule}
-                        </p>
-                    </div>
-
-                    {/* Last Run Info */}
-                    {lastRun && lastResult && (
-                        <div className="p-3 bg-gray-800 rounded">
-                            <p className="text-xs text-gray-400 mb-2">
-                                <strong>Last Run:</strong> {lastRun.toLocaleString()}
-                            </p>
-                            {lastResult.emailsSent !== undefined && (
-                                <p className="text-xs text-gray-400">
-                                    📧 {lastResult.emailsSent} emails sent
-                                </p>
-                            )}
-                            {lastResult.usersProcessed !== undefined && (
-                                <p className="text-xs text-gray-400">
-                                    👥 {lastResult.usersProcessed} users processed
-                                </p>
-                            )}
-                            {lastResult.collectionsUpdated !== undefined && (
-                                <p className="text-xs text-gray-400">
-                                    📁 {lastResult.collectionsUpdated} collections updated
-                                </p>
-                            )}
-                            {lastResult.notificationsCreated !== undefined && (
-                                <p className="text-xs text-gray-400">
-                                    🔔 {lastResult.notificationsCreated} notifications created
-                                </p>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Action Button */}
-                    <button
-                        onClick={() => runCronJob(jobType, false)}
-                        disabled={running}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded-lg transition"
-                    >
-                        {running ? (
-                            <>
-                                <RefreshCw className="h-4 w-4 animate-spin" />
-                                Running...
-                            </>
-                        ) : (
-                            <>
-                                <Play className="h-4 w-4" />
-                                Run for All Users
-                            </>
-                        )}
-                    </button>
-                </div>
-            </div>
-        )
-    }
-
     return (
         <div className="space-y-6">
+            {reauthDialog}
+            {confirmAll && (
+                <ConfirmDialog
+                    title={`Run the ${confirmAll.title.toLowerCase()} for all users?`}
+                    confirmLabel="Run for all users"
+                    danger
+                    busy={running !== null}
+                    onConfirm={() => run(confirmAll, 'all')}
+                    onCancel={() => setConfirmAll(null)}
+                >
+                    <p>{DETAILS[confirmAll.name].summary}.</p>
+                    <p>
+                        This is the same run as the schedule ({confirmAll.schedule}) and can send
+                        real email to everyone opted in.
+                    </p>
+                </ConfirmDialog>
+            )}
+
             {/* Header */}
             <div className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 border border-blue-800 rounded-xl p-6">
                 <div className="flex items-center gap-3 mb-3">
@@ -250,238 +177,127 @@ export default function CronJobsPanel() {
                     <h2 className="text-2xl font-bold text-white">Cron Jobs Management</h2>
                 </div>
                 <p className="text-gray-300 text-sm">
-                    Production cron jobs that run on schedule via Vercel. These process all users
-                    and send real emails.
+                    Weekly jobs run by Cloudflare Cron Triggers at 02:00 UTC. Running one here uses
+                    the same code; &quot;Run for me only&quot; limits it to your own account.
                 </p>
                 <div className="mt-4 p-3 bg-yellow-900/20 border border-yellow-700 rounded-lg">
                     <p className="text-sm text-yellow-400 flex items-center gap-2">
                         <AlertCircle className="h-4 w-4" />
-                        <strong>Warning:</strong> These buttons trigger production jobs that affect
-                        ALL users. Use with caution.
+                        <strong>Warning:</strong> &quot;Run for all users&quot; can email everyone
+                        opted in. It asks to confirm first.
                     </p>
                 </div>
             </div>
 
-            {/* Overview Section */}
+            {/* Overview */}
             <Section
                 id="overview"
                 title="System Overview"
                 icon={<Database className="h-5 w-5 text-green-500" />}
             >
-                <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-gray-900 p-4 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {jobs.map((job) => (
+                        <div
+                            key={job.name}
+                            className="bg-gray-900 p-4 rounded-lg"
+                            data-testid={`job-overview-${job.name}`}
+                        >
                             <div className="flex items-center gap-2 mb-2">
-                                <Mail className="h-4 w-4 text-blue-400" />
-                                <h4 className="text-sm font-medium text-white">Trending Digest</h4>
+                                {ICONS[job.name]}
+                                <h4 className="text-sm font-medium text-white">{job.title}</h4>
                             </div>
-                            <p className="text-xs text-gray-400 mb-1">
-                                Sends weekly trending content emails
+                            <p className="text-xs text-gray-400 mb-2">
+                                {DETAILS[job.name].summary}
                             </p>
-                            <p className="text-xs text-green-500">Status: Active</p>
-                        </div>
-                        <div className="bg-gray-900 p-4 rounded-lg">
-                            <div className="flex items-center gap-2 mb-2">
-                                <RefreshCw className="h-4 w-4 text-teal-400" />
-                                <h4 className="text-sm font-medium text-white">Collection Cache</h4>
-                            </div>
-                            <p className="text-xs text-gray-400 mb-1">
-                                Refreshes user collection caches
+                            <p className="text-xs text-gray-400">Schedule: {job.schedule}</p>
+                            <p className="text-xs text-gray-400">
+                                Next run: {formatTime(job.nextRun)}
                             </p>
-                            <p className="text-xs text-green-500">Status: Active</p>
-                        </div>
-                        <div className="bg-gray-900 p-4 rounded-lg">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Users className="h-4 w-4 text-purple-400" />
-                                <h4 className="text-sm font-medium text-white">Social Digest</h4>
-                            </div>
-                            <p className="text-xs text-gray-400 mb-1">
-                                Batches social interaction emails
+                            <p className="text-xs">
+                                <span className="text-gray-400">Last run: </span>
+                                <LastRunLine job={job} />
                             </p>
-                            <p className="text-xs text-green-500">Status: Active</p>
                         </div>
-                    </div>
-
-                    <div className="bg-blue-900/20 border border-blue-800 rounded-lg p-4">
-                        <h4 className="text-sm font-medium text-white mb-2">
-                            How Vercel Cron Works
-                        </h4>
-                        <ul className="space-y-1 text-xs text-gray-300">
-                            <li>
-                                • Cron jobs are defined in{' '}
-                                <code className="text-blue-400">vercel.json</code>
-                            </li>
-                            <li>• Vercel automatically calls the endpoint at scheduled times</li>
-                            <li>
-                                • Jobs use <code className="text-blue-400">CRON_SECRET</code> for
-                                authentication
-                            </li>
-                            <li>
-                                • Free tier allows 1 job per day (we have 3 running on different
-                                days)
-                            </li>
-                            <li>
-                                • Manual triggers from this panel do NOT count toward Vercel's limit
-                            </li>
-                        </ul>
-                    </div>
+                    ))}
                 </div>
             </Section>
 
-            {/* Trending Digest Section */}
-            <Section
-                id="trending"
-                title="Trending Digest (Mondays 2 AM UTC)"
-                icon={<Mail className="h-5 w-5 text-blue-500" />}
-            >
-                <div className="space-y-4">
-                    <div className="prose prose-invert prose-sm max-w-none">
-                        <h4 className="text-white">What it does:</h4>
-                        <ul className="text-gray-300">
-                            <li>Fetches current trending movies and TV shows from TMDB</li>
-                            <li>
-                                Sends email to all users who have enabled trending notifications
-                            </li>
-                            <li>Includes top 5 trending movies and top 5 trending TV shows</li>
-                            <li>Users can unsubscribe via link in email</li>
-                        </ul>
-                        <h4 className="text-white mt-4">Requirements:</h4>
-                        <ul className="text-gray-300">
-                            <li>
-                                User must have <code>notifications.email = true</code>
-                            </li>
-                            <li>
-                                User must have{' '}
-                                <code>notifications.types.trending_update = true</code>
-                            </li>
-                            <li>User must have valid email address</li>
-                        </ul>
-                    </div>
-
-                    <JobCard
-                        title="Run Trending Digest for All Users"
-                        description="Fetches trending content and sends emails to all opted-in users"
-                        jobType="trending"
-                        schedule="Every Monday at 2:00 AM UTC"
-                        lastRun={jobStatuses['trending-all'].lastRun}
-                        lastResult={jobStatuses['trending-all'].lastResult}
-                        running={jobStatuses['trending-all'].running}
-                    />
-                </div>
-            </Section>
-
-            {/* Collection Cache Section */}
-            <Section
-                id="cache"
-                title="Collection Cache Refresh (Sundays 2 AM UTC)"
-                icon={<RefreshCw className="h-5 w-5 text-teal-500" />}
-            >
-                <div className="space-y-4">
-                    <div className="prose prose-invert prose-sm max-w-none">
-                        <h4 className="text-white">What it does:</h4>
-                        <ul className="text-gray-300">
-                            <li>
-                                Finds all TMDB genre-based collections with actor/director filters
-                            </li>
-                            <li>Re-fetches top 50 results from TMDB for each collection</li>
-                            <li>Compares with existing cache to detect new content</li>
-                            <li>Updates cache if top 50 results have changed</li>
-                            <li>Creates notification for user when new items are found</li>
-                        </ul>
-                        <h4 className="text-white mt-4">Optimization:</h4>
-                        <ul className="text-gray-300">
-                            <li>Only processes collections not updated in the last 7 days</li>
-                            <li>Skips manual collections (no API calls needed)</li>
-                            <li>Skips AI-generated collections (static content)</li>
-                        </ul>
-                    </div>
-
-                    <JobCard
-                        title="Run Collection Cache for All Users"
-                        description="Refreshes collection caches and creates notifications for new content"
-                        jobType="cache"
-                        schedule="Every Sunday at 2:00 AM UTC"
-                        lastRun={jobStatuses['cache-all'].lastRun}
-                        lastResult={jobStatuses['cache-all'].lastResult}
-                        running={jobStatuses['cache-all'].running}
-                    />
-                </div>
-            </Section>
-
-            {/* Social Digest Section */}
-            <Section
-                id="social"
-                title="Social Digest (Wednesdays 2 AM UTC)"
-                icon={<Users className="h-5 w-5 text-purple-500" />}
-            >
-                <div className="space-y-4">
-                    <div className="prose prose-invert prose-sm max-w-none">
-                        <h4 className="text-white">What it does:</h4>
-                        <ul className="text-gray-300">
-                            <li>Queries all pending social notifications from the past 7 days</li>
-                            <li>Groups notifications by user (comments + likes)</li>
-                            <li>
-                                Sends one batched digest email per user with all their interactions
-                            </li>
-                            <li>
-                                Marks notifications as <code>emailSent: true</code> after sending
-                            </li>
-                        </ul>
-                        <h4 className="text-white mt-4">Notification Types:</h4>
-                        <ul className="text-gray-300">
-                            <li>
-                                <strong>ranking_comment:</strong> Someone commented on user's
-                                ranking
-                            </li>
-                            <li>
-                                <strong>ranking_like:</strong> Someone liked user's ranking
-                                (batched)
-                            </li>
-                        </ul>
-                        <h4 className="text-white mt-4">Requirements:</h4>
-                        <ul className="text-gray-300">
-                            <li>
-                                User must have <code>notifications.email = true</code>
-                            </li>
-                            <li>
-                                User must have{' '}
-                                <code>notifications.types.social_interactions = true</code>
-                            </li>
-                            <li>User must have valid email address</li>
-                            <li>
-                                Must have pending notifications with <code>emailSent: false</code>
-                            </li>
-                        </ul>
-                    </div>
-
-                    <JobCard
-                        title="Run Social Digest for All Users"
-                        description="Sends batched social interaction emails to all users with pending notifications"
-                        jobType="social"
-                        schedule="Every Wednesday at 2:00 AM UTC"
-                        lastRun={jobStatuses['social-all'].lastRun}
-                        lastResult={jobStatuses['social-all'].lastResult}
-                        running={jobStatuses['social-all'].running}
-                    />
-                </div>
-            </Section>
-
-            {/* Documentation Link */}
-            <div className="bg-gray-800 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-white mb-3">Additional Documentation</h3>
-                <p className="text-sm text-gray-400 mb-4">
-                    For detailed technical documentation, API specifications, and troubleshooting
-                    guides, see:
-                </p>
-                <a
-                    href="/docs/CRON_JOBS.md"
-                    target="_blank"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
+            {jobs.map((job) => (
+                <Section
+                    key={job.name}
+                    id={job.name}
+                    title={`${job.title} (${job.schedule})`}
+                    icon={ICONS[job.name]}
                 >
-                    <Database className="h-4 w-4" />
-                    View Full Documentation
-                </a>
-            </div>
+                    <div className="space-y-4">
+                        <div className="prose prose-invert prose-sm max-w-none">
+                            <h4 className="text-white">What it does:</h4>
+                            <ul className="text-gray-300">
+                                {DETAILS[job.name].does.map((line) => (
+                                    <li key={line}>{line}</li>
+                                ))}
+                            </ul>
+                            {DETAILS[job.name].needs.length > 0 && (
+                                <>
+                                    <h4 className="text-white mt-4">Who gets email:</h4>
+                                    <ul className="text-gray-300">
+                                        {DETAILS[job.name].needs.map((line) => (
+                                            <li key={line}>
+                                                <code>{line}</code>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </>
+                            )}
+                        </div>
+
+                        <div className="bg-gray-900 rounded-lg p-5 space-y-3">
+                            <div className="flex items-start justify-between">
+                                <p className="text-xs text-gray-400">
+                                    <strong>Last run:</strong> <LastRunLine job={job} />
+                                </p>
+                                {job.lastRun?.ok === true && (
+                                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                )}
+                                {job.lastRun?.ok === false && (
+                                    <AlertCircle className="h-4 w-4 text-amber-400" />
+                                )}
+                            </div>
+                            {job.lastRun?.summary && (
+                                <p className="text-xs text-gray-400">
+                                    {summaryText(job.lastRun.summary)}
+                                </p>
+                            )}
+                            <div className="flex flex-col gap-3 sm:flex-row">
+                                <button
+                                    onClick={() => run(job, 'admin')}
+                                    disabled={running !== null}
+                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-600 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition"
+                                >
+                                    {running === `${job.name}-admin` ? (
+                                        <RefreshCw className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Play className="h-4 w-4" />
+                                    )}
+                                    Run for me only
+                                </button>
+                                <button
+                                    onClick={() => setConfirmAll(job)}
+                                    disabled={running !== null}
+                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-700 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition"
+                                >
+                                    {running === `${job.name}-all` ? (
+                                        <RefreshCw className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Play className="h-4 w-4" />
+                                    )}
+                                    Run for all users...
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </Section>
+            ))}
         </div>
     )
 }

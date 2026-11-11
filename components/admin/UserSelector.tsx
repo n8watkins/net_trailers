@@ -3,144 +3,106 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useToast } from '@/hooks/useToast'
 import { UserIcon, MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline'
-import type { EmailTemplate } from './EmailComposer'
 
 interface User {
     userId: string
     email: string
-    displayName?: string
-    createdAt: number
-    lastActive?: number
-    emailNotifications?: {
-        trending?: boolean
-        social?: boolean
+    displayName: string | null
+    createdAt: number | null
+    lastActive: number | null
+    /** False when email is off for this user, including after unsubscribing. */
+    canReceiveEmail: boolean
+    emailNotifications: {
+        trending: boolean
+        social: boolean
     }
 }
 
 interface UserSelectorProps {
     selectedUserIds: string[]
     onSelectionChange: (userIds: string[]) => void
-    template: EmailTemplate
 }
 
 type FilterType = 'all' | 'trending' | 'social' | 'recent' | 'inactive'
 
-export default function UserSelector({
-    selectedUserIds,
-    onSelectionChange,
-    template,
-}: UserSelectorProps) {
+const DAY = 24 * 60 * 60 * 1000
+
+function matchesFilter(user: User, filter: FilterType, now: number): boolean {
+    switch (filter) {
+        case 'trending':
+            return user.canReceiveEmail && user.emailNotifications.trending
+        case 'social':
+            return user.canReceiveEmail && user.emailNotifications.social
+        case 'recent':
+            return (user.lastActive ?? 0) > now - 7 * DAY
+        case 'inactive':
+            return (user.lastActive ?? 0) < now - 30 * DAY
+        default:
+            return true
+    }
+}
+
+const FILTERS: { id: FilterType; label: string }[] = [
+    { id: 'all', label: 'All Users' },
+    { id: 'trending', label: 'Trending Opt-in' },
+    { id: 'social', label: 'Social Opt-in' },
+    { id: 'recent', label: 'Recently Active' },
+    { id: 'inactive', label: 'Inactive (30d+)' },
+]
+
+export default function UserSelector({ selectedUserIds, onSelectionChange }: UserSelectorProps) {
     const [users, setUsers] = useState<User[]>([])
-    const [filteredUsers, setFilteredUsers] = useState<User[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedFilter, setSelectedFilter] = useState<FilterType>('all')
 
     const { showError } = useToast()
 
-    // Memoize filter counts to avoid recalculating on every render
-    const filterCounts = useMemo(() => {
-        const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
-        const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000
-
-        return {
-            all: users.length,
-            trending: users.filter((u) => u.emailNotifications?.trending === true).length,
-            social: users.filter((u) => u.emailNotifications?.social === true).length,
-            recent: users.filter((u) => (u.lastActive || 0) > sevenDaysAgo).length,
-            inactive: users.filter((u) => (u.lastActive || 0) < thirtyDaysAgo).length,
-        }
-    }, [users]) // Only recompute when users array changes
-
     useEffect(() => {
+        const fetchUsers = async () => {
+            setLoading(true)
+            try {
+                const response = await fetch('/api/admin/users/filtered?filter=all')
+                const result = await response.json()
+                if (!response.ok) throw new Error(result.error || 'Failed to fetch users')
+                setUsers(result.users || [])
+            } catch (error) {
+                showError(error instanceof Error ? error.message : 'Failed to fetch users')
+            } finally {
+                setLoading(false)
+            }
+        }
         fetchUsers()
     }, [])
 
-    useEffect(() => {
-        // Auto-select filter based on template
-        if (template === 'trending') {
-            setSelectedFilter('trending')
-        } else if (template === 'social') {
-            setSelectedFilter('social')
-        } else {
-            setSelectedFilter('all')
-        }
-    }, [template])
+    const filterCounts = useMemo(() => {
+        const now = Date.now()
+        return Object.fromEntries(
+            FILTERS.map((f) => [f.id, users.filter((u) => matchesFilter(u, f.id, now)).length])
+        ) as Record<FilterType, number>
+    }, [users])
 
-    useEffect(() => {
-        applyFilters()
+    const filteredUsers = useMemo(() => {
+        const now = Date.now()
+        const query = searchQuery.toLowerCase()
+        return users.filter(
+            (u) =>
+                matchesFilter(u, selectedFilter, now) &&
+                (!query ||
+                    u.email.toLowerCase().includes(query) ||
+                    (u.displayName?.toLowerCase() ?? '').includes(query) ||
+                    u.userId.toLowerCase().includes(query))
+        )
     }, [users, searchQuery, selectedFilter])
 
-    const fetchUsers = async () => {
-        setLoading(true)
-        try {
-            const response = await fetch('/api/admin/users/filtered?filter=all')
-            const result = await response.json()
-
-            if (!response.ok) {
-                throw new Error(result.error || 'Failed to fetch users')
-            }
-
-            setUsers(result.users || [])
-        } catch (error) {
-            console.error('Failed to fetch users:', error)
-            showError(error instanceof Error ? error.message : 'Failed to fetch users')
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    const applyFilters = () => {
-        let filtered = [...users]
-
-        // Apply filter type
-        switch (selectedFilter) {
-            case 'trending':
-                filtered = filtered.filter((u) => u.emailNotifications?.trending === true)
-                break
-            case 'social':
-                filtered = filtered.filter((u) => u.emailNotifications?.social === true)
-                break
-            case 'recent': {
-                // Active in last 7 days
-                const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
-                filtered = filtered.filter((u) => (u.lastActive || 0) > sevenDaysAgo)
-                break
-            }
-            case 'inactive': {
-                // Not active in last 30 days
-                const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000
-                filtered = filtered.filter((u) => (u.lastActive || 0) < thirtyDaysAgo)
-                break
-            }
-            case 'all':
-            default:
-                // No filtering
-                break
-        }
-
-        // Apply search query
-        if (searchQuery) {
-            const query = searchQuery.toLowerCase()
-            filtered = filtered.filter(
-                (u) =>
-                    u.email.toLowerCase().includes(query) ||
-                    (u.displayName?.toLowerCase() || '').includes(query) ||
-                    u.userId.toLowerCase().includes(query)
-            )
-        }
-
-        setFilteredUsers(filtered)
-    }
+    // Only users who can get email can be selected.
+    const selectable = filteredUsers.filter((u) => u.canReceiveEmail)
+    const allSelected =
+        selectable.length > 0 && selectable.every((u) => selectedUserIds.includes(u.userId))
+    const optedOutCount = users.filter((u) => !u.canReceiveEmail).length
 
     const handleSelectAll = () => {
-        if (selectedUserIds.length === filteredUsers.length) {
-            // Deselect all
-            onSelectionChange([])
-        } else {
-            // Select all filtered users
-            onSelectionChange(filteredUsers.map((u) => u.userId))
-        }
+        onSelectionChange(allSelected ? [] : selectable.map((u) => u.userId))
     }
 
     const handleToggleUser = (userId: string) => {
@@ -150,30 +112,6 @@ export default function UserSelector({
             onSelectionChange([...selectedUserIds, userId])
         }
     }
-
-    const filters = [
-        { id: 'all' as FilterType, label: 'All Users', count: filterCounts.all },
-        {
-            id: 'trending' as FilterType,
-            label: 'Trending Opt-in',
-            count: filterCounts.trending,
-        },
-        {
-            id: 'social' as FilterType,
-            label: 'Social Opt-in',
-            count: filterCounts.social,
-        },
-        {
-            id: 'recent' as FilterType,
-            label: 'Recently Active',
-            count: filterCounts.recent,
-        },
-        {
-            id: 'inactive' as FilterType,
-            label: 'Inactive (30d+)',
-            count: filterCounts.inactive,
-        },
-    ]
 
     return (
         <div className="space-y-4">
@@ -188,12 +126,10 @@ export default function UserSelector({
                 </div>
                 <button
                     onClick={handleSelectAll}
-                    disabled={loading || filteredUsers.length === 0}
+                    disabled={loading || selectable.length === 0}
                     className="text-sm font-medium text-blue-400 hover:text-blue-300 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                    {selectedUserIds.length === filteredUsers.length
-                        ? 'Deselect All'
-                        : 'Select All'}
+                    {allSelected ? 'Deselect All' : 'Select All'}
                 </button>
             </div>
 
@@ -212,7 +148,7 @@ export default function UserSelector({
             {/* Filters */}
             <div className="flex items-center gap-2 overflow-x-auto">
                 <FunnelIcon className="h-4 w-4 flex-shrink-0 text-gray-400" />
-                {filters.map((filter) => (
+                {FILTERS.map((filter) => (
                     <button
                         key={filter.id}
                         onClick={() => setSelectedFilter(filter.id)}
@@ -220,10 +156,11 @@ export default function UserSelector({
                         className={`flex-shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                             selectedFilter === filter.id
                                 ? 'bg-blue-500 text-white'
-                                : 'bg-gray-800 text-gray-300 hover:bg-gray-750'
+                                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                         } disabled:cursor-not-allowed disabled:opacity-50`}
                     >
-                        {filter.label} <span className="ml-1 opacity-60">({filter.count})</span>
+                        {filter.label}{' '}
+                        <span className="ml-1 opacity-60">({filterCounts[filter.id]})</span>
                     </button>
                 ))}
             </div>
@@ -245,33 +182,58 @@ export default function UserSelector({
                         {filteredUsers.map((user) => (
                             <label
                                 key={user.userId}
-                                className="flex cursor-pointer items-center gap-3 p-4 transition-colors hover:bg-gray-750"
+                                className={`flex items-center gap-3 p-4 transition-colors ${
+                                    user.canReceiveEmail
+                                        ? 'cursor-pointer hover:bg-gray-700/50'
+                                        : 'cursor-not-allowed opacity-60'
+                                }`}
                             >
                                 <input
                                     type="checkbox"
-                                    checked={selectedUserIds.includes(user.userId)}
+                                    aria-label={user.email}
+                                    disabled={!user.canReceiveEmail}
+                                    checked={
+                                        user.canReceiveEmail &&
+                                        selectedUserIds.includes(user.userId)
+                                    }
                                     onChange={() => handleToggleUser(user.userId)}
                                     className="h-4 w-4 rounded border-gray-600 bg-gray-700 text-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:ring-offset-0"
                                 />
                                 <div className="flex-1">
-                                    <div className="font-medium text-white">
-                                        {user.displayName || 'Anonymous User'}
+                                    {user.displayName && (
+                                        <div className="font-medium text-white">
+                                            {user.displayName}
+                                        </div>
+                                    )}
+                                    <div
+                                        className={
+                                            user.displayName
+                                                ? 'text-sm text-gray-400'
+                                                : 'font-medium text-white'
+                                        }
+                                    >
+                                        {user.email}
                                     </div>
-                                    <div className="text-sm text-gray-400">{user.email}</div>
                                     <div className="mt-1 flex flex-wrap gap-2">
-                                        {user.emailNotifications?.trending && (
-                                            <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-xs text-green-400">
-                                                Trending ✓
+                                        {!user.canReceiveEmail && (
+                                            <span className="rounded-full bg-gray-600/40 px-2 py-0.5 text-xs text-gray-300">
+                                                Email off
                                             </span>
                                         )}
-                                        {user.emailNotifications?.social && (
+                                        {user.canReceiveEmail &&
+                                            user.emailNotifications.trending && (
+                                                <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-xs text-green-400">
+                                                    Trending ✓
+                                                </span>
+                                            )}
+                                        {user.canReceiveEmail && user.emailNotifications.social && (
                                             <span className="rounded-full bg-purple-500/20 px-2 py-0.5 text-xs text-purple-400">
                                                 Social ✓
                                             </span>
                                         )}
-                                        {user.lastActive && (
+                                        {user.lastActive !== null && user.lastActive > 0 && (
                                             <span className="text-xs text-gray-500">
-                                                Last active:{' '}
+                                                Last sign-in:{' '}
                                                 {new Date(user.lastActive).toLocaleDateString()}
                                             </span>
                                         )}
@@ -284,9 +246,11 @@ export default function UserSelector({
             </div>
 
             {/* Summary */}
-            {filteredUsers.length > 0 && (
+            {users.length > 0 && (
                 <div className="text-sm text-gray-400">
                     Showing {filteredUsers.length} of {users.length} total users
+                    {optedOutCount > 0 &&
+                        `. ${optedOutCount} with email off (or unsubscribed) cannot be selected.`}
                 </div>
             )}
         </div>

@@ -40,6 +40,11 @@ export const users = sqliteTable('user', {
     // Legacy: the GitHub login of accounts made with the retired GitHub sign-in.
     // Nothing reads it now (admins are matched by email, lib/admin.ts).
     githubLogin: text('githubLogin'),
+    // When the account was made and when it last signed in (epoch ms). Set by
+    // the insert ($defaultFn, so the Auth.js adapter fills it) and by the
+    // signIn event (lib/authEvents.ts). Null for accounts older than 0004.
+    createdAt: integer('createdAt').$defaultFn(() => Date.now()),
+    lastLoginAt: integer('lastLoginAt'),
 })
 
 export const accounts = sqliteTable(
@@ -68,6 +73,9 @@ export const sessions = sqliteTable('session', {
         .notNull()
         .references(() => users.id, { onDelete: 'cascade' }),
     expires: integer('expires', { mode: 'timestamp_ms' }).notNull(),
+    // When this session was created, i.e. when its owner signed in (epoch ms).
+    // Admin actions that email people or run jobs need a recent one (lib/admin/guard.ts).
+    createdAt: integer('createdAt').$defaultFn(() => Date.now()),
 })
 
 export const verificationTokens = sqliteTable(
@@ -470,6 +478,7 @@ export const userActivity = sqliteTable(
     (t) => [
         index('user_activity_user_idx').on(t.userId),
         index('user_activity_user_ts_idx').on(t.userId, t.timestamp),
+        index('user_activity_ts_idx').on(t.timestamp),
     ]
 )
 
@@ -539,6 +548,41 @@ export const adminEmails = sqliteTable('admin_emails', {
     sentAt: integer('sentAt').notNull(),
     sentBy: text('sentBy'),
 })
+
+/**
+ * What admins did (lib/admin/audit.ts): who, what, when and counts. Never an
+ * email body or a recipient's address; the only address kept is the admin's.
+ */
+export const adminAudit = sqliteTable(
+    'admin_audit',
+    {
+        id: text('id').primaryKey().$defaultFn(uuid),
+        actorId: text('actorId').notNull(),
+        actorEmail: text('actorEmail'),
+        action: text('action').notNull(),
+        details: text('details', { mode: 'json' }).$type<
+            Record<string, string | number | boolean | null>
+        >(),
+        createdAt: integer('createdAt').notNull(),
+    },
+    (t) => [index('admin_audit_created_idx').on(t.createdAt)]
+)
+
+/** One row per run of a scheduled job, by the cron or an admin (lib/jobs). */
+export const cronRuns = sqliteTable(
+    'cron_runs',
+    {
+        id: text('id').primaryKey().$defaultFn(uuid),
+        job: text('job').notNull(),
+        trigger: text('trigger').notNull(),
+        scope: text('scope').notNull(),
+        startedAt: integer('startedAt').notNull(),
+        finishedAt: integer('finishedAt'),
+        ok: integer('ok', { mode: 'boolean' }),
+        summary: text('summary', { mode: 'json' }).$type<Record<string, number>>(),
+    },
+    (t) => [index('cron_runs_job_started_idx').on(t.job, t.startedAt)]
+)
 
 export const signupLog = sqliteTable(
     'signup_log',

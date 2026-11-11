@@ -14,6 +14,19 @@ export interface AdminStats {
     currentMonthStart?: number
 }
 
+/** One account as GET /api/admin/users returns it. Dates are ISO strings or null when unknown. */
+export interface AdminUserRow {
+    uid: string
+    email: string
+    displayName: string
+    photoURL: string | null
+    emailVerified: boolean
+    createdAt: string | null
+    lastSignInAt: string | null
+    /** 'email' and/or the OAuth providers linked to the account (e.g. 'github'). */
+    providers: string[]
+}
+
 export interface TrendingStats {
     lastRun: number | null
     itemsFound?: number

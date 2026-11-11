@@ -6,17 +6,7 @@ import { ArrowLeft, Calendar, TrendingUp } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
 
-interface UserInfo {
-    uid: string
-    email: string
-    displayName: string
-    photoURL?: string
-    emailVerified: boolean
-    disabled: boolean
-    createdAt: string
-    lastSignInAt: string
-    providerData: Array<{ providerId: string; uid: string }>
-}
+import type { AdminUserRow as UserInfo } from '@/types/admin'
 
 export default function SignupsPage() {
     const router = useRouter()
@@ -53,7 +43,7 @@ export default function SignupsPage() {
             } else {
                 showError('Failed to load users')
             }
-        } catch (error) {
+        } catch {
             showError('Failed to load users')
         } finally {
             setLoading(false)
@@ -78,10 +68,10 @@ export default function SignupsPage() {
     }
 
     // Filter users by timeframe
-    const recentSignups = users.filter((user) => {
-        const signupTime = new Date(user.createdAt).getTime()
-        return signupTime >= getTimeframeBoundary()
-    })
+    const recentSignups = users.filter(
+        (user): user is UserInfo & { createdAt: string } =>
+            user.createdAt !== null && Date.parse(user.createdAt) >= getTimeframeBoundary()
+    )
 
     // Group by day
     const signupsByDay = recentSignups.reduce(
@@ -93,7 +83,7 @@ export default function SignupsPage() {
             acc[day].push(user)
             return acc
         },
-        {} as Record<string, UserInfo[]>
+        {} as Record<string, typeof recentSignups>
     )
 
     const sortedDays = Object.keys(signupsByDay).sort(
@@ -215,7 +205,9 @@ export default function SignupsPage() {
                                             </div>
                                             <div className="text-right">
                                                 <p className="text-sm text-white">
-                                                    {new Date(user.createdAt).toLocaleTimeString()}
+                                                    {new Date(
+                                                        user.createdAt ?? 0
+                                                    ).toLocaleTimeString()}
                                                 </p>
                                                 <div className="flex items-center gap-2 mt-1">
                                                     <span
@@ -226,11 +218,7 @@ export default function SignupsPage() {
                                                             : 'Unverified'}
                                                     </span>
                                                     <span className="text-xs text-gray-500">
-                                                        via{' '}
-                                                        {user.providerData[0]?.providerId.replace(
-                                                            '.com',
-                                                            ''
-                                                        )}
+                                                        via {user.providers[0]?.replace('.com', '')}
                                                     </span>
                                                 </div>
                                             </div>

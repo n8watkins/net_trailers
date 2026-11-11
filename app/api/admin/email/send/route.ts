@@ -1,246 +1,193 @@
 /**
- * POST /api/admin/email/send
+ * POST /api/admin/email/send (admin only, fresh sign-in)
  *
- * Send emails to selected users. ADMIN ONLY.
+ * `mode: 'send'` emails an announcement or a custom email to the selected
+ * users who have email turned on (lib/admin/recipients.ts): the others,
+ * including everyone who unsubscribed, are skipped and counted. `mode: 'test'`
+ * sends the same email to the signed-in admin only.
  *
- * User data is read from Drizzle `user` + `profiles` tables.
- * History is written to the `adminEmails` table (PII-minimised: counts only).
- * Unsubscribe tokens are stored in `userPreferences.data.unsubscribeToken`.
- * Auth via validateAdminRequest (session-based).
+ * Every call writes an audit row (counts only) and a send-history row.
  */
 
+import { eq, inArray } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
 
 import { db } from '@/db'
-import { adminEmails, profiles, users } from '@/db/schema'
+import { adminEmails, profiles, userPreferences, users } from '@/db/schema'
+import { writeAdminAudit } from '@/lib/admin/audit'
+import { badRequest, readJson, requireAdmin, serverError } from '@/lib/admin/guard'
+import { canReceiveAdminEmail } from '@/lib/admin/recipients'
+import { emailSendBody, type EmailSendBody } from '@/lib/admin/schemas'
+import type { LimitRule } from '@/lib/durableLimit'
 import { EmailService } from '@/lib/email/email-service'
 import { sanitizeEmailHtml, validateEmailTemplate } from '@/lib/email/email-validation'
 import { EmailLimitError } from '@/lib/email/gate'
-import type { LimitRule } from '@/lib/durableLimit'
 import { batchEnsureUnsubscribeTokens } from '@/lib/email/unsubscribe-token'
-import {
-    createForbiddenResponse,
-    createUnauthorizedResponse,
-    validateAdminRequest,
-} from '@/utils/adminMiddleware'
+
+type Recipient = { userId: string; email: string; displayName: string; token?: string }
+
+async function sendOne(
+    body: EmailSendBody,
+    html: string | undefined,
+    to: Recipient,
+    limits: LimitRule[]
+) {
+    if (body.template === 'announcement') {
+        await EmailService.sendAnnouncement(
+            {
+                to: to.email,
+                userName: to.displayName,
+                subject: body.subject,
+                message: body.customMessage ?? '',
+                unsubscribeToken: to.token,
+            },
+            limits
+        )
+    } else {
+        await EmailService.sendCustomEmail(
+            {
+                to: to.email,
+                userName: to.displayName,
+                subject: body.subject,
+                htmlContent: html ?? '',
+                unsubscribeToken: to.token,
+            },
+            limits
+        )
+    }
+}
 
 export async function POST(request: NextRequest) {
+    const guard = await requireAdmin({ fresh: true })
+    if (!guard.ok) return guard.response
+    const { actor } = guard
+
+    const parsed = emailSendBody.safeParse(await readJson(request))
+    if (!parsed.success) return badRequest()
+    const body = parsed.data
+
+    const validation = validateEmailTemplate(body)
+    if (!validation.valid) return badRequest(validation.error)
+    const html =
+        body.template === 'custom' && body.customHtmlContent
+            ? sanitizeEmailHtml(body.customHtmlContent)
+            : undefined
+
+    // This admin's hourly quota, plus each recipient's daily quota of admin
+    // emails, on top of the site-wide caps (lib/email/gate.ts).
+    const adminLimit: LimitRule = {
+        key: `email:admin:${actor.userId}`,
+        limit: 100,
+        window: { ms: 60 * 60 * 1000 },
+    }
+
     try {
-        const authResult = await validateAdminRequest(request)
-        if (!authResult.authorized) {
-            return authResult.error?.includes('not an administrator')
-                ? createForbiddenResponse(authResult.error)
-                : createUnauthorizedResponse(authResult.error)
-        }
-
-        const adminUserId = authResult.userId!
-
-        const body = await request.json()
-        const {
-            template,
-            userIds,
-            subject,
-            customMessage,
-            customHtmlContent,
-        }: {
-            template: 'trending' | 'social' | 'announcement' | 'custom'
-            userIds: string[]
-            subject?: string
-            customMessage?: string
-            customHtmlContent?: string
-        } = body
-
-        const MAX_RECIPIENTS_PER_REQUEST = 100
-
-        if (!template || !userIds || userIds.length === 0) {
-            return NextResponse.json(
-                { error: 'Missing required fields: template, userIds' },
-                { status: 400 }
-            )
-        }
-
-        if (userIds.length > MAX_RECIPIENTS_PER_REQUEST) {
-            return NextResponse.json(
-                {
-                    error: `Too many recipients (max ${MAX_RECIPIENTS_PER_REQUEST} per request)`,
-                    limit: MAX_RECIPIENTS_PER_REQUEST,
-                    requested: userIds.length,
-                },
-                { status: 400 }
-            )
-        }
-
-        const validation = validateEmailTemplate({
-            template,
-            subject,
-            customMessage,
-            customHtmlContent,
-        })
-        if (!validation.valid) {
-            return NextResponse.json({ error: validation.error }, { status: 400 })
-        }
-
-        // Durable limits, checked per email by the email gate (lib/email/gate.ts)
-        // on top of the site-wide caps: this admin's hourly quota and each
-        // recipient's daily quota of admin emails.
-        const limitsFor = (recipientId: string): LimitRule[] => [
-            { key: `email:admin:${adminUserId}`, limit: 100, window: { ms: 60 * 60 * 1000 } },
-            { key: `email:admin-to:${recipientId}`, limit: 3, window: 'day' },
-        ]
-
-        const sanitizedHtmlContent =
-            template === 'custom' && customHtmlContent
-                ? sanitizeEmailHtml(customHtmlContent)
-                : customHtmlContent
-
-        console.log(`[AdminEmailSend] Sending ${template} to ${userIds.length} users`)
-
-        const errors: string[] = []
-        let emailsSent = 0
-
-        // Fetch user + profile data from Drizzle.
-        const userRows = await db
-            .select({ id: users.id, email: users.email, name: users.name })
-            .from(users)
-
-        const profileRows = await db
-            .select({ userId: profiles.userId, displayName: profiles.displayName })
-            .from(profiles)
-
-        const userMap = new Map(userRows.map((u) => [u.id, u]))
-        const profileMap = new Map(profileRows.map((p) => [p.userId, p]))
-
-        const resolvedUsers = userIds
-            .map((uid) => {
-                const u = userMap.get(uid)
-                const p = profileMap.get(uid)
-                if (!u) {
-                    errors.push(`User not found: ${uid}`)
-                    return null
-                }
-                return {
-                    userId: uid,
-                    email: u.email,
-                    displayName: p?.displayName ?? u.name ?? 'there',
-                }
-            })
-            .filter((u): u is NonNullable<typeof u> => u !== null)
-
-        // Batch-generate unsubscribe tokens (CAN-SPAM compliance).
-        const unsubscribeTokens = await batchEnsureUnsubscribeTokens(
-            resolvedUsers.map((u) => u.userId)
-        )
-
-        switch (template) {
-            case 'trending':
-            case 'social':
-                return NextResponse.json(
+        if (body.mode === 'test') {
+            if (!actor.email) return badRequest('Your account has no email address')
+            const [profile] = await db
+                .select({ displayName: profiles.displayName })
+                .from(profiles)
+                .where(eq(profiles.userId, actor.userId))
+                .limit(1)
+            let sent = 0
+            let error: string | undefined
+            try {
+                await sendOne(
+                    body,
+                    html,
                     {
-                        error: 'Not Implemented',
-                        message: `The ${template} email template is not yet implemented. Use 'announcement' or 'custom'.`,
+                        userId: actor.userId,
+                        email: actor.email,
+                        displayName: profile?.displayName ?? 'there',
                     },
-                    { status: 501 }
+                    [adminLimit]
                 )
-
-            case 'announcement':
-                for (const user of resolvedUsers) {
-                    if (!user.email) {
-                        errors.push(`Missing email for user: ${user.userId}`)
-                        continue
-                    }
-                    try {
-                        await EmailService.sendAnnouncement(
-                            {
-                                to: user.email,
-                                userName: user.displayName,
-                                subject: subject!,
-                                message: customMessage!,
-                                unsubscribeToken: unsubscribeTokens.get(user.userId),
-                            },
-                            limitsFor(user.userId)
-                        )
-                        emailsSent++
-                    } catch (err) {
-                        errors.push(
-                            `Failed to send to ${user.email}: ${err instanceof Error ? err.message : 'Unknown error'}`
-                        )
-                        // The site-wide cap or this admin's quota stops the whole batch.
-                        if (
-                            err instanceof EmailLimitError &&
-                            !err.refusal.rule.key.startsWith('email:admin-to:')
-                        )
-                            break
-                    }
-                }
-                break
-
-            case 'custom':
-                for (const user of resolvedUsers) {
-                    if (!user.email) {
-                        errors.push(`Missing email for user: ${user.userId}`)
-                        continue
-                    }
-                    try {
-                        await EmailService.sendCustomEmail(
-                            {
-                                to: user.email,
-                                userName: user.displayName,
-                                subject: subject!,
-                                htmlContent: sanitizedHtmlContent!,
-                                unsubscribeToken: unsubscribeTokens.get(user.userId),
-                            },
-                            limitsFor(user.userId)
-                        )
-                        emailsSent++
-                    } catch (err) {
-                        errors.push(
-                            `Failed to send to ${user.email}: ${err instanceof Error ? err.message : 'Unknown error'}`
-                        )
-                        // The site-wide cap or this admin's quota stops the whole batch.
-                        if (
-                            err instanceof EmailLimitError &&
-                            !err.refusal.rule.key.startsWith('email:admin-to:')
-                        )
-                            break
-                    }
-                }
-                break
-
-            default:
-                return NextResponse.json({ error: 'Invalid template type' }, { status: 400 })
+                sent = 1
+            } catch (err) {
+                error = err instanceof EmailLimitError ? err.message : 'The test email failed'
+            }
+            await writeAdminAudit(actor, 'email.test', { template: body.template, sent })
+            return NextResponse.json({ success: sent === 1, emailsSent: sent, error })
         }
 
-        console.log(`[AdminEmailSend] ${emailsSent} sent, ${errors.length} errors`)
-
-        // Write PII-minimised history record.
-        try {
-            await db.insert(adminEmails).values({
-                type: template,
-                subject: subject ?? template,
-                sentCount: emailsSent,
-                failedCount: errors.length,
-                targetFilter: `userIds:${userIds.length}`,
-                sentAt: Date.now(),
-                sentBy: adminUserId,
+        const requested = [...new Set(body.userIds)]
+        const rows = await db
+            .select({
+                id: users.id,
+                email: users.email,
+                name: users.name,
+                displayName: profiles.displayName,
+                prefs: userPreferences.data,
             })
-        } catch (historyError) {
-            console.error('[AdminEmailSend] History write failed:', historyError)
+            .from(users)
+            .leftJoin(profiles, eq(profiles.userId, users.id))
+            .leftJoin(userPreferences, eq(userPreferences.userId, users.id))
+            .where(inArray(users.id, requested))
+
+        const notFound = requested.length - rows.length
+        const eligible = rows.filter((row) => row.email && canReceiveAdminEmail(row.prefs))
+        const skippedOptedOut = rows.length - eligible.length
+
+        const tokens = await batchEnsureUnsubscribeTokens(eligible.map((row) => row.id))
+        let emailsSent = 0
+        let failed = 0
+        let stoppedByLimit = false
+
+        for (const row of eligible) {
+            try {
+                await sendOne(
+                    body,
+                    html,
+                    {
+                        userId: row.id,
+                        email: row.email!,
+                        displayName: row.displayName ?? row.name ?? 'there',
+                        token: tokens.get(row.id),
+                    },
+                    [adminLimit, { key: `email:admin-to:${row.id}`, limit: 3, window: 'day' }]
+                )
+                emailsSent++
+            } catch (err) {
+                failed++
+                // The site-wide cap or this admin's quota stops the whole batch.
+                if (
+                    err instanceof EmailLimitError &&
+                    !err.refusal.rule.key.startsWith('email:admin-to:')
+                ) {
+                    stoppedByLimit = true
+                    break
+                }
+            }
         }
+
+        await db.insert(adminEmails).values({
+            type: body.template,
+            subject: body.subject,
+            sentCount: emailsSent,
+            failedCount: failed,
+            targetFilter: `userIds:${requested.length}`,
+            sentAt: Date.now(),
+            sentBy: actor.userId,
+        })
+        await writeAdminAudit(actor, 'email.send', {
+            template: body.template,
+            requested: requested.length,
+            sent: emailsSent,
+            failed,
+            skippedOptedOut,
+            notFound,
+        })
 
         return NextResponse.json({
             success: true,
             emailsSent,
-            totalUsers: userIds.length,
-            errors: errors.length > 0 ? errors : undefined,
+            failed,
+            skippedOptedOut,
+            notFound,
+            stoppedByLimit,
         })
     } catch (error) {
         console.error('[AdminEmailSend] Error:', error)
-        return NextResponse.json(
-            {
-                error: 'Failed to send emails',
-                details: error instanceof Error ? error.message : 'Unknown error',
-            },
-            { status: 500 }
-        )
+        return serverError('Failed to send emails')
     }
 }

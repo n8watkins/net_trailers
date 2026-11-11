@@ -1,214 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
+
 import { hasCronSecret } from '@/lib/cronAuth'
-import { validateAdminRequest } from '@/utils/adminMiddleware'
-import { EmailService } from '@/lib/email/email-service'
-import { generateUnsubscribeToken } from '@/lib/email/unsubscribe-token'
-import { db } from '@/db'
-import { users } from '@/db/schema'
-import { eq } from 'drizzle-orm'
-import {
-    listUnsentNotificationsByTypes,
-    markNotificationsEmailSent,
-} from '@/db/queries/notifications'
-import { loadUserPreferences } from '@/db/queries/userPreferences'
-import { getAdminUserId } from '@/db/queries/_helpers'
+import { runJob } from '@/lib/jobs'
 
-export async function GET(req: NextRequest) {
+/**
+ * GET /api/cron/social-digest: the social digest (Wednesdays 02:00 UTC), run by the Cloudflare cron
+ * (worker/crons.ts). CRON_SECRET only: an admin session is never enough, so a
+ * link an admin clicks cannot start it. Admins run it with
+ * POST /api/admin/jobs/social (fresh sign-in, confirm, audit log) instead.
+ * `?adminOnly=true` limits the run to the admin's own account.
+ */
+export async function GET(request: NextRequest) {
+    if (!hasCronSecret(request.headers)) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const adminOnly = request.nextUrl.searchParams.get('adminOnly') === 'true'
     try {
-        // Auth check - allow cron or admin
-
-        const isCron = hasCronSecret(req.headers)
-
-        let isAdmin = false
-        if (!isCron) {
-            const authResult = await validateAdminRequest(req)
-            isAdmin = authResult.authorized
-        }
-
-        if (!isCron && !isAdmin) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-        }
-
-        console.log('📧 [Social Digest] Starting weekly social digest')
-
-        const nowMs = Date.now()
-        const lastWeek = nowMs - 7 * 24 * 60 * 60 * 1000
-
-        // -----------------------------------------------------------------------
-        // Query the notifications table for ranking_comment and ranking_like rows
-        // from the past 7 days that have not yet had an email sent.
-        // emailSent lives in the JSON `data` column; the helper issues a
-        // json_extract filter for it.
-        // -----------------------------------------------------------------------
-        console.log('📧 [Social Digest] Querying for unsent social notifications...')
-        const pendingNotifications = await listUnsentNotificationsByTypes(
-            ['ranking_comment', 'ranking_like'],
-            lastWeek
-        )
-
-        console.log(`📧 [Social Digest] Found ${pendingNotifications.length} pending notifications`)
-
-        // Group notifications by userId
-        const userNotifications = new Map<
-            string,
-            Array<{
-                type: 'ranking_comment' | 'ranking_like'
-                rankingId?: string
-                rankingTitle?: string
-                commenterName?: string
-                commentText?: string
-                commentId?: string
-                isReply?: boolean
-                parentCommentText?: string
-                likerNames?: string[]
-                notificationId: string
-            }>
-        >()
-
-        for (const notification of pendingNotifications) {
-            const userId = notification.userId
-            if (!userId) continue
-
-            if (!userNotifications.has(userId)) {
-                userNotifications.set(userId, [])
-            }
-
-            // Only include the two social types - the query already filters this
-            // but we narrow the type here for type-safety
-            const notifType = notification.type as 'ranking_comment' | 'ranking_like'
-
-            userNotifications.get(userId)?.push({
-                type: notifType,
-                rankingId: notification.rankingId,
-                rankingTitle: notification.rankingTitle,
-                commenterName: notification.commenterName,
-                commentText: notification.commentText,
-                commentId: notification.commentId,
-                isReply: notification.isReply,
-                parentCommentText: notification.parentCommentText,
-                likerNames: notification.likerNames,
-                notificationId: notification.id,
-            })
-        }
-
-        console.log(`📧 [Social Digest] Processing ${userNotifications.size} users`)
-
-        // Check if admin-only mode is enabled via query parameter.
-        // Default to ALL eligible users - the scheduled weekly run must actually
-        // deliver digests. `?adminOnly=true` is an opt-in test mode that targets
-        // only the admin account.
-        const { searchParams } = new URL(req.url)
-        const adminOnly = searchParams.get('adminOnly') === 'true'
-
-        // Resolve the admin's Turso id from ADMIN_EMAILS (the old ADMIN_UID
-        // env var was removed in the Firebase→Turso migration).
-        const adminUserId = adminOnly ? await getAdminUserId() : null
-
-        if (adminOnly) {
-            console.log(`📧 [Social Digest] Running in ADMIN-ONLY mode`)
-        } else {
-            console.log(`📧 [Social Digest] Running in ALL USERS mode`)
-        }
-
-        let emailsSent = 0
-        let skippedUsers = 0
-
-        // Send digest email to each user with pending notifications
-        for (const [userId, userNotifList] of userNotifications.entries()) {
-            try {
-                // ADMIN ONLY MODE: Skip all users except admin
-                if (adminOnly && (!adminUserId || userId !== adminUserId)) {
-                    console.log(`📧 [Social Digest] Skipping non-admin user: ${userId}`)
-                    skippedUsers++
-                    continue
-                }
-
-                // Look up user record (email, name) from the users table
-                const userRows = await db.select().from(users).where(eq(users.id, userId)).limit(1)
-
-                if (userRows.length === 0) {
-                    skippedUsers++
-                    continue
-                }
-
-                const user = userRows[0]
-
-                // Load notification preferences from userPreferences blob
-                const prefs = await loadUserPreferences(userId)
-
-                // Check if user has opted into social notifications AND email
-                const socialEnabled = prefs?.notifications?.types?.system ?? true // social_interactions maps to system pref
-                const emailEnabled = prefs?.notifications?.email ?? false
-
-                if (!socialEnabled || !emailEnabled || !user.email) {
-                    skippedUsers++
-                    continue
-                }
-
-                // Generate unsubscribe token
-                let unsubscribeToken: string | undefined
-                try {
-                    unsubscribeToken = await generateUnsubscribeToken(userId)
-                } catch (tokenError) {
-                    console.warn(
-                        `⚠️  [Social Digest] Failed to generate unsubscribe token for ${userId}:`,
-                        tokenError
-                    )
-                }
-
-                // Transform notifications into email format
-                const interactions = userNotifList.map((n) => ({
-                    type: n.type === 'ranking_comment' ? ('comment' as const) : ('like' as const),
-                    rankingId: n.rankingId ?? '',
-                    rankingTitle: n.rankingTitle ?? '',
-                    commenterName: n.commenterName,
-                    commentText: n.commentText,
-                    commentId: n.commentId,
-                    isReply: n.isReply,
-                    parentCommentText: n.parentCommentText,
-                    likerNames: n.likerNames,
-                }))
-
-                // Send social digest email
-                const displayName = user.name || user.email.split('@')[0]
-                await EmailService.sendSocialDigest({
-                    to: user.email,
-                    userName: displayName,
-                    interactions,
-                    unsubscribeToken,
-                })
-
-                emailsSent++
-                console.log(
-                    `📧 [Social Digest] Sent email to ${user.email} (${userNotifList.length} interactions)`
-                )
-
-                // Mark all notifications as emailSent in the JSON data column
-                const sentIds = userNotifList.map((n) => n.notificationId)
-                await markNotificationsEmailSent(sentIds)
-            } catch (error) {
-                console.error(`📧 ❌ [Social Digest] Failed to process user ${userId}:`, error)
-            }
-        }
-
-        console.log(`📧 [Social Digest] Skipped ${skippedUsers} users (opted out or no email)`)
-        console.log(`📧 [Social Digest] Sent ${emailsSent} social digest emails`)
-
-        return NextResponse.json({
-            success: true,
-            emailsSent,
-            totalUsers: userNotifications.size,
-            skippedUsers,
-            totalNotifications: pendingNotifications.length,
+        const summary = await runJob('social', {
+            scope: adminOnly ? 'admin' : 'all',
+            trigger: 'cron',
         })
+        return NextResponse.json({ success: true, ...summary })
     } catch (error) {
-        console.error('📧 ❌ Social digest error:', error)
-        return NextResponse.json(
-            {
-                error: 'Failed to send social digest',
-                details: error instanceof Error ? error.message : 'Unknown error',
-            },
-            { status: 500 }
-        )
+        console.error('[cron/social-digest] failed:', error)
+        return NextResponse.json({ error: 'Job failed' }, { status: 500 })
     }
 }

@@ -20,18 +20,18 @@ import {
 import { clearPIN, hasPIN, setPIN, verifyPIN } from '@/db/queries/childSafety'
 
 beforeAll(async () => {
-    // Apply the generated Drizzle migration to the in-memory DB.
+    // Apply every generated Drizzle migration to the in-memory DB, in order.
     const migDir = path.join(process.cwd(), 'db/migrations')
-    const sqlFile = readdirSync(migDir)
+    for (const sqlFile of readdirSync(migDir)
         .filter((f) => f.endsWith('.sql'))
-        .sort()[0]
-    const text = readFileSync(path.join(migDir, sqlFile), 'utf-8')
-    const statements = text
-        .split('--> statement-breakpoint')
-        .map((s) => s.trim())
-        .filter(Boolean)
-    for (const stmt of statements) {
-        await db.run(sql.raw(stmt))
+        .sort()) {
+        const statements = readFileSync(path.join(migDir, sqlFile), 'utf-8')
+            .split('--> statement-breakpoint')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        for (const stmt of statements) {
+            await db.run(sql.raw(stmt))
+        }
     }
 
     // A user row to satisfy foreign keys.

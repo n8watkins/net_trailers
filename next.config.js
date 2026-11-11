@@ -56,6 +56,8 @@ const nextConfig = {
     // Optimize for faster builds and caching - disabled heroicons optimization due to runtime errors
     experimental: {
         // optimizePackageImports: ['@heroicons/react'],
+        // forbidden() answers a real 403 (the admin pages' server gate, app/admin/layout.tsx).
+        authInterrupts: true,
     },
     // Redirects for removed routes
     async redirects() {
