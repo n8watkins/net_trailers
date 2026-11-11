@@ -5,7 +5,7 @@
  */
 
 jest.mock('../../lib/email/cloudflare', () => ({
-    EMAIL_FROM: 'nettrailers@n8builds.dev',
+    EMAIL_FROM: 'net-trailers@n8builds.dev',
     emailBinding: () => undefined,
 }))
 

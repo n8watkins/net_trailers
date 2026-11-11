@@ -29,7 +29,7 @@ const debugOptions = {
         color: 'blue',
         icon: '🔐',
         description:
-            'Removed. The Firebase-based AuthFlowDebugger was removed when auth migrated to Auth.js (GitHub OAuth). Auth flow logging is now handled via utils/debugLogger.ts (authLog, authError, authWarn).',
+            'Removed. The Firebase-based AuthFlowDebugger was removed when auth migrated to Auth.js. Auth flow logging is now handled via utils/debugLogger.ts (authLog, authError, authWarn).',
         whatItDoes: ['This debug option has been removed.'],
         when: ['N/A - option removed.'],
         output: 'N/A',

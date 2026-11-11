@@ -2,7 +2,7 @@
  * Admin Middleware Utilities
  *
  * Server-side validation of admin access via the Auth.js session. The session
- * carries `isAdmin` (derived from ADMIN_GITHUB_LOGIN), so no token handling or
+ * carries `isAdmin` (derived from ADMIN_EMAILS), so no token handling or
  * UID list is needed here.
  */
 

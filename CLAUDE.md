@@ -144,7 +144,7 @@ The app handles both movies and TV shows through a unified type system:
 
 ### Authentication & User Data System
 
-- **Auth.js (NextAuth v5)** with the **GitHub** provider only (`auth.ts`,
+- **Auth.js (NextAuth v5)** with the email magic-link provider only (`auth.ts`,
   `@auth/drizzle-adapter`, database sessions). Cookie-based sessions — no bearer tokens.
 - **Guest mode** for demo access without authentication
 - **Data Storage**:
@@ -154,7 +154,7 @@ The app handles both movies and TV shows through a unified type system:
     - Session persistence: Auth.js session cookie (validated server-side)
 - **User Isolation**: API routes derive the user id from the session (`withAuth` /
   `currentUserId()`), never from the request body — a user only ever reads/writes their own rows
-- **Admin**: identified by GitHub login via `ADMIN_GITHUB_LOGIN` (`session.user.isAdmin`)
+- **Admin**: identified by sign-in email via `ADMIN_EMAILS` (`lib/admin.ts`, `session.user.isAdmin`)
 - **Public Profiles**: `/users/[userId]` routes show public profiles with rankings and collections
 
 **Turso tables** (Drizzle schema in `db/schema.ts`; queries in `db/queries/*.ts`):
@@ -385,14 +385,14 @@ Each unified genre has a `childSafe` flag. When child safety mode is enabled, on
 Required environment variables are documented in the file with setup instructions for:
 
 - Turso: `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`
-- Auth.js: `AUTH_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET` (GitHub OAuth App), optional `AUTH_URL` (prod)
+- Auth.js: `AUTH_SECRET` (sign-in is by emailed link only)
 - TMDB API key (query parameter auth for v3 API)
 - Google Gemini API key (for smart search)
 - CRON_SECRET (for auto-updating collections)
-- ADMIN_GITHUB_LOGIN (server-side only, not NEXT_PUBLIC\* — the admin's GitHub username)
+- ADMIN_EMAILS (server-side only, not NEXT_PUBLIC\* — the admin accounts' sign-in emails, comma-separated)
 - Sentry DSN (for error monitoring)
 - Google Analytics measurement ID
-- Email (magic-link sign-in and every other email): Cloudflare Email Service through the Worker's `send_email` binding `EMAIL`, from `EMAIL_FROM` (`nettrailers@n8builds.dev`, a `wrangler.jsonc` var); no API key. Every send goes through the capped email gate (`lib/email/gate.ts`)
+- Email (magic-link sign-in and every other email): Cloudflare Email Service through the Worker's `send_email` binding `EMAIL`, from `EMAIL_FROM` (`net-trailers@n8builds.dev`, a `wrangler.jsonc` var); no API key. Every send goes through the capped email gate (`lib/email/gate.ts`)
 - `BLOB_READ_WRITE_TOKEN` (Vercel Blob — image uploads)
 
 ### Next.js Configuration
@@ -631,7 +631,7 @@ export async function myAction() {
     - HTML: max 50,000 characters
     - Recipient limit: max 100 per request
 - **CSRF Protection**: All endpoints use authenticatedFetch()
-- **Admin-Only Access**: `ADMIN_GITHUB_LOGIN` verification via session (server-side only)
+- **Admin-Only Access**: `ADMIN_EMAILS` verification via session (server-side only)
 - **PII Minimization**: Email history stores counts, not recipient emails
 
 ### CAN-SPAM Compliance

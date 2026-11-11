@@ -8,7 +8,7 @@ import {
     KeyIcon,
 } from '@heroicons/react/24/outline'
 // Firebase Auth User type replaced with a minimal local shape.
-// The `user` prop is no longer used (auth is now Auth.js / GitHub OAuth) but
+// The `user` prop is no longer used (auth is now Auth.js email links) but
 // the component is kept for reference; callers should pass null.
 interface FirebaseUserCompat {
     email: string | null

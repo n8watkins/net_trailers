@@ -11,7 +11,7 @@
 import { cloudflareEnv } from '@/lib/cloudflare/env'
 
 /** The sender address; wrangler.jsonc allows the binding only this one. */
-export const EMAIL_FROM = process.env.EMAIL_FROM || 'nettrailers@n8builds.dev'
+export const EMAIL_FROM = process.env.EMAIL_FROM || 'net-trailers@n8builds.dev'
 
 export interface OutgoingEmail {
     to: string

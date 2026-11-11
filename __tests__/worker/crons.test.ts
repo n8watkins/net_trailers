@@ -22,6 +22,7 @@ function wrangler() {
         r2_buckets: { binding: string }[]
         services: { binding: string; service: string }[]
         send_email: { name: string; allowed_sender_addresses?: string[] }[]
+        routes: { pattern: string; custom_domain?: boolean }[]
         name: string
     }
 }
@@ -43,11 +44,21 @@ describe('wrangler.jsonc', () => {
             service: config.name,
         })
         expect(config.vars.APP_ENV).toBe('production')
-        // Email only from the app's own address (lib/email/cloudflare.ts)
+        // Email only from the app's own address (lib/email/cloudflare.ts), on
+        // n8builds.dev, the domain onboarded for Email Sending
         expect(config.send_email).toEqual([
             { name: 'EMAIL', allowed_sender_addresses: [config.vars.EMAIL_FROM] },
         ])
-        expect(config.vars.EMAIL_FROM).toBe('nettrailers@n8builds.dev')
+        expect(config.vars.EMAIL_FROM).toBe('net-trailers@n8builds.dev')
+    })
+
+    it('serves net-trailers.n8builds.dev and keeps the old address only to redirect it', () => {
+        const config = wrangler()
+        expect(config.vars.PUBLIC_URL).toBe('https://net-trailers.n8builds.dev')
+        expect(config.routes).toEqual([
+            { pattern: 'net-trailers.n8builds.dev', custom_domain: true },
+            { pattern: 'nettrailers.n8builds.dev', custom_domain: true },
+        ])
     })
 })
 

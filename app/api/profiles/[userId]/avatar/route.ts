@@ -68,7 +68,10 @@ export const PUT = withAuth(
         const storedUrl = allowedAvatarUrl(avatarUrl, targetUserId)
         if (!storedUrl) {
             return NextResponse.json(
-                { success: false, error: 'avatarUrl must be an uploaded image or a GitHub avatar' },
+                {
+                    success: false,
+                    error: 'avatarUrl must be an uploaded image or a known avatar host',
+                },
                 { status: 400 }
             )
         }

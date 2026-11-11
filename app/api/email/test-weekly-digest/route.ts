@@ -13,7 +13,7 @@ const CRON_SECRET = process.env.CRON_SECRET
  */
 async function handleTestWeeklyDigest(request: NextRequest, userId: string): Promise<NextResponse> {
     try {
-        // ADMIN ONLY: identity comes from the Auth.js session (ADMIN_GITHUB_LOGIN),
+        // ADMIN ONLY: identity comes from the Auth.js session (ADMIN_EMAILS),
         // not the removed ADMIN_UID env var.
         if (!(await isCurrentUserAdmin())) {
             console.error('[TestWeeklyDigest] User is not admin:', userId)

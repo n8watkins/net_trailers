@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
                     displayName:
                         profile?.displayName ?? u.name ?? u.email?.split('@')[0] ?? 'Anonymous',
                     photoURL: profile?.avatarUrl ?? u.image ?? null,
-                    // GitHub OAuth always verifies the email; we don't store
+                    // Magic-link sign-in proves the email; we don't store
                     // emailVerified separately in the new schema.
                     emailVerified: true,
                     disabled: false,
@@ -74,8 +74,8 @@ export async function GET(request: NextRequest) {
                     lastSignInAt: lastLoginMs
                         ? new Date(lastLoginMs).toISOString()
                         : new Date(createdAtMs).toISOString(),
-                    providerData: u.githubLogin
-                        ? [{ providerId: 'github.com', uid: u.githubLogin }]
+                    providerData: u.email
+                        ? [{ providerId: 'email', uid: u.email }]
                         : [{ providerId: 'unknown', uid: u.id }],
                 }
             })

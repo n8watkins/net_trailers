@@ -32,7 +32,7 @@
     // through Cloudflare Email Service from EMAIL_FROM on n8builds.dev, which
     // is onboarded for sending (no API key). The app's own caps are in
     // lib/email/gate.ts; the binding may send from this one address only.
-    "send_email": [{ "name": "EMAIL", "allowed_sender_addresses": ["nettrailers@n8builds.dev"] }],
+    "send_email": [{ "name": "EMAIL", "allowed_sender_addresses": ["net-trailers@n8builds.dev"] }],
     // The three Vercel crons, same schedules (worker/crons.ts), 02:00 UTC on
     // Monday, Sunday and Wednesday. Weekdays are named because Cloudflare
     // counts them from 1 = Sunday, unlike Vercel's 0 = Sunday.
@@ -43,20 +43,24 @@
         // The Vercel project is a redirect without crons, so the Worker alone
         // runs the three crons (worker/crons.ts).
         "CRONS_ENABLED": "true",
-        // The site's one public address; the workers.dev address forwards to it
-        // (worker/canonical.ts).
-        "PUBLIC_URL": "https://nettrailers.n8builds.dev",
-        // The admin's GitHub login (public, so a var rather than a secret).
-        "ADMIN_GITHUB_LOGIN": "n8watkins",
+        // The site's one public address; the workers.dev address and the old
+        // nettrailers.n8builds.dev forward to it (worker/canonical.ts).
+        "PUBLIC_URL": "https://net-trailers.n8builds.dev",
+        // Admin accounts by sign-in email, comma-separated (lib/admin.ts).
+        "ADMIN_EMAILS": "nathancwatkins23@gmail.com",
         // The sender for every email (lib/email/cloudflare.ts).
-        "EMAIL_FROM": "nettrailers@n8builds.dev",
+        "EMAIL_FROM": "net-trailers@n8builds.dev",
     },
     // Secrets (npx wrangler secret put <NAME>, see DEPLOY.md): TURSO_DATABASE_URL,
-    // TURSO_AUTH_TOKEN, AUTH_SECRET, AUTH_GITHUB_ID and AUTH_GITHUB_SECRET (optional),
-    // TMDB_API_KEY, GEMINI_API_KEY, CRON_SECRET, TURNSTILE_SECRET_KEY.
-    // nettrailers.n8builds.dev as a Workers custom domain: Cloudflare creates and
-    // manages its DNS record and certificate on deploy.
-    "routes": [{ "pattern": "nettrailers.n8builds.dev", "custom_domain": true }],
+    // TURSO_AUTH_TOKEN, AUTH_SECRET, TMDB_API_KEY, GEMINI_API_KEY, CRON_SECRET,
+    // TURNSTILE_SECRET_KEY.
+    // Workers custom domains: Cloudflare creates and manages their DNS records and
+    // certificates on deploy. net-trailers is the site; nettrailers is the old
+    // address, kept so its links 301 to the new one (worker/canonical.ts).
+    "routes": [
+        { "pattern": "net-trailers.n8builds.dev", "custom_domain": true },
+        { "pattern": "nettrailers.n8builds.dev", "custom_domain": true },
+    ],
     "observability": { "enabled": true, "head_sampling_rate": 1 },
     "workers_dev": true,
     "preview_urls": false,

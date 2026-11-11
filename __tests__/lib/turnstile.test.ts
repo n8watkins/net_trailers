@@ -20,7 +20,7 @@ function siteverifyAnswers(success: boolean) {
 }
 
 function signInRequest(fields: Record<string, string>, headers: Record<string, string> = {}) {
-    return new Request('https://nettrailers.n8builds.dev/api/auth/signin/email', {
+    return new Request('https://net-trailers.n8builds.dev/api/auth/signin/email', {
         method: 'POST',
         headers: { 'content-type': 'application/x-www-form-urlencoded', ...headers },
         body: new URLSearchParams(fields),
@@ -91,7 +91,7 @@ describe('checkSignInTurnstile', () => {
             )
         )
         expect(await json!.json()).toEqual({
-            url: 'https://nettrailers.n8builds.dev/?error=Turnstile',
+            url: 'https://net-trailers.n8builds.dev/?error=Turnstile',
         })
         const redirect = await checkSignInTurnstile(signInRequest({ email: 'a@example.com' }))
         expect(redirect!.status).toBe(302)

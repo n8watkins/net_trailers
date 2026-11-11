@@ -6,9 +6,8 @@ import useAuth from '../../../hooks/useAuth'
 import { useAuthStatus } from '../../../hooks/useAuthStatus'
 
 /**
- * Account page. With GitHub-only auth there is no email/password to change and
- * no email verification - accounts are managed entirely through GitHub. This
- * page shows the connected account and a sign-out action. Guests are redirected.
+ * Account page. Sign-in is by emailed link only, so there is no password to
+ * change. This page shows the signed-in account and a sign-out action. Guests are redirected.
  */
 const AccountManagementPage: React.FC = () => {
     const router = useRouter()
@@ -46,10 +45,12 @@ const AccountManagementPage: React.FC = () => {
                     </div>
                     <div>
                         <p className="text-white text-lg font-semibold">
-                            {user.displayName ?? user.githubLogin ?? 'GitHub user'}
+                            {user.displayName ?? user.email ?? 'Your account'}
                         </p>
-                        {user.email && <p className="text-gray-400 text-sm">{user.email}</p>}
-                        <p className="text-gray-500 text-sm mt-1">Connected with GitHub</p>
+                        {user.email && user.displayName && (
+                            <p className="text-gray-400 text-sm">{user.email}</p>
+                        )}
+                        <p className="text-gray-500 text-sm mt-1">Signs in with an emailed link</p>
                     </div>
                 </div>
 

@@ -28,7 +28,7 @@ This document outlines the security measures implemented in NetTrailers to prote
 
 NetTrailers uses **Auth.js (NextAuth v5)** for secure user identity management:
 
-- **Providers**: GitHub OAuth and passwordless email magic-link (Brevo by default, Resend optional)
+- **Providers**: passwordless email magic-link only, sent through Cloudflare Email Service, with Turnstile on the request form
 - **Database sessions**: Sessions are persisted in Turso via `@auth/drizzle-adapter`
 - **Cookie-based**: Auth state is carried by an HttpOnly session cookie — no client-supplied bearer/ID tokens
 - **Server-side validation**: All protected API routes validate the session cookie via the Drizzle adapter
@@ -41,24 +41,24 @@ NetTrailers uses **Auth.js (NextAuth v5)** for secure user identity management:
 
 ### Authorization Levels
 
-| Level             | Access                       | Verification                          |
-| ----------------- | ---------------------------- | ------------------------------------- |
-| **Public**        | Browse, search               | None required                         |
-| **Authenticated** | Personal data, collections   | Auth.js session cookie                |
-| **Admin**         | Admin panel, user management | Session cookie + `ADMIN_GITHUB_LOGIN` |
-| **Cron**          | Scheduled jobs               | CRON_SECRET (timing-safe comparison)  |
+| Level             | Access                       | Verification                         |
+| ----------------- | ---------------------------- | ------------------------------------ |
+| **Public**        | Browse, search               | None required                        |
+| **Authenticated** | Personal data, collections   | Auth.js session cookie               |
+| **Admin**         | Admin panel, user management | Session cookie + `ADMIN_EMAILS`      |
+| **Cron**          | Scheduled jobs               | CRON_SECRET (timing-safe comparison) |
 
 ### Admin Authorization
 
 Admin access requires:
 
 1. A valid Auth.js session cookie
-2. The signed-in GitHub login to match the `ADMIN_GITHUB_LOGIN` environment variable
-   (surfaced as `session.user.isAdmin`)
+2. The signed-in email to be listed in the `ADMIN_EMAILS` environment variable
+   (surfaced as `session.user.isAdmin`); the emailed link proves the address
 
 **Files:**
 
-- `auth.ts` - Sets `session.user.isAdmin` from `ADMIN_GITHUB_LOGIN`
+- `auth.ts` - Sets `session.user.isAdmin` from `ADMIN_EMAILS` (`lib/admin.ts`)
 - `utils/adminMiddleware.ts` - Admin request middleware
 
 ---
@@ -404,7 +404,7 @@ beforeSend(event) {
 Only approved domains allowed:
 
 - `image.tmdb.org` - TMDB images
-- `avatars.githubusercontent.com` - GitHub profile pictures
+- `avatars.githubusercontent.com` - profile pictures from the retired GitHub sign-in
 - `*.public.blob.vercel-storage.com` - User uploads (Vercel Blob)
 
 ### Third-Party API Security
@@ -422,9 +422,9 @@ Only approved domains allowed:
 
 ### Implemented Protections
 
-- [x] Auth.js authentication (GitHub OAuth + email magic-link)
+- [x] Auth.js authentication (email magic-link)
 - [x] Server-side session validation (cookie-based, database sessions)
-- [x] Admin authorization via `ADMIN_GITHUB_LOGIN`
+- [x] Admin authorization via `ADMIN_EMAILS`
 - [x] Timing-safe secret comparison for cron jobs
 - [x] Input sanitization on all user inputs
 - [x] Rate limiting (general, AI, magic-link)
@@ -499,7 +499,7 @@ Only approved domains allowed:
 - **Transaction Safety**: Drizzle/libSQL transactions prevent token generation race conditions
 - **Batch Optimization**: Batched database reads (100+ queries → 1 read)
 - **CSRF Protection**: authenticatedFetch() used for all email endpoints
-- **Admin-Only Access**: `ADMIN_GITHUB_LOGIN` verification required for all email operations
+- **Admin-Only Access**: `ADMIN_EMAILS` verification required for all email operations
 - **Content Sanitization Config**: Shared CUSTOM_HTML_SANITIZATION_CONFIG
     - Allowed tags: p, br, strong, em, u, h1-h3, ul, ol, li, a
     - Allowed attributes: href, title only

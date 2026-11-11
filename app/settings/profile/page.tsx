@@ -297,7 +297,7 @@ const ProfilePage: React.FC = () => {
         ]
     )
 
-    // Authentication is GitHub-only now.
+    // Sign-in is by emailed link only (Auth.js).
     const isGoogleAuth = false
     const isEmailAuth = false
 

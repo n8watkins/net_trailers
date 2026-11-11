@@ -7,7 +7,7 @@
 
 const send = jest.fn(async (_message: Record<string, unknown>) => ({ messageId: 'msg-1' }))
 jest.mock('../../lib/email/cloudflare', () => ({
-    EMAIL_FROM: 'nettrailers@n8builds.dev',
+    EMAIL_FROM: 'net-trailers@n8builds.dev',
     emailBinding: () => ({ send: (message: Record<string, unknown>) => send(message) }),
 }))
 
@@ -84,7 +84,7 @@ describe('email gate', () => {
         expect(result).toEqual({ id: 'msg-1' })
         expect(send).toHaveBeenCalledWith({
             to: 'a@example.com',
-            from: { email: 'nettrailers@n8builds.dev', name: 'NetTrailers' },
+            from: { email: 'net-trailers@n8builds.dev', name: 'NetTrailers' },
             subject: 'Hi',
             html: '<p>Hello <b>there</b></p>',
             text: expect.stringContaining('Hello there'),
@@ -102,16 +102,16 @@ describe('email gate', () => {
             subject: 'Hi',
             html: '<p>Hi</p>',
             text: 'Hi (text)',
-            unsubscribeUrl: 'https://nettrailers.n8builds.dev/unsubscribe?token=a%26b',
+            unsubscribeUrl: 'https://net-trailers.n8builds.dev/unsubscribe?token=a%26b',
         })
         jest.useRealTimers()
         expect(send).toHaveBeenCalledWith(
             expect.objectContaining({
-                from: { email: 'nettrailers@n8builds.dev', name: 'NetTrailers' },
+                from: { email: 'net-trailers@n8builds.dev', name: 'NetTrailers' },
                 text: 'Hi (text)',
                 headers: {
                     'List-Unsubscribe':
-                        '<https://nettrailers.n8builds.dev/api/email/unsubscribe?token=a%26b>',
+                        '<https://net-trailers.n8builds.dev/api/email/unsubscribe?token=a%26b>',
                     'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
                 },
             })

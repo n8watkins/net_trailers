@@ -69,7 +69,7 @@ export function ownUploads(urls: unknown, userId: string, max = 4): string[] {
         .slice(0, max)
 }
 
-/** Outside hosts an avatar may come from (GitHub sign-in, generated defaults). */
+/** Outside hosts an avatar may come from (photos from the retired GitHub sign-in, generated defaults). */
 const AVATAR_HOSTS = new Set(['avatars.githubusercontent.com', 'api.dicebear.com'])
 
 /**

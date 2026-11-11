@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://nettrailers.n8builds.dev/sitemap.xml
+Sitemap: https://net-trailers.n8builds.dev/sitemap.xml
 
 # Common crawlers
 User-agent: Googlebot
