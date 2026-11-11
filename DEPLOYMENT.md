@@ -161,9 +161,19 @@ Owner steps, in order:
 
 ## Sign-in and admin
 
-Sign-in is by emailed link only (Auth.js email provider, `auth.ts`); GitHub sign-in was removed on 2026-11-10.
-An account is an admin when its sign-in email is in `ADMIN_EMAILS` (`lib/admin.ts`), so the owner signs in with that address like anyone else.
-The Worker secrets `AUTH_GITHUB_ID` and `AUTH_GITHUB_SECRET` are no longer read and can be deleted with `npx wrangler secret delete <NAME> --name net-trailers`; the GitHub OAuth App can be deleted too.
+Sign-in is by emailed link (Auth.js email provider, `auth.ts`), plus GitHub as an extra option for visitors.
+An account is an admin when its sign-in email is in `ADMIN_EMAILS` (`lib/admin.ts`).
+A GitHub username never grants admin.
+
+GitHub sign-in turns on only when both Worker secrets `AUTH_GITHUB_ID` and `AUTH_GITHUB_SECRET` are set (`lib/authConfig.ts`); the button in the sign-in modal appears only when `/api/auth/providers` lists `github`.
+Set them from pass with `pass-env pipe net_trailers/AUTH_GITHUB_ID -- npx wrangler secret put AUTH_GITHUB_ID --name net-trailers`, and the same for `AUTH_GITHUB_SECRET`.
+The GitHub OAuth App's callback URL is `https://net-trailers.n8builds.dev/api/auth/callback/github`.
+The app asks for the `read:user user:email` scopes.
+
+Account linking: a GitHub sign-in lands on the existing account with the same email, so the owner's email account and GitHub sign-in are one user (`allowDangerousEmailAccountLinking`, `lib/githubAuth.ts`).
+The trade-off is that linking trusts GitHub's verification of the address.
+To keep that safe, the email used is only the primary address GitHub marks verified (from `/user/emails`, never the free-text profile email), and a GitHub sign-in without one is refused.
+Turnstile and the sign-in email limits guard the emailed-link request only; starting GitHub sign-in sends no email, so it spends none of those limits.
 
 ## Taking it down
 

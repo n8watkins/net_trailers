@@ -2,7 +2,7 @@
  * Auth.js (NextAuth v5) configuration.
  *
  * Authentication via passwordless email magic links (sent through Cloudflare
- * Email Service by the email gate, lib/email/gate.ts),
+ * Email Service by the email gate, lib/email/gate.ts) and, optionally, GitHub,
  * backed by the Turso/Drizzle adapter. Replaces Firebase Auth. Database session
  * strategy so `session.user.id` is the canonical Turso user id used for all
  * ownership checks.
@@ -14,12 +14,15 @@
 import { DrizzleAdapter } from '@auth/drizzle-adapter'
 import NextAuth from 'next-auth'
 import { headers } from 'next/headers'
+import GitHub from 'next-auth/providers/github'
 import type { Provider } from 'next-auth/providers'
 
 import { db } from '@/db'
 import { accounts, sessions, users, verificationTokens } from '@/db/schema'
 import { authLogger } from '@/lib/log'
 import { isAdminEmail } from '@/lib/admin'
+import { isGitHubAuthConfigured } from '@/lib/authConfig'
+import { githubUser, isGitHubSignInAllowed } from '@/lib/githubAuth'
 import { isTestMode } from '@/lib/testMode'
 import { deliverSignInLink } from '@/lib/email/gate'
 import { SIGN_IN_EMAIL_LIMIT_ERROR, reserveSignInEmail } from '@/lib/email/signInLimits'
@@ -65,6 +68,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     providers: [
         // Passwordless email magic links (see emailProvider above).
         emailProvider,
+        // GitHub sign-in is an extra option for visitors, registered only when
+        // both OAuth App values exist. The modal asks /api/auth/providers and
+        // hides the button when it is absent. See lib/githubAuth.ts for linking.
+        ...(isGitHubAuthConfigured()
+            ? [
+                  GitHub({
+                      // AUTH_GITHUB_ID / AUTH_GITHUB_SECRET are read from env automatically.
+                      authorization: { params: { scope: 'read:user user:email' } },
+                      // Safe only because the profile email is GitHub-verified (lib/githubAuth.ts).
+                      allowDangerousEmailAccountLinking: true,
+                      async profile(profile, tokens) {
+                          return githubUser(profile, tokens.access_token)
+                      },
+                  }),
+              ]
+            : []),
     ],
     callbacks: {
         /**
@@ -72,7 +91,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
          * per IP and site-wide (lib/email/signInLimits.ts). There is no cap on
          * the number of accounts (removed 2026-11-10, docs/costs-and-limits.md).
          */
-        async signIn({ user, email }) {
+        async signIn({ user, email, account }) {
+            // A GitHub sign-in without a verified primary email is refused.
+            if (!isGitHubSignInAllowed(account?.provider, user.email)) return false
             if (email?.verificationRequest && user.email) {
                 const reservation = await reserveSignInEmail(user.email, await headers())
                 if (!reservation.allowed) {

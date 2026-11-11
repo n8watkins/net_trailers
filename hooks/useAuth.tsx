@@ -31,6 +31,7 @@ interface iAuth {
     wasRecentlyAuthenticated: boolean
     isAdmin: boolean
     error: string | null
+    signInWithGitHub: () => Promise<void>
     /** Send a passwordless magic-link sign-in email. Resolves once the email is sent. */
     signInWithEmail: (email: string, turnstileToken: string | null) => Promise<void>
     logOut: () => Promise<void>
@@ -42,6 +43,8 @@ const defaultValue: iAuth = {
     wasRecentlyAuthenticated: false,
     isAdmin: false,
     error: null,
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    signInWithGitHub: async () => {},
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     signInWithEmail: async () => {},
     // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -78,6 +81,10 @@ function AuthStateProvider({ children }: AuthProviderProps) {
             wasRecentlyAuthenticated: Boolean(user),
             isAdmin: Boolean(user?.isAdmin),
             error: null,
+            signInWithGitHub: async () => {
+                // Return to the page the user started from after OAuth.
+                await signIn('github', { callbackUrl: window.location.href })
+            },
             signInWithEmail: async (email: string, turnstileToken: string | null) => {
                 // Sends the magic-link email via the active provider (stable id
                 // "email"); redirect:false keeps the modal so it can show a
