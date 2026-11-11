@@ -10,9 +10,9 @@ Where older docs disagree with it, this section wins.
 NetTrailers is a Netflix-style movie and TV discovery app: TMDB browsing and trailers, Gemini-powered smart search, collections, rankings, polls and notifications.
 Stack: Next.js 16, React 19, Turso (libSQL) with Drizzle, Auth.js (magic link only since 2026-11-10), Sentry, Tailwind 4 plus MUI.
 Live at https://net-trailers.n8builds.dev (Cloudflare Worker; every push to `main` deploys). 2026-11-10: Turnstile on sign-in, a nonce-based CSP, no account cap, email through Cloudflare Email Service; the owner's remaining Vercel steps are in DEPLOYMENT.md, "Moving off Vercel".
-2026-11-03: the app also runs on Cloudflare Workers at https://net-trailers.nathancwatkins23.workers.dev (DEPLOYMENT.md), on the same Turso database; uploads are in R2, the crons are Cron Triggers (off until Vercel is turned off), and Cloudflare Web Analytics replaces Vercel Analytics.
+2026-11-03: the app also runs on Cloudflare Workers (DEPLOYMENT.md), on the same Turso database; uploads are in R2, the crons are Cron Triggers (off until Vercel is turned off), and Cloudflare Web Analytics replaces Vercel Analytics.
 The owner's remaining steps for the move are in DEPLOYMENT.md, "Moving off Vercel".
-The address is `net-trailers.n8builds.dev` (a Workers custom domain); the old `nettrailers.n8builds.dev` 301s there and the workers.dev address forwards to it.
+The address is `net-trailers.n8builds.dev` (a Workers custom domain); the old `nettrailers.n8builds.dev` 301s there, and the workers.dev address is off.
 Setup and features: `README.md`; architecture and conventions for agents: `CLAUDE.md`; deploy and env vars: `DEPLOYMENT.md`; AI endpoints: `docs/gemini-api-usage.md`.
 
 ### Status today

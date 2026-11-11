@@ -54,8 +54,8 @@
         // The Vercel project is a redirect without crons, so the Worker alone
         // runs the three crons (worker/crons.ts).
         "CRONS_ENABLED": "true",
-        // The site's one public address; the workers.dev address and the old
-        // nettrailers.n8builds.dev forward to it (worker/canonical.ts).
+        // The site's one public address; the old nettrailers.n8builds.dev
+        // forwards to it (worker/canonical.ts).
         "PUBLIC_URL": "https://net-trailers.n8builds.dev",
         // Admin accounts by sign-in email, comma-separated (lib/admin.ts).
         "ADMIN_EMAILS": "nathancwatkins23@gmail.com",
@@ -73,6 +73,6 @@
         { "pattern": "nettrailers.n8builds.dev", "custom_domain": true },
     ],
     "observability": { "enabled": true, "head_sampling_rate": 1 },
-    "workers_dev": true,
+    "workers_dev": false,
     "preview_urls": false,
 }
