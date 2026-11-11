@@ -85,6 +85,8 @@ The email sign-in form runs Cloudflare Turnstile in the background as it opens (
 Its token goes with the request for a link, and the Auth.js route checks it with siteverify before anything else (`lib/turnstile.ts`), so a request without a valid token never spends the sign-in email limits or sends an email.
 The widget is "NetTrailers sign-in" in the Cloudflare dashboard (Turnstile), for `net-trailers.n8builds.dev`, `nettrailers.n8builds.dev` (the old address, until nothing links to it), `net-trailers.nathancwatkins23.workers.dev` and `localhost`.
 A new host must be added to the widget's hostnames before the site is served from it, or the challenge fails there and nobody can sign in.
+The switch to `net-trailers.n8builds.dev` left `workers_dev` on (`wrangler.jsonc`), so the workers.dev address still answers, with its 308 to the site.
+**Owner reminder:** after 2026-11-18, remove nettrailers.n8builds.dev (and the workers.dev hostname if workers_dev is off) from the NetTrailers sign-in Turnstile widget; keep localhost.
 Its site key is public and set in the deploy workflow; its secret is the Worker secret `TURNSTILE_SECRET_KEY`.
 The production Worker refuses every request for a link while that secret is missing.
 Local runs and the end-to-end tests use Cloudflare's always-pass test keys.
