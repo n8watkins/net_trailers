@@ -29,6 +29,9 @@ const customJestConfig = {
     // e2e/ holds the Playwright suite (npm run test:e2e)
     testPathIgnorePatterns: ['/node_modules/', '<rootDir>/e2e/'],
     moduleNameMapper: {
+        // @react-email/render loads react-dom/server with a dynamic import, which
+        // Jest refuses; the shim renders with react-dom/server's static import.
+        '^@react-email/render$': '<rootDir>/jest.react-email-render.js',
         // Handle module aliases (if you use them in your Next.js app)
         '^@/components/(.*)$': '<rootDir>/components/$1',
         '^@/app/(.*)$': '<rootDir>/app/$1',

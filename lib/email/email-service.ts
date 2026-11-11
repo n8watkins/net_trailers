@@ -1,12 +1,8 @@
 import type { LimitRule } from '@/lib/durableLimit'
 import { Content } from '../../typings'
 import { sendEmail } from './gate'
-import {
-    TrendingContentEmail,
-    SocialDigestEmail,
-    AnnouncementEmail,
-    CustomEmail,
-} from './templates'
+import { announcementEmail, customEmail, socialDigestEmail, trendingEmail } from './templates'
+import type { DigestInteraction } from './subjects'
 
 /**
  * The app's branded emails. Every send goes through the email gate
@@ -15,46 +11,21 @@ import {
  * Each method returns null when no email provider is configured.
  */
 export class EmailService {
-    /**
-     * Send daily social digest (batched comments and likes)
-     */
+    /** Send the weekly social digest (batched comments and likes). */
     static async sendSocialDigest(
         params: {
             to: string
             userName: string
-            interactions: Array<{
-                type: 'comment' | 'like'
-                rankingId: string
-                rankingTitle: string
-                commenterName?: string
-                commentText?: string
-                commentId?: string
-                isReply?: boolean
-                parentCommentText?: string
-                likerNames?: string[]
-            }>
+            interactions: DigestInteraction[]
             unsubscribeToken?: string
         },
         limits: LimitRule[] = []
     ) {
-        return sendEmail(
-            'social-digest',
-            {
-                to: params.to,
-                subject: 'Your Rankings Got Some Action! - NetTrailers',
-                react: SocialDigestEmail({
-                    userName: params.userName,
-                    interactions: params.interactions,
-                    unsubscribeToken: params.unsubscribeToken,
-                }),
-            },
-            limits
-        )
+        const { to, ...rest } = params
+        return sendEmail('social-digest', { to, ...(await socialDigestEmail(rest)) }, limits)
     }
 
-    /**
-     * Send trending content (weekly digest, or the admin's pilot email)
-     */
+    /** Send trending content (weekly digest, or the admin's pilot email). */
     static async sendTrendingContent(
         params: {
             to: string
@@ -65,25 +36,11 @@ export class EmailService {
         },
         limits: LimitRule[] = []
     ) {
-        return sendEmail(
-            'trending',
-            {
-                to: params.to,
-                subject: 'Trending This Week - NetTrailers [Demo]',
-                react: TrendingContentEmail({
-                    userName: params.userName,
-                    movies: params.movies,
-                    tvShows: params.tvShows,
-                    unsubscribeToken: params.unsubscribeToken,
-                }),
-            },
-            limits
-        )
+        const { to, ...rest } = params
+        return sendEmail('trending', { to, ...(await trendingEmail(rest)) }, limits)
     }
 
-    /**
-     * Send announcement email
-     */
+    /** Send an announcement email. */
     static async sendAnnouncement(
         params: {
             to: string
@@ -94,25 +51,11 @@ export class EmailService {
         },
         limits: LimitRule[] = []
     ) {
-        return sendEmail(
-            'announcement',
-            {
-                to: params.to,
-                subject: params.subject,
-                react: AnnouncementEmail({
-                    userName: params.userName,
-                    subject: params.subject,
-                    message: params.message,
-                    unsubscribeToken: params.unsubscribeToken,
-                }),
-            },
-            limits
-        )
+        const { to, ...rest } = params
+        return sendEmail('announcement', { to, ...(await announcementEmail(rest)) }, limits)
     }
 
-    /**
-     * Send custom email with rich HTML content
-     */
+    /** Send a custom email with sanitised rich HTML content. */
     static async sendCustomEmail(
         params: {
             to: string
@@ -123,19 +66,7 @@ export class EmailService {
         },
         limits: LimitRule[] = []
     ) {
-        return sendEmail(
-            'custom',
-            {
-                to: params.to,
-                subject: params.subject,
-                react: CustomEmail({
-                    userName: params.userName,
-                    subject: params.subject,
-                    htmlContent: params.htmlContent,
-                    unsubscribeToken: params.unsubscribeToken,
-                }),
-            },
-            limits
-        )
+        const { to, ...rest } = params
+        return sendEmail('custom', { to, ...(await customEmail(rest)) }, limits)
     }
 }

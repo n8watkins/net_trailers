@@ -35,6 +35,18 @@ function withContentSecurityPolicy(request: NextRequest): NextResponse {
     return response
 }
 
+/**
+ * RFC 8058 one-click unsubscribe: a POST to this one route with the token in
+ * the query. Every other route, and this one without a token, keeps the Origin check.
+ */
+function isOneClickUnsubscribe(request: NextRequest): boolean {
+    return (
+        request.method === 'POST' &&
+        request.nextUrl.pathname === '/api/email/unsubscribe' &&
+        Boolean(request.nextUrl.searchParams.get('token'))
+    )
+}
+
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl
     const method = request.method
@@ -54,6 +66,8 @@ export async function proxy(request: NextRequest) {
                 )
             }
             // Valid CRON_SECRET - skip CSRF check and continue to handler
+        } else if (isOneClickUnsubscribe(request)) {
+            // Mail clients POST here without an Origin; the token in the query is the proof.
         } else if (!SAFE_METHODS.includes(method)) {
             // CSRF Protection for state-changing requests (non-cron routes only)
             const csrfResponse = applyCsrfProtection(request)

@@ -51,6 +51,27 @@ describe('/api/email/unsubscribe', () => {
         expect(after.notifications?.email).toBe(false)
     })
 
+    it('POST accepts a mail client one-click request: token in the query, form body, no Origin', async () => {
+        const prefs = await loadUserPreferences('reader')
+        await saveUserPreferences('reader', {
+            ...prefs,
+            notifications: { ...(prefs.notifications as object), email: true } as never,
+        })
+        const token = await generateUnsubscribeToken('reader')
+        const response = await POST(
+            new NextRequest(
+                `https://nettrailers.example/api/email/unsubscribe?token=${encodeURIComponent(token)}`,
+                {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+                    body: 'List-Unsubscribe=One-Click',
+                }
+            )
+        )
+        expect(response.status).toBe(200)
+        expect((await loadUserPreferences('reader')).notifications?.email).toBe(false)
+    })
+
     it('POST refuses an unknown token', async () => {
         const response = await POST(
             new NextRequest('https://nettrailers.example/api/email/unsubscribe', {

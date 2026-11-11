@@ -6,8 +6,11 @@
  *   - Prevents email scanners from silently unsubscribing users.
  *
  * POST /api/email/unsubscribe
- *   - Performs actual unsubscribe (CSRF-protected by proxy.ts origin check).
- *   - Body: { token: string }
+ *   - Performs actual unsubscribe.
+ *   - The confirm page sends JSON { token } with its Origin (checked by proxy.ts).
+ *   - A mail client's one-click button (RFC 8058, List-Unsubscribe-Post) sends
+ *     the body "List-Unsubscribe=One-Click" with the token in the query and no
+ *     Origin; proxy.ts exempts exactly that request, since the token is the proof.
  *
  * Token lookup: tokens live in `userPreferences.data.unsubscribeToken` (stored
  * there by lib/email/unsubscribe-token.ts - no schema column needed).
@@ -33,14 +36,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(page)
 }
 
-/**
- * POST: Perform actual unsubscribe.
- * Protected by proxy.ts CSRF validation (Origin/Referer header check).
- */
+/** The token from the query (one-click) or, failing that, the JSON body (confirm page). */
+async function readToken(request: NextRequest): Promise<unknown> {
+    const fromQuery = request.nextUrl.searchParams.get('token')
+    if (fromQuery) return fromQuery
+    return (await request.json().catch(() => null))?.token
+}
+
+/** POST: Perform actual unsubscribe. */
 export async function POST(request: NextRequest) {
     try {
-        const body = await request.json()
-        const { token } = body
+        const token = await readToken(request)
 
         if (typeof token !== 'string' || !token) {
             return NextResponse.json({ error: 'Missing unsubscribe token' }, { status: 400 })

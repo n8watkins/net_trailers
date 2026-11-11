@@ -192,6 +192,36 @@ describe('proxy', () => {
         })
     })
 
+    describe('one-click unsubscribe', () => {
+        const oneClick = {
+            contentType: 'application/x-www-form-urlencoded',
+            headers: {} as Record<string, string>,
+        }
+
+        it('accepts the mail client POST without an Origin when the token is in the query', async () => {
+            const request = createProxyRequest('/api/email/unsubscribe?token=abc', 'POST', oneClick)
+            const response = await proxy(request)
+            expect(response.status).toBe(200)
+        })
+
+        it('still checks the Origin on that route without a token', async () => {
+            const request = createProxyRequest('/api/email/unsubscribe', 'POST', oneClick)
+            expect((await proxy(request)).status).toBe(403)
+        })
+
+        it('still blocks every other route without an Origin, even with a token', async () => {
+            for (const path of ['/api/test?token=abc', '/api/email/send-pilot?token=abc']) {
+                const request = createProxyRequest(path, 'POST', oneClick)
+                expect((await proxy(request)).status).toBe(403)
+            }
+        })
+
+        it('does not exempt other methods on the route', async () => {
+            const request = createProxyRequest('/api/email/unsubscribe?token=abc', 'DELETE')
+            expect((await proxy(request)).status).toBe(403)
+        })
+    })
+
     describe('Request size limits', () => {
         it('rejects JSON payloads over 500KB', async () => {
             const request = createProxyRequest('/api/test', 'POST', {

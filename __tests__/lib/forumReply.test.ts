@@ -33,7 +33,8 @@ import { db } from '@/db'
 import { profiles, users } from '@/db/schema'
 import { createReply, createThread } from '@/db/queries/threads'
 import { loadUserPreferences, saveUserPreferences } from '@/db/queries/userPreferences'
-import { notifyReply, replyEmailHtml } from '@/lib/email/forumReply'
+import { notifyReply } from '@/lib/email/forumReply'
+import { replyEmail } from '@/lib/email/templates'
 
 const origin = 'https://nettrailers.example'
 
@@ -99,7 +100,14 @@ describe('forum reply email', () => {
         const stored = await reply('replier', 'Great <img src=x onerror=alert(1)> pick')
         expect(await notifyReply(stored.id, 'replier', origin)).toEqual({ sent: true })
         expect(send).toHaveBeenCalledTimes(1)
-        const message = send.mock.calls[0][0] as { to: string; subject: string; html: string }
+        const message = send.mock.calls[0][0] as {
+            to: string
+            subject: string
+            html: string
+            text: string
+            from: { name: string }
+            headers: Record<string, string>
+        }
         expect(message.to).toBe('owner@example.com')
         expect(message.subject).toBe(
             'Replier <b> replied to your thread "Best <script>alert(1)</script> of 2026"'
@@ -108,7 +116,11 @@ describe('forum reply email', () => {
         expect(message.html).toContain('Replier &lt;b&gt;')
         expect(message.html).not.toContain('<script>')
         expect(message.html).toContain(`${origin}/community/thread/${threadId}`)
-        expect(message.html).toContain(`${origin}/unsubscribe?token=`)
+        expect(message.html).toContain('/unsubscribe?token=')
+        expect(message.text).toContain('Read the reply:')
+        expect(message.text).toContain('/unsubscribe?token=')
+        expect(message.from.name).toBe('NetTrailers')
+        expect(message.headers['List-Unsubscribe-Post']).toBe('List-Unsubscribe=One-Click')
     })
 
     it('sends nothing for a reply that is not the caller’s', async () => {
@@ -159,20 +171,22 @@ describe('forum reply email', () => {
         })
     })
 
-    it('escapes every value in the HTML', () => {
-        const html = replyEmailHtml({
+    it('escapes every value in the HTML', async () => {
+        const { html, subject } = await replyEmail({
             recipientName: '"><a>',
             replierName: '<x>',
             threadTitle: '&',
             replyContent: "it's",
             threadUrl: 'https://a.example/?q="x"',
-            unsubscribeUrl: null,
+            unsubscribeToken: null,
             isReplyToReply: true,
         })
         expect(html).toContain('&quot;&gt;&lt;a&gt;')
         expect(html).toContain('&lt;x&gt;')
-        expect(html).toContain('it&#39;s')
+        expect(html).toContain('it&#x27;s')
         expect(html).toContain('https://a.example/?q=&quot;x&quot;')
         expect(html).toContain('replied to your comment')
+        expect(html).not.toContain('<a>')
+        expect(subject).toBe('<x> replied to your comment on "&"')
     })
 })

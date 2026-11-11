@@ -89,6 +89,33 @@ describe('email gate', () => {
             html: '<p>Hello <b>there</b></p>',
             text: expect.stringContaining('Hello there'),
         })
+        expect((send.mock.calls[0][0] as { headers?: unknown }).headers).toBeUndefined()
+    })
+
+    it('sets the one-click unsubscribe headers when it has an unsubscribe link, and a plain sender name', async () => {
+        jest.useFakeTimers({
+            now: new Date('2027-01-15T09:00:00Z'),
+            doNotFake: ['nextTick', 'setImmediate', 'setTimeout', 'setInterval', 'queueMicrotask'],
+        })
+        await gate.sendEmail('trending', {
+            to: 'a@example.com',
+            subject: 'Hi',
+            html: '<p>Hi</p>',
+            text: 'Hi (text)',
+            unsubscribeUrl: 'https://nettrailers.n8builds.dev/unsubscribe?token=a%26b',
+        })
+        jest.useRealTimers()
+        expect(send).toHaveBeenCalledWith(
+            expect.objectContaining({
+                from: { email: 'nettrailers@n8builds.dev', name: 'NetTrailers' },
+                text: 'Hi (text)',
+                headers: {
+                    'List-Unsubscribe':
+                        '<https://nettrailers.n8builds.dev/api/email/unsubscribe?token=a%26b>',
+                    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+                },
+            })
+        )
     })
 
     it('delivers a reserved sign-in link without spending another unit', async () => {
@@ -99,8 +126,10 @@ describe('email gate', () => {
         )
         const message = send.mock.calls[0][0] as { subject: string; html: string; text: string }
         expect(message.subject).toBe('Your NetTrailers sign-in link')
-        expect(message.html).toContain('token=a&#38;b=&#60;c&#62;')
+        expect(message.html).toContain('token=a&amp;b=&lt;c&gt;')
         expect(message.text).toContain('https://x.test/api/auth/callback/email?token=a&b=<c>')
+        expect(message).not.toHaveProperty('headers')
+        expect(message.html).not.toContain('Unsubscribe')
         expect((await gate.getEmailUsage()).today).toBe(before.today)
     })
 })
