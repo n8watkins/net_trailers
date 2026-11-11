@@ -244,7 +244,7 @@ function ActivityPageContent() {
                                     {activityByDay[day].map((activity) => (
                                         <div
                                             key={activity.id}
-                                            className="flex items-center justify-between p-3 bg-gray-900 rounded-lg hover:bg-gray-850 transition-colors"
+                                            className="flex items-center justify-between p-3 bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors"
                                         >
                                             <div className="flex items-center gap-3">
                                                 {activity.type === 'login' ? (

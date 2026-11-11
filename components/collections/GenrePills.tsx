@@ -96,7 +96,7 @@ export function GenrePills({
                     className={`relative px-4 py-2 rounded-full text-sm font-medium transition-all ${
                         isAllGenresSelected
                             ? 'bg-amber-500 text-zinc-950 border-2 border-amber-500 hover:bg-amber-600 hover:border-amber-600'
-                            : 'bg-gray-800 text-gray-300 border-2 border-gray-700 hover:border-gray-600 hover:bg-gray-750'
+                            : 'bg-gray-800 text-gray-300 border-2 border-gray-700 hover:border-gray-600 hover:bg-gray-700'
                     }`}
                 >
                     <span className="flex items-center gap-1.5">
@@ -125,7 +125,7 @@ export function GenrePills({
                                         ? 'bg-amber-500 text-zinc-950 border-2 border-amber-500 hover:bg-amber-600 hover:border-amber-600'
                                         : isDisabled
                                           ? 'bg-gray-800 text-gray-500 border-2 border-gray-700 cursor-not-allowed opacity-50'
-                                          : 'bg-gray-800 text-gray-300 border-2 border-gray-700 hover:border-gray-600 hover:bg-gray-750'
+                                          : 'bg-gray-800 text-gray-300 border-2 border-gray-700 hover:border-gray-600 hover:bg-gray-700'
                                 }
                             `}
                         >

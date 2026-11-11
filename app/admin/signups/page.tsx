@@ -180,7 +180,7 @@ export default function SignupsPage() {
                                     {signupsByDay[day].map((user) => (
                                         <div
                                             key={user.uid}
-                                            className="flex items-center justify-between p-4 bg-gray-900 rounded-lg hover:bg-gray-850 transition-colors"
+                                            className="flex items-center justify-between p-4 bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors"
                                         >
                                             <div className="flex items-center gap-3">
                                                 {user.photoURL ? (
