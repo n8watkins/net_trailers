@@ -5,7 +5,7 @@
 
 export const ABOUT_LINKS = {
     portfolio: 'https://portfolio.n8builds.dev',
-    writeUp: 'https://portfolio.n8builds.dev/projects/net-trailer',
+    writeUp: 'https://portfolio.n8builds.dev/projects/net-trailers',
     source: 'https://github.com/n8watkins/net_trailers',
     n8builds: 'https://n8builds.dev',
 } as const

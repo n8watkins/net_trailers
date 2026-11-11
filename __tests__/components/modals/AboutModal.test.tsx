@@ -24,7 +24,9 @@ describe('AboutModal', () => {
         renderAbout()
         const href = (name: RegExp) => screen.getByRole('link', { name }).getAttribute('href')
         expect(href(/^Portfolio/)).toBe('https://portfolio.n8builds.dev')
-        expect(href(/Project write-up/)).toBe('https://portfolio.n8builds.dev/projects/net-trailer')
+        expect(href(/Project write-up/)).toBe(
+            'https://portfolio.n8builds.dev/projects/net-trailers'
+        )
         expect(href(/Source/)).toBe('https://github.com/n8watkins/net_trailers')
         expect(href(/n8builds\.dev/)).toBe('https://n8builds.dev')
         expect(href(/Security/)).toBe('/security')

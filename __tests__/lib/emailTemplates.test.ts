@@ -112,7 +112,7 @@ describe('email templates', () => {
             expect(email.text.length).toBeGreaterThan(40)
             expect(email.html).toContain('href="https://n8builds.dev"')
             expect(email.html).toContain(
-                'href="https://portfolio.n8builds.dev/projects/net-trailer"'
+                'href="https://portfolio.n8builds.dev/projects/net-trailers"'
             )
             expect(email.html).toContain('/email/nettrailers-mark-96.png')
             expect(email.text).toContain('portfolio project by n8builds.dev')
