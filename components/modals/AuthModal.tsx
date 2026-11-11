@@ -12,18 +12,18 @@ interface AuthModalProps {
 }
 
 /**
- * Authentication modal. Sign in with GitHub OAuth or a passwordless email magic
- * link (Auth.js). Guests can keep using the app without signing in; signing in
+ * Authentication modal. Sign in with a passwordless email magic link
+ * (Auth.js). Guests can keep using the app without signing in; signing in
  * syncs their data to the cloud.
  */
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
-    const { user, loading, signInWithGitHub, signInWithEmail, logOut } = useAuth()
+    const { user, loading, signInWithEmail, logOut } = useAuth()
     const [isWorking, setIsWorking] = React.useState(false)
     const [email, setEmail] = React.useState('')
     const [emailSent, setEmailSent] = React.useState(false)
     const [emailError, setEmailError] = React.useState<string | null>(null)
-    // Detect in-app browsers (Gmail/Facebook/Instagram webviews) where OAuth can
-    // be blocked and magic links open in the wrong browser. Set on the client to
+    // Detect in-app browsers (Gmail/Facebook/Instagram webviews) where magic
+    // links open in the wrong browser. Set on the client to
     // avoid hydration mismatch.
     const [inApp, setInApp] = React.useState(false)
     React.useEffect(() => setInApp(isInAppBrowser()), [])
@@ -33,35 +33,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     const turnstileBox = React.useRef<HTMLDivElement>(null)
     const showEmailForm = isOpen && !loading && !user && !emailSent
     const { takeToken, challengeShown } = useTurnstile(turnstileBox, showEmailForm)
-
-    // GitHub sign-in is optional on the server (auth.ts); show its button only
-    // when the provider is registered. Hidden until confirmed, so it never flashes.
-    const [githubEnabled, setGithubEnabled] = React.useState(false)
-    React.useEffect(() => {
-        if (!isOpen) return
-        let cancelled = false
-        fetch('/api/auth/providers')
-            .then((res) => (res.ok ? res.json() : {}))
-            .then((providers: Record<string, unknown>) => {
-                if (!cancelled) setGithubEnabled(Boolean(providers?.github))
-            })
-            .catch(() => {
-                if (!cancelled) setGithubEnabled(false)
-            })
-        return () => {
-            cancelled = true
-        }
-    }, [isOpen])
-
-    const handleSignIn = async () => {
-        setIsWorking(true)
-        try {
-            await signInWithGitHub()
-            onClose()
-        } finally {
-            setIsWorking(false)
-        }
-    }
 
     const handleEmailSignIn = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -180,36 +151,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                             </div>
                         ) : (
                             <>
-                                {githubEnabled && (
-                                    <>
-                                        <button
-                                            onClick={handleSignIn}
-                                            disabled={isWorking || loading}
-                                            className="w-full bg-white hover:bg-gray-100 disabled:bg-gray-400 text-black py-3 rounded-md font-medium transition-colors flex items-center justify-center space-x-2"
-                                        >
-                                            <svg
-                                                className="w-5 h-5"
-                                                viewBox="0 0 24 24"
-                                                fill="currentColor"
-                                            >
-                                                <path d="M12 .5C5.37.5 0 5.78 0 12.29c0 5.2 3.44 9.61 8.21 11.17.6.11.82-.25.82-.56v-2.13c-3.34.71-4.04-1.61-4.04-1.61-.55-1.36-1.34-1.72-1.34-1.72-1.09-.73.08-.72.08-.72 1.2.08 1.84 1.21 1.84 1.21 1.07 1.8 2.81 1.28 3.5.98.11-.76.42-1.28.76-1.57-2.67-.3-5.47-1.31-5.47-5.83 0-1.29.47-2.34 1.23-3.17-.12-.3-.53-1.52.12-3.16 0 0 1-.32 3.3 1.21a11.5 11.5 0 0 1 6 0c2.28-1.53 3.29-1.21 3.29-1.21.65 1.64.24 2.86.12 3.16.77.83 1.23 1.88 1.23 3.17 0 4.53-2.81 5.53-5.49 5.82.43.37.81 1.1.81 2.22v3.29c0 .31.22.68.83.56A12.05 12.05 0 0 0 24 12.29C24 5.78 18.63.5 12 .5z" />
-                                            </svg>
-                                            <span>Continue with GitHub</span>
-                                        </button>
-
-                                        <div className="relative my-5">
-                                            <div className="absolute inset-0 flex items-center">
-                                                <div className="w-full border-t border-gray-700" />
-                                            </div>
-                                            <div className="relative flex justify-center text-sm">
-                                                <span className="px-2 bg-[#181818] text-gray-500">
-                                                    or
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
-
                                 <form onSubmit={handleEmailSignIn} className="space-y-3">
                                     <input
                                         type="email"

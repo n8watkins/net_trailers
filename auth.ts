@@ -1,32 +1,29 @@
 /**
  * Auth.js (NextAuth v5) configuration.
  *
- * Authentication via GitHub OAuth and passwordless email magic links (sent
- * through Cloudflare Email Service by the email gate, lib/email/gate.ts),
+ * Authentication via passwordless email magic links (sent through Cloudflare
+ * Email Service by the email gate, lib/email/gate.ts),
  * backed by the Turso/Drizzle adapter. Replaces Firebase Auth. Database session
  * strategy so `session.user.id` is the canonical Turso user id used for all
  * ownership checks.
  *
- * Admin is identified by GitHub login (ADMIN_GITHUB_LOGIN) rather than a
+ * Admin is identified by email (ADMIN_EMAILS, lib/admin.ts) rather than a
  * generated user id, so it can be configured before the first sign-in.
  */
 
 import { DrizzleAdapter } from '@auth/drizzle-adapter'
 import NextAuth from 'next-auth'
 import { headers } from 'next/headers'
-import GitHub from 'next-auth/providers/github'
 import type { Provider } from 'next-auth/providers'
 
 import { db } from '@/db'
 import { accounts, sessions, users, verificationTokens } from '@/db/schema'
 import { authLogger } from '@/lib/log'
-import { isGitHubAuthConfigured } from '@/lib/authConfig'
+import { isAdminEmail } from '@/lib/admin'
 import { isTestMode } from '@/lib/testMode'
 import { deliverSignInLink } from '@/lib/email/gate'
 import { SIGN_IN_EMAIL_LIMIT_ERROR, reserveSignInEmail } from '@/lib/email/signInLimits'
 import { TestEmailProvider } from '@/lib/testEmailProvider'
-
-const adminLogin = process.env.ADMIN_GITHUB_LOGIN?.toLowerCase()
 
 /**
  * Passwordless email sign-in. The link is reserved against the email limits in
@@ -38,7 +35,7 @@ function CloudflareEmail(): Provider {
         id: 'email',
         type: 'email',
         name: 'Email',
-        from: process.env.EMAIL_FROM || 'nettrailers@n8builds.dev',
+        from: process.env.EMAIL_FROM || 'net-trailers@n8builds.dev',
         server: {},
         maxAge: 24 * 60 * 60,
         options: {},
@@ -60,32 +57,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         verificationTokensTable: verificationTokens,
     }),
     session: { strategy: 'database' },
-    // Required when running behind a proxy (Vercel) so Auth.js trusts the
-    // X-Forwarded-Host header for callback URL construction.
+    // Callback and magic-link URLs follow the host the request came in on
+    // (net-trailers.n8builds.dev in production; the old host 301s there first).
     trustHost: true,
     // Error type and a masked message only; see lib/log.ts.
     logger: authLogger,
     providers: [
-        // GitHub sign-in is optional: it is registered only when its OAuth App
-        // credentials exist, so email magic links work on their own. The sign-in
-        // modal asks /api/auth/providers and hides the button when it is absent.
-        ...(isGitHubAuthConfigured()
-            ? [
-                  GitHub({
-                      // AUTH_GITHUB_ID / AUTH_GITHUB_SECRET are read from env automatically.
-                      profile(profile) {
-                          return {
-                              id: profile.id.toString(),
-                              name: profile.name ?? profile.login,
-                              email: profile.email,
-                              image: profile.avatar_url,
-                              // Persisted on the users row; used for admin identification.
-                              githubLogin: profile.login,
-                          }
-                      },
-                  }),
-              ]
-            : []),
         // Passwordless email magic links (see emailProvider above).
         emailProvider,
     ],
@@ -108,9 +85,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session({ session, user }) {
             if (session.user) {
                 session.user.id = user.id
-                const login = (user as { githubLogin?: string }).githubLogin
-                session.user.githubLogin = login
-                session.user.isAdmin = !!adminLogin && login?.toLowerCase() === adminLogin
+                session.user.isAdmin = isAdminEmail(user.email)
             }
             return session
         },

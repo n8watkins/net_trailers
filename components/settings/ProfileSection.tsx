@@ -223,7 +223,9 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                                 <p className="text-sm text-[#b3b3b3] truncate">
                                     {user?.email || 'No email'}
                                 </p>
-                                <p className="text-xs text-[#666] mt-0.5">Connected with GitHub</p>
+                                <p className="text-xs text-[#666] mt-0.5">
+                                    Signs in with an emailed link
+                                </p>
                             </div>
                         </div>
 

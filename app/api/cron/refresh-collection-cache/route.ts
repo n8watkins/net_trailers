@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
         const adminOnlyParam = searchParams.get('adminOnly')
         const adminOnly = adminOnlyParam === 'true'
 
-        // Resolve the admin's Turso id from ADMIN_GITHUB_LOGIN (the old ADMIN_UID
+        // Resolve the admin's Turso id from ADMIN_EMAILS (the old ADMIN_UID
         // env var was removed in the Firebase→Turso migration).
         const adminUserId = adminOnly ? await getAdminUserId() : null
 

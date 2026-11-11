@@ -68,14 +68,14 @@ const interactions = [
 async function all() {
     return {
         'sign-in': await signInEmail(
-            'https://nettrailers.n8builds.dev/api/auth/callback/email?token=t&email=a%40b.c'
+            'https://net-trailers.n8builds.dev/api/auth/callback/email?token=t&email=a%40b.c'
         ),
         reply: await replyEmail({
             recipientName: 'Maya',
             replierName: 'Jordan',
             threadTitle: 'Best thrillers?',
             replyContent: 'Try Slow Horses',
-            threadUrl: 'https://nettrailers.n8builds.dev/community/thread/t1',
+            threadUrl: 'https://net-trailers.n8builds.dev/community/thread/t1',
             unsubscribeToken: token,
             isReplyToReply: false,
         }),

@@ -37,9 +37,8 @@ export const users = sqliteTable('user', {
     email: text('email').unique(),
     emailVerified: integer('emailVerified', { mode: 'timestamp_ms' }),
     image: text('image'),
-    // GitHub login handle, stamped from the OAuth profile in the signIn callback.
-    // Used for admin identification (ADMIN_GITHUB_LOGIN) without needing the
-    // generated user id up front.
+    // Legacy: the GitHub login of accounts made with the retired GitHub sign-in.
+    // Nothing reads it now (admins are matched by email, lib/admin.ts).
     githubLogin: text('githubLogin'),
 })
 

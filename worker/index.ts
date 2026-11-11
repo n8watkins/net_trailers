@@ -41,9 +41,9 @@ function withUploads(env: WorkerEnv): WorkerEnv {
 export default {
     async fetch(request, env, ctx) {
         try {
-            // The workers.dev address forwards to the site's own (worker/canonical.ts).
+            // The old address and workers.dev forward to the site's own (worker/canonical.ts).
             const canonical = canonicalRedirect(request.url, env.PUBLIC_URL)
-            if (canonical) return Response.redirect(canonical, 308)
+            if (canonical) return Response.redirect(canonical.location, canonical.status)
             if (isUploadPath(new URL(request.url).pathname))
                 return await serveUpload(request, env.UPLOADS)
             return forBrowsers(await app.fetch(request, withUploads(env), ctx))

@@ -2,7 +2,7 @@
  * Admin Authentication Hook
  *
  * Reads admin status from the Auth.js session (exposed via useAuth). Admin
- * identity is derived server-side from ADMIN_GITHUB_LOGIN, so the client never
+ * identity is derived server-side from ADMIN_EMAILS, so the client never
  * sees the admin identifier - only the resolved boolean.
  */
 

@@ -6,15 +6,17 @@
 
 A streaming-style trailer browser and discovery platform built with modern web technologies, featuring user authentication, AI-powered smart search, custom collections, community rankings, personalized recommendations, and child safety controls.
 
+Live at **https://net-trailers.n8builds.dev**.
+
 ## 🚀 Tech Stack
 
 <div align="center">
 
-| Frontend          | Backend                              | Database           | APIs             | Styling             | State Management | Monitoring              | Testing     |
-| ----------------- | ------------------------------------ | ------------------ | ---------------- | ------------------- | ---------------- | ----------------------- | ----------- |
-| ▲ **Next.js 16**  | 🗄️ **Turso (libSQL)**                | 🌿 **Drizzle ORM** | 🎬 **TMDB**      | 🎨 **Tailwind CSS** | 🐻 **Zustand**   | 🛡️ **Sentry**           | 🧪 **Jest** |
-| **TS TypeScript** | 🔐 **Auth.js (GitHub + magic link)** | 📧 **CF Email**    | 🤖 **Gemini AI** | 🎭 **Material-UI**  |                  | 📊 **GA4**              | 🧪 **RTL**  |
-| ⚛️ **React 19**   |                                      |                    |                  | 🦸 **Heroicons**    |                  | 📈 **Vercel Analytics** |             |
+| Frontend          | Backend                     | Database           | APIs             | Styling             | State Management | Monitoring              | Testing     |
+| ----------------- | --------------------------- | ------------------ | ---------------- | ------------------- | ---------------- | ----------------------- | ----------- |
+| ▲ **Next.js 16**  | 🗄️ **Turso (libSQL)**       | 🌿 **Drizzle ORM** | 🎬 **TMDB**      | 🎨 **Tailwind CSS** | 🐻 **Zustand**   | 🛡️ **Sentry**           | 🧪 **Jest** |
+| **TS TypeScript** | 🔐 **Auth.js (magic link)** | 📧 **CF Email**    | 🤖 **Gemini AI** | 🎭 **Material-UI**  |                  | 📊 **GA4**              | 🧪 **RTL**  |
+| ⚛️ **React 19**   |                             |                    |                  | 🦸 **Heroicons**    |                  | 📈 **Vercel Analytics** |             |
 
 </div>
 
@@ -23,7 +25,7 @@ A streaming-style trailer browser and discovery platform built with modern web t
 ### 🔐 Authentication & User Management
 
 - **Auth.js (NextAuth v5) Authentication**
-    - GitHub OAuth sign-in
+    - Passwordless sign-in by emailed link
     - Passwordless email magic-link sign-in (delivered through Cloudflare Email Service)
     - Database sessions with secure, cookie-based session management
     - Guest mode for demo access (no registration required)
@@ -260,7 +262,7 @@ A streaming-style trailer browser and discovery platform built with modern web t
 
 - **Security**
     - Dual-layer authentication (client routing + server-side Auth.js session validation)
-    - Admin identified by GitHub login (`ADMIN_GITHUB_LOGIN`, server-side only, not exposed to client)
+    - Admin identified by sign-in email (`ADMIN_EMAILS`, server-side only, not exposed to client)
     - Rate limiting on public endpoints (30 requests/minute per IP)
     - Email rate limiting (100/hour admin, 3/day recipient)
     - Input validation and sanitization
@@ -315,7 +317,6 @@ _Experience all features or continue as guest to explore the platform_
 - Node.js 18.x or higher
 - npm (project migrated from pnpm to npm)
 - Turso database (free tier available)
-- GitHub OAuth App (for sign-in)
 - Nothing for email: it goes through the Worker's Cloudflare Email Service binding (no key)
 - TMDB API key (free from themoviedb.org)
 - Google Gemini API key (free from ai.google.dev)
@@ -349,12 +350,6 @@ _Experience all features or continue as guest to explore the platform_
     # Auth.js / NextAuth v5 (Required)
     # AUTH_SECRET: generate with `npx auth secret` (or `openssl rand -base64 32`)
     AUTH_SECRET=your_auth_secret
-    # GitHub OAuth App (https://github.com/settings/developers)
-    # Callback URL: http://localhost:3000/api/auth/callback/github (and your prod URL)
-    AUTH_GITHUB_ID=your_github_oauth_client_id
-    AUTH_GITHUB_SECRET=your_github_oauth_client_secret
-    # Production URL (only needed in production behind a proxy, e.g. Vercel)
-    AUTH_URL=https://your-deployment-url.com
 
     # TMDB API (Required)
     # Get your free API key from: https://www.themoviedb.org/settings/api
@@ -365,10 +360,10 @@ _Experience all features or continue as guest to explore the platform_
     GEMINI_API_KEY=your_gemini_api_key
 
     # Admin Portal (Required for admin access - SERVER-SIDE ONLY)
-    # The GitHub username (login) of the admin account. The signed-in user whose
-    # GitHub login matches this gets `session.user.isAdmin`.
+    # Sign-in emails of the admin accounts, comma-separated. A signed-in user
+    # whose email is listed gets `session.user.isAdmin` (lib/admin.ts).
     # IMPORTANT: This is intentionally NOT prefixed with NEXT_PUBLIC_ to keep it server-side only.
-    ADMIN_GITHUB_LOGIN=your_github_username
+    ADMIN_EMAILS=you@example.com
 
     # Email needs no key: the Worker sends through its Cloudflare Email Service
     # binding (wrangler.jsonc). Locally there is no binding and nothing is sent.
@@ -412,13 +407,12 @@ _Experience all features or continue as guest to explore the platform_
 
     Inspect the database any time with `npm run db:studio`.
 
-    b. **Create a GitHub OAuth App** (https://github.com/settings/developers):
-    - Authorization callback URL: `http://localhost:3000/api/auth/callback/github`
-      (add your production URL's callback as well)
-    - Copy the Client ID and Client Secret into `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET`
+    b. **Sign-in:** by emailed link only (Auth.js email provider). Locally there is
+    no email binding, so run with `APP_ENV=test` and a `file:` database to have
+    sign-in links written to `E2E_MAGIC_LINK_DIR` instead (see `playwright.config.ts`).
 
     c. **Email:** nothing to set up locally. The deployed Worker sends every email
-    through Cloudflare Email Service from `nettrailers@n8builds.dev` (DEPLOYMENT.md).
+    through Cloudflare Email Service from `net-trailers@n8builds.dev` (DEPLOYMENT.md).
 
     > There is no Firebase project, Firestore rules deploy, or Firebase Admin SDK
     > service account to configure - all data access is server-mediated through
@@ -426,15 +420,15 @@ _Experience all features or continue as guest to explore the platform_
 
 5. **Admin Portal Setup** (Required for admin access)
 
-    a. **Set your admin GitHub login**:
-    - Add your GitHub username to `.env.local` as `ADMIN_GITHUB_LOGIN`
+    a. **Set your admin email**:
+    - Add your sign-in email to `.env.local` as `ADMIN_EMAILS`
       (server-side only, not exposed to the client)
-    - When you sign in via GitHub with that account, the session is granted
+    - When you sign in with that address, the session is granted
       `session.user.isAdmin` and `/admin` becomes accessible
 
     b. **Access the admin dashboard**:
     - Start the dev server: `npm run dev`
-    - Sign in with your admin GitHub account
+    - Sign in with your admin email
     - Navigate to `/admin` in your browser
     - You should see the admin dashboard with statistics
 
@@ -665,7 +659,7 @@ net_trailers/
 │   ├── schema.ts         # Drizzle schema (tables, indexes)
 │   ├── migrations/       # drizzle-kit generated SQL migrations
 │   └── queries/          # Typed query helpers (one module per domain)
-├── auth.ts               # Auth.js (NextAuth v5) config - GitHub + magic link
+├── auth.ts               # Auth.js (NextAuth v5) config - email magic link
 ├── drizzle.config.ts     # drizzle-kit configuration
 ├── instrumentation-client.ts # Sentry client config
 ├── instrumentation.ts    # Sentry server config (Next.js 15+)
@@ -965,9 +959,9 @@ NetTrailers implements comprehensive security measures. See the full [Security D
 
 - [ ] Set all required environment variables
 - [ ] Create the Turso database and apply migrations (`npm run db:migrate`)
-- [ ] Configure the GitHub OAuth App callback URL for production
+- [ ] Add the production host to the Turnstile widget's hostnames
 - [ ] Email: the `send_email` binding in `wrangler.jsonc` (domain onboarded for Cloudflare Email Service)
-- [ ] Set `ADMIN_GITHUB_LOGIN` for admin access
+- [ ] Set `ADMIN_EMAILS` for admin access
 - [ ] Create a Vercel Blob store and set `BLOB_READ_WRITE_TOKEN` (for image uploads)
 - [ ] Enable Sentry error monitoring
 - [ ] Configure Google Analytics (optional)

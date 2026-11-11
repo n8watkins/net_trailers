@@ -1,8 +1,9 @@
 # Deploying NetTrailers
 
 NetTrailers runs on Cloudflare Workers as the `net-trailers` Worker in the owner's Cloudflare account, built by the OpenNext adapter (`@opennextjs/cloudflare`).
-It is served at https://nettrailers.n8builds.dev, a Workers custom domain (`routes` in `wrangler.jsonc`; Cloudflare manages its DNS record and certificate).
-The workers.dev address, https://net-trailers.nathancwatkins23.workers.dev, forwards there with a 308 that keeps the path and query (`worker/canonical.ts`), so sign-in cookies, magic links and the GitHub callback all live on one address.
+It is served at https://net-trailers.n8builds.dev, a Workers custom domain (`routes` in `wrangler.jsonc`; Cloudflare manages its DNS record and certificate).
+The old address, https://nettrailers.n8builds.dev, stays a custom domain of the same Worker only so it can answer a permanent 301 to the new one, keeping the path and query (`worker/canonical.ts`).
+The workers.dev address, https://net-trailers.nathancwatkins23.workers.dev, forwards there too, with a 308, so sign-in cookies and magic links all live on one address.
 https://net-trailers.vercel.app still serves an old Vercel deployment until the owner turns it into a redirect ("Moving off Vercel" below).
 
 ## How it fits together
@@ -42,18 +43,17 @@ Set it to `"true"` in `wrangler.jsonc` in the same change that turns off the Ver
 
 ## Configuration
 
-Plain values live in `wrangler.jsonc` (`vars`): `APP_ENV`, `CRONS_ENABLED`, `PUBLIC_URL`, `ADMIN_GITHUB_LOGIN` (the admin's GitHub login, public) and `EMAIL_FROM`.
+Plain values live in `wrangler.jsonc` (`vars`): `APP_ENV`, `CRONS_ENABLED`, `PUBLIC_URL`, `ADMIN_EMAILS` (the admin accounts' sign-in emails, comma-separated) and `EMAIL_FROM`.
 Secrets are set with `npx wrangler secret put <NAME>` (it reads the value from stdin) and listed with `npx wrangler secret list`:
 
-| Secret                                   | Used for                                                                                                                              |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` | the database (`turso db show net-trailers --url`, `turso db tokens create net-trailers`)                                              |
-| `AUTH_SECRET`                            | Auth.js                                                                                                                               |
-| `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`   | optional GitHub sign-in (callback `https://nettrailers.n8builds.dev/api/auth/callback/github`); without them only email sign-in shows |
-| `TMDB_API_KEY`                           | every movie and TV page                                                                                                               |
-| `GEMINI_API_KEY`                         | smart search and the other AI features                                                                                                |
-| `CRON_SECRET`                            | the Cron Triggers                                                                                                                     |
-| `TURNSTILE_SECRET_KEY`                   | the Turnstile check on the email sign-in form (`lib/turnstile.ts`)                                                                    |
+| Secret                                   | Used for                                                                                 |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` | the database (`turso db show net-trailers --url`, `turso db tokens create net-trailers`) |
+| `AUTH_SECRET`                            | Auth.js                                                                                  |
+| `TMDB_API_KEY`                           | every movie and TV page                                                                  |
+| `GEMINI_API_KEY`                         | smart search and the other AI features                                                   |
+| `CRON_SECRET`                            | the Cron Triggers                                                                        |
+| `TURNSTILE_SECRET_KEY`                   | the Turnstile check on the email sign-in form (`lib/turnstile.ts`)                       |
 
 Build-time values (inlined into the pages, all public) are set in the deploy workflow: `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_GA_MEASUREMENT_ID`, `NEXT_PUBLIC_SENTRY_DSN`, and `NEXT_PUBLIC_CF_WEB_ANALYTICS_TOKEN` from a repository variable.
 For a deploy by hand, export the same values in the shell first.
@@ -63,8 +63,10 @@ After changing bindings in `wrangler.jsonc`, run `npm run cf-typegen` (CI checks
 
 ## Email
 
-Every email (sign-in links, digests, forum replies, admin email) goes through Cloudflare Email Service: the `send_email` binding `EMAIL` in `wrangler.jsonc`, from `nettrailers@n8builds.dev` (the `EMAIL_FROM` var).
-`n8builds.dev` is onboarded for sending (`npx wrangler email sending list`), so there is no API key, and the binding may send from that one address only.
+Every email (sign-in links, digests, forum replies, admin email) goes through Cloudflare Email Service: the `send_email` binding `EMAIL` in `wrangler.jsonc`, from `net-trailers@n8builds.dev` (the `EMAIL_FROM` var), with the display name "NetTrailers".
+`n8builds.dev` is onboarded for sending (`npx wrangler email sending list`), so there is no API key, and the binding may send from that one address only (`allowed_sender_addresses`).
+Any address on an onboarded domain can send without further setup, so changing the sender is a `wrangler.jsonc` change alone.
+Replies to the sender address are not routed anywhere unless an Email Routing rule is added for it.
 Before anything is sent, the email gate (`lib/email/gate.ts`) spends one unit from the site-wide caps (200 a day, 2,000 a month) and any per-caller limits (sign-in links: 5 a day per address, 20 per IP), kept in Turso.
 Cloudflare includes 3,000 emails a month across the whole account, then charges $0.35 per 1,000; the site cap keeps this app inside that on its own.
 Off Workers (`next dev`, `next start`, tests) there is no binding, so nothing is sent; the end-to-end tests write sign-in links to disk instead.
@@ -81,7 +83,8 @@ A new third-party script must be loaded by a nonced script or get the nonce; a n
 
 The email sign-in form runs Cloudflare Turnstile in the background as it opens (managed mode, "interaction-only" appearance: most people see nothing, and a small challenge appears only when Cloudflare is unsure).
 Its token goes with the request for a link, and the Auth.js route checks it with siteverify before anything else (`lib/turnstile.ts`), so a request without a valid token never spends the sign-in email limits or sends an email.
-The widget is "NetTrailers sign-in" in the Cloudflare dashboard (Turnstile), for `nettrailers.n8builds.dev`, `net-trailers.nathancwatkins23.workers.dev` and `localhost`.
+The widget is "NetTrailers sign-in" in the Cloudflare dashboard (Turnstile), for `net-trailers.n8builds.dev`, `nettrailers.n8builds.dev` (the old address, until nothing links to it), `net-trailers.nathancwatkins23.workers.dev` and `localhost`.
+A new host must be added to the widget's hostnames before the site is served from it, or the challenge fails there and nobody can sign in.
 Its site key is public and set in the deploy workflow; its secret is the Worker secret `TURNSTILE_SECRET_KEY`.
 The production Worker refuses every request for a link while that secret is missing.
 Local runs and the end-to-end tests use Cloudflare's always-pass test keys.
@@ -104,7 +107,7 @@ Workers Logs keeps every request (`observability` in `wrangler.jsonc`, `head_sam
 In the Cloudflare dashboard, open Workers & Pages, then the `net-trailers` Worker, then Logs.
 To stream them live, run `npx wrangler tail net-trailers --format pretty`.
 `--search` matches log messages only, not request URLs, so use `--status error` or no filter to see requests.
-Failures log one JSON line with `event`, `reason` and `route`: Auth.js errors (GitHub and magic-link sign-in) as `auth_error` with the error type (such as `CallbackRouteError` or `EmailSignInError`), a masked message and the provider's OAuth error code, and errors thrown in pages, route handlers or the proxy as `unhandled_exception` with the route (`instrumentation.ts`).
+Failures log one JSON line with `event`, `reason` and `route`: Auth.js errors (magic-link sign-in) as `auth_error` with the error type (such as `CallbackRouteError` or `EmailSignInError`) and a masked message, and errors thrown in pages, route handlers or the proxy as `unhandled_exception` with the route (`instrumentation.ts`).
 They never carry secrets, tokens, OAuth codes or state values, cookies, emails or other personal data.
 
 ## Testing a deployment
@@ -119,7 +122,7 @@ Fix forward afterwards by reverting the commit and deploying again.
 
 ## Moving off Vercel
 
-Done on the Cloudflare side: the custom domain, `NEXT_PUBLIC_APP_URL` (email links, sitemap, metadata), the workers.dev forward, optional GitHub sign-in, email through Cloudflare, and the Cron Triggers.
+Done on the Cloudflare side: the custom domain, `NEXT_PUBLIC_APP_URL` (email links, sitemap, metadata), the workers.dev forward, email through Cloudflare, and the Cron Triggers.
 The Vercel project `net-trailers` stopped deploying on 2026-11-03, and its production deployment became a redirect (step 1), which ended its crons; the Worker now runs them.
 The ops decision is to keep Vercel projects as redirect-only (they hold the `*.vercel.app` name), not to delete them.
 Owner steps, in order:
@@ -135,14 +138,15 @@ Owner steps, in order:
         "redirects": [
             {
                 "source": "/:path(.*)",
-                "destination": "https://nettrailers.n8builds.dev/:path",
+                "destination": "https://net-trailers.n8builds.dev/:path",
                 "permanent": true
             }
         ]
     }
     ```
     Then run `vercel link --yes --project net-trailers` and `vercel deploy --prod --yes` there.
-    Check with `curl -sI https://net-trailers.vercel.app/search?q=x`: a 308 to `https://nettrailers.n8builds.dev/search?q=x`.
+    Check with `curl -sI https://net-trailers.vercel.app/search?q=x`: a 308 to `https://net-trailers.n8builds.dev/search?q=x`.
+    A deployment made before the address change still points at `nettrailers.n8builds.dev`, which then 301s to the new address; redeploying it with this file saves the extra hop.
     The new deployment has no crons, so Vercel's crons stop with it.
     In the Vercel project settings, disconnect the Git repository so a push never redeploys the app there.
 2. **Rotate the Turso token**, which also cuts off the old Vercel deployment:
@@ -151,9 +155,13 @@ Owner steps, in order:
     turso db tokens create net-trailers | npx wrangler secret put TURSO_AUTH_TOKEN --name net-trailers
     ```
     The site errors for the seconds between the two commands.
-3. **GitHub sign-in (optional):** in the GitHub OAuth App, set the callback to `https://nettrailers.n8builds.dev/api/auth/callback/github`, make a new client secret, then `npx wrangler secret put AUTH_GITHUB_ID --name net-trailers` and `AUTH_GITHUB_SECRET`.
-   The "Continue with GitHub" button appears once both are set; the admin dashboard needs it, because the admin is identified by GitHub login.
-4. **Delete leftover email secrets:** `npx wrangler secret delete RESEND_API_KEY --name net-trailers`, and remove Resend and Brevo variables from the Vercel project if it keeps any.
+3. **Delete leftover email secrets:** `npx wrangler secret delete RESEND_API_KEY --name net-trailers`, and remove Resend and Brevo variables from the Vercel project if it keeps any.
+
+## Sign-in and admin
+
+Sign-in is by emailed link only (Auth.js email provider, `auth.ts`); GitHub sign-in was removed on 2026-11-10.
+An account is an admin when its sign-in email is in `ADMIN_EMAILS` (`lib/admin.ts`), so the owner signs in with that address like anyone else.
+The Worker secrets `AUTH_GITHUB_ID` and `AUTH_GITHUB_SECRET` are no longer read and can be deleted with `npx wrangler secret delete <NAME> --name net-trailers`; the GitHub OAuth App can be deleted too.
 
 ## Taking it down
 

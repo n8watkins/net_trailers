@@ -7,7 +7,7 @@
 
 /** The site's one public address (wrangler.jsonc PUBLIC_URL). */
 export function siteUrl(): string {
-    return (process.env.PUBLIC_URL || 'https://nettrailers.n8builds.dev').replace(/\/$/, '')
+    return (process.env.PUBLIC_URL || 'https://net-trailers.n8builds.dev').replace(/\/$/, '')
 }
 
 export const PORTFOLIO_PROJECT_URL = 'https://portfolio.n8builds.dev/projects/net-trailer'
