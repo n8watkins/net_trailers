@@ -1,13 +1,45 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { signOut } from 'next-auth/react'
+import { ShieldAlert, ShieldCheck } from 'lucide-react'
+
+import { BUTTON } from './shell/ui'
 
 /**
- * The admin page's two guard rails for dangerous actions: a confirm dialog
- * that restates what will happen, and the "sign in again" dialog shown when
- * the server answers `reauth_required` (lib/admin/guard.ts).
+ * The admin's guard rails for dangerous actions: one confirm dialog that
+ * restates what will happen and shows whether the sign-in is fresh enough
+ * (lib/admin/guard.ts, 15 minutes), and the "sign in again" dialog shown when
+ * the server answers `reauth_required` anyway.
  */
+
+/** The same window the server enforces (lib/admin/guard.ts FRESH_SIGN_IN_MS). */
+const FRESH_SIGN_IN_MS = 15 * 60 * 1000
+
+const SignedInAt = createContext<number | null>(null)
+
+/** Set once by app/admin/layout.tsx from the server session. */
+export function AdminSessionProvider({
+    signedInAt,
+    children,
+}: {
+    signedInAt: number | null
+    children: React.ReactNode
+}) {
+    return <SignedInAt.Provider value={signedInAt}>{children}</SignedInAt.Provider>
+}
+
+/** Minutes left on the fresh sign-in (0 when stale), rechecked every 15 s. */
+function useFreshMinutesLeft(): number {
+    const signedInAt = useContext(SignedInAt)
+    const [now, setNow] = useState(() => Date.now())
+    useEffect(() => {
+        const timer = setInterval(() => setNow(Date.now()), 15_000)
+        return () => clearInterval(timer)
+    }, [])
+    if (!signedInAt) return 0
+    return Math.max(0, Math.floor((signedInAt + FRESH_SIGN_IN_MS - now) / 60_000))
+}
 
 export type AdminPostResult<T> =
     { ok: true; data: T } | { ok: false; reauth: boolean; error: string }
@@ -35,21 +67,80 @@ export async function adminPost<T = Record<string, unknown>>(
     }
 }
 
-function Backdrop({ children, label }: { children: React.ReactNode; label: string }) {
+/** A modal: Escape and the backdrop close it, focus moves in and returns, Tab stays inside. */
+function Backdrop({
+    children,
+    label,
+    onClose,
+}: {
+    children: React.ReactNode
+    label: string
+    onClose?: () => void
+}) {
+    const box = useRef<HTMLDivElement>(null)
+    const close = useRef(onClose)
+    useEffect(() => {
+        close.current = onClose
+    }, [onClose])
+    useEffect(() => {
+        const previous = document.activeElement as HTMLElement | null
+        box.current?.querySelector<HTMLElement>('[data-autofocus],button')?.focus()
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') close.current?.()
+            if (event.key === 'Tab' && box.current) {
+                const items = box.current.querySelectorAll<HTMLElement>('button,a,input')
+                const first = items[0]
+                const last = items[items.length - 1]
+                if (event.shiftKey && document.activeElement === first) {
+                    event.preventDefault()
+                    last?.focus()
+                } else if (!event.shiftKey && document.activeElement === last) {
+                    event.preventDefault()
+                    first?.focus()
+                }
+            }
+        }
+        document.addEventListener('keydown', onKey)
+        return () => {
+            document.removeEventListener('keydown', onKey)
+            previous?.focus?.()
+        }
+    }, [])
     return (
-        <div
-            className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/70 p-4"
-            role="dialog"
-            aria-modal="true"
-            aria-label={label}
-        >
-            <div className="w-full max-w-md rounded-xl border border-gray-700 bg-gray-800 p-6 shadow-xl">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/75" onClick={onClose} aria-hidden />
+            <div
+                ref={box}
+                role="dialog"
+                aria-modal="true"
+                aria-label={label}
+                className="relative w-full max-w-md rounded-xl border border-white/10 bg-[#161616] p-5 shadow-2xl sm:p-6"
+            >
                 {children}
             </div>
         </div>
     )
 }
 
+function FreshNote({ minutes }: { minutes: number }) {
+    return minutes > 0 ? (
+        <p className="mb-5 flex items-center gap-2 rounded-lg bg-emerald-500/10 px-3 py-2 text-[13px] text-emerald-200">
+            <ShieldCheck aria-hidden className="size-4 shrink-0" />
+            Fresh sign-in: {minutes} more minute{minutes === 1 ? '' : 's'} to act.
+        </p>
+    ) : (
+        <p className="mb-5 flex items-center gap-2 rounded-lg bg-amber-500/10 px-3 py-2 text-[13px] text-amber-200">
+            <ShieldAlert aria-hidden className="size-4 shrink-0" />
+            This needs a sign-in from the last 15 minutes. Sign in again first.
+        </p>
+    )
+}
+
+/**
+ * The one confirm step for anything that emails people or runs a job.
+ * `children` says exactly what will happen; with a stale sign-in the confirm
+ * button becomes "Sign in again".
+ */
 export function ConfirmDialog({
     title,
     children,
@@ -67,27 +158,39 @@ export function ConfirmDialog({
     onConfirm: () => void
     onCancel: () => void
 }) {
+    const minutes = useFreshMinutesLeft()
     return (
-        <Backdrop label={title}>
+        <Backdrop label={title} onClose={busy ? undefined : onCancel}>
             <h3 className="mb-3 text-lg font-semibold text-white">{title}</h3>
-            <div className="mb-6 space-y-2 text-sm text-gray-300">{children}</div>
-            <div className="flex justify-end gap-3">
+            <div className="mb-4 space-y-2 text-sm text-gray-300">{children}</div>
+            <FreshNote minutes={minutes} />
+            <div className="flex flex-wrap justify-end gap-2">
                 <button
+                    type="button"
                     onClick={onCancel}
                     disabled={busy}
-                    className="rounded-lg border border-gray-600 px-4 py-2 text-sm font-medium text-gray-200 hover:bg-gray-700 disabled:opacity-50"
+                    className={BUTTON.secondary}
                 >
                     Cancel
                 </button>
-                <button
-                    onClick={onConfirm}
-                    disabled={busy}
-                    className={`rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 ${
-                        danger ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
-                    }`}
-                >
-                    {busy ? 'Working...' : confirmLabel}
-                </button>
+                {minutes > 0 ? (
+                    <button
+                        type="button"
+                        onClick={onConfirm}
+                        disabled={busy}
+                        className={danger ? BUTTON.danger : BUTTON.primary}
+                    >
+                        {busy ? 'Working...' : confirmLabel}
+                    </button>
+                ) : (
+                    <button
+                        type="button"
+                        onClick={() => signOut({ redirectTo: '/' })}
+                        className={BUTTON.primary}
+                    >
+                        Sign out and sign in again
+                    </button>
+                )}
             </div>
         </Backdrop>
     )
@@ -95,22 +198,20 @@ export function ConfirmDialog({
 
 export function ReauthDialog({ onClose }: { onClose: () => void }) {
     return (
-        <Backdrop label="Sign in again">
+        <Backdrop label="Sign in again" onClose={onClose}>
             <h3 className="mb-3 text-lg font-semibold text-white">Sign in again</h3>
             <p className="mb-6 text-sm text-gray-300">
                 Sending email and running jobs need a sign-in from the last 15 minutes. Sign out,
-                sign in again with a new email link, then come back to the admin page.
+                sign in again with a new email link, then come back to the admin.
             </p>
-            <div className="flex justify-end gap-3">
-                <button
-                    onClick={onClose}
-                    className="rounded-lg border border-gray-600 px-4 py-2 text-sm font-medium text-gray-200 hover:bg-gray-700"
-                >
+            <div className="flex flex-wrap justify-end gap-2">
+                <button type="button" onClick={onClose} className={BUTTON.secondary}>
                     Not now
                 </button>
                 <button
+                    type="button"
                     onClick={() => signOut({ redirectTo: '/' })}
-                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                    className={BUTTON.primary}
                 >
                     Sign out and sign in again
                 </button>
@@ -123,6 +224,7 @@ export function ReauthDialog({ onClose }: { onClose: () => void }) {
 export function useReauthDialog() {
     const [open, setOpen] = useState(false)
     const needReauth = useCallback(() => setOpen(true), [])
-    const dialog = open ? <ReauthDialog onClose={() => setOpen(false)} /> : null
+    const close = useCallback(() => setOpen(false), [])
+    const dialog = open ? <ReauthDialog onClose={close} /> : null
     return { needReauth, dialog }
 }

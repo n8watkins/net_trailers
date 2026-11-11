@@ -47,6 +47,7 @@ function ClientLayout({ children }: ClientLayoutProps) {
     const [isTourActive, setIsTourActive] = useState(false)
     const [showWelcome, setShowWelcome] = useState(false)
     const pathname = usePathname()
+    const isAdminPath = pathname === '/admin' || pathname?.startsWith('/admin/') === true
     const router = useRouter()
     const { modal } = useModalStore()
     const isModalOpen = modal.isOpen
@@ -194,14 +195,17 @@ function ClientLayout({ children }: ClientLayoutProps) {
             {/* At least a screen tall, so the footer never shows (and then jumps) while
                 a page is still loading its content */}
             <div className="min-h-screen">{children}</div>
-            <Footer
-                showAboutModal={showAboutModal}
-                onOpenAboutModal={handleOpenAboutModal}
-                onCloseAboutModal={handleCloseAboutModal}
-                onOpenKeyboardShortcuts={handleOpenShortcuts}
-                onOpenTutorial={handleOpenTutorial}
-                onOpenWelcome={handleOpenWelcome}
-            />
+            {/* The admin has its own shell (app/admin/layout.tsx) with no public footer */}
+            {!isAdminPath && (
+                <Footer
+                    showAboutModal={showAboutModal}
+                    onOpenAboutModal={handleOpenAboutModal}
+                    onCloseAboutModal={handleCloseAboutModal}
+                    onOpenKeyboardShortcuts={handleOpenShortcuts}
+                    onOpenTutorial={handleOpenTutorial}
+                    onOpenWelcome={handleOpenWelcome}
+                />
+            )}
             {showAboutModal && (
                 <AboutModal
                     isOpen={showAboutModal}

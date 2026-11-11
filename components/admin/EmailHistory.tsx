@@ -3,7 +3,11 @@
 import { useState, useEffect } from 'react'
 import { useToast } from '@/hooks/useToast'
 import { getTemplateEmoji, getTemplateName } from '@/lib/email/email-templates-config'
-import { ClockIcon, CheckCircleIcon, XCircleIcon, EnvelopeIcon } from '@heroicons/react/24/outline'
+import {
+    CircleCheck as CheckCircleIcon,
+    CircleX as XCircleIcon,
+    Mail as EnvelopeIcon,
+} from 'lucide-react'
 
 interface EmailHistoryRecord {
     id: string
@@ -49,25 +53,14 @@ export default function EmailHistory() {
     }
 
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="flex items-center gap-3">
-                <ClockIcon className="h-8 w-8 text-purple-500" />
-                <div>
-                    <h2 className="text-2xl font-bold text-white">Email History</h2>
-                    <p className="text-sm text-gray-400">
-                        View all emails sent from the admin panel
-                    </p>
-                </div>
-            </div>
-
+        <div className="space-y-3">
             {/* History List */}
             {loading ? (
                 <div className="flex items-center justify-center py-12">
-                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-purple-500 border-t-transparent" />
+                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
                 </div>
             ) : history.length === 0 ? (
-                <div className="rounded-lg border-2 border-dashed border-gray-700 bg-gray-800 p-12 text-center">
+                <div className="rounded-lg border-2 border-dashed border-white/10 bg-black/30 p-12 text-center">
                     <EnvelopeIcon className="mx-auto h-12 w-12 text-gray-600" />
                     <h3 className="mt-4 text-lg font-semibold text-white">No emails sent yet</h3>
                     <p className="mt-2 text-sm text-gray-400">
@@ -79,13 +72,13 @@ export default function EmailHistory() {
                     {history.map((record) => (
                         <div
                             key={record.id}
-                            className="overflow-hidden rounded-lg border border-gray-700 bg-gray-800 transition-all hover:border-gray-600"
+                            className="overflow-hidden rounded-lg border border-white/10 bg-black/30 transition-all hover:border-gray-600"
                         >
                             <button
                                 onClick={() =>
                                     setExpandedId(expandedId === record.id ? null : record.id)
                                 }
-                                className="w-full p-4 text-left transition-colors hover:bg-gray-700"
+                                className="w-full p-4 text-left transition-colors hover:bg-white/10"
                             >
                                 <div className="flex items-start justify-between gap-4">
                                     <div className="flex flex-1 items-start gap-3">
@@ -97,7 +90,7 @@ export default function EmailHistory() {
                                                 <h3 className="font-semibold text-white">
                                                     {record.subject}
                                                 </h3>
-                                                <span className="rounded-full bg-gray-700 px-2 py-0.5 text-xs text-gray-300">
+                                                <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-gray-300">
                                                     {getTemplateName(record.template)}
                                                 </span>
                                             </div>
@@ -131,7 +124,7 @@ export default function EmailHistory() {
 
                             {/* Expanded Details */}
                             {expandedId === record.id && (
-                                <div className="border-t border-gray-700 bg-gray-900/60 p-4">
+                                <div className="border-t border-white/10 bg-black/40 p-4">
                                     <div className="text-sm text-gray-300">
                                         <p>
                                             <span className="font-medium text-white">Sent at:</span>{' '}

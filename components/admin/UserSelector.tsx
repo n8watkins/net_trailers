@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useToast } from '@/hooks/useToast'
-import { UserIcon, MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline'
+import { User as UserIcon, Search as MagnifyingGlassIcon, Filter as FunnelIcon } from 'lucide-react'
 
 interface User {
     userId: string
@@ -120,14 +120,14 @@ export default function UserSelector({ selectedUserIds, onSelectionChange }: Use
                 <div className="flex items-center gap-2">
                     <UserIcon className="h-5 w-5 text-gray-400" />
                     <h3 className="text-lg font-semibold text-white">Select Recipients</h3>
-                    <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-xs font-medium text-blue-400">
+                    <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-xs font-medium text-amber-400">
                         {selectedUserIds.length} selected
                     </span>
                 </div>
                 <button
                     onClick={handleSelectAll}
                     disabled={loading || selectable.length === 0}
-                    className="text-sm font-medium text-blue-400 hover:text-blue-300 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="text-sm font-medium text-amber-400 hover:text-amber-300 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     {allSelected ? 'Deselect All' : 'Select All'}
                 </button>
@@ -141,12 +141,12 @@ export default function UserSelector({ selectedUserIds, onSelectionChange }: Use
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search by email, name, or user ID..."
-                    className="w-full rounded-lg border border-gray-700 bg-gray-800 py-2 pl-10 pr-4 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                    className="w-full rounded-lg border border-white/10 bg-black/30 py-2 pl-10 pr-4 text-white placeholder-gray-500 focus:border-amber-400/60 focus:outline-none focus:ring-2 focus:ring-amber-400/20"
                 />
             </div>
 
             {/* Filters */}
-            <div className="flex items-center gap-2 overflow-x-auto">
+            <div className="flex flex-wrap items-center gap-2">
                 <FunnelIcon className="h-4 w-4 flex-shrink-0 text-gray-400" />
                 {FILTERS.map((filter) => (
                     <button
@@ -155,8 +155,8 @@ export default function UserSelector({ selectedUserIds, onSelectionChange }: Use
                         disabled={loading}
                         className={`flex-shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                             selectedFilter === filter.id
-                                ? 'bg-blue-500 text-white'
-                                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                                ? 'bg-amber-500 text-black'
+                                : 'bg-white/5 text-gray-300 hover:bg-white/10'
                         } disabled:cursor-not-allowed disabled:opacity-50`}
                     >
                         {filter.label}{' '}
@@ -166,10 +166,10 @@ export default function UserSelector({ selectedUserIds, onSelectionChange }: Use
             </div>
 
             {/* User List */}
-            <div className="max-h-96 overflow-y-auto rounded-lg border border-gray-700 bg-gray-800">
+            <div className="max-h-96 overflow-y-auto rounded-lg border border-white/10 bg-black/30">
                 {loading ? (
                     <div className="flex items-center justify-center py-12">
-                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-400 border-t-transparent" />
                     </div>
                 ) : filteredUsers.length === 0 ? (
                     <div className="py-12 text-center text-gray-400">
@@ -178,13 +178,13 @@ export default function UserSelector({ selectedUserIds, onSelectionChange }: Use
                             : 'No users found with this filter'}
                     </div>
                 ) : (
-                    <div className="divide-y divide-gray-700">
+                    <div className="divide-y divide-white/5">
                         {filteredUsers.map((user) => (
                             <label
                                 key={user.userId}
                                 className={`flex items-center gap-3 p-4 transition-colors ${
                                     user.canReceiveEmail
-                                        ? 'cursor-pointer hover:bg-gray-700/50'
+                                        ? 'cursor-pointer hover:bg-white/5'
                                         : 'cursor-not-allowed opacity-60'
                                 }`}
                             >
@@ -197,7 +197,7 @@ export default function UserSelector({ selectedUserIds, onSelectionChange }: Use
                                         selectedUserIds.includes(user.userId)
                                     }
                                     onChange={() => handleToggleUser(user.userId)}
-                                    className="h-4 w-4 rounded border-gray-600 bg-gray-700 text-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:ring-offset-0"
+                                    className="h-4 w-4 rounded border-gray-600 bg-black/40 text-amber-500 focus:ring-2 focus:ring-amber-400/20 focus:ring-offset-0"
                                 />
                                 <div className="flex-1">
                                     {user.displayName && (

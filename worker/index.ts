@@ -8,7 +8,10 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import openNext from '../.open-next/worker.js'
+import { WorkerEntrypoint } from 'cloudflare:workers'
+
 import { errorSummary, logError, pathOf } from '../lib/log'
+import { isInternalPath, readAdminStats } from './adminStats'
 import { canonicalRedirect } from './canonical'
 import { runCron, type FetchHandler, type WorkerEnv } from './crons'
 import { assetsWithUploads, isUploadPath, serveUpload } from './uploads'
@@ -44,6 +47,9 @@ export default {
             // The old address and workers.dev forward to the site's own (worker/canonical.ts).
             const canonical = canonicalRedirect(request.url, env.PUBLIC_URL)
             if (canonical) return Response.redirect(canonical.location, canonical.status)
+            // Service-only routes (worker/adminStats.ts) are never served to the internet.
+            if (isInternalPath(new URL(request.url).pathname))
+                return new Response('Not found', { status: 404 })
             if (isUploadPath(new URL(request.url).pathname))
                 return await serveUpload(request, env.UPLOADS)
             return forBrowsers(await app.fetch(request, withUploads(env), ctx))
@@ -67,3 +73,14 @@ export default {
         console.log(JSON.stringify({ event: 'cron', cron: controller.cron, ...result }))
     },
 } satisfies ExportedHandler<WorkerEnv>
+
+/**
+ * NetTrailers' totals for admin.n8builds.dev, over its NETTRAILERS_ADMIN
+ * service binding (RPC; a named entrypoint has no public URL). Shape:
+ * n8builds-admin's docs/APP-STATS.md. Totals only, never per-user data.
+ */
+export class AdminStats extends WorkerEntrypoint<WorkerEnv> {
+    async stats() {
+        return readAdminStats(app, withUploads(this.env), this.ctx)
+    }
+}

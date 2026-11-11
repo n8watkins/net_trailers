@@ -6,13 +6,13 @@ import Link from '@tiptap/extension-link'
 import TextAlign from '@tiptap/extension-text-align'
 import Underline from '@tiptap/extension-underline'
 import {
-    BoldIcon,
-    ItalicIcon,
-    UnderlineIcon,
-    ListBulletIcon,
-    NumberedListIcon,
-    LinkIcon,
-} from '@heroicons/react/24/outline'
+    Bold as BoldIcon,
+    Italic as ItalicIcon,
+    Underline as UnderlineIcon,
+    List as ListBulletIcon,
+    ListOrdered as NumberedListIcon,
+    Link as LinkIcon,
+} from 'lucide-react'
 import { useEffect } from 'react'
 
 interface RichTextEditorProps {
@@ -83,8 +83,8 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
             title={title}
             className={`rounded p-2 transition-colors ${
                 active
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+                    ? 'bg-amber-500 text-black'
+                    : 'text-gray-400 hover:bg-white/10 hover:text-white'
             }`}
         >
             {children}
@@ -92,9 +92,9 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
     )
 
     return (
-        <div className="overflow-hidden rounded-lg border border-gray-700 bg-gray-800">
+        <div className="overflow-hidden rounded-lg border border-white/10 bg-black/30">
             {/* Toolbar */}
-            <div className="flex flex-wrap gap-1 border-b border-gray-700 bg-gray-900/60 p-2">
+            <div className="flex flex-wrap gap-1 border-b border-white/10 bg-black/40 p-2">
                 <ToolbarButton
                     onClick={() => editor.chain().focus().toggleBold().run()}
                     active={editor.isActive('bold')}
@@ -119,7 +119,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
                     <UnderlineIcon className="h-5 w-5" />
                 </ToolbarButton>
 
-                <div className="mx-2 w-px bg-gray-700" />
+                <div className="mx-2 w-px bg-white/10" />
 
                 <ToolbarButton
                     onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
@@ -137,7 +137,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
                     <span className="text-sm font-bold">H3</span>
                 </ToolbarButton>
 
-                <div className="mx-2 w-px bg-gray-700" />
+                <div className="mx-2 w-px bg-white/10" />
 
                 <ToolbarButton
                     onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -155,7 +155,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
                     <NumberedListIcon className="h-5 w-5" />
                 </ToolbarButton>
 
-                <div className="mx-2 w-px bg-gray-700" />
+                <div className="mx-2 w-px bg-white/10" />
 
                 <ToolbarButton onClick={setLink} active={editor.isActive('link')} title="Add Link">
                     <LinkIcon className="h-5 w-5" />

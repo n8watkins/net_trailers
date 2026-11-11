@@ -149,6 +149,17 @@ describe('proxy', () => {
             expect(response.headers.get('x-middleware-next')).toBe('1')
         })
 
+        it('guards the service-only /api/internal/* routes with the same secret', async () => {
+            const anon = await proxy(createProxyRequest('/api/internal/admin-stats', 'GET'))
+            expect(anon.status).toBe(401)
+            const service = await proxy(
+                createProxyRequest('/api/internal/admin-stats', 'GET', {
+                    headers: { Authorization: 'Bearer test-cron-secret-12345' },
+                })
+            )
+            expect(service.headers.get('x-middleware-next')).toBe('1')
+        })
+
         it('allows GET to /api/cron/* with CRON_SECRET without Bearer prefix', async () => {
             const request = createProxyRequest('/api/cron/update-trending', 'GET', {
                 headers: { Authorization: 'test-cron-secret-12345' },

@@ -7,7 +7,7 @@ import UserSelector from './UserSelector'
 import EmailPreviewModal from './EmailPreviewModal'
 import RichTextEditor from './RichTextEditor'
 import { EMAIL_TEMPLATES } from '@/lib/email/email-templates-config'
-import { EnvelopeIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline'
+import { Send as PaperAirplaneIcon } from 'lucide-react'
 
 export type EmailTemplate = 'announcement' | 'custom'
 
@@ -181,143 +181,138 @@ export default function EmailComposer({ onSent }: { onSent?: () => void }) {
                 customHtmlContent={customHtmlContent}
             />
 
-            <div className="space-y-6">
-                {/* Header */}
-                <div className="flex items-center gap-3">
-                    <EnvelopeIcon className="h-8 w-8 text-blue-500" />
-                    <div>
-                        <h2 className="text-2xl font-bold text-white">Email Composer</h2>
-                        <p className="text-sm text-gray-400">
-                            Send emails to users manually with template selection
-                        </p>
-                    </div>
-                </div>
-
-                {/* Template Selection */}
-                <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-300">
-                        Select Email Template
-                    </label>
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                        {EMAIL_TEMPLATES.map((template) => (
-                            <button
-                                key={template.id}
-                                onClick={() => setSelectedTemplate(template.id)}
-                                className={`rounded-lg border-2 p-4 text-left transition-all ${
-                                    selectedTemplate === template.id
-                                        ? 'border-blue-500 bg-blue-500/10'
-                                        : 'border-gray-700 bg-gray-800 hover:border-gray-600'
-                                }`}
-                            >
-                                <div className="flex items-start gap-3">
-                                    <span className="text-2xl">{template.icon}</span>
-                                    <div className="flex-1">
-                                        <div className="font-semibold text-white">
-                                            {template.name}
-                                        </div>
-                                        <div className="text-sm text-gray-400">
-                                            {template.description}
-                                        </div>
-                                    </div>
-                                </div>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Subject Field */}
-                <div>
-                    <label
-                        htmlFor="subject"
-                        className="mb-2 block text-sm font-medium text-gray-300"
-                    >
-                        Email Subject
-                    </label>
-                    <input
-                        id="subject"
-                        type="text"
-                        value={subject}
-                        onChange={(e) => setSubject(e.target.value)}
-                        placeholder="Enter email subject..."
-                        className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                    />
-                </div>
-
-                {/* Announcement Message Field (plain textarea) */}
-                {selectedTemplate === 'announcement' && (
-                    <div>
-                        <label
-                            htmlFor="message"
-                            className="mb-2 block text-sm font-medium text-gray-300"
-                        >
-                            Announcement Message
-                        </label>
-                        <textarea
-                            id="message"
-                            value={customMessage}
-                            onChange={(e) => setCustomMessage(e.target.value)}
-                            placeholder="Enter your announcement message..."
-                            rows={6}
-                            className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                        />
-                    </div>
-                )}
-
-                {/* Custom Email Rich Text Editor */}
-                {selectedTemplate === 'custom' && (
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                <section className="flex min-w-0 flex-col gap-5 rounded-xl border border-white/10 bg-[#141414] p-4 sm:p-5">
+                    {/* Template Selection */}
                     <div>
                         <label className="mb-2 block text-sm font-medium text-gray-300">
-                            Custom Message (Rich Text)
+                            Select Email Template
                         </label>
-                        <RichTextEditor
-                            value={customHtmlContent}
-                            onChange={setCustomHtmlContent}
-                            placeholder="Write your custom email message with rich formatting..."
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                            {EMAIL_TEMPLATES.map((template) => (
+                                <button
+                                    key={template.id}
+                                    onClick={() => setSelectedTemplate(template.id)}
+                                    aria-pressed={selectedTemplate === template.id}
+                                    className={`rounded-lg border p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-amber-400 ${
+                                        selectedTemplate === template.id
+                                            ? 'border-amber-400 bg-amber-500/10'
+                                            : 'border-white/10 bg-black/30 hover:border-white/20'
+                                    }`}
+                                >
+                                    <div className="flex items-start gap-3">
+                                        <span className="text-2xl">{template.icon}</span>
+                                        <div className="flex-1">
+                                            <div className="font-semibold text-white">
+                                                {template.name}
+                                            </div>
+                                            <div className="text-sm text-gray-400">
+                                                {template.description}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Subject Field */}
+                    <div>
+                        <label
+                            htmlFor="subject"
+                            className="mb-2 block text-sm font-medium text-gray-300"
+                        >
+                            Email Subject
+                        </label>
+                        <input
+                            id="subject"
+                            type="text"
+                            value={subject}
+                            onChange={(e) => setSubject(e.target.value)}
+                            placeholder="Enter email subject..."
+                            className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-amber-400/60 focus:outline-none focus:ring-2 focus:ring-amber-400/20"
                         />
                     </div>
-                )}
+
+                    {/* Announcement Message Field (plain textarea) */}
+                    {selectedTemplate === 'announcement' && (
+                        <div>
+                            <label
+                                htmlFor="message"
+                                className="mb-2 block text-sm font-medium text-gray-300"
+                            >
+                                Announcement Message
+                            </label>
+                            <textarea
+                                id="message"
+                                value={customMessage}
+                                onChange={(e) => setCustomMessage(e.target.value)}
+                                placeholder="Enter your announcement message..."
+                                rows={6}
+                                className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-amber-400/60 focus:outline-none focus:ring-2 focus:ring-amber-400/20"
+                            />
+                        </div>
+                    )}
+
+                    {/* Custom Email Rich Text Editor */}
+                    {selectedTemplate === 'custom' && (
+                        <div>
+                            <label className="mb-2 block text-sm font-medium text-gray-300">
+                                Custom Message (Rich Text)
+                            </label>
+                            <RichTextEditor
+                                value={customHtmlContent}
+                                onChange={setCustomHtmlContent}
+                                placeholder="Write your custom email message with rich formatting..."
+                            />
+                        </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap gap-2 [&>button]:min-h-10 [&>button]:basis-auto [&>button]:whitespace-nowrap">
+                        <button
+                            onClick={handlePreview}
+                            disabled={selectedUserIds.length === 0 || sending}
+                            className="flex-1 rounded-lg border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-medium text-gray-100 transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            Preview Email
+                        </button>
+                        <button
+                            onClick={handleSendTest}
+                            disabled={sending}
+                            className="flex-1 rounded-lg border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-medium text-gray-100 transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            Send a test to me
+                        </button>
+                        <button
+                            onClick={handleSendEmail}
+                            disabled={selectedUserIds.length === 0 || sending}
+                            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            {sending ? (
+                                <>
+                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                    Sending...
+                                </>
+                            ) : (
+                                <>
+                                    <PaperAirplaneIcon className="h-4 w-4" />
+                                    Send to {selectedUserIds.length}{' '}
+                                    {selectedUserIds.length === 1 ? 'user' : 'users'}...
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </section>
 
                 {/* User Selection */}
-                <UserSelector
-                    key={selectorKey}
-                    selectedUserIds={selectedUserIds}
-                    onSelectionChange={setSelectedUserIds}
-                />
-
-                {/* Action Buttons */}
-                <div className="flex gap-3">
-                    <button
-                        onClick={handlePreview}
-                        disabled={selectedUserIds.length === 0 || sending}
-                        className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-6 py-3 font-semibold text-white transition-colors hover:border-gray-600 hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                        Preview Email
-                    </button>
-                    <button
-                        onClick={handleSendTest}
-                        disabled={sending}
-                        className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-6 py-3 font-semibold text-white transition-colors hover:border-gray-600 hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                        Send a test to me
-                    </button>
-                    <button
-                        onClick={handleSendEmail}
-                        disabled={selectedUserIds.length === 0 || sending}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                        {sending ? (
-                            <>
-                                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                                Sending...
-                            </>
-                        ) : (
-                            <>
-                                <PaperAirplaneIcon className="h-5 w-5" />
-                                Send to {selectedUserIds.length} User(s)...
-                            </>
-                        )}
-                    </button>
-                </div>
+                <section className="min-w-0 rounded-xl border border-white/10 bg-[#141414] p-4 sm:p-5">
+                    <UserSelector
+                        key={selectorKey}
+                        selectedUserIds={selectedUserIds}
+                        onSelectionChange={setSelectedUserIds}
+                    />
+                </section>
             </div>
         </>
     )
