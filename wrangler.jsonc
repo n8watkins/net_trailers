@@ -28,6 +28,8 @@
     // The revalidation queue, and the server's calls to its own API
     // (lib/selfFetch.ts), reach the Worker through this binding.
     "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "net-trailers" }],
+    // Which version is live, for the AdminStats entrypoint (worker/adminStats.ts).
+    "version_metadata": { "binding": "CF_VERSION_METADATA" },
     // Every email (sign-in links, digests, forum replies, admin email) goes
     // through Cloudflare Email Service from EMAIL_FROM on n8builds.dev, which
     // is onboarded for sending (no API key). The app's own caps are in

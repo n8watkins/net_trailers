@@ -91,7 +91,15 @@ test('signed-out visitors are sent home from /admin', async ({ page }) => {
 test('a signed-in non-admin gets 403 on the pages and the APIs', async ({ browser, baseURL }) => {
     const page = await newPage(browser)
     await signIn(page, baseURL!, `visitor-${stamp}@nettrailers.test`)
-    for (const path of ['/admin', '/admin/accounts', '/admin/signups', '/admin/activity']) {
+    for (const path of [
+        '/admin',
+        '/admin/users',
+        '/admin/activity',
+        '/admin/content',
+        '/admin/email',
+        '/admin/jobs',
+        '/admin/system',
+    ]) {
         const response = await page.goto(path)
         expect(response?.status(), path).toBe(403)
         await expect(page.getByText('This page is only for administrators.')).toBeVisible()
@@ -121,11 +129,10 @@ test.describe('as the admin', () => {
         await page.close()
     })
 
-    test('the dashboard shows real data and no stubs', async () => {
+    test('the overview shows real data, no stubs, and fits one screen at 1440x900', async () => {
+        await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto('/admin')
-        await expect(page.getByRole('heading', { name: 'Admin Dashboard' })).toBeVisible()
-        // Email usage is real; the fake panels are gone
-        await expect(page.getByTestId('email-usage')).toContainText(/\d+ \/ \d+/)
+        await expect(page.getByRole('heading', { name: 'Overview', level: 1 })).toBeVisible()
         for (const gone of [
             'Healthy',
             'System Logs',
@@ -138,77 +145,224 @@ test.describe('as the admin', () => {
         ]) {
             await expect(page.getByText(gone)).toHaveCount(0)
         }
-        // The real weekly schedule with next runs
-        await expect(page.getByText('Trending digest: Mondays at 02:00 UTC')).toBeVisible()
-        await expect(page.getByText('Social digest: Wednesdays at 02:00 UTC')).toBeVisible()
-        await expect(page.getByText('Collection cache refresh: Sundays at 02:00 UTC')).toBeVisible()
-        // The admin's own sign-up is counted (signup_log)
-        await expect(page.getByText(/Last signup: (?!None)/)).toBeVisible()
+        // Email usage against the caps, and the real weekly jobs
+        await expect(page.getByRole('link', { name: /Emails this month \d+ \/ \d+/ })).toBeVisible()
+        await expect(page.getByText('Mondays at 02:00 UTC')).toBeVisible()
+        await expect(page.getByText('Wednesdays at 02:00 UTC')).toBeVisible()
+        await expect(page.getByText('Sundays at 02:00 UTC')).toBeVisible()
+        // The admin's own sign-up is a real, recent account (user.createdAt)
+        await expect(page.getByText(ADMIN_EMAIL).first()).toBeVisible()
+        await expect(page.getByText('1969')).toHaveCount(0)
+        // One screen: no page scroll
+        const height = await page.evaluate(() => document.documentElement.scrollHeight)
+        expect(height).toBeLessThanOrEqual(900)
+        // No public site footer inside the admin
+        await expect(page.locator('footer')).toHaveCount(0)
     })
 
-    test('the stat cards open their pages', async () => {
+    test('each overview number opens its page', async () => {
+        await page.setViewportSize({ width: 1440, height: 900 })
+        const tiles: [RegExp, RegExp][] = [
+            [/^Users/, /\/admin\/users$/],
+            [/^New this week/, /\/admin\/activity\/signups$/],
+            [/^Active this week/, /\/admin\/activity\/views$/],
+            [/^Emails this month/, /\/admin\/email\/usage$/],
+            [/^Jobs/, /\/admin\/jobs$/],
+        ]
+        for (const [name, url] of tiles) {
+            await page.goto('/admin')
+            await page
+                .getByRole('region', { name: 'Key numbers' })
+                .getByRole('link', { name })
+                .click()
+            await expect(page).toHaveURL(url)
+        }
+    })
+
+    test('the sidebar reaches every section and tab, marks the current one, and collapses', async () => {
+        await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto('/admin')
-        await page.getByRole('button', { name: /Total Accounts/ }).click()
-        await expect(page).toHaveURL(/\/admin\/accounts$/)
-        await page.getByRole('button', { name: 'Back to Dashboard' }).click()
-        await page.getByRole('button', { name: /Signups This Month/ }).click()
-        await expect(page).toHaveURL(/\/admin\/signups$/)
-        await page.getByRole('button', { name: 'Back to Dashboard' }).click()
-        await page.getByRole('button', { name: /Activity This Month/ }).click()
-        await expect(page).toHaveURL(/\/admin\/activity$/)
+        const nav = page.getByRole('navigation', { name: 'Admin' })
+        const sections: [string, RegExp, string][] = [
+            ['Users', /\/admin\/users$/, 'Users'],
+            ['Activity', /\/admin\/activity$/, 'Activity'],
+            ['Content and Rankings', /\/admin\/content$/, 'Content and Rankings'],
+            ['Email', /\/admin\/email$/, 'Email'],
+            ['Jobs', /\/admin\/jobs$/, 'Jobs'],
+            ['System', /\/admin\/system$/, 'System'],
+            ['Overview', /\/admin$/, 'Overview'],
+        ]
+        for (const [label, url, heading] of sections) {
+            await nav.getByRole('link', { name: label, exact: true }).click()
+            await expect(page).toHaveURL(url)
+            await expect(page.getByRole('heading', { name: heading, level: 1 })).toBeVisible()
+            await expect(nav.getByRole('link', { name: label, exact: true })).toHaveAttribute(
+                'aria-current',
+                'page'
+            )
+        }
+        // Tabs as sub-items in the sidebar
+        const subItems: [string, RegExp][] = [
+            ['Page views', /\/admin\/activity\/views$/],
+            ['Signups', /\/admin\/activity\/signups$/],
+            ['History', /\/admin\/email\/history$/],
+            ['Usage', /\/admin\/email\/usage$/],
+            ['Config', /\/admin\/system\/config$/],
+            ['Audit log', /\/admin\/system$/],
+        ]
+        for (const [label, url] of subItems) {
+            await nav.getByRole('link', { name: label, exact: true }).click()
+            await expect(page).toHaveURL(url)
+            await expect(nav.getByRole('link', { name: label, exact: true })).toHaveAttribute(
+                'aria-current',
+                'page'
+            )
+        }
+        // Collapsed to icons, still navigable, remembered after a reload
+        await page.getByRole('button', { name: 'Collapse the sidebar' }).click()
+        await expect(nav.getByRole('link', { name: 'Page views' })).toHaveCount(0)
+        await page.reload()
+        await nav.getByRole('link', { name: 'Jobs' }).click()
+        await expect(page).toHaveURL(/\/admin\/jobs$/)
+        await page.getByRole('button', { name: 'Expand the sidebar' }).click()
+        await expect(nav.getByRole('link', { name: 'Page views' })).toBeVisible()
     })
 
-    test('accounts: real dates, filters, search and a quoted CSV', async () => {
-        await page.goto('/admin/accounts')
+    test('the tabs inside a section switch pages and are keyboard reachable', async () => {
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.goto('/admin/email')
+        const tabs = page.getByRole('navigation', { name: 'Email tabs' })
+        await expect(tabs.getByRole('link', { name: 'Compose' })).toHaveAttribute(
+            'aria-current',
+            'page'
+        )
+        await tabs.getByRole('link', { name: 'History' }).focus()
+        await page.keyboard.press('Enter')
+        await expect(page).toHaveURL(/\/admin\/email\/history$/)
+        await tabs.getByRole('link', { name: 'Usage' }).click()
+        await expect(page.getByTestId('email-usage')).toContainText(/\d+ \/ \d+/)
+
+        await page.goto('/admin/activity')
+        const activityTabs = page.getByRole('navigation', { name: 'Activity tabs' })
+        await expect(activityTabs.getByRole('link', { name: 'Logins' })).toHaveAttribute(
+            'aria-current',
+            'page'
+        )
+        await activityTabs.getByRole('link', { name: 'Page views' }).click()
+        await expect(page).toHaveURL(/\/admin\/activity\/views$/)
+    })
+
+    test('on a phone the sidebar is a drawer', async ({ browser }) => {
+        const phone = await browser.newPage({ viewport: { width: 390, height: 844 } })
+        await phone.context().addCookies(await page.context().cookies())
+        await phone.goto('/admin')
+        await expect(phone.getByRole('navigation', { name: 'Admin' })).toBeHidden()
+        const menu = phone.getByRole('button', { name: 'Open the admin menu' })
+        await menu.click()
+        const drawer = phone.getByRole('dialog', { name: 'Admin menu' })
+        await expect(drawer).toBeVisible()
+        await phone.keyboard.press('Escape')
+        await expect(drawer).toBeHidden()
+        await expect(menu).toBeFocused()
+        await menu.click()
+        await drawer.getByRole('link', { name: 'Usage', exact: true }).click()
+        await expect(phone).toHaveURL(/\/admin\/email\/usage$/)
+        await expect(drawer).toBeHidden()
+        await expect(phone.getByText('Admin · Email')).toBeVisible()
+        // Nothing wider than the screen
+        for (const path of [
+            '/admin',
+            '/admin/users',
+            '/admin/activity/views',
+            '/admin/email',
+            '/admin/jobs',
+        ]) {
+            await phone.goto(path)
+            const width = await phone.evaluate(() => document.documentElement.scrollWidth)
+            expect(width, path).toBeLessThanOrEqual(390)
+        }
+        await phone.close()
+    })
+
+    test('users: real dates, filters, search, pagination and a quoted CSV', async () => {
+        await page.goto('/admin/users')
         await expect(page.getByText('1969')).toHaveCount(0)
         const adminRow = page.getByRole('row', { name: new RegExp(ADMIN_EMAIL) })
         await expect(adminRow).toContainText(new Date().getFullYear().toString())
 
-        await page.getByPlaceholder('Search by name or email...').fill(people.optIn.email)
-        await expect(page.getByRole('heading', { name: 'All Accounts (1)' })).toBeVisible()
-        await page.getByPlaceholder('Search by name or email...').fill('')
+        const search = page.getByPlaceholder('Search by name or email')
+        await search.fill(people.optIn.email)
+        await expect(page.getByText('1-1 of 1')).toBeVisible()
+        await search.fill('')
 
-        const [provider, status] = await page.locator('select').all()
-        await provider.selectOption('github')
-        await expect(page.getByText('No accounts found matching your filters')).toBeVisible()
-        await provider.selectOption('email')
+        await page.getByRole('button', { name: 'GitHub' }).click()
+        await expect(page.getByText('No rows match.')).toBeVisible()
+        await page.getByRole('button', { name: 'Email link' }).click()
         await expect(adminRow).toBeVisible()
-        await provider.selectOption('all')
-        await status.selectOption('verified')
+        await page.getByRole('button', { name: 'Any sign-in' }).click()
+        await page.getByRole('button', { name: 'Verified', exact: true }).click()
         // The admin signed in by email link, so is verified; the inserted users are not
         await expect(adminRow).toBeVisible()
         await expect(page.getByRole('row', { name: new RegExp(people.quiet.email) })).toHaveCount(0)
-        await status.selectOption('unverified')
+        await page.getByRole('button', { name: 'Unverified' }).click()
         await expect(page.getByRole('row', { name: new RegExp(people.quiet.email) })).toBeVisible()
-        await status.selectOption('all')
+        await page.getByRole('button', { name: 'Verified or not' }).click()
 
-        await page.getByPlaceholder('Search by name or email...').fill(people.optIn.email)
+        await search.fill(people.optIn.email)
         const download = page.waitForEvent('download')
-        await page.getByRole('button', { name: 'Export to CSV' }).click()
+        await page.getByRole('button', { name: 'Export CSV' }).click()
         const csv = await readFile(await (await download).path(), 'utf8')
         const [header, row] = csv.split('\r\n')
         expect(header).toBe('"Name","Email","Joined","Last Sign In","Verified","Provider"')
         expect(row.startsWith(`"Opt, ""In"" =1","${people.optIn.email}",`)).toBe(true)
+        await search.fill('')
+
+        // Pagination: 25 a page once there are more rows than that
+        for (let i = 0; i < 26; i++) {
+            await db.execute({
+                sql: 'INSERT INTO user (id, email, createdAt) VALUES (?, ?, ?)',
+                args: [`page-${stamp}-${i}`, `page-${stamp}-${i}@nettrailers.test`, Date.now()],
+            })
+        }
+        await page.reload()
+        await expect(page.getByText(/^1-25 of \d+$/)).toBeVisible()
+        await page.getByRole('button', { name: 'Next page' }).click()
+        await expect(page.getByText(/^26-\d+ of \d+$/)).toBeVisible()
+        await page.getByRole('button', { name: 'Previous page' }).click()
+        await expect(page.getByText(/^1-25 of \d+$/)).toBeVisible()
     })
 
-    test('sign-ups: this week and this month list the new accounts', async () => {
+    test('the old accounts and sign-ups links still land on their new pages', async () => {
+        await page.goto('/admin/accounts')
+        await expect(page).toHaveURL(/\/admin\/users$/)
         await page.goto('/admin/signups')
-        await page.getByRole('button', { name: 'This Week' }).click()
-        await expect(page.getByText(people.optIn.email)).toBeVisible()
-        await page.getByRole('button', { name: 'This Month' }).click()
-        await expect(page.getByText(ADMIN_EMAIL).first()).toBeVisible()
+        await expect(page).toHaveURL(/\/admin\/activity\/signups$/)
     })
 
-    test('activity: the Logins and Page Views tabs filter by type', async () => {
+    test('activity: sign-ups, logins and page views by week and month', async () => {
+        await page.goto('/admin/activity/signups')
+        await page.getByRole('button', { name: 'This week' }).click()
+        const search = page.getByPlaceholder('Search by name or email')
+        await search.fill(people.optIn.email)
+        await expect(page.getByText(people.optIn.email)).toBeVisible()
+        await page.getByRole('button', { name: 'This month' }).click()
+        await search.fill(ADMIN_EMAIL)
+        await expect(page.getByText(ADMIN_EMAIL).first()).toBeVisible()
+
         await page.goto('/admin/activity')
-        await page.getByRole('button', { name: 'Logins' }).click()
         // Every sign-in records a login event
         await expect(page.getByText(ADMIN_EMAIL).first()).toBeVisible()
-        await page.getByRole('button', { name: 'Page Views' }).click()
-        await expect(page.getByText('Logins and page views this month')).toBeVisible()
-        await page.getByRole('button', { name: 'This Week' }).click()
-        await page.getByRole('button', { name: 'All Activity' }).click()
+        await page.getByRole('button', { name: 'This week' }).click()
         await expect(page.getByText(ADMIN_EMAIL).first()).toBeVisible()
+        // One user's activity
+        await page.getByRole('link', { name: ADMIN_EMAIL }).first().click()
+        await expect(page).toHaveURL(/userId=/)
+        await expect(page.getByText(`Only ${ADMIN_EMAIL}.`)).toBeVisible()
+        await page.getByRole('link', { name: 'Show everyone' }).click()
+        await expect(page).not.toHaveURL(/userId=/)
+
+        await page.goto('/admin/activity/views')
+        await expect(page.getByRole('heading', { name: 'Activity', level: 1 })).toBeVisible()
 
         const logins = await (await page.request.get('/api/admin/activity?type=login')).json()
         expect(logins.activities.length).toBeGreaterThan(0)
@@ -216,8 +370,31 @@ test.describe('as the admin', () => {
         expect((await page.request.get('/api/admin/activity?type=logins')).status()).toBe(400)
     })
 
+    test('content: counts, rankings and reports', async () => {
+        await db.execute({
+            sql: `INSERT INTO rankings (id, userId, userName, userUsername, title, rankedItems, isPublic, itemCount, createdAt, updatedAt)
+                  VALUES (?, ?, 'Opt In', 'optin', ?, '[]', 1, 3, ?, ?)`,
+            args: [`rank-${stamp}`, people.optIn.id, `Ranking ${stamp}`, Date.now(), Date.now()],
+        })
+        await page.goto('/admin/content')
+        await expect(
+            page.getByRole('heading', { name: 'Content and Rankings', level: 1 })
+        ).toBeVisible()
+        await page.getByPlaceholder('Search by title or owner').fill(stamp.toString())
+        await expect(page.getByRole('link', { name: `Ranking ${stamp}` })).toHaveAttribute(
+            'href',
+            `/rankings/rank-${stamp}`
+        )
+        await page.getByRole('button', { name: 'Private' }).click()
+        await expect(page.getByRole('link', { name: `Ranking ${stamp}` })).toHaveCount(0)
+        await page.getByRole('button', { name: 'Public' }).click()
+        await expect(page.getByRole('link', { name: `Ranking ${stamp}` })).toBeVisible()
+        await page.getByRole('button', { name: 'All', exact: true }).last().click()
+        await expect(page.getByText('Nobody has reported anything.')).toBeVisible()
+    })
+
     test('recipients: unsubscribed users cannot be selected, no stray 0 or Anonymous User', async () => {
-        await page.goto('/admin')
+        await page.goto('/admin/email')
         const list = page.locator('label', { hasText: people.unsub.email })
         await expect(list).toContainText('Email off')
         await expect(list.getByRole('checkbox')).toBeDisabled()
@@ -248,7 +425,7 @@ test.describe('as the admin', () => {
     })
 
     test('compose: preview, test to me, confirm with count and sample, audit log', async () => {
-        await page.goto('/admin')
+        await page.goto('/admin/email')
         await page.getByRole('button', { name: /Custom Email/ }).click()
         await page.getByRole('button', { name: /Announcement/ }).click()
         await page.getByLabel('Email Subject').fill(`E2E ${stamp}`)
@@ -277,45 +454,90 @@ test.describe('as the admin', () => {
             page.getByText(/Test email sent to you|No email provider|failed/i).first()
         ).toBeVisible()
 
-        await page.getByRole('button', { name: /Send to 1 User/ }).click()
+        await page.getByRole('button', { name: /Send to 1 user/ }).click()
         const dialog = page.getByRole('dialog', { name: /Send to 1 person/ })
         await expect(dialog).toBeVisible()
         await expect(dialog.getByTestId('confirm-sample')).toHaveText(people.optIn.email)
+        await expect(dialog.getByText(/Fresh sign-in: \d+ more minutes? to act/)).toBeVisible()
+        // Escape cancels like the button does
+        await page.keyboard.press('Escape')
+        await expect(dialog).toHaveCount(0)
+        await page.getByRole('button', { name: /Send to 1 user/ }).click()
         await dialog.getByRole('button', { name: 'Cancel' }).click()
         await expect(dialog).toHaveCount(0)
 
-        await page.getByRole('button', { name: /Send to 1 User/ }).click()
+        await page.getByRole('button', { name: /Send to 1 user/ }).click()
         await page.getByRole('dialog').getByRole('button', { name: 'Send to 1' }).click()
         await expect(page.getByText(/Sent \d email/)).toBeVisible()
 
+        await page.goto('/admin/system')
         const audit = page.getByTestId('audit-log')
         await expect(audit).toContainText('Sent an email')
         await expect(audit).toContainText('Sent a test email to self')
         await expect(audit).toContainText('requested: 1')
         await expect(audit).not.toContainText(people.optIn.email)
+        await page.getByRole('button', { name: 'Jobs', exact: true }).click()
+        await expect(audit).not.toContainText('Sent an email')
+        await page.getByRole('button', { name: 'Email', exact: true }).click()
+        await expect(audit).toContainText('Sent an email')
+
+        await page.goto('/admin/email/history')
         await expect(page.getByText(`E2E ${stamp}`).first()).toBeVisible()
+
+        await page.goto('/admin')
+        await expect(page.getByText(/Sent an email/).first()).toBeVisible()
     })
 
-    test('jobs: run for me, confirm before all users, last run recorded', async () => {
-        await page.goto('/admin')
-        await page.getByRole('button', { name: /Collection cache refresh \(Sundays/ }).click()
-        await page.getByRole('button', { name: 'Run for me only' }).click()
+    test('jobs: confirm, run for me, confirm before all users, last run recorded', async () => {
+        await page.goto('/admin/jobs')
+        const cache = page.getByTestId('job-cache')
+        await cache.getByRole('button', { name: 'Run for me only' }).click()
+        const mine = page.getByRole('dialog', {
+            name: /Run the collection cache refresh for you only/,
+        })
+        await mine.getByRole('button', { name: 'Run for me only' }).click()
         await expect(page.getByText(/Collection cache refresh done/)).toBeVisible()
-        await expect(page.getByTestId('job-overview-cache')).toBeHidden()
+        await expect(cache).toContainText('by admin, admin only')
 
-        await page.getByRole('button', { name: /Social digest \(Wednesdays/ }).click()
-        await page.getByRole('button', { name: 'Run for all users...' }).click()
+        const social = page.getByTestId('job-social')
+        await social.getByRole('button', { name: 'Run for all users...' }).click()
         const dialog = page.getByRole('dialog', { name: /Run the social digest for all users/ })
+        await expect(dialog).toContainText('Emails a digest to everyone')
         await dialog.getByRole('button', { name: 'Cancel' }).click()
-        await page.getByRole('button', { name: 'Run for all users...' }).click()
+        await social.getByRole('button', { name: 'Run for all users...' }).click()
         await dialog.getByRole('button', { name: 'Run for all users' }).click()
         await expect(page.getByText(/Social digest done/)).toBeVisible()
+        await expect(social).toContainText('by admin')
 
-        await page.getByRole('button', { name: /System Overview/ }).click()
-        await expect(page.getByTestId('job-overview-social')).toContainText('by admin')
-        await expect(page.getByTestId('audit-log')).toContainText('Ran a job')
-        await page.getByRole('button', { name: /Trending digest \(Mondays/ }).click()
-        await expect(page.getByRole('button', { name: 'Run for me only' })).toBeVisible()
+        await page.getByTestId('job-trending').getByText('What it does').click()
+        await expect(page.getByText('Fetches the current trending movies')).toBeVisible()
+
+        await page.goto('/admin/system')
+        await expect(page.getByTestId('audit-log')).toContainText('Ran social (all)')
+        await page.goto('/admin/system/config')
+        await expect(page.getByText('EMAIL_DAILY_CAP')).toBeVisible()
+        await expect(page.locator('#admin-main').getByText(ADMIN_EMAIL)).toBeVisible()
+    })
+
+    test('the stats for admin.n8builds.dev are service-only and carry totals only', async () => {
+        // An admin session is not enough (the Worker also answers 404 to this path from outside)
+        expect((await page.request.get('/api/internal/admin-stats')).status()).toBe(401)
+        const response = await page.request.get('/api/internal/admin-stats', {
+            headers: { Authorization: 'Bearer e2e-only-cron-secret' },
+        })
+        expect(response.status()).toBe(200)
+        const stats = await response.json()
+        expect(stats).toMatchObject({ schema: 1, app: 'nettrailers', name: 'NetTrailers' })
+        expect(stats.tile.headline.value).toBeGreaterThan(0)
+        expect(stats.jobs.map((j: { key: string }) => j.key)).toEqual([
+            'trending',
+            'cache',
+            'social',
+        ])
+        // No addresses, names or ids anywhere in it
+        const body = JSON.stringify(stats)
+        expect(body).not.toContain('@nettrailers.test')
+        expect(body).not.toContain(people.optIn.id)
     })
 
     test('the cron routes cannot be started with an admin session', async () => {
@@ -330,7 +552,23 @@ test.describe('as the admin', () => {
             sql: 'UPDATE session SET createdAt = ? WHERE userId = (SELECT id FROM user WHERE email = ?)',
             args: [Date.now() - 16 * 60 * 1000, ADMIN_EMAIL],
         })
-        await page.goto('/admin')
+        await page.goto('/admin/jobs')
+        // The confirm dialog says so up front and offers to sign in again
+        await page
+            .getByTestId('job-social')
+            .getByRole('button', { name: 'Run for all users...' })
+            .click()
+        const confirm = page.getByRole('dialog', { name: /Run the social digest for all users/ })
+        await expect(
+            confirm.getByText('This needs a sign-in from the last 15 minutes')
+        ).toBeVisible()
+        await expect(
+            confirm.getByRole('button', { name: 'Sign out and sign in again' })
+        ).toBeVisible()
+        await expect(confirm.getByRole('button', { name: 'Run for all users' })).toHaveCount(0)
+        await confirm.getByRole('button', { name: 'Cancel' }).click()
+
+        await page.goto('/admin/email')
         await page.getByLabel('Email Subject').fill('Stale')
         await page.getByLabel('Announcement Message').fill('Should not go')
         await page.getByRole('button', { name: 'Send a test to me' }).click()

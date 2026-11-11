@@ -55,7 +55,9 @@ export async function proxy(request: NextRequest) {
     if (pathname.startsWith('/api/')) {
         // Cron routes require CRON_SECRET for ALL methods (including GET)
         // Vercel cron jobs use GET, so we check auth before the safe-method guard
-        const isCronRoute = pathname.startsWith('/api/cron/')
+        // /api/internal/ (service-only, worker/adminStats.ts) uses the same secret.
+        const isCronRoute =
+            pathname.startsWith('/api/cron/') || pathname.startsWith('/api/internal/')
 
         if (isCronRoute) {
             // Cron routes MUST have valid CRON_SECRET regardless of HTTP method

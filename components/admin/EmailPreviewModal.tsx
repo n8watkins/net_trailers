@@ -1,7 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { XMarkIcon, DevicePhoneMobileIcon, ComputerDesktopIcon } from '@heroicons/react/24/outline'
+import {
+    X as XMarkIcon,
+    Smartphone as DevicePhoneMobileIcon,
+    Monitor as ComputerDesktopIcon,
+} from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import { authenticatedFetch } from '@/lib/authenticatedFetch'
 import type { EmailTemplate } from './EmailComposer'
@@ -89,9 +93,9 @@ export default function EmailPreviewModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-            <div className="relative flex h-[90vh] w-full max-w-6xl flex-col rounded-xl bg-gray-900 shadow-2xl">
+            <div className="relative flex h-[90vh] w-full max-w-6xl flex-col rounded-xl border border-white/10 bg-[#161616] shadow-2xl">
                 {/* Header */}
-                <div className="flex items-center justify-between border-b border-gray-700 p-6">
+                <div className="flex items-center justify-between border-b border-white/10 p-6">
                     <div className="flex-1">
                         <h2 className="text-2xl font-bold text-white">Email Preview</h2>
                         {previewUser && (
@@ -107,8 +111,8 @@ export default function EmailPreviewModal({
                             onClick={() => setViewMode('desktop')}
                             className={`flex items-center gap-2 rounded-lg px-4 py-2 transition-colors ${
                                 viewMode === 'desktop'
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                                    ? 'bg-amber-500 text-black'
+                                    : 'bg-white/5 text-gray-400 hover:bg-white/10'
                             }`}
                         >
                             <ComputerDesktopIcon className="h-5 w-5" />
@@ -118,8 +122,8 @@ export default function EmailPreviewModal({
                             onClick={() => setViewMode('mobile')}
                             className={`flex items-center gap-2 rounded-lg px-4 py-2 transition-colors ${
                                 viewMode === 'mobile'
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                                    ? 'bg-amber-500 text-black'
+                                    : 'bg-white/5 text-gray-400 hover:bg-white/10'
                             }`}
                         >
                             <DevicePhoneMobileIcon className="h-5 w-5" />
@@ -131,17 +135,17 @@ export default function EmailPreviewModal({
                     <button
                         onClick={onClose}
                         aria-label="Close preview"
-                        className="ml-4 rounded-lg bg-gray-800 p-2 text-gray-400 transition-colors hover:bg-gray-700 hover:text-white"
+                        className="ml-4 rounded-lg bg-white/5 p-2 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
                     >
                         <XMarkIcon className="h-6 w-6" />
                     </button>
                 </div>
 
                 {/* Preview Content */}
-                <div className="flex flex-1 items-center justify-center overflow-auto bg-gray-800 p-6">
+                <div className="flex flex-1 items-center justify-center overflow-auto bg-black/40 p-6">
                     {loading ? (
                         <div className="flex flex-col items-center gap-4">
-                            <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+                            <div className="h-12 w-12 animate-spin rounded-full border-4 border-amber-400 border-t-transparent" />
                             <p className="text-gray-400">Generating preview...</p>
                         </div>
                     ) : html ? (
@@ -155,7 +159,7 @@ export default function EmailPreviewModal({
                             <iframe
                                 srcDoc={html}
                                 title="Email Preview"
-                                className="h-[600px] w-full rounded-lg border-2 border-gray-700 bg-white shadow-xl"
+                                className="h-[600px] w-full rounded-lg border-2 border-white/10 bg-white shadow-xl"
                                 sandbox="allow-same-origin"
                             />
                         </div>
@@ -165,7 +169,7 @@ export default function EmailPreviewModal({
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between border-t border-gray-700 p-6">
+                <div className="flex items-center justify-between border-t border-white/10 p-6">
                     <div className="text-sm text-gray-400">
                         {userIds.length > 1 && (
                             <p>
@@ -176,7 +180,7 @@ export default function EmailPreviewModal({
                     </div>
                     <button
                         onClick={onClose}
-                        className="rounded-lg bg-gray-700 px-6 py-2 font-semibold text-white transition-colors hover:bg-gray-600"
+                        className="rounded-lg bg-white/10 px-6 py-2 font-semibold text-white transition-colors hover:bg-white/15"
                     >
                         Close Preview
                     </button>
