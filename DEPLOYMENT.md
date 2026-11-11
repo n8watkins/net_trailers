@@ -3,7 +3,7 @@
 NetTrailers runs on Cloudflare Workers as the `net-trailers` Worker in the owner's Cloudflare account, built by the OpenNext adapter (`@opennextjs/cloudflare`).
 It is served at https://net-trailers.n8builds.dev, a Workers custom domain (`routes` in `wrangler.jsonc`; Cloudflare manages its DNS record and certificate).
 The old address, https://nettrailers.n8builds.dev, stays a custom domain of the same Worker only so it can answer a permanent 301 to the new one, keeping the path and query (`worker/canonical.ts`).
-The workers.dev address, https://net-trailers.nathancwatkins23.workers.dev, forwards there too, with a 308, so sign-in cookies and magic links all live on one address.
+The workers.dev address is off (`workers_dev: false` in `wrangler.jsonc`), so sign-in cookies and magic links all live on one address.
 https://net-trailers.vercel.app still serves an old Vercel deployment until the owner turns it into a redirect ("Moving off Vercel" below).
 
 ## How it fits together
@@ -83,10 +83,9 @@ A new third-party script must be loaded by a nonced script or get the nonce; a n
 
 The email sign-in form runs Cloudflare Turnstile in the background as it opens (managed mode, "interaction-only" appearance: most people see nothing, and a small challenge appears only when Cloudflare is unsure).
 Its token goes with the request for a link, and the Auth.js route checks it with siteverify before anything else (`lib/turnstile.ts`), so a request without a valid token never spends the sign-in email limits or sends an email.
-The widget is "NetTrailers sign-in" in the Cloudflare dashboard (Turnstile), for `net-trailers.n8builds.dev`, `nettrailers.n8builds.dev` (the old address, until nothing links to it), `net-trailers.nathancwatkins23.workers.dev` and `localhost`.
+The widget is "NetTrailers sign-in" in the Cloudflare dashboard (Turnstile), for `net-trailers.n8builds.dev`, `nettrailers.n8builds.dev` (the old address, until nothing links to it) and `localhost` (the workers.dev hostname is no longer served and can be removed from the widget).
 A new host must be added to the widget's hostnames before the site is served from it, or the challenge fails there and nobody can sign in.
-The switch to `net-trailers.n8builds.dev` left `workers_dev` on (`wrangler.jsonc`), so the workers.dev address still answers, with its 308 to the site.
-**Owner reminder:** after 2026-11-18, remove nettrailers.n8builds.dev (and the workers.dev hostname if workers_dev is off) from the NetTrailers sign-in Turnstile widget; keep localhost.
+**Owner reminder:** after 2026-11-18, remove nettrailers.n8builds.dev and the workers.dev hostname from the NetTrailers sign-in Turnstile widget; keep localhost.
 Its site key is public and set in the deploy workflow; its secret is the Worker secret `TURNSTILE_SECRET_KEY`.
 The production Worker refuses every request for a link while that secret is missing.
 Local runs and the end-to-end tests use Cloudflare's always-pass test keys.
@@ -124,7 +123,7 @@ Fix forward afterwards by reverting the commit and deploying again.
 
 ## Moving off Vercel
 
-Done on the Cloudflare side: the custom domain, `NEXT_PUBLIC_APP_URL` (email links, sitemap, metadata), the workers.dev forward, email through Cloudflare, and the Cron Triggers.
+Done on the Cloudflare side: the custom domain, `NEXT_PUBLIC_APP_URL` (email links, sitemap, metadata), email through Cloudflare, and the Cron Triggers.
 The Vercel project `net-trailers` stopped deploying on 2026-11-03, and its production deployment became a redirect (step 1), which ended its crons; the Worker now runs them.
 The ops decision is to keep Vercel projects as redirect-only (they hold the `*.vercel.app` name), not to delete them.
 Owner steps, in order:
