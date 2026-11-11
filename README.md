@@ -25,7 +25,7 @@ Live at **https://net-trailers.n8builds.dev**.
 ### 🔐 Authentication & User Management
 
 - **Auth.js (NextAuth v5) Authentication**
-    - Passwordless sign-in by emailed link
+    - Sign in with GitHub (optional, shown only when the OAuth App is configured); a verified GitHub email links to the account with that email
     - Passwordless email magic-link sign-in (delivered through Cloudflare Email Service)
     - Database sessions with secure, cookie-based session management
     - Guest mode for demo access (no registration required)
@@ -351,6 +351,10 @@ _Experience all features or continue as guest to explore the platform_
     # AUTH_SECRET: generate with `npx auth secret` (or `openssl rand -base64 32`)
     AUTH_SECRET=your_auth_secret
 
+    # GitHub sign-in (Optional; the button appears only when both are set)
+    # AUTH_GITHUB_ID=your_oauth_app_client_id
+    # AUTH_GITHUB_SECRET=your_oauth_app_client_secret
+
     # TMDB API (Required)
     # Get your free API key from: https://www.themoviedb.org/settings/api
     TMDB_API_KEY=your_tmdb_api_key
@@ -407,7 +411,7 @@ _Experience all features or continue as guest to explore the platform_
 
     Inspect the database any time with `npm run db:studio`.
 
-    b. **Sign-in:** by emailed link only (Auth.js email provider). Locally there is
+    b. **Sign-in:** by emailed link (Auth.js email provider), plus optional GitHub sign-in when `AUTH_GITHUB_ID` and `AUTH_GITHUB_SECRET` are set (OAuth App callback `/api/auth/callback/github`). Locally there is
     no email binding, so run with `APP_ENV=test` and a `file:` database to have
     sign-in links written to `E2E_MAGIC_LINK_DIR` instead (see `playwright.config.ts`).
 
