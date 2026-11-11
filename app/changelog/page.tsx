@@ -218,7 +218,7 @@ export default function ChangelogPage() {
                                             className="flex items-center gap-2 px-4 py-2 bg-purple-500/20 text-purple-400 rounded-lg border border-purple-500/30 hover:bg-purple-500/30 transition-colors"
                                         >
                                             <InformationCircleIcon className="w-5 h-5" />
-                                            <span>About NetTrailers</span>
+                                            <span>About this project</span>
                                         </button>
                                         <a
                                             href="https://github.com/n8watkins/net_trailers"

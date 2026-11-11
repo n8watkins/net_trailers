@@ -206,7 +206,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                             >
                                 <div className="flex items-center">
                                     <InformationCircleIcon className="w-6 h-6 mr-4 group-hover:text-amber-400 transition-colors duration-200" />
-                                    About NetTrailers
+                                    About this project
                                 </div>
                                 <span className="text-xs text-gray-400 font-mono font-semibold">
                                     Alt+I
@@ -384,7 +384,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                         >
                             <div className="flex items-center">
                                 <InformationCircleIcon className="w-6 h-6 mr-4 group-hover:text-amber-400 transition-colors duration-200" />
-                                About NetTrailers
+                                About this project
                             </div>
                             <span className="text-xs text-gray-400 font-mono font-semibold">
                                 Alt+I

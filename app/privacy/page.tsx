@@ -257,7 +257,7 @@ export default function PrivacyPage() {
                                     <li>
                                         GitHub:{' '}
                                         <a
-                                            href="https://github.com/n8watkins/net_trailer"
+                                            href="https://github.com/n8watkins/net_trailers"
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="text-amber-300 hover:text-amber-200 underline"

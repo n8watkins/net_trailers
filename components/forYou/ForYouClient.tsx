@@ -297,13 +297,13 @@ function TastePicker({
                 <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 md:px-8 lg:px-16">
                     <p className="text-sm text-gray-300" aria-live="polite">
                         <HeartIcon className="mr-1.5 inline h-4 w-4 -translate-y-px text-amber-400" />
-                        {pickedCount} picked
+                        {pickedCount} of {TARGET_PICKS} picked
                         {remaining > 0 && (
                             <span className="text-gray-500">
                                 {' '}
                                 ·{' '}
                                 {pickedCount < MIN_PICKS
-                                    ? `${MIN_PICKS - pickedCount} more to go`
+                                    ? `${MIN_PICKS - pickedCount} more to see your picks`
                                     : `up to ${remaining} more helps`}
                             </span>
                         )}

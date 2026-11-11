@@ -350,6 +350,29 @@
         -webkit-line-clamp: 2;
     }
 
+    /* Welcome "Describe a mood": a short amber ring where the eye should land (lib/revealInView.ts) */
+    [data-attention] {
+        outline: 2px solid #f59e0b;
+        outline-offset: 3px;
+        animation: attention-ring 1.5s ease-out forwards;
+    }
+
+    @keyframes attention-ring {
+        0%,
+        70% {
+            outline-color: #f59e0b;
+        }
+        100% {
+            outline-color: transparent;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        [data-attention] {
+            animation: none;
+        }
+    }
+
     @keyframes fade-in {
         from {
             opacity: 0;

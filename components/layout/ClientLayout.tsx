@@ -7,6 +7,7 @@ import { usePageViewTracking } from '../../hooks/useActivityTracking'
 import dynamic from 'next/dynamic'
 import Footer from './Footer'
 import { hasSeenWelcome, isWelcomeSuppressedPath, markWelcomeSeen } from '../../lib/welcome'
+import { highlightBriefly, revealAndFocus } from '../../lib/revealInView'
 import ScrollToTopButton from '../common/ScrollToTopButton'
 import CustomScrollbar from '../common/CustomScrollbar'
 import { useModalStore } from '../../stores/modalStore'
@@ -98,13 +99,15 @@ function ClientLayout({ children }: ClientLayoutProps) {
     const handleWelcomeTryMood = useCallback(() => {
         handleCloseWelcome()
         if (pathname !== '/') router.push('/')
-        // The mood box renders with the home hero; focus it once it is there
+        // The mood box renders with the home hero; once it is there, scroll only if it is
+        // not fully visible below the sticky header, focus it and ring it briefly
         let tries = 0
         const focusMoodBox = () => {
             const box = document.querySelector<HTMLTextAreaElement>('#mood-search textarea')
             if (box) {
-                box.scrollIntoView({ block: 'center', behavior: 'smooth' })
-                box.focus({ preventScroll: true })
+                const container = box.parentElement ?? box
+                revealAndFocus(container, box)
+                highlightBriefly(container, box, 'e.g. "Cozy rainy-day mysteries"')
             } else if (tries++ < 40) {
                 setTimeout(focusMoodBox, 100)
             }
@@ -203,7 +206,6 @@ function ClientLayout({ children }: ClientLayoutProps) {
                 <AboutModal
                     isOpen={showAboutModal}
                     onClose={handleCloseAboutModal}
-                    onOpenTutorial={handleOpenTutorial}
                     onStartTour={handleStartTour}
                 />
             )}

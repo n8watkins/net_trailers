@@ -99,10 +99,11 @@ export default function WelcomeModal({
                                 <SparklesIcon className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
                                 <span>
                                     <span className="block font-semibold text-white">
-                                        Try a mood
+                                        Describe a mood
                                     </span>
                                     <span className="block text-sm text-gray-400">
-                                        &ldquo;Cozy rainy-day mysteries&rdquo; or anything you like.
+                                        Type what you feel like watching. AI finds trailers to
+                                        match.
                                     </span>
                                 </span>
                             </button>
@@ -128,7 +129,7 @@ export default function WelcomeModal({
                                         About this project
                                     </span>
                                     <span className="block text-sm text-gray-400">
-                                        Who built it and how it works.
+                                        Who built it, how to use it, how it is built.
                                     </span>
                                 </span>
                             </button>
