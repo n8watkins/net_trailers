@@ -9,6 +9,9 @@ import { apiLog, apiError } from '@/utils/debugLogger'
 import { routeGeminiRequest, extractGeminiText } from '@/lib/geminiRouter'
 
 export async function POST(request: NextRequest) {
+    // Set once a unit of the visitor's daily AI quota is spent, so any failure
+    // after that gives it back.
+    let spentQuotaKey: string | null = null
     try {
         const visitor = await getAiVisitor(request)
         const userId = visitor.userId
@@ -45,6 +48,7 @@ export async function POST(request: NextRequest) {
                 { status: 429 }
             )
         }
+        spentQuotaKey = visitor.key
 
         const isFollowUp = conversationHistory.length > 0 || existingMovies.length > 0
         const prompt = isFollowUp
@@ -66,6 +70,8 @@ export async function POST(request: NextRequest) {
                 generationConfig: {
                     temperature: 0.4,
                     maxOutputTokens: 4000,
+                    // JSON only, so the reply always parses (utils/gemini/responseParser.ts)
+                    responseMimeType: 'application/json',
                 },
             },
             apiKey
@@ -76,6 +82,7 @@ export async function POST(request: NextRequest) {
             // client only that AI search is unavailable so it can offer regular search.
             apiError('[AI Suggestions] Gemini router error:', result.error)
             await refundAiQuota(visitor.key).catch(() => undefined)
+            spentQuotaKey = null
             return NextResponse.json(
                 { error: 'AI search is unavailable right now', code: 'AI_UNAVAILABLE' },
                 { status: 503 }
@@ -122,6 +129,10 @@ export async function POST(request: NextRequest) {
         })
     } catch (error: any) {
         apiError('[AI Suggestions] Error:', error)
-        return NextResponse.json({ error: 'Failed to generate suggestions' }, { status: 500 })
+        if (spentQuotaKey) await refundAiQuota(spentQuotaKey).catch(() => undefined)
+        return NextResponse.json(
+            { error: 'AI search is unavailable right now', code: 'AI_UNAVAILABLE' },
+            { status: 503 }
+        )
     }
 }
