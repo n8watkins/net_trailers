@@ -3,10 +3,16 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
     enabled: process.env.ANALYZE === 'true',
 })
 
+const { stackVersionsFrom } = require('./lib/stackVersions')
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     // Next 16.4 `next dev` writes agent rules into AGENTS.md when a coding agent runs it; keep the tree clean.
     agentRules: false,
+    // The About dialog's stack chips show these majors, read from package.json at build time
+    env: {
+        NEXT_PUBLIC_STACK_VERSIONS: JSON.stringify(stackVersionsFrom(require('./package.json'))),
+    },
     reactStrictMode: true,
     typescript: {
         ignoreBuildErrors: false,

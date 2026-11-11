@@ -1,1192 +1,329 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react'
+'use client'
+
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import {
     XMarkIcon,
-    HeartIcon,
-    StarIcon,
-    PlayIcon,
-    ShieldCheckIcon,
-    CodeBracketIcon,
-    CpuChipIcon,
-    DevicePhoneMobileIcon,
-    UserIcon,
-    Cog6ToothIcon,
-    DocumentTextIcon,
     ArrowTopRightOnSquareIcon,
-    LockClosedIcon,
-    ServerIcon,
-    BeakerIcon,
-    BoltIcon,
-    RocketLaunchIcon,
-    ChevronLeftIcon,
-    ChevronRightIcon,
-    ClipboardDocumentListIcon,
-    AcademicCapIcon,
-    EyeSlashIcon,
-    MagnifyingGlassIcon,
-    SparklesIcon,
-    ChatBubbleLeftRightIcon,
-    BellIcon,
-    ShareIcon,
-    TrophyIcon,
-    MicrophoneIcon,
+    ChevronDownIcon,
+    ArrowRightIcon,
+    CursorArrowRaysIcon,
 } from '@heroicons/react/24/outline'
-import { HandThumbUpIcon, RectangleStackIcon } from '@heroicons/react/24/solid'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
+import { useFocusTrap } from '../../hooks/useFocusTrap'
+import {
+    ABOUT_HIGHLIGHTS,
+    ABOUT_LINKS,
+    ABOUT_STACK,
+    ABOUT_STEPS,
+    ABOUT_SUMMARY,
+    readStackVersions,
+} from '../../constants/aboutContent'
 
 interface AboutModalProps {
     isOpen: boolean
     onClose: () => void
+    /** Starts the interactive tour; the "Show me around" button is hidden without it. */
     onStartTour?: () => void
+    /** @deprecated The tutorial is no longer linked from About; kept so callers compile. */
     onOpenTutorial?: () => void
 }
 
-type TabId = 'tech' | 'features' | 'architecture' | 'security'
+const focusRing =
+    'focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0d0f]'
 
-interface Tab {
-    id: TabId
-    title: string
-    icon: React.ComponentType<{ className?: string }>
-    itemCount: number
-    blurb: string
-}
+/**
+ * "About this project": what NetTrailers is, how to use it in four steps, and
+ * what is under the hood. One card with two columns on desktop (no inner
+ * scroll at 1440x900); a bottom sheet on phones with the engineering collapsed.
+ */
+export default function AboutModal({ isOpen, onClose, onStartTour }: AboutModalProps) {
+    const dialogRef = useRef<HTMLDivElement>(null)
+    const [openHighlight, setOpenHighlight] = useState<string | null>(null)
+    const [hoodOpen, setHoodOpen] = useState(false)
+    const versions = useMemo(() => readStackVersions(), [])
+    const ids = useId()
 
-const AboutModal: React.FC<AboutModalProps> = ({
-    isOpen,
-    onClose,
-    onStartTour,
-    onOpenTutorial,
-}) => {
-    const [activeTab, setActiveTab] = useState<TabId>('tech')
-    const [highlightedIndex, setHighlightedIndex] = useState(0)
-    const [isHovering, setIsHovering] = useState(false)
-    const [animationPhase, setAnimationPhase] = useState<'idle' | 'exit' | 'enter'>('idle')
-    const [isMobile, setIsMobile] = useState(false)
-    const intervalRef = useRef<NodeJS.Timeout | null>(null)
+    useEscapeKey(isOpen, onClose)
+    useFocusTrap(dialogRef, isOpen)
 
-    // Check for mobile viewport
     useEffect(() => {
-        const checkMobile = () => setIsMobile(window.innerWidth < 640)
-        checkMobile()
-        window.addEventListener('resize', checkMobile)
-        return () => window.removeEventListener('resize', checkMobile)
-    }, [])
-
-    // Tech stack data with specific package versions from package.json
-    const techStack = [
-        {
-            name: 'TypeScript',
-            desc: 'Type-safe development',
-            icon: '/icons/typescript.svg',
-            bg: 'bg-blue-500/10',
-            border: 'border-blue-500/30',
-            activeBorder: 'border-blue-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(59,130,246,0.5)]',
-            version: '5.9.3',
-            details: [
-                'Strict mode enabled for maximum type safety',
-                'Custom type guards for Content (Movie | TVShow) discrimination',
-                'Comprehensive interface definitions in /types directory',
-                'Generic utility types for API responses and state management',
-            ],
-        },
-        {
-            name: 'Next.js',
-            desc: 'React framework',
-            icon: '/icons/nextjs.svg',
-            bg: 'bg-white/5',
-            border: 'border-white/20',
-            activeBorder: 'border-white/60',
-            activeGlow: 'shadow-[0_0_25px_rgba(255,255,255,0.3)]',
-            iconBg: 'bg-black border border-white/30',
-            version: '16.0.1',
-            details: [
-                'App Router with React Server Components',
-                'API routes for TMDB proxy and Gemini AI integration',
-                'Image optimization with next/image for TMDB CDN',
-                'Middleware for security headers (CSP, HSTS, X-Frame-Options)',
-            ],
-        },
-        {
-            name: 'React',
-            desc: 'UI library',
-            icon: '/icons/react.svg',
-            bg: 'bg-sky-500/10',
-            border: 'border-sky-500/30',
-            activeBorder: 'border-sky-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(14,165,233,0.5)]',
-            version: '19.2.0',
-            details: [
-                'React 19 with concurrent features',
-                'Server Components for improved performance',
-                'Hooks-based architecture throughout the app',
-                'Strict mode for detecting potential issues',
-            ],
-        },
-        {
-            name: 'Tailwind CSS',
-            desc: 'Utility-first styling',
-            icon: '/icons/tailwind.svg',
-            bg: 'bg-cyan-500/10',
-            border: 'border-cyan-500/30',
-            activeBorder: 'border-cyan-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(6,182,212,0.5)]',
-            version: '3.4.17',
-            details: [
-                'Custom color palette with cinematic dark theme',
-                'Responsive breakpoints for mobile-first design',
-                'Custom animations (pulse, fadeIn, slide transitions)',
-                'JIT mode for optimized production builds',
-            ],
-        },
-        {
-            name: 'Turso',
-            desc: 'Database & ORM',
-            emoji: '🐘',
-            bg: 'bg-teal-500/10',
-            border: 'border-teal-500/30',
-            activeBorder: 'border-teal-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(20,184,166,0.5)]',
-            details: [
-                'Turso (libSQL/SQLite) with Drizzle ORM for all persistence',
-                'User data, rankings, threads, and polls live in Turso',
-                'Accessed only through Next.js API routes - never client-side',
-                'Server-side ownership checks enforce per-user data isolation',
-            ],
-        },
-        {
-            name: 'Zustand',
-            desc: 'State management',
-            emoji: '🐻',
-            bg: 'bg-amber-500/10',
-            border: 'border-amber-500/30',
-            activeBorder: 'border-amber-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(245,158,11,0.5)]',
-            version: '5.0.8',
-            details: [
-                '18 focused stores (auth, session, UI, notifications, etc.)',
-                'Storage adapters: ApiStorageAdapter (Turso) for auth users, LocalStorageAdapter for guests',
-                'Optimized selectors to prevent unnecessary re-renders',
-                'Devtools integration for debugging state changes',
-            ],
-        },
-    ]
-
-    // Features data - user-focused and compelling
-    const features = [
-        {
-            id: 'ai-search',
-            icon: StarIcon,
-            title: 'Search with AI',
-            desc: 'Just describe what you want to watch in plain English',
-            color: 'text-yellow-400',
-            bg: 'bg-yellow-500/10',
-            border: 'border-yellow-500/20',
-            activeBorder: 'border-yellow-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(250,204,21,0.5)]',
-            details: [
-                'Google Gemini 3.1 Flash Lite integration for natural language query parsing',
-                'Web Speech API voice input with live transcription feedback',
-                'Semantic concept understanding ("rainy day vibes", "mind-bending thrillers")',
-                'Save AI search results as custom collections',
-                'Live preview showing result count as you type',
-                'Debounced input with race condition handling for optimal performance',
-            ],
-        },
-        {
-            id: 'collections',
-            icon: HeartIcon,
-            title: 'Create Custom Collections',
-            desc: 'Organize your watchlist exactly how you want',
-            color: 'text-pink-400',
-            bg: 'bg-pink-500/10',
-            border: 'border-pink-500/20',
-            activeBorder: 'border-pink-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(236,72,153,0.5)]',
-            details: [
-                'Drag-and-drop to reorder - build your perfect list visually',
-                'Auto-updating collections that refresh daily with new content',
-                'Let AI create collections from natural language descriptions',
-                'Filter by year, rating, cast, director - get exactly what you want',
-                'Share your collections with friends via public links',
-                'Get notified when new content matches your collections',
-            ],
-        },
-        {
-            id: 'rankings',
-            icon: TrophyIcon,
-            title: 'Build & Share Rankings',
-            desc: 'Create your definitive top 10 lists',
-            color: 'text-purple-400',
-            bg: 'bg-purple-500/10',
-            border: 'border-purple-500/20',
-            activeBorder: 'border-purple-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(168,85,247,0.5)]',
-            details: [
-                'Drag-and-drop ranking builder with custom scores',
-                'Make your rankings public or keep them private',
-                'Get comments, likes, and engagement from the community',
-                'Join discussion forums with polls and voting',
-                'See real-time likes and view counts on your rankings',
-                'Threaded conversations so you can debate with other users',
-            ],
-        },
-        {
-            id: 'discovery',
-            icon: PlayIcon,
-            title: 'Discover New Content',
-            desc: 'Find trending movies and shows worth watching',
-            color: 'text-amber-300',
-            bg: 'bg-amber-400/10',
-            border: 'border-amber-400/20',
-            activeBorder: 'border-amber-300',
-            activeGlow: 'shadow-[0_0_25px_rgba(251,191,36,0.5)]',
-            details: [
-                'Browse trending, popular, and top-rated content',
-                'Explore by genre - consistent experience for movies and TV',
-                'Watch trailers without leaving the site',
-                'See full cast, crew, and get similar recommendations',
-            ],
-        },
-        {
-            id: 'recommendations',
-            icon: SparklesIcon,
-            title: 'Content For You',
-            desc: 'Recommendations that actually get you',
-            color: 'text-green-400',
-            bg: 'bg-green-500/10',
-            border: 'border-green-500/20',
-            activeBorder: 'border-green-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(34,197,94,0.5)]',
-            details: [
-                'Learns your taste from what you watch and like',
-                'Based on your top 3 preferred genres from viewing history',
-                "Automatically excludes content you've already seen",
-                'Refreshes with new recommendations regularly',
-                'Opt-out anytime if you prefer manual discovery',
-                'Minimum 7.0 rating - only quality suggestions',
-            ],
-        },
-        {
-            id: 'safety',
-            icon: ShieldCheckIcon,
-            title: 'Family-Friendly & Personal',
-            desc: 'Safe for kids, smart for you',
-            color: 'text-cyan-400',
-            bg: 'bg-cyan-500/10',
-            border: 'border-cyan-500/20',
-            activeBorder: 'border-cyan-400',
-            activeGlow: 'shadow-[0_0_25px_rgba(6,182,212,0.5)]',
-            details: [
-                'PIN-protected child safety mode filters adult content automatically',
-                'Get recommendations tailored to what you actually like',
-                'Your viewing history stays private with automatic cleanup',
-                'Export your collections and watch history anytime as CSV',
-            ],
-        },
-    ]
-
-    // Architecture data
-    const architecture = [
-        {
-            icon: ServerIcon,
-            title: 'API Proxy Architecture',
-            text: 'Server-side TMDB integration with rate limiting',
-            details: [
-                '49 internal API routes proxy TMDB requests server-side',
-                'In-memory cache store with smart invalidation strategy',
-                'Respects TMDB rate limits (40 requests/second)',
-                'Query parameter authentication for TMDB API v3 compatibility',
-            ],
-        },
-        {
-            icon: BoltIcon,
-            title: 'Cloud Sync System',
-            text: 'Dual storage backed by Turso (libSQL)',
-            details: [
-                'ApiStorageAdapter for authenticated users (Turso via API routes)',
-                'LocalStorageAdapter for guest users (no cloud persistence)',
-                'User ID validation prevents data mixing between users',
-                'Server-side ownership checks on every write',
-            ],
-        },
-        {
-            icon: CodeBracketIcon,
-            title: 'Content Type System',
-            text: 'Type-safe discriminated unions',
-            details: [
-                'BaseContent interface with Movie | TVShow discriminated unions',
-                'Type guards (isMovie, isTVShow) for runtime type checking',
-                'Utility functions for consistent property access across types',
-                'Prevents runtime errors with compile-time type safety',
-            ],
-        },
-        {
-            icon: CpuChipIcon,
-            title: 'Genre Unification System',
-            text: 'Seamless genre mapping across media types',
-            details: [
-                'Unified genre IDs map to different TMDB IDs per media type',
-                'Fantasy → Movies: 14 | TV: 10765 (Sci-Fi & Fantasy)',
-                'Automatic deduplication when genres map to same TMDB ID',
-                'Consistent user experience across movies and TV shows',
-            ],
-        },
-        {
-            icon: RocketLaunchIcon,
-            title: 'Personalization Engine',
-            text: 'Weighted interaction scoring',
-            details: [
-                '10 interaction types with different weights (+5 to -5)',
-                'Top 3 preferred genres calculated from 90-day history',
-                'Hybrid algorithm: genre preferences + TMDB similarity',
-                'Auto-excludes seen content, minimum 7.0 rating threshold',
-            ],
-        },
-        {
-            icon: BellIcon,
-            title: 'Trending Notification System',
-            text: 'Snapshot comparison with daily updates',
-            details: [
-                'Daily cron job (2 AM UTC) compares trending snapshots',
-                'Detects new entries in top 20 trending movies/TV shows',
-                'Sends notifications for watchlist items newly trending',
-                'Polls /api/notifications every 30s to deliver notification updates',
-            ],
-        },
-    ]
-
-    // Security data
-    const security = [
-        {
-            icon: ShieldCheckIcon,
-            title: 'CSRF Protection',
-            desc: 'Cross-site request forgery prevention',
-            details: [
-                'Origin/Referer header validation on all state-changing requests',
-                'Protected methods: POST, PUT, DELETE, PATCH to /api/*',
-                'CRON_SECRET authentication for scheduled jobs',
-                'Timing-safe comparison prevents timing attacks',
-            ],
-        },
-        {
-            icon: LockClosedIcon,
-            title: 'Session Authentication',
-            desc: 'Auth.js (NextAuth v5) cookie sessions',
-            details: [
-                'GitHub OAuth + passwordless email magic-link sign-in',
-                'Database-backed sessions validated server-side via cookies',
-                'User ID derived from the session, never from request bodies',
-                'Admin access gated by ADMIN_GITHUB_LOGIN verification',
-            ],
-        },
-        {
-            icon: CodeBracketIcon,
-            title: 'Request Validation',
-            desc: 'Size limits and content-type checks',
-            details: [
-                '1MB request body size limit (500KB for JSON)',
-                'Content-Type validation for POST/PUT/PATCH requests',
-                'Rejects oversized payloads (413 status)',
-                'Protects against memory exhaustion attacks',
-            ],
-        },
-        {
-            icon: BellIcon,
-            title: 'Security Monitoring',
-            desc: 'Logging and error tracking',
-            details: [
-                'Request validation logging for security events',
-                'Sentry integration tracks errors and anomalies',
-                'CSRF attempt detection and logging',
-                'Audit trail for admin and sensitive operations',
-            ],
-        },
-        {
-            icon: CodeBracketIcon,
-            title: 'Input Sanitization & Headers',
-            desc: 'XSS protection and secure headers',
-            details: [
-                'Server-side input sanitization on all AI endpoints',
-                'Content Security Policy prevents XSS attacks',
-                'HSTS enforces HTTPS, X-Frame-Options stops clickjacking',
-                'API keys never exposed to client (server-side only)',
-            ],
-        },
-        {
-            icon: UserIcon,
-            title: 'Data Protection',
-            desc: 'Server-side ownership checks and child safety',
-            details: [
-                'User isolation prevents cross-user data access',
-                'Field-level validation for all database writes',
-                'bcrypt-encrypted PINs for child safety mode',
-                'Server-side content filtering by ratings',
-            ],
-        },
-    ]
-
-    // Tab configuration with section blurbs
-    const tabs: Tab[] = [
-        {
-            id: 'tech',
-            title: 'Tech Stack',
-            icon: CodeBracketIcon,
-            itemCount: techStack.length,
-            blurb: 'Built with a modern, production-ready stack featuring Next.js 16, React 19, and TypeScript for type-safe development. State management is handled by Zustand with 18 focused stores, with Turso (libSQL) + Drizzle ORM for data and Auth.js for authentication.',
-        },
-        {
-            id: 'features',
-            title: 'Features',
-            icon: StarIcon,
-            itemCount: features.length,
-            blurb: 'NetTrailers showcases production-ready features that demonstrate full-stack development expertise. From AI-powered natural language search to real-time data synchronization, these features highlight advanced React patterns, API integrations, and scalable architecture design.',
-        },
-        {
-            id: 'architecture',
-            title: 'Architecture',
-            icon: CpuChipIcon,
-            itemCount: architecture.length,
-            blurb: 'Designed with scalability and maintainability in mind. Uses a focused store pattern for state management, dual storage adapters for auth/guest users, comprehensive error monitoring with Sentry, and optimized API caching for performance.',
-        },
-        {
-            id: 'security',
-            title: 'Security',
-            icon: ShieldCheckIcon,
-            itemCount: security.length,
-            blurb: 'Enterprise-grade security with server-side ownership checks, XSS protection via input sanitization, security headers (CSP, HSTS), and PIN-protected child safety mode. All sensitive operations are validated server-side.',
-        },
-    ]
-
-    // Get current tab's item count
-    const getCurrentTabItemCount = useCallback(() => {
-        const tab = tabs.find((t) => t.id === activeTab)
-        return tab?.itemCount || 0
-    }, [activeTab, tabs])
-
-    // Get current tab's blurb
-    const getCurrentTabBlurb = useCallback(() => {
-        const tab = tabs.find((t) => t.id === activeTab)
-        return tab?.blurb || ''
-    }, [activeTab, tabs])
-
-    // Auto-cycle through highlighted items (pauses on hover)
-    useEffect(() => {
-        if (!isOpen || isHovering) {
-            if (intervalRef.current) {
-                clearInterval(intervalRef.current)
-                intervalRef.current = null
-            }
-            return
-        }
-
-        const cycleInterval = 5000 // 5 seconds per highlight
-
-        intervalRef.current = setInterval(() => {
-            // Phase 1: Exit animation (slide out to left)
-            setAnimationPhase('exit')
-
-            setTimeout(() => {
-                // Phase 2: Update content while hidden
-                setHighlightedIndex((prev) => {
-                    const itemCount = getCurrentTabItemCount()
-                    const nextIndex = (prev + 1) % itemCount
-
-                    // If we've cycled through all items, move to next tab
-                    if (nextIndex === 0) {
-                        setActiveTab((currentTab) => {
-                            const currentTabIndex = tabs.findIndex((t) => t.id === currentTab)
-                            const nextTabIndex = (currentTabIndex + 1) % tabs.length
-                            return tabs[nextTabIndex].id
-                        })
-                    }
-
-                    return nextIndex
-                })
-
-                // Phase 3: Enter animation (slide in from right)
-                setAnimationPhase('enter')
-
-                setTimeout(() => {
-                    setAnimationPhase('idle')
-                }, 200)
-            }, 200)
-        }, cycleInterval)
-
+        if (!isOpen) return
+        const previous = document.body.style.overflow
+        document.body.style.overflow = 'hidden'
         return () => {
-            if (intervalRef.current) {
-                clearInterval(intervalRef.current)
-                intervalRef.current = null
-            }
-        }
-    }, [isOpen, isHovering, getCurrentTabItemCount, tabs])
-
-    // Reset state when modal opens
-    useEffect(() => {
-        if (isOpen) {
-            document.body.style.overflow = 'hidden'
-            setActiveTab('tech')
-            setHighlightedIndex(0)
-            setIsHovering(false)
-            setAnimationPhase('idle')
-        } else {
-            document.body.style.overflow = 'unset'
-        }
-
-        return () => {
-            document.body.style.overflow = 'unset'
+            document.body.style.overflow = previous
         }
     }, [isOpen])
 
-    // Handle tab change
-    const handleTabChange = useCallback((tabId: TabId) => {
-        setAnimationPhase('exit')
-        setTimeout(() => {
-            setActiveTab(tabId)
-            setHighlightedIndex(0)
-            setAnimationPhase('enter')
-            setTimeout(() => setAnimationPhase('idle'), 200)
-        }, 200)
-    }, [])
-
-    // Handle item click to highlight
-    const handleItemClick = useCallback(
-        (index: number) => {
-            if (index === highlightedIndex) return
-            setAnimationPhase('exit')
-            setTimeout(() => {
-                setHighlightedIndex(index)
-                setAnimationPhase('enter')
-                setTimeout(() => setAnimationPhase('idle'), 200)
-            }, 200)
-        },
-        [highlightedIndex]
-    )
-
-    // Navigate to previous item (wraps to previous tab if at first item)
-    const goToPrev = useCallback(() => {
-        setAnimationPhase('exit')
-        setTimeout(() => {
-            if (highlightedIndex === 0) {
-                // Go to previous tab's last item
-                const currentTabIndex = tabs.findIndex((t) => t.id === activeTab)
-                const prevTabIndex = (currentTabIndex - 1 + tabs.length) % tabs.length
-                const prevTab = tabs[prevTabIndex]
-                setActiveTab(prevTab.id)
-                setHighlightedIndex(prevTab.itemCount - 1)
-            } else {
-                setHighlightedIndex((prev) => prev - 1)
-            }
-            setAnimationPhase('enter')
-            setTimeout(() => setAnimationPhase('idle'), 200)
-        }, 200)
-    }, [highlightedIndex, activeTab, tabs])
-
-    // Navigate to next item (wraps to next tab if at last item)
-    const goToNext = useCallback(() => {
-        const itemCount = getCurrentTabItemCount()
-        setAnimationPhase('exit')
-        setTimeout(() => {
-            if (highlightedIndex === itemCount - 1) {
-                // Go to next tab's first item
-                const currentTabIndex = tabs.findIndex((t) => t.id === activeTab)
-                const nextTabIndex = (currentTabIndex + 1) % tabs.length
-                setActiveTab(tabs[nextTabIndex].id)
-                setHighlightedIndex(0)
-            } else {
-                setHighlightedIndex((prev) => prev + 1)
-            }
-            setAnimationPhase('enter')
-            setTimeout(() => setAnimationPhase('idle'), 200)
-        }, 200)
-    }, [getCurrentTabItemCount, highlightedIndex, activeTab, tabs])
-
-    // Keyboard navigation
-    useEffect(() => {
-        if (!isOpen) return
-
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
-                onClose()
-            } else if (e.key === 'ArrowLeft') {
-                e.preventDefault()
-                goToPrev()
-            } else if (e.key === 'ArrowRight') {
-                e.preventDefault()
-                goToNext()
-            }
-        }
-
-        window.addEventListener('keydown', handleKeyDown)
-        return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [isOpen, onClose, goToPrev, goToNext])
-
-    // Render the focused/detailed view of current item
-    const renderFocusedItem = () => {
-        switch (activeTab) {
-            case 'tech': {
-                const tech = techStack[highlightedIndex]
-                if (!tech) return null
-                return (
-                    <div
-                        className={`rounded-xl ${tech.bg} border-2 ${tech.activeBorder} ${tech.activeGlow} p-4 sm:p-5 transition-all duration-300`}
-                    >
-                        <div className="flex items-start gap-4">
-                            <div
-                                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center flex-shrink-0 ${tech.iconBg || 'bg-white/5'}`}
-                            >
-                                {tech.emoji ? (
-                                    <span className="text-2xl sm:text-3xl">{tech.emoji}</span>
-                                ) : (
-                                    <Image
-                                        src={tech.icon!}
-                                        alt={tech.name}
-                                        width={32}
-                                        height={32}
-                                        className="w-7 h-7 sm:w-8 sm:h-8"
-                                    />
-                                )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <h4 className="text-xl sm:text-2xl font-bold text-white">
-                                        {tech.name}
-                                    </h4>
-                                    {tech.version && (
-                                        <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-white/10 text-gray-300">
-                                            v{tech.version}
-                                        </span>
-                                    )}
-                                </div>
-                                <p className="text-sm text-gray-400 mb-2 sm:hidden">{tech.desc}</p>
-                                <ul className="space-y-1.5">
-                                    {tech.details.slice(0, isMobile ? 2 : 4).map((detail, idx) => (
-                                        <li
-                                            key={idx}
-                                            className="flex items-start gap-2 text-xs sm:text-sm text-gray-300"
-                                        >
-                                            <span className="text-amber-300 mt-0.5">•</span>
-                                            <span>{detail}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
-            case 'features': {
-                const feature = features[highlightedIndex]
-                if (!feature) return null
-                return (
-                    <div
-                        className={`rounded-xl ${feature.bg} border-2 ${feature.activeBorder} ${feature.activeGlow} p-4 sm:p-5 transition-all duration-300`}
-                    >
-                        <div className="flex items-start gap-4">
-                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0">
-                                <feature.icon
-                                    className={`w-7 h-7 sm:w-8 sm:h-8 ${feature.color}`}
-                                />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <div className="mb-2">
-                                    <h4 className="text-xl sm:text-2xl font-bold text-white">
-                                        {feature.title}
-                                    </h4>
-                                </div>
-                                <p className="text-sm text-gray-400 mb-2 sm:hidden">
-                                    {feature.desc}
-                                </p>
-                                <ul className="space-y-1.5">
-                                    {feature.details
-                                        .slice(0, isMobile ? 2 : 4)
-                                        .map((detail, idx) => (
-                                            <li
-                                                key={idx}
-                                                className="flex items-start gap-2 text-xs sm:text-sm text-gray-300"
-                                            >
-                                                <span className={feature.color}>•</span>
-                                                <span>{detail}</span>
-                                            </li>
-                                        ))}
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
-            case 'architecture': {
-                const arch = architecture[highlightedIndex]
-                if (!arch) return null
-                return (
-                    <div className="rounded-xl bg-zinc-800/60 border-2 border-amber-300 shadow-[0_0_25px_rgba(251,191,36,0.4)] p-4 sm:p-5 transition-all duration-300">
-                        <div className="flex items-start gap-4">
-                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-amber-400/10 flex items-center justify-center flex-shrink-0">
-                                <arch.icon className="w-7 h-7 sm:w-8 sm:h-8 text-amber-300" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <div className="mb-2">
-                                    <h4 className="text-xl sm:text-2xl font-bold text-white">
-                                        {arch.title}
-                                    </h4>
-                                </div>
-                                <p className="text-sm text-gray-400 mb-2 sm:hidden">{arch.text}</p>
-                                <ul className="space-y-1.5">
-                                    {arch.details.slice(0, isMobile ? 2 : 4).map((detail, idx) => (
-                                        <li
-                                            key={idx}
-                                            className="flex items-start gap-2 text-xs sm:text-sm text-gray-300"
-                                        >
-                                            <span className="text-amber-300">•</span>
-                                            <span>{detail}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
-            case 'security': {
-                const sec = security[highlightedIndex]
-                if (!sec) return null
-                return (
-                    <div className="rounded-xl bg-emerald-500/10 border-2 border-emerald-400 shadow-[0_0_25px_rgba(52,211,153,0.4)] p-4 sm:p-5 transition-all duration-300">
-                        <div className="flex items-start gap-4">
-                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
-                                <sec.icon className="w-7 h-7 sm:w-8 sm:h-8 text-emerald-400" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <div className="mb-2">
-                                    <h4 className="text-xl sm:text-2xl font-bold text-white">
-                                        {sec.title}
-                                    </h4>
-                                </div>
-                                <p className="text-sm text-gray-400 mb-2 sm:hidden">{sec.desc}</p>
-                                <ul className="space-y-1.5">
-                                    {sec.details.slice(0, isMobile ? 2 : 4).map((detail, idx) => (
-                                        <li
-                                            key={idx}
-                                            className="flex items-start gap-2 text-xs sm:text-sm text-gray-300"
-                                        >
-                                            <span className="text-emerald-400">•</span>
-                                            <span>{detail}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
-        }
-    }
-
-    // Render mini cards for all items in current tab
-    const renderMiniCards = () => {
-        // Common card class - smaller height, centered content
-        const cardClass =
-            'flex items-center gap-2 px-3 py-2 rounded-xl border transition-all duration-300'
-
-        switch (activeTab) {
-            case 'tech':
-                return techStack.map((tech, index) => {
-                    const isActive = highlightedIndex === index
-                    return (
-                        <button
-                            key={tech.name}
-                            onClick={() => handleItemClick(index)}
-                            className={`${cardClass} ${
-                                isActive
-                                    ? `${tech.bg} ${tech.activeBorder} ${tech.activeGlow}`
-                                    : `bg-zinc-800/40 border-zinc-700/50 opacity-60 hover:opacity-90`
-                            }`}
-                        >
-                            <div
-                                className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${tech.iconBg || 'bg-white/5'}`}
-                            >
-                                {tech.emoji ? (
-                                    <span className="text-lg">{tech.emoji}</span>
-                                ) : (
-                                    <Image
-                                        src={tech.icon!}
-                                        alt={tech.name}
-                                        width={20}
-                                        height={20}
-                                        className="w-5 h-5"
-                                    />
-                                )}
-                            </div>
-                            <span className="text-xs sm:text-sm font-medium text-white truncate">
-                                {tech.name}
-                            </span>
-                        </button>
-                    )
-                })
-            case 'features':
-                return features.map((feature, index) => {
-                    const isActive = highlightedIndex === index
-                    return (
-                        <button
-                            key={feature.id}
-                            onClick={() => handleItemClick(index)}
-                            className={`${cardClass} ${
-                                isActive
-                                    ? `${feature.bg} ${feature.activeBorder} ${feature.activeGlow}`
-                                    : `bg-zinc-800/40 border-zinc-700/50 opacity-60 hover:opacity-90`
-                            }`}
-                        >
-                            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
-                                <feature.icon className={`w-5 h-5 ${feature.color}`} />
-                            </div>
-                            <span className="text-xs sm:text-sm font-medium text-white truncate">
-                                {feature.title}
-                            </span>
-                        </button>
-                    )
-                })
-            case 'architecture':
-                return architecture.map((arch, index) => {
-                    const isActive = highlightedIndex === index
-                    return (
-                        <button
-                            key={index}
-                            onClick={() => handleItemClick(index)}
-                            className={`${cardClass} ${
-                                isActive
-                                    ? 'bg-amber-400/10 border-amber-300 shadow-[0_0_15px_rgba(251,191,36,0.3)]'
-                                    : 'bg-zinc-800/40 border-zinc-700/50 opacity-60 hover:opacity-90'
-                            }`}
-                        >
-                            <div className="w-8 h-8 rounded-lg bg-amber-400/10 flex items-center justify-center flex-shrink-0">
-                                <arch.icon className="w-5 h-5 text-amber-300" />
-                            </div>
-                            <span className="text-xs sm:text-sm font-medium text-white truncate">
-                                {arch.title}
-                            </span>
-                        </button>
-                    )
-                })
-            case 'security':
-                return security.map((sec, index) => {
-                    const isActive = highlightedIndex === index
-                    return (
-                        <button
-                            key={index}
-                            onClick={() => handleItemClick(index)}
-                            className={`${cardClass} ${
-                                isActive
-                                    ? 'bg-emerald-500/10 border-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.3)]'
-                                    : 'bg-zinc-800/40 border-zinc-700/50 opacity-60 hover:opacity-90'
-                            }`}
-                        >
-                            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
-                                <sec.icon className="w-5 h-5 text-emerald-400" />
-                            </div>
-                            <span className="text-xs sm:text-sm font-medium text-white truncate">
-                                {sec.title}
-                            </span>
-                        </button>
-                    )
-                })
-        }
-    }
-
     if (!isOpen) return null
 
+    const titleId = `${ids}-title`
+    const hoodId = `${ids}-hood`
+
+    const outboundBase = `inline-flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm sm:px-3.5 font-semibold transition-colors ${focusRing}`
+
     return (
-        <div
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-modal flex items-center justify-center p-4"
-            onClick={onClose}
-        >
+        <div className="fixed inset-0 z-modal flex items-end justify-center sm:items-center sm:p-4">
             <div
-                className="relative bg-gradient-to-br from-zinc-900 via-zinc-900/95 to-black rounded-2xl max-w-2xl lg:max-w-3xl w-full border border-amber-400/30 shadow-2xl shadow-amber-400/10 overflow-hidden max-h-[90vh] flex flex-col"
-                onClick={(e) => e.stopPropagation()}
+                className="absolute inset-0 bg-black/75 backdrop-blur-sm"
+                onClick={onClose}
+                aria-hidden="true"
+            />
+            <div
+                ref={dialogRef}
+                tabIndex={-1}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={titleId}
+                data-testid="about-dialog"
+                className="relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl border border-zinc-700 bg-[#0d0d0f] shadow-2xl outline-none sm:max-w-[900px] sm:rounded-2xl"
             >
-                {/* Animated background glow */}
-                <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-64 bg-gradient-radial from-amber-400/10 via-transparent to-transparent" />
-                    <div
-                        className="absolute inset-0 bg-gradient-to-t from-amber-800/5 via-transparent to-transparent animate-pulse"
-                        style={{ animationDuration: '4s' }}
-                    />
-                </div>
-
-                {/* Close Button */}
-                <button
-                    onClick={onClose}
-                    aria-label="Close"
-                    className="absolute top-4 right-4 z-20 p-2 rounded-full bg-zinc-800/60 text-gray-400 hover:text-white hover:bg-zinc-700/80 transition-all duration-300 hover:scale-110"
-                >
-                    <XMarkIcon className="w-5 h-5" />
-                </button>
-
-                {/* About Section (Always Visible) */}
-                <div className="relative z-10 p-6 border-b border-zinc-800/50 flex-shrink-0">
-                    <h1 className="text-2xl font-bold text-white mb-4 text-center">
-                        About this project
-                    </h1>
-
-                    <div className="flex items-start gap-4">
-                        {/* Profile Photo */}
-                        <div className="relative group flex-shrink-0">
-                            <div className="absolute inset-0 bg-amber-400/30 rounded-full blur-xl scale-110 group-hover:scale-125 transition-transform duration-500" />
-                            <Image
-                                src="/images/portrait-medium.jpg"
-                                alt="Nathan's Portrait"
-                                width={64}
-                                height={64}
-                                className="relative w-16 h-16 rounded-full object-cover border-2 border-amber-400/50 group-hover:border-amber-300 transition-colors duration-300"
-                            />
-                        </div>
-
-                        {/* Intro */}
-                        <div className="flex-1 min-w-0">
-                            <h2 className="text-lg font-bold text-white mb-1">
-                                Hi, I&apos;m Nathan 👋
-                            </h2>
-                            <p className="text-sm text-gray-300 leading-relaxed mb-2">
-                                The future of content discovery isn&apos;t endless scrolling through
-                                algorithmic feeds - it&apos;s giving people tools to curate their
-                                own experience. Search by vibe instead of keywords. Build
-                                collections that match exactly what you want. Hide what you&apos;re
-                                not interested in so your feed gets better. Share your taste through
-                                rankings and let others pull your recommendations into their
-                                collections. AI should help you find and organize what you care
-                                about, not decide for you.
-                            </p>
-
-                            <div className="border-t border-zinc-700/30 my-3" />
-
-                            {/* Help Options */}
-                            {(onStartTour || onOpenTutorial) && (
-                                <p className="text-sm text-gray-400 leading-relaxed mb-2 flex flex-wrap items-center gap-1.5">
-                                    <span>New to NetTrailers?</span>
-                                    {onOpenTutorial && (
-                                        <>
-                                            <span>Check out the</span>
-                                            <button
-                                                onClick={() => {
-                                                    onClose()
-                                                    setTimeout(() => {
-                                                        onOpenTutorial()
-                                                    }, 300)
-                                                }}
-                                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-500/20 hover:bg-blue-500/30 rounded-full text-xs font-medium text-blue-300 hover:text-blue-200 border border-blue-500/40 hover:border-blue-400 transition-all"
-                                            >
-                                                <AcademicCapIcon className="w-3 h-3" />
-                                                Tutorial
-                                            </button>
-                                        </>
-                                    )}
-                                    {onStartTour && (
-                                        <>
-                                            <span>{onOpenTutorial ? 'or take a' : 'Take a'}</span>
-                                            <button
-                                                onClick={() => {
-                                                    onClose()
-                                                    setTimeout(() => {
-                                                        onStartTour()
-                                                    }, 300)
-                                                }}
-                                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-orange-500/20 hover:bg-orange-500/30 rounded-full text-xs font-medium text-orange-300 hover:text-orange-200 border border-orange-500/40 hover:border-orange-400 transition-all"
-                                            >
-                                                <RocketLaunchIcon className="w-3 h-3" />
-                                                Quick Tour
-                                            </button>
-                                        </>
-                                    )}
-                                </p>
-                            )}
-
-                            <p className="text-sm text-gray-400 leading-relaxed mb-3">
-                                Check out my{' '}
-                                <a
-                                    href="https://portfolio.n8builds.dev/"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-400/20 hover:bg-amber-400/30 rounded-full text-xs font-medium text-amber-200 hover:text-amber-100 border border-amber-400/40 hover:border-amber-300 transition-all"
-                                >
-                                    <ArrowTopRightOnSquareIcon className="w-3 h-3" />
-                                    Portfolio
-                                </a>{' '}
-                                for more projects, or connect with me on social media below!
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Social Links (icons only) */}
-                    <div className="flex flex-wrap items-center justify-center gap-2.5 mt-3">
-                        {[
-                            {
-                                href: 'https://github.com/n8watkins',
-                                icon: '/icons/github.svg',
-                                label: 'GitHub',
-                            },
-                            {
-                                href: 'https://www.linkedin.com/in/n8watkins/',
-                                icon: '/icons/linkedin.svg',
-                                label: 'LinkedIn',
-                            },
-                            { href: 'https://x.com/n8watkins', icon: 'x', label: 'X' },
-                        ].map((social) => (
+                {/* Header: what it is and where to go next */}
+                <div className="flex items-start gap-3 border-b border-zinc-800 px-5 pb-4 pt-5 sm:px-6">
+                    <div className="min-w-0 flex-1">
+                        <h2
+                            id={titleId}
+                            className="flex flex-wrap items-baseline gap-x-2 text-xl font-bold text-white"
+                        >
+                            <span>NetTrailers</span>
+                            <span className="text-sm font-medium text-gray-400">
+                                built by Nathan Watkins
+                            </span>
+                        </h2>
+                        <p className="mt-1.5 max-w-[46rem] text-[15px] leading-snug text-gray-300 [text-wrap:pretty]">
+                            {ABOUT_SUMMARY}
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-2">
                             <a
-                                key={social.label}
-                                href={social.href}
+                                href={ABOUT_LINKS.portfolio}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                aria-label={social.label}
-                                className="group w-11 h-11 rounded-full bg-zinc-800/60 hover:bg-zinc-700/80 transition-all duration-300 flex items-center justify-center border border-zinc-700/50 hover:border-amber-400/50 hover:scale-110 hover:shadow-[0_0_20px_rgba(251,191,36,0.3)]"
+                                className={`${outboundBase} bg-amber-500 text-zinc-950 hover:bg-amber-400`}
                             >
-                                {social.icon === 'x' ? (
-                                    <svg className="w-5 h-5 fill-white" viewBox="0 0 24 24">
-                                        <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" />
-                                    </svg>
-                                ) : (
-                                    <Image
-                                        src={social.icon}
-                                        alt={social.label}
-                                        width={20}
-                                        height={20}
-                                        className="w-5 h-5"
-                                    />
-                                )}
+                                Portfolio
+                                <ArrowTopRightOnSquareIcon className="h-4 w-4" aria-hidden="true" />
                             </a>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Tab Navigation */}
-                <div className="relative z-10 flex flex-wrap items-center justify-center gap-1.5 px-4 py-3 border-b border-zinc-800/50 flex-shrink-0">
-                    {tabs.map((tab) => {
-                        const isSecurityTab = tab.id === 'security'
-                        const isActive = activeTab === tab.id
-                        return (
-                            <button
-                                key={tab.id}
-                                onClick={() => handleTabChange(tab.id)}
-                                className={`group flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-5 sm:py-2.5 text-sm sm:text-lg font-bold rounded-full transition-all duration-300 ${
-                                    isActive
-                                        ? isSecurityTab
-                                            ? 'bg-emerald-500/90 text-white shadow-[0_0_10px_rgba(52,211,153,0.3)]'
-                                            : 'bg-amber-400/90 text-white shadow-[0_0_10px_rgba(251,191,36,0.3)]'
-                                        : 'bg-zinc-800/60 text-gray-400 hover:text-white hover:bg-zinc-700/80'
-                                }`}
+                            <a
+                                href={ABOUT_LINKS.writeUp}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`${outboundBase} border border-zinc-700 text-gray-100 hover:border-amber-500/60 hover:bg-zinc-900`}
                             >
-                                <tab.icon className="w-4 h-4 sm:w-6 sm:h-6" />
-                                <span>{tab.title}</span>
-                            </button>
-                        )
-                    })}
-                </div>
-
-                {/* Content Area - pauses on hover */}
-                <div
-                    className="relative z-10 flex-1 overflow-y-auto p-5 space-y-4"
-                    onMouseEnter={() => setIsHovering(true)}
-                    onMouseLeave={() => setIsHovering(false)}
-                >
-                    {/* Focused Item Display with Navigation */}
-                    <div className="flex items-center gap-2">
-                        {/* Left Arrow */}
-                        <button
-                            onClick={goToPrev}
-                            className="flex-shrink-0 p-2 rounded-full bg-zinc-800/60 text-gray-400 hover:text-white hover:bg-zinc-700/80 transition-all duration-300 hover:scale-110"
-                            aria-label="Previous item"
-                        >
-                            <ChevronLeftIcon className="w-5 h-5" />
-                        </button>
-
-                        {/* Focused Item */}
-                        <div
-                            className={`flex-1 transition-all duration-300 ${
-                                animationPhase === 'exit'
-                                    ? 'opacity-0 -translate-x-8'
-                                    : animationPhase === 'enter'
-                                      ? 'opacity-0 translate-x-8'
-                                      : 'opacity-100 translate-x-0'
-                            }`}
-                        >
-                            {renderFocusedItem()}
+                                <span className="sm:hidden">Write-up</span>
+                                <span className="hidden sm:inline">Project write-up</span>
+                            </a>
+                            <a
+                                href={ABOUT_LINKS.source}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`${outboundBase} border border-zinc-700 text-gray-100 hover:border-amber-500/60 hover:bg-zinc-900`}
+                            >
+                                <Image
+                                    src="/icons/github.svg"
+                                    width={16}
+                                    height={16}
+                                    alt=""
+                                    unoptimized
+                                    className="h-4 w-4"
+                                />
+                                Source
+                            </a>
                         </div>
-
-                        {/* Right Arrow */}
-                        <button
-                            onClick={goToNext}
-                            className="flex-shrink-0 p-2 rounded-full bg-zinc-800/60 text-gray-400 hover:text-white hover:bg-zinc-700/80 transition-all duration-300 hover:scale-110"
-                            aria-label="Next item"
-                        >
-                            <ChevronRightIcon className="w-5 h-5" />
-                        </button>
                     </div>
-
-                    {/* Mini Cards Grid */}
-                    <div className="grid grid-cols-2 gap-2">{renderMiniCards()}</div>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        aria-label="Close about"
+                        className={`-mr-2 -mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-white/10 hover:text-white ${focusRing}`}
+                    >
+                        <XMarkIcon className="h-6 w-6" />
+                    </button>
                 </div>
 
-                {/* Footer */}
-                <div className="relative z-10 px-5 py-3 border-t border-zinc-800/50 flex-shrink-0 space-y-2.5">
-                    {/* Quick Links Intro */}
-                    <p className="text-xs text-gray-500 text-center">
-                        Learn more about this project&apos;s development and security practices
-                    </p>
+                <div className="overflow-y-auto overscroll-contain md:grid md:grid-cols-2">
+                    {/* How to use it */}
+                    <section
+                        aria-labelledby={`${ids}-how`}
+                        className="px-5 py-4 sm:px-6 md:border-r md:border-zinc-800 md:py-5"
+                    >
+                        <h3
+                            id={`${ids}-how`}
+                            className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-400"
+                        >
+                            How to use it
+                        </h3>
+                        <ol className="mt-3 space-y-3">
+                            {ABOUT_STEPS.map((step, index) => (
+                                <li key={step.title} className="flex gap-3">
+                                    <span
+                                        aria-hidden="true"
+                                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-amber-500/50 text-sm font-semibold text-amber-400"
+                                    >
+                                        {index + 1}
+                                    </span>
+                                    <div className="min-w-0">
+                                        <p className="font-semibold leading-7 text-white">
+                                            {step.title}
+                                        </p>
+                                        <p className="text-sm leading-snug text-gray-400">
+                                            {step.body}{' '}
+                                            <Link
+                                                href={step.action.href}
+                                                onClick={onClose}
+                                                className={`inline-flex items-center gap-1 whitespace-nowrap rounded font-medium text-amber-400 hover:text-amber-300 ${focusRing}`}
+                                            >
+                                                {step.action.label}
+                                                <ArrowRightIcon
+                                                    className="h-3.5 w-3.5"
+                                                    aria-hidden="true"
+                                                />
+                                            </Link>
+                                        </p>
+                                    </div>
+                                </li>
+                            ))}
+                        </ol>
+                        {onStartTour && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    onClose()
+                                    onStartTour()
+                                }}
+                                className={`mt-4 inline-flex h-10 items-center gap-2 rounded-lg border border-amber-500/60 px-4 text-sm font-semibold text-amber-300 transition-colors hover:bg-amber-500/10 ${focusRing}`}
+                            >
+                                <CursorArrowRaysIcon className="h-4 w-4" aria-hidden="true" />
+                                Show me around
+                            </button>
+                        )}
+                    </section>
 
-                    {/* Quick Links */}
-                    <div className="flex flex-wrap gap-2 justify-center">
-                        <Link
-                            href="/security"
-                            onClick={onClose}
-                            className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-zinc-800/60 text-gray-300 border border-zinc-700/50 hover:border-amber-400/50 hover:text-amber-300 transition-all duration-300"
+                    {/* Under the hood: collapsed on phones, always open on desktop */}
+                    <section
+                        aria-labelledby={`${ids}-hood-title`}
+                        className="border-t border-zinc-800 px-5 py-4 sm:px-6 md:border-t-0 md:py-5"
+                    >
+                        <h3 id={`${ids}-hood-title`} className="md:hidden">
+                            <button
+                                type="button"
+                                aria-expanded={hoodOpen}
+                                aria-controls={hoodId}
+                                onClick={() => setHoodOpen((open) => !open)}
+                                className={`flex w-full items-center justify-between rounded text-xs font-semibold uppercase tracking-[0.12em] text-gray-400 ${focusRing}`}
+                            >
+                                Under the hood
+                                <ChevronDownIcon
+                                    className={`h-4 w-4 transition-transform ${hoodOpen ? 'rotate-180' : ''}`}
+                                    aria-hidden="true"
+                                />
+                            </button>
+                        </h3>
+                        <p
+                            aria-hidden="true"
+                            className="hidden text-xs font-semibold uppercase tracking-[0.12em] text-gray-400 md:block"
                         >
-                            <ShieldCheckIcon className="w-3.5 h-3.5" />
-                            Security
-                        </Link>
-                        <Link
-                            href="/changelog"
-                            onClick={onClose}
-                            className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-zinc-800/60 text-gray-300 border border-zinc-700/50 hover:border-amber-400/50 hover:text-amber-300 transition-all duration-300"
-                        >
-                            <ClipboardDocumentListIcon className="w-3.5 h-3.5" />
-                            Changelog
-                        </Link>
+                            Under the hood
+                        </p>
+                        <div id={hoodId} className={`${hoodOpen ? 'block' : 'hidden'} md:block`}>
+                            <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Tech stack">
+                                {ABOUT_STACK.map((chip) => {
+                                    const version = chip.version ? versions[chip.version] : null
+                                    return (
+                                        <li
+                                            key={chip.name}
+                                            className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700 bg-zinc-900/70 px-2.5 py-1 text-xs text-gray-200"
+                                        >
+                                            {chip.logo && (
+                                                <Image
+                                                    src={chip.logo}
+                                                    width={14}
+                                                    height={14}
+                                                    alt=""
+                                                    unoptimized
+                                                    className="h-3.5 w-3.5"
+                                                />
+                                            )}
+                                            {chip.name}
+                                            {version && (
+                                                <span className="text-gray-500">{version}</span>
+                                            )}
+                                        </li>
+                                    )
+                                })}
+                            </ul>
+
+                            <ul className="mt-4 divide-y divide-zinc-800 rounded-xl border border-zinc-800">
+                                {ABOUT_HIGHLIGHTS.map((item) => {
+                                    const open = openHighlight === item.id
+                                    const panelId = `${ids}-${item.id}`
+                                    return (
+                                        <li key={item.id}>
+                                            <button
+                                                type="button"
+                                                aria-expanded={open}
+                                                aria-controls={panelId}
+                                                onClick={() =>
+                                                    setOpenHighlight(open ? null : item.id)
+                                                }
+                                                className={`flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-medium text-gray-100 hover:bg-zinc-900 ${focusRing}`}
+                                            >
+                                                {item.title}
+                                                <ChevronDownIcon
+                                                    className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${open ? 'rotate-180 text-amber-400' : ''}`}
+                                                    aria-hidden="true"
+                                                />
+                                            </button>
+                                            <ul
+                                                id={panelId}
+                                                hidden={!open}
+                                                className="list-disc space-y-1 pb-3 pl-8 pr-3.5 text-sm leading-snug text-gray-400 marker:text-amber-500/70"
+                                            >
+                                                {item.bullets.map((bullet) => (
+                                                    <li key={bullet}>{bullet}</li>
+                                                ))}
+                                            </ul>
+                                        </li>
+                                    )
+                                })}
+                            </ul>
+
+                            <p className="mt-3 flex gap-4 text-sm">
+                                <Link
+                                    href="/security"
+                                    onClick={onClose}
+                                    className={`rounded text-gray-400 underline-offset-2 hover:text-white hover:underline ${focusRing}`}
+                                >
+                                    Security
+                                </Link>
+                                <Link
+                                    href="/changelog"
+                                    onClick={onClose}
+                                    className={`rounded text-gray-400 underline-offset-2 hover:text-white hover:underline ${focusRing}`}
+                                >
+                                    Changelog
+                                </Link>
+                            </p>
+                        </div>
+                    </section>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-zinc-800 px-5 pb-[max(0.875rem,env(safe-area-inset-bottom))] pt-3.5 text-xs text-gray-500 sm:px-6">
+                    <p>
+                        NetTrailers is a portfolio project by{' '}
                         <a
-                            href="https://github.com/n8watkins/net_trailer/issues"
+                            href={ABOUT_LINKS.n8builds}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-zinc-800/60 text-gray-300 border border-zinc-700/50 hover:border-amber-400/50 hover:text-amber-300 transition-all duration-300"
+                            className={`rounded text-gray-300 underline-offset-2 hover:text-white hover:underline ${focusRing}`}
                         >
-                            <ArrowTopRightOnSquareIcon className="w-3.5 h-3.5" />
-                            GitHub Issues
+                            n8builds.dev
                         </a>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                        {/* Footer text */}
-                        <p className="text-xs text-gray-500">
-                            Built with <span className="text-amber-300">❤️</span> as a portfolio
-                            project
-                        </p>
-
-                        {/* Keyboard hints */}
-                        <div className="hidden sm:flex items-center gap-3 text-xs text-gray-600">
-                            <div className="flex items-center gap-1">
-                                <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 text-gray-400 text-[10px]">
-                                    ←/→
-                                </kbd>
-                                <span className="text-gray-500">navigate</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                                <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 text-gray-400 text-[10px]">
-                                    ESC
-                                </kbd>
-                                <span className="text-gray-500">close</span>
-                            </div>
-                        </div>
-                    </div>
+                    </p>
+                    <p>Trailer data from TMDB</p>
                 </div>
             </div>
         </div>
     )
 }
-
-export default AboutModal
