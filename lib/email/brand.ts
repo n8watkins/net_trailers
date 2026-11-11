@@ -10,7 +10,7 @@ export function siteUrl(): string {
     return (process.env.PUBLIC_URL || 'https://net-trailers.n8builds.dev').replace(/\/$/, '')
 }
 
-export const PORTFOLIO_PROJECT_URL = 'https://portfolio.n8builds.dev/projects/net-trailer'
+export const PORTFOLIO_PROJECT_URL = 'https://portfolio.n8builds.dev/projects/net-trailers'
 export const N8BUILDS_URL = 'https://n8builds.dev'
 
 /** A stable, long-cached copy of the mark (public/_headers). */
