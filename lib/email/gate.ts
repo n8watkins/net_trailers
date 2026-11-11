@@ -18,8 +18,7 @@
  * every other email goes through `sendEmail`, which reserves and delivers.
  */
 
-import type { ReactElement } from 'react'
-import { render, toPlainText } from '@react-email/render'
+import { toPlainText } from '@react-email/render'
 
 import {
     consumeLimits,
@@ -29,8 +28,9 @@ import {
     type LimitResult,
     type LimitRule,
 } from '@/lib/durableLimit'
+import { oneClickUnsubscribeUrl } from './brand'
 import { EMAIL_FROM, emailBinding } from './cloudflare'
-import { signInEmail } from './templates/sign-in'
+import { signInEmail } from './templates'
 
 export type EmailKind =
     'sign-in' | 'forum-reply' | 'social-digest' | 'trending' | 'announcement' | 'custom'
@@ -108,10 +108,15 @@ export async function reserveEmail(
 export interface EmailMessage {
     to: string
     subject: string
-    html?: string
-    react?: ReactElement
-    /** Display name before the sender address. */
-    fromName?: string
+    html: string
+    /** The plain-text version; derived from the HTML when missing. */
+    text?: string
+    /**
+     * The person's unsubscribe link (brand.ts unsubscribeUrl). When set, the
+     * message carries List-Unsubscribe and the one-click header, so mail
+     * clients show their own Unsubscribe button. Absent on sign-in links.
+     */
+    unsubscribeUrl?: string | null
 }
 
 /** Whether email can be sent here (the Worker's binding); otherwise nothing is reserved or sent. */
@@ -120,17 +125,23 @@ export function emailConfigured(): boolean {
 }
 
 /** Sends one message that has already been reserved. Throws when Cloudflare refuses it. */
-async function deliver(message: EmailMessage & { text?: string }): Promise<{ id: string | null }> {
+async function deliver(message: EmailMessage): Promise<{ id: string | null }> {
     const binding = emailBinding()
     if (!binding) throw new Error('No email binding on this deployment')
-    const html = message.react ? await render(message.react) : (message.html ?? '')
-    const text = message.text ?? toPlainText(html)
+    const headers = message.unsubscribeUrl
+        ? {
+              'List-Unsubscribe': `<${oneClickUnsubscribeUrl(message.unsubscribeUrl)}>`,
+              'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+          }
+        : undefined
     const result = await binding.send({
+        // The sender is always "NetTrailers", whatever the email.
         to: message.to,
-        from: { email: EMAIL_FROM, name: message.fromName ?? 'NetTrailers' },
+        from: { email: EMAIL_FROM, name: 'NetTrailers' },
         subject: message.subject,
-        html,
-        text,
+        html: message.html,
+        text: message.text ?? toPlainText(message.html),
+        ...(headers ? { headers } : {}),
     })
     return { id: result?.messageId ?? null }
 }
@@ -140,7 +151,7 @@ async function deliver(message: EmailMessage & { text?: string }): Promise<{ id:
  * (lib/email/signInLimits.ts), so it spends nothing more here.
  */
 export async function deliverSignInLink(to: string, url: string): Promise<void> {
-    await deliver({ to, ...signInEmail(url) })
+    await deliver({ to, ...(await signInEmail(url)) })
 }
 
 /**
