@@ -13,6 +13,7 @@ import { WorkerEntrypoint } from 'cloudflare:workers'
 import { errorSummary, logError, pathOf } from '../lib/log'
 import { isInternalPath, readAdminStats } from './adminStats'
 import { canonicalRedirect } from './canonical'
+import { cheapAnswer, forEdge, mayUseEdgeCache } from './edgeCache'
 import { runCron, type FetchHandler, type WorkerEnv } from './crons'
 import { assetsWithUploads, isUploadPath, serveUpload } from './uploads'
 
@@ -36,6 +37,11 @@ function forBrowsers(response: Response): Response {
     return fresh
 }
 
+/** The cached entrypoint below, reached through ctx.exports. */
+type CachedPagesExports = {
+    exports: { CachedPages: { fetch(request: Request): Promise<Response> } }
+}
+
 /** OpenNext with ASSETS answering /uploads too, for the image optimizer. */
 function withUploads(env: WorkerEnv): WorkerEnv {
     return { ...env, ASSETS: assetsWithUploads(env.ASSETS, env.UPLOADS) }
@@ -52,6 +58,13 @@ export default {
                 return new Response('Not found', { status: 404 })
             if (isUploadPath(new URL(request.url).pathname))
                 return await serveUpload(request, env.UPLOADS)
+            const cheap = cheapAnswer(request)
+            if (cheap) return cheap
+            // The catalogue, images and the anonymous home page (worker/edgeCache.ts).
+            if (env.PUBLIC_URL && mayUseEdgeCache(request, new URL(env.PUBLIC_URL).host)) {
+                const cached = (ctx as ExecutionContext & CachedPagesExports).exports.CachedPages
+                return await cached.fetch(request)
+            }
             return forBrowsers(await app.fetch(request, withUploads(env), ctx))
         } catch (err) {
             // Next reports its own errors (instrumentation.ts onRequestError);
@@ -73,6 +86,20 @@ export default {
         console.log(JSON.stringify({ event: 'cron', cron: controller.cron, ...result }))
     },
 } satisfies ExportedHandler<WorkerEnv>
+
+/**
+ * What Cloudflare's cache sits in front of (wrangler.jsonc "exports"): a hit is
+ * answered without running this code. The default entrypoint sends only
+ * cacheable requests here (worker/edgeCache.ts).
+ */
+export class CachedPages extends WorkerEntrypoint<WorkerEnv> {
+    async fetch(request: Request): Promise<Response> {
+        return forEdge(
+            request,
+            forBrowsers(await app.fetch(request, withUploads(this.env), this.ctx))
+        )
+    }
+}
 
 /**
  * NetTrailers' totals for admin.n8builds.dev, over its NETTRAILERS_ADMIN

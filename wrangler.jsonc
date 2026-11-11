@@ -15,6 +15,15 @@
     },
     // next/image (posters, backdrops, avatars, uploads) resizes through Cloudflare Images.
     "images": { "binding": "IMAGES" },
+    // Workers Cache (worker/edgeCache.ts): Cloudflare's cache sits in front of the
+    // CachedPages entrypoint, so the TMDB catalogue routes, optimized images and the
+    // anonymous home page cost no CPU time once cached. The default entrypoint runs
+    // on every request and sends only those there.
+    "cache": { "enabled": false },
+    "exports": {
+        "default": { "type": "worker", "cache": { "enabled": false } },
+        "CachedPages": { "type": "worker", "cache": { "enabled": true } },
+    },
     "r2_buckets": [
         // ISR and the data cache (open-next.config.ts).
         { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "net-trailers-opennext-cache" },
