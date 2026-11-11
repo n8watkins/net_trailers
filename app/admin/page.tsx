@@ -1,270 +1,142 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSessionStore } from '@/stores/sessionStore'
-import { Users, Settings, PlayCircle, RefreshCw, CalendarDays, Eye } from 'lucide-react'
-import { useToast } from '@/hooks/useToast'
-import type { AdminStats, ActivityStats, ActiveUser } from '@/types/admin'
-import CronJobsPanel from '@/components/admin/CronJobsPanel'
+import { CalendarClock, CalendarDays, Eye, Mail, ShieldCheck, Users } from 'lucide-react'
+
+import CronJobsPanel, { LastRunLine, type JobInfo } from '@/components/admin/CronJobsPanel'
 import EmailComposer from '@/components/admin/EmailComposer'
 import EmailHistory from '@/components/admin/EmailHistory'
+import { useToast } from '@/hooks/useToast'
+import type { ActiveUser, ActivityStats, AdminStats } from '@/types/admin'
 
-// Admin check is done server-side via API routes
-// Client-side verification happens through API calls, not exposed UIDs
+// Only admins reach this page: app/admin/layout.tsx checks on the server, and
+// every admin API checks again.
+
+type EmailUsage = { today: number; thisMonth: number; dailyCap: number; monthlyCap: number }
+
+type AuditEntry = {
+    id: string
+    actorEmail: string | null
+    action: string
+    details: Record<string, string | number | boolean | null> | null
+    createdAt: number
+}
+
+async function getJson<T>(url: string, init?: RequestInit): Promise<T | null> {
+    try {
+        const response = await fetch(url, init)
+        return response.ok ? ((await response.json()) as T) : null
+    } catch {
+        return null
+    }
+}
+
+const ACTION_LABELS: Record<string, string> = {
+    'email.send': 'Sent an email',
+    'email.test': 'Sent a test email to self',
+    'job.run': 'Ran a job',
+}
+
+function auditDetails(details: AuditEntry['details']): string {
+    if (!details) return ''
+    return Object.entries(details)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join(', ')
+}
 
 export default function AdminDashboard() {
     const router = useRouter()
-    const getUserId = useSessionStore((state) => state.getUserId)
-    const sessionType = useSessionStore((state) => state.sessionType)
-    const isInitialized = useSessionStore((state) => state.isInitialized)
-    const userId = getUserId()
-    const isAuth = sessionType === 'authenticated'
-    const { showSuccess, showError } = useToast()
+    const { showError } = useToast()
     const [stats, setStats] = useState<AdminStats | null>(null)
     const [activityStats, setActivityStats] = useState<ActivityStats | null>(null)
     const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([])
-    const [loading, setLoading] = useState(false)
+    const [usage, setUsage] = useState<EmailUsage | null>(null)
+    const [jobs, setJobs] = useState<JobInfo[]>([])
+    const [audit, setAudit] = useState<AuditEntry[]>([])
+    const [historyKey, setHistoryKey] = useState(0)
     const [statsLoading, setStatsLoading] = useState(true)
-    const [lastTrendingRun, setLastTrendingRun] = useState<Date | null>(null)
-    const [isAdminUser, setIsAdminUser] = useState<boolean | null>(null)
-    const hasCheckedRef = useRef(false)
 
-    // Check admin status via server-side API (session cookie is sent automatically)
+    const loadJobs = useCallback(async () => {
+        const data = await getJson<{ jobs: JobInfo[] }>('/api/admin/jobs')
+        if (data) setJobs(data.jobs)
+    }, [])
+
+    const loadAudit = useCallback(async () => {
+        const data = await getJson<{ entries: AuditEntry[] }>('/api/admin/audit')
+        if (data) setAudit(data.entries)
+    }, [])
+
+    const loadUsage = useCallback(async () => {
+        const data = await getJson<{ usage: EmailUsage }>('/api/admin/email/usage')
+        if (data) setUsage(data.usage)
+    }, [])
+
     useEffect(() => {
-        const checkAdminStatus = async () => {
-            console.log('🔍 Admin page - Check status:', {
-                isInitialized,
-                isAuth,
-                userId,
-                sessionType,
-                isAdminUser,
-                hasChecked: hasCheckedRef.current,
-            })
+        const loadAll = async () => {
+            const [accounts, activity] = await Promise.all([
+                getJson<{
+                    userCount: number
+                    signupsThisWeek: number
+                    signupsThisMonth: number
+                    signupsToday: number
+                    lastSignup: number | null
+                }>('/api/admin/init-stats', { method: 'POST' }),
+                getJson<{
+                    stats: ActivityStats
+                    activities: { userId?: string; userEmail?: string; timestamp: number }[]
+                }>('/api/admin/activity?period=month'),
+                loadUsage(),
+                loadJobs(),
+                loadAudit(),
+            ])
 
-            // Don't re-check if already checked
-            if (hasCheckedRef.current) {
-                console.log('🔍 Already checked admin status, skipping')
-                return
+            if (accounts) {
+                setStats({
+                    totalAccounts: accounts.userCount,
+                    signupsThisWeek: accounts.signupsThisWeek,
+                    signupsThisMonth: accounts.signupsThisMonth,
+                    signupsToday: accounts.signupsToday,
+                    lastSignup: accounts.lastSignup,
+                })
+            } else {
+                showError('Failed to load account statistics')
             }
 
-            if (!isInitialized) {
-                console.log('🔍 Waiting for session to initialize...')
-                return
-            }
-
-            if (!isAuth || !userId) {
-                console.log('🔍 Not authenticated, marking as not admin')
-                setIsAdminUser(false)
-                hasCheckedRef.current = true
-                return
-            }
-
-            // Mark as checked to prevent re-runs
-            hasCheckedRef.current = true
-
-            try {
-                console.log('🔍 Calling /api/admin/check...')
-                // Session cookie is sent automatically - no Bearer token needed
-                const response = await fetch('/api/admin/check')
-
-                console.log('🔍 Admin check response:', response.status)
-                const data = await response.json()
-                console.log('🔍 Admin check data:', data)
-                setIsAdminUser(data.isAdmin === true)
-
-                if (!data.isAdmin) {
-                    console.log('🔍 Admin check failed: User is not an admin')
-                } else {
-                    console.log('🔍 Admin check passed!')
+            if (activity) {
+                setActivityStats(activity.stats)
+                const userMap = new Map<string, ActiveUser>()
+                for (const a of activity.activities) {
+                    if (!a.userId || !a.userEmail) continue
+                    const user = userMap.get(a.userId) ?? {
+                        userId: a.userId,
+                        email: a.userEmail,
+                        lastActive: a.timestamp,
+                        activityCount: 0,
+                    }
+                    user.activityCount++
+                    user.lastActive = Math.max(user.lastActive, a.timestamp)
+                    userMap.set(a.userId, user)
                 }
-            } catch (error) {
-                console.error('🔍 Admin check error:', error)
-                setIsAdminUser(false)
-            }
-        }
-
-        checkAdminStatus()
-    }, [isAuth, userId, isInitialized, sessionType])
-
-    // Redirect if not admin (only after check completes)
-    useEffect(() => {
-        if (isAdminUser === false) {
-            console.log('🔍 Redirecting to home - not admin')
-            router.push('/')
-        }
-    }, [isAdminUser, router])
-
-    // Load stats - wait for admin check to complete
-    useEffect(() => {
-        if (!isAuth || !userId || isAdminUser !== true) return
-        loadAllStats()
-    }, [isAuth, userId, isAdminUser])
-
-    const loadAllStats = async () => {
-        setStatsLoading(true)
-        try {
-            // Account counts, from the database on the server
-            try {
-                const accountResponse = await fetch('/api/admin/init-stats', { method: 'POST' })
-                if (accountResponse.ok) {
-                    const accountData = await accountResponse.json()
-                    setStats({
-                        totalAccounts: accountData.userCount,
-                        signupsThisWeek: accountData.signupsThisWeek,
-                        signupsThisMonth: accountData.signupsThisMonth,
-                        lastSignup: accountData.lastSignup,
-                    })
-                } else {
-                    console.error('Failed to load account stats')
-                }
-            } catch (_error) {
-                console.error('Error loading account stats:', _error)
-            }
-
-            // Load trending stats
-            try {
-                // Session cookie sent automatically - no Authorization header needed
-                const trendingResponse = await fetch('/api/admin/trending-stats')
-                if (trendingResponse.ok) {
-                    const trendingData = await trendingResponse.json()
-                    setLastTrendingRun(trendingData.lastRun ? new Date(trendingData.lastRun) : null)
-                } else {
-                    console.error('Failed to load trending stats')
-                }
-            } catch (_error) {
-                console.error('Error loading trending stats:', _error)
-            }
-
-            // Load activity stats
-            try {
-                const activityResponse = await fetch('/api/admin/activity?period=month')
-                if (activityResponse.ok) {
-                    const activityData = await activityResponse.json()
-                    setActivityStats(activityData.stats)
-
-                    // Get unique users from activities
-                    const userMap = new Map<string, ActiveUser>()
-                    activityData.activities.forEach(
-                        (activity: { userId?: string; userEmail?: string; timestamp: number }) => {
-                            if (activity.userId && activity.userEmail) {
-                                if (!userMap.has(activity.userId)) {
-                                    userMap.set(activity.userId, {
-                                        userId: activity.userId,
-                                        email: activity.userEmail,
-                                        lastActive: activity.timestamp,
-                                        activityCount: 0,
-                                    })
-                                }
-                                const user = userMap.get(activity.userId)!
-                                user.activityCount++
-                                if (activity.timestamp > user.lastActive) {
-                                    user.lastActive = activity.timestamp
-                                }
-                            }
-                        }
-                    )
-
-                    // Sort by most recent activity
-                    const users = Array.from(userMap.values()).sort(
-                        (a, b) => b.lastActive - a.lastActive
-                    )
-                    setActiveUsers(users.slice(0, 10)) // Top 10 most active
-                } else {
-                    console.error('Failed to load activity stats')
-                    showError('Failed to load activity statistics')
-                }
-            } catch (error) {
-                console.error('Error loading activity stats:', error)
+                setActiveUsers(
+                    [...userMap.values()].sort((a, b) => b.lastActive - a.lastActive).slice(0, 10)
+                )
+            } else {
                 showError('Failed to load activity statistics')
             }
-        } catch (error) {
-            console.error('Error loading stats:', error)
-            showError('Failed to load admin statistics. Please refresh the page.')
-        } finally {
             setStatsLoading(false)
         }
+        loadAll()
+    }, [])
+
+    const afterAction = () => {
+        loadAudit()
+        loadUsage()
+        loadJobs()
+        setHistoryKey((key) => key + 1)
     }
 
-    const runTrendingCheck = async (demoMode = false) => {
-        setLoading(true)
-        try {
-            // Session cookie sent automatically - no Authorization header needed
-            const response = await fetch(`/api/cron/update-trending${demoMode ? '?demo=true' : ''}`)
-            const result = await response.json()
-
-            if (response.ok) {
-                showSuccess(
-                    `Trending check complete: ${result.newItems} new items, ${result.notifications} notifications created`
-                )
-                await loadAllStats()
-            } else {
-                showError(result.error || 'Failed to run trending check')
-            }
-        } catch (_error) {
-            showError('Failed to run trending check')
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    const seedSocialNotifications = async () => {
-        setLoading(true)
-        try {
-            const response = await fetch('/api/admin/seed-social', {
-                method: 'POST',
-            })
-            const result = await response.json()
-
-            if (response.ok) {
-                showSuccess(
-                    `Social seeding complete: ${result.commentsCreated} comments, ${result.likesCreated} likes, ${result.notificationsCreated} notifications created`
-                )
-            } else {
-                showError(result.error || 'Failed to seed social notifications')
-            }
-        } catch (_error) {
-            showError('Failed to seed social notifications')
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    // Debug render state
-    console.log('🎨 Render state:', {
-        isInitialized,
-        isAdminUser,
-        isAuth,
-        userId: userId?.substring(0, 10),
-        statsLoading,
-    })
-
-    // Show loading while session initializes or admin check is pending
-    if (!isInitialized || isAdminUser === null) {
-        console.log('🎨 Showing loading screen (admin check pending)')
-        return (
-            <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-                    <div className="text-white text-xl">Loading admin dashboard...</div>
-                </div>
-            </div>
-        )
-    }
-
-    // Show unauthorized if not admin (admin check done server-side)
-    if (!isAuth || !userId || isAdminUser === false) {
-        console.log('🎨 Showing unauthorized screen')
-        return (
-            <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-                <div className="text-white text-xl">Unauthorized</div>
-            </div>
-        )
-    }
-
-    // Show loading while stats are loading (but admin is confirmed)
     if (statsLoading) {
-        console.log('🎨 Showing stats loading screen')
         return (
             <div className="min-h-screen bg-gray-900 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
@@ -275,181 +147,121 @@ export default function AdminDashboard() {
         )
     }
 
-    console.log('🎨 Showing admin dashboard!')
-
     return (
         <div className="min-h-screen bg-gray-900 p-8">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-white mb-2">Admin Dashboard</h1>
-                    <p className="text-gray-400">Portfolio project operations center</p>
+                    <p className="text-gray-400">Accounts, activity, email and scheduled jobs</p>
                 </div>
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    {/* Total Accounts - Clickable */}
                     <button
                         onClick={() => router.push('/admin/accounts')}
-                        className="bg-gray-800 rounded-xl p-6 text-left hover:bg-gray-750 transition-colors cursor-pointer"
+                        className="bg-gray-800 rounded-xl p-6 text-left hover:bg-gray-700/60 transition-colors cursor-pointer"
                     >
                         <div className="flex items-center justify-between mb-4">
                             <Users className="h-8 w-8 text-blue-500" />
                             <span className="text-2xl font-bold text-white">
-                                {stats?.totalAccounts || 0}
+                                {stats?.totalAccounts ?? 0}
                             </span>
                         </div>
                         <h3 className="text-gray-400 text-sm mb-1">Total Accounts →</h3>
                         <span className="text-xs text-gray-500">
-                            {stats?.signupsThisWeek || 0} new this week
+                            {stats?.signupsThisWeek ?? 0} new this week
                         </span>
                     </button>
 
-                    {/* Monthly Signups - Clickable */}
                     <button
                         onClick={() => router.push('/admin/signups')}
-                        className="bg-gray-800 rounded-xl p-6 text-left hover:bg-gray-750 transition-colors cursor-pointer"
+                        className="bg-gray-800 rounded-xl p-6 text-left hover:bg-gray-700/60 transition-colors cursor-pointer"
                     >
                         <div className="flex items-center justify-between mb-4">
                             <CalendarDays className="h-8 w-8 text-green-500" />
                             <span className="text-2xl font-bold text-white">
-                                {stats?.signupsThisMonth || 0}
+                                {stats?.signupsThisMonth ?? 0}
                             </span>
                         </div>
                         <h3 className="text-gray-400 text-sm mb-1">Signups This Month →</h3>
                         <span className="text-xs text-gray-500">View timeline and details</span>
                     </button>
 
-                    {/* User Activity - Clickable */}
                     <button
                         onClick={() => router.push('/admin/activity')}
-                        className="bg-gray-800 rounded-xl p-6 text-left hover:bg-gray-750 transition-colors cursor-pointer"
+                        className="bg-gray-800 rounded-xl p-6 text-left hover:bg-gray-700/60 transition-colors cursor-pointer"
                     >
                         <div className="flex items-center justify-between mb-4">
                             <Eye className="h-8 w-8 text-purple-500" />
                             <span className="text-2xl font-bold text-white">
-                                {activityStats?.total || 0}
+                                {activityStats?.total ?? 0}
                             </span>
                         </div>
                         <h3 className="text-gray-400 text-sm mb-1">Activity This Month →</h3>
                         <span className="text-xs text-gray-500">
-                            {activityStats?.uniqueUsers || 0} users,{' '}
-                            {activityStats?.uniqueGuests || 0} guests
+                            {activityStats?.uniqueUsers ?? 0} signed-in users
                         </span>
                     </button>
 
-                    {/* System Health */}
-                    <div className="bg-gray-800 rounded-xl p-6">
+                    {/* Email usage against the site-wide caps (lib/email/gate.ts) */}
+                    <div className="bg-gray-800 rounded-xl p-6" data-testid="email-usage">
                         <div className="flex items-center justify-between mb-4">
-                            <Settings className="h-8 w-8 text-orange-500" />
-                            <span className="text-sm font-medium text-green-500">Healthy</span>
+                            <Mail className="h-8 w-8 text-orange-500" />
+                            <span className="text-2xl font-bold text-white">
+                                {usage ? `${usage.today} / ${usage.dailyCap}` : '-'}
+                            </span>
                         </div>
-                        <h3 className="text-gray-400 text-sm mb-1">System Status</h3>
-                        <span className="text-xs text-gray-500">All systems operational</span>
+                        <h3 className="text-gray-400 text-sm mb-1">Emails Today</h3>
+                        <span className="text-xs text-gray-500">
+                            {usage
+                                ? `${usage.thisMonth} / ${usage.monthlyCap} this month`
+                                : 'Usage unavailable'}
+                        </span>
                     </div>
                 </div>
 
                 {/* Action Panels */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Trending Controls */}
                     <div className="bg-gray-800 rounded-xl p-6">
-                        <h2 className="text-xl font-semibold text-white mb-4">
-                            Trending System Controls
-                        </h2>
-
-                        <div className="space-y-4">
-                            <div className="p-4 bg-gray-900 rounded-lg">
-                                <h3 className="text-sm font-medium text-gray-300 mb-2">
-                                    Production Mode
-                                </h3>
-                                <p className="text-xs text-gray-500 mb-3">
-                                    Run real trending check against TMDB API
-                                </p>
-                                <button
-                                    onClick={() => runTrendingCheck(false)}
-                                    disabled={loading}
-                                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 text-white rounded-lg transition"
-                                >
-                                    <PlayCircle className="h-4 w-4" />
-                                    {loading ? 'Running...' : 'Check Trending Now'}
-                                </button>
-                            </div>
-
-                            <div className="p-4 bg-gray-900 rounded-lg">
-                                <h3 className="text-sm font-medium text-gray-300 mb-2">
-                                    Demo Mode
-                                </h3>
-                                <p className="text-xs text-gray-500 mb-3">
-                                    Guarantee finding new items for demonstration
-                                </p>
-                                <button
-                                    onClick={() => runTrendingCheck(true)}
-                                    disabled={loading}
-                                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 text-white rounded-lg transition"
-                                >
-                                    <RefreshCw className="h-4 w-4" />
-                                    {loading ? 'Running...' : 'Trigger Demo'}
-                                </button>
-                            </div>
-
-                            {/* Social Notifications Seed */}
-                            <div className="p-4 bg-gray-900 rounded-lg">
-                                <h3 className="text-sm font-medium text-gray-300 mb-2">
-                                    Seed Social Notifications
-                                </h3>
-                                <p className="text-xs text-gray-500 mb-3">
-                                    Create comments and likes on rankings to generate social
-                                    notifications
-                                </p>
-                                <button
-                                    onClick={seedSocialNotifications}
-                                    disabled={loading}
-                                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 text-white rounded-lg transition"
-                                >
-                                    <Users className="h-4 w-4" />
-                                    {loading ? 'Seeding...' : 'Seed Social Notifications'}
-                                </button>
-                            </div>
-
-                            {/* Cron Schedule Info */}
-                            <div className="p-3 bg-blue-900/20 border border-blue-800 rounded-lg">
-                                <p className="text-xs text-blue-400">
-                                    <strong>Automatic Schedule:</strong> Every 6 hours (0:00, 6:00,
-                                    12:00, 18:00 UTC)
-                                </p>
-                                <p className="text-xs text-blue-400 mt-1">
-                                    Next run:{' '}
-                                    {new Date(
-                                        Date.now() + (6 - (new Date().getHours() % 6)) * 3600000
-                                    ).toLocaleString()}
-                                </p>
-                            </div>
+                        <h2 className="text-xl font-semibold text-white mb-4">Job Schedule</h2>
+                        <div className="space-y-3">
+                            {jobs.map((job) => (
+                                <div key={job.name} className="p-4 bg-gray-900 rounded-lg">
+                                    <h3 className="text-sm font-medium text-gray-300 mb-1 flex items-center gap-2">
+                                        <CalendarClock className="h-4 w-4 text-blue-400" />
+                                        {job.title}: {job.schedule}
+                                    </h3>
+                                    <p className="text-xs text-gray-400">
+                                        Next run: {new Date(job.nextRun).toLocaleString()}
+                                    </p>
+                                    <p className="text-xs">
+                                        <span className="text-gray-400">Last run: </span>
+                                        <LastRunLine job={job} />
+                                    </p>
+                                </div>
+                            ))}
                         </div>
                     </div>
 
-                    {/* Account Management */}
                     <div className="bg-gray-800 rounded-xl p-6">
                         <h2 className="text-xl font-semibold text-white mb-4">
                             Account Management
                         </h2>
-
-                        <div className="space-y-4">
-                            {/* Recent Activity */}
-                            <div className="p-4 bg-gray-900 rounded-lg">
-                                <h3 className="text-sm font-medium text-gray-300 mb-2">
-                                    Recent Activity
-                                </h3>
-                                <div className="space-y-1">
-                                    <p className="text-xs text-gray-400">
-                                        Last signup:{' '}
-                                        {stats?.lastSignup
-                                            ? new Date(stats.lastSignup).toLocaleString()
-                                            : 'Never'}
-                                    </p>
-                                    <p className="text-xs text-gray-400">
-                                        Today: {stats?.signupsToday || 0} signups
-                                    </p>
-                                </div>
+                        <div className="p-4 bg-gray-900 rounded-lg">
+                            <h3 className="text-sm font-medium text-gray-300 mb-2">
+                                Recent Signups
+                            </h3>
+                            <div className="space-y-1">
+                                <p className="text-xs text-gray-400">
+                                    Last signup:{' '}
+                                    {stats?.lastSignup
+                                        ? new Date(stats.lastSignup).toLocaleString()
+                                        : 'None recorded yet'}
+                                </p>
+                                <p className="text-xs text-gray-400">
+                                    Today: {stats?.signupsToday ?? 0} signups
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -468,7 +280,7 @@ export default function AdminDashboard() {
                                     onClick={() =>
                                         router.push(`/admin/activity?userId=${user.userId}`)
                                     }
-                                    className="w-full flex items-center justify-between p-4 bg-gray-900 rounded-lg hover:bg-gray-850 transition-colors text-left"
+                                    className="w-full flex items-center justify-between p-4 bg-gray-900 rounded-lg hover:bg-gray-700/40 transition-colors text-left"
                                 >
                                     <div>
                                         <p className="text-white font-medium">{user.email}</p>
@@ -495,39 +307,45 @@ export default function AdminDashboard() {
 
                 {/* Email Management */}
                 <div className="mt-8 bg-gray-800 rounded-xl p-6">
-                    <EmailComposer />
+                    <EmailComposer onSent={afterAction} />
                 </div>
 
                 {/* Email History */}
                 <div className="mt-8 bg-gray-800 rounded-xl p-6">
-                    <EmailHistory />
+                    <EmailHistory key={historyKey} />
                 </div>
 
                 {/* Cron Jobs Management */}
                 <div className="mt-8">
-                    <CronJobsPanel />
+                    <CronJobsPanel jobs={jobs} onRan={afterAction} />
                 </div>
 
-                {/* System Logs */}
+                {/* Admin audit log (admin_audit) */}
                 <div className="mt-8 bg-gray-800 rounded-xl p-6">
-                    <h2 className="text-xl font-semibold text-white mb-4">System Logs</h2>
-                    <div className="bg-gray-900 rounded-lg p-4 h-48 overflow-y-auto">
-                        <div className="space-y-2 font-mono text-xs">
-                            <p className="text-gray-400">
-                                [{new Date().toISOString()}] Admin dashboard accessed
-                            </p>
-                            {lastTrendingRun && (
-                                <p className="text-green-400">
-                                    [{lastTrendingRun.toISOString()}] Trending check completed
-                                </p>
-                            )}
-                            {stats?.lastSignup && (
-                                <p className="text-blue-400">
-                                    [{new Date(stats.lastSignup).toISOString()}] New account created
-                                </p>
-                            )}
-                            <p className="text-gray-500">Waiting for system events...</p>
-                        </div>
+                    <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                        <ShieldCheck className="h-5 w-5 text-green-500" />
+                        Admin Audit Log
+                    </h2>
+                    <div className="bg-gray-900 rounded-lg p-4 max-h-64 overflow-y-auto">
+                        {audit.length === 0 ? (
+                            <p className="text-sm text-gray-500">No admin actions recorded yet</p>
+                        ) : (
+                            <ul className="space-y-2 font-mono text-xs" data-testid="audit-log">
+                                {audit.map((entry) => (
+                                    <li key={entry.id} className="text-gray-300">
+                                        <span className="text-gray-500">
+                                            {new Date(entry.createdAt).toLocaleString()}
+                                        </span>{' '}
+                                        {entry.actorEmail ?? 'admin'}:{' '}
+                                        {ACTION_LABELS[entry.action] ?? entry.action}
+                                        <span className="text-gray-500">
+                                            {' '}
+                                            ({auditDetails(entry.details)})
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
                     </div>
                 </div>
             </div>

@@ -108,7 +108,7 @@ export default function EmailPreviewModal({
                             className={`flex items-center gap-2 rounded-lg px-4 py-2 transition-colors ${
                                 viewMode === 'desktop'
                                     ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-800 text-gray-400 hover:bg-gray-750'
+                                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                             }`}
                         >
                             <ComputerDesktopIcon className="h-5 w-5" />
@@ -119,7 +119,7 @@ export default function EmailPreviewModal({
                             className={`flex items-center gap-2 rounded-lg px-4 py-2 transition-colors ${
                                 viewMode === 'mobile'
                                     ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-800 text-gray-400 hover:bg-gray-750'
+                                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                             }`}
                         >
                             <DevicePhoneMobileIcon className="h-5 w-5" />
@@ -130,7 +130,8 @@ export default function EmailPreviewModal({
                     {/* Close Button */}
                     <button
                         onClick={onClose}
-                        className="ml-4 rounded-lg bg-gray-800 p-2 text-gray-400 transition-colors hover:bg-gray-750 hover:text-white"
+                        aria-label="Close preview"
+                        className="ml-4 rounded-lg bg-gray-800 p-2 text-gray-400 transition-colors hover:bg-gray-700 hover:text-white"
                     >
                         <XMarkIcon className="h-6 w-6" />
                     </button>

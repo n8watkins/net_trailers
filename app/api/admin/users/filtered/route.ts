@@ -1,151 +1,95 @@
+import { eq } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
 
 import { db } from '@/db'
 import { profiles, userPreferences, users } from '@/db/schema'
-import {
-    createForbiddenResponse,
-    createUnauthorizedResponse,
-    validateAdminRequest,
-} from '@/utils/adminMiddleware'
+import { badRequest, requireAdmin, serverError } from '@/lib/admin/guard'
+import { canReceiveAdminEmail } from '@/lib/admin/recipients'
+import { recipientFilter } from '@/lib/admin/schemas'
 
 /**
- * GET /api/admin/users/filtered
+ * GET /api/admin/users/filtered?filter=all|trending|social|recent|inactive
  *
- * Returns a list of authenticated users for email targeting (ADMIN ONLY).
+ * The recipient list for the email composer (admin only). Every user comes
+ * back with `canReceiveEmail`: false for anyone with email off, including
+ * everyone who unsubscribed. The composer shows them disabled and the send
+ * route skips them anyway.
  *
- * Filter values:
- *   all      – every user that has an email address
- *   recent   – last-login within 7 days  (uses profiles.lastLoginAt)
- *   inactive – last-login older than 30 days
- *   trending / social – users with those notification preferences enabled
- *                       (stored in the userPreferences JSON blob)
- *
- * Guest-user targeting: guests are not persisted in the DB, so a "guest"
- * filter always returns an empty list with a note in the response.
+ *   recent   - signed in within 7 days (user.lastLoginAt)
+ *   inactive - no sign-in for 30 days (or never recorded)
  */
 export async function GET(request: NextRequest) {
+    const guard = await requireAdmin()
+    if (!guard.ok) return guard.response
+
+    const parsed = recipientFilter.safeParse(
+        new URL(request.url).searchParams.get('filter') ?? undefined
+    )
+    if (!parsed.success) return badRequest('Unknown filter')
+    const filter = parsed.data
+
     try {
-        const authResult = await validateAdminRequest(request)
-        if (!authResult.authorized) {
-            return authResult.error?.includes('not an administrator')
-                ? createForbiddenResponse(authResult.error)
-                : createUnauthorizedResponse(authResult.error)
-        }
-
-        const { searchParams } = new URL(request.url)
-        const filter = searchParams.get('filter') || 'all'
-
-        console.log(`[AdminUsersFiltered] Fetching users with filter: ${filter}`)
-
-        // Fetch users + profiles + preferences in three queries, then merge in JS.
-        const userRows = await db
+        const rows = await db
             .select({
                 id: users.id,
                 name: users.name,
                 email: users.email,
+                createdAt: users.createdAt,
+                lastLoginAt: users.lastLoginAt,
+                displayName: profiles.displayName,
+                profileCreatedAt: profiles.createdAt,
+                prefs: userPreferences.data,
             })
             .from(users)
+            .leftJoin(profiles, eq(profiles.userId, users.id))
+            .leftJoin(userPreferences, eq(userPreferences.userId, users.id))
 
-        const profileRows = await db
-            .select({
-                userId: profiles.userId,
-                displayName: profiles.displayName,
-                createdAt: profiles.createdAt,
-                lastLoginAt: profiles.lastLoginAt,
-            })
-            .from(profiles)
-
-        const prefRows = await db
-            .select({
-                userId: userPreferences.userId,
-                data: userPreferences.data,
-            })
-            .from(userPreferences)
-
-        const profileMap = new Map(profileRows.map((p) => [p.userId, p]))
-        const prefMap = new Map(prefRows.map((p) => [p.userId, p.data]))
-
-        interface FilteredUser {
-            userId: string
-            email: string
-            displayName?: string
-            createdAt: number
-            lastActive: number
-            emailNotifications: { trending: boolean; social: boolean }
-        }
-
-        const allUsers: FilteredUser[] = userRows
-            .filter((u) => Boolean(u.email))
-            .map((u) => {
-                const profile = profileMap.get(u.id)
-                const prefs = prefMap.get(u.id)
-
-                // emailNotifications lives inside the UserPreferences JSON blob.
-                const emailNotif = (prefs as any)?.emailNotifications ?? {}
-
+        const allUsers = rows
+            .filter((row) => Boolean(row.email))
+            .map((row) => {
+                const types = (row.prefs as { notifications?: { types?: Record<string, unknown> } })
+                    ?.notifications?.types
                 return {
-                    userId: u.id,
-                    email: u.email!,
-                    displayName: profile?.displayName ?? u.name ?? undefined,
-                    createdAt: profile?.createdAt ?? 0,
-                    lastActive: profile?.lastLoginAt ?? profile?.createdAt ?? 0,
+                    userId: row.id,
+                    email: row.email!,
+                    displayName: row.displayName ?? row.name ?? null,
+                    createdAt: row.createdAt ?? row.profileCreatedAt ?? null,
+                    lastActive: row.lastLoginAt ?? null,
+                    canReceiveEmail: canReceiveAdminEmail(row.prefs),
                     emailNotifications: {
-                        trending: Boolean(emailNotif.trending),
-                        social: Boolean(emailNotif.social),
+                        trending: types?.trending_update === true,
+                        social: types?.system !== false,
                     },
                 }
             })
 
         const now = Date.now()
-        let filteredUsers: FilteredUser[]
-
-        switch (filter) {
-            case 'trending':
-                filteredUsers = allUsers.filter((u) => u.emailNotifications.trending)
-                break
-            case 'social':
-                filteredUsers = allUsers.filter((u) => u.emailNotifications.social)
-                break
-            case 'recent': {
-                const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000
-                filteredUsers = allUsers.filter((u) => u.lastActive > sevenDaysAgo)
-                break
+        const day = 24 * 60 * 60 * 1000
+        const filtered = allUsers.filter((u) => {
+            switch (filter) {
+                case 'trending':
+                    return u.canReceiveEmail && u.emailNotifications.trending
+                case 'social':
+                    return u.canReceiveEmail && u.emailNotifications.social
+                case 'recent':
+                    return (u.lastActive ?? 0) > now - 7 * day
+                case 'inactive':
+                    return (u.lastActive ?? 0) < now - 30 * day
+                default:
+                    return true
             }
-            case 'inactive': {
-                const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000
-                filteredUsers = allUsers.filter((u) => u.lastActive < thirtyDaysAgo)
-                break
-            }
-            case 'all':
-            default:
-                filteredUsers = allUsers
-                break
-        }
-
-        filteredUsers.sort((a, b) => b.lastActive - a.lastActive)
-
-        console.log(
-            `[AdminUsersFiltered] Returning ${filteredUsers.length} users (filter: ${filter})`
-        )
+        })
+        filtered.sort((a, b) => (b.lastActive ?? 0) - (a.lastActive ?? 0))
 
         return NextResponse.json({
             success: true,
-            users: filteredUsers,
+            users: filtered,
             totalUsers: allUsers.length,
+            optedOut: allUsers.filter((u) => !u.canReceiveEmail).length,
             filter,
-            note:
-                filter === 'all'
-                    ? 'Guest users are not stored in the database and are not included in email targeting.'
-                    : undefined,
         })
     } catch (error) {
         console.error('[AdminUsersFiltered] Error:', error)
-        return NextResponse.json(
-            {
-                error: 'Failed to fetch users',
-                details: error instanceof Error ? error.message : 'Unknown error',
-            },
-            { status: 500 }
-        )
+        return serverError('Failed to fetch users')
     }
 }

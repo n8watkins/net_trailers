@@ -48,6 +48,8 @@ export default defineConfig({
             AUTH_URL: baseURL,
             NEXT_PUBLIC_APP_URL: baseURL,
             E2E_MAGIC_LINK_DIR: '.e2e/magic-links',
+            // The admin account for e2e/admin.spec.ts.
+            ADMIN_EMAILS: 'admin@nettrailers.test',
             // Cloudflare's always-pass Turnstile test secret, matching the test
             // site key the build falls back to (hooks/useTurnstile.ts).
             TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA',

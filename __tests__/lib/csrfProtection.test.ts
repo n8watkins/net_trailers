@@ -50,10 +50,12 @@ describe('csrfProtection', () => {
             expect(validateOrigin(request)).toBe(true)
         })
 
-        it('accepts localhost:3001 as allowed origin', () => {
+        it('accepts localhost:3001 only under next dev', () => {
             const request = createRequest('POST', {
                 Origin: 'http://localhost:3001',
             })
+            expect(validateOrigin(request)).toBe(false)
+            process.env = { ...process.env, NODE_ENV: 'development' }
             expect(validateOrigin(request)).toBe(true)
         })
 

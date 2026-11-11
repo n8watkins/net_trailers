@@ -6,16 +6,12 @@
  * `system/stats` document - statistics are derived on-the-fly from the DB.
  */
 
-import { count, gte } from 'drizzle-orm'
-import { NextRequest, NextResponse } from 'next/server'
+import { count, gte, max, sql } from 'drizzle-orm'
+import { NextResponse } from 'next/server'
 
 import { db } from '@/db'
 import { signupLog, users } from '@/db/schema'
-import {
-    createForbiddenResponse,
-    createUnauthorizedResponse,
-    validateAdminRequest,
-} from '@/utils/adminMiddleware'
+import { requireAdmin, serverError } from '@/lib/admin/guard'
 
 function getWeekStart(timestamp: number): number {
     const date = new Date(timestamp)
@@ -33,15 +29,11 @@ function getMonthStart(timestamp: number): number {
     return date.getTime()
 }
 
-export async function POST(request: NextRequest) {
-    try {
-        const authResult = await validateAdminRequest(request)
-        if (!authResult.authorized) {
-            return authResult.error?.includes('not an administrator')
-                ? createForbiddenResponse(authResult.error)
-                : createUnauthorizedResponse(authResult.error)
-        }
+export async function POST() {
+    const guard = await requireAdmin()
+    if (!guard.ok) return guard.response
 
+    try {
         const now = Date.now()
         const currentWeekStart = getWeekStart(now)
         const currentMonthStart = getMonthStart(now)
@@ -60,27 +52,25 @@ export async function POST(request: NextRequest) {
             .from(signupLog)
             .where(gte(signupLog.timestamp, currentMonthStart))
 
-        console.log(
-            `Admin init-stats: ${userCount} users, ${signupsThisWeek} this week, ${signupsThisMonth} this month`
-        )
+        const dayStart = new Date(now)
+        dayStart.setUTCHours(0, 0, 0, 0)
+        const [{ signupsToday, lastSignup }] = await db
+            .select({
+                signupsToday: sql<number>`count(case when ${signupLog.timestamp} >= ${dayStart.getTime()} then 1 end)`,
+                lastSignup: max(signupLog.timestamp),
+            })
+            .from(signupLog)
 
         return NextResponse.json({
             success: true,
             userCount,
-            previousCount: userCount, // no delta tracking in the new schema
             signupsThisWeek,
             signupsThisMonth,
-            lastSignup: null, // not surfaced from signup_log to avoid PII
-            message: `Account statistics computed. Found ${userCount} users (${signupsThisWeek} this week, ${signupsThisMonth} this month).`,
+            signupsToday: Number(signupsToday ?? 0),
+            lastSignup: lastSignup ?? null,
         })
     } catch (error) {
         console.error('Admin init-stats error:', error)
-        return NextResponse.json(
-            {
-                error: 'Failed to initialize account stats',
-                details: error instanceof Error ? error.message : 'Unknown error',
-            },
-            { status: 500 }
-        )
+        return serverError('Failed to load account stats')
     }
 }

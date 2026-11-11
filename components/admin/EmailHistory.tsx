@@ -85,7 +85,7 @@ export default function EmailHistory() {
                                 onClick={() =>
                                     setExpandedId(expandedId === record.id ? null : record.id)
                                 }
-                                className="w-full p-4 text-left transition-colors hover:bg-gray-750"
+                                className="w-full p-4 text-left transition-colors hover:bg-gray-700"
                             >
                                 <div className="flex items-start justify-between gap-4">
                                     <div className="flex flex-1 items-start gap-3">
@@ -131,7 +131,7 @@ export default function EmailHistory() {
 
                             {/* Expanded Details */}
                             {expandedId === record.id && (
-                                <div className="border-t border-gray-700 bg-gray-850 p-4">
+                                <div className="border-t border-gray-700 bg-gray-900/60 p-4">
                                     <div className="text-sm text-gray-300">
                                         <p>
                                             <span className="font-medium text-white">Sent at:</span>{' '}

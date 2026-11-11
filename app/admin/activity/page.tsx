@@ -42,7 +42,8 @@ function ActivityPageContent() {
         avgPerDay: 0,
     })
     const [loading, setLoading] = useState(true)
-    const [activeTab, setActiveTab] = useState<'logins' | 'views' | 'all'>('all')
+    // The API's type values: 'login' and 'view' rows, or all of them.
+    const [activeTab, setActiveTab] = useState<'login' | 'view' | 'all'>('all')
     const [timeframe, setTimeframe] = useState<'week' | 'month'>('month')
     const [filteredUserEmail, setFilteredUserEmail] = useState<string | null>(null)
 
@@ -90,7 +91,7 @@ function ActivityPageContent() {
             } else {
                 showError('Failed to load activity')
             }
-        } catch (error) {
+        } catch {
             showError('Failed to load activity')
         } finally {
             setLoading(false)
@@ -181,15 +182,15 @@ function ActivityPageContent() {
                         All Activity
                     </button>
                     <button
-                        onClick={() => setActiveTab('logins')}
-                        className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-colors ${activeTab === 'logins' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
+                        onClick={() => setActiveTab('login')}
+                        className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-colors ${activeTab === 'login' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
                     >
                         <LogIn className="h-4 w-4" />
                         Logins
                     </button>
                     <button
-                        onClick={() => setActiveTab('views')}
-                        className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-colors ${activeTab === 'views' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
+                        onClick={() => setActiveTab('view')}
+                        className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-colors ${activeTab === 'view' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
                     >
                         <Eye className="h-4 w-4" />
                         Page Views
@@ -243,7 +244,7 @@ function ActivityPageContent() {
                                     {activityByDay[day].map((activity) => (
                                         <div
                                             key={activity.id}
-                                            className="flex items-center justify-between p-3 bg-gray-900 rounded-lg hover:bg-gray-850 transition-colors"
+                                            className="flex items-center justify-between p-3 bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors"
                                         >
                                             <div className="flex items-center gap-3">
                                                 {activity.type === 'login' ? (

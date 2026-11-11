@@ -94,7 +94,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
     return (
         <div className="overflow-hidden rounded-lg border border-gray-700 bg-gray-800">
             {/* Toolbar */}
-            <div className="flex flex-wrap gap-1 border-b border-gray-700 bg-gray-850 p-2">
+            <div className="flex flex-wrap gap-1 border-b border-gray-700 bg-gray-900/60 p-2">
                 <ToolbarButton
                     onClick={() => editor.chain().focus().toggleBold().run()}
                     active={editor.isActive('bold')}

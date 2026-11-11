@@ -1,99 +1,69 @@
 /**
- * Admin Users List API Route
- *
- * Returns all registered users from the Turso/Drizzle `user` and `profiles`
- * tables.  The response shape is intentionally kept close to what the old
- * Firebase Admin SDK returned so the existing client components need no
- * changes.
+ * GET /api/admin/users (admin only): every account for the Accounts and
+ * Sign-ups pages. Dates are epoch-ms based ISO strings, or null when unknown
+ * (accounts made before the dates were recorded and without a profile).
  */
 
-import { desc, eq } from 'drizzle-orm'
-import { NextRequest, NextResponse } from 'next/server'
+import { eq } from 'drizzle-orm'
+import { NextResponse } from 'next/server'
 
 import { db } from '@/db'
-import { profiles, users } from '@/db/schema'
-import {
-    createForbiddenResponse,
-    createUnauthorizedResponse,
-    validateAdminRequest,
-} from '@/utils/adminMiddleware'
+import { accounts, profiles, users } from '@/db/schema'
+import { requireAdmin, serverError } from '@/lib/admin/guard'
 
-export async function GET(request: NextRequest) {
+const iso = (ms: number | null | undefined) => (ms ? new Date(ms).toISOString() : null)
+
+export async function GET() {
+    const guard = await requireAdmin()
+    if (!guard.ok) return guard.response
+
     try {
-        const authResult = await validateAdminRequest(request)
-        if (!authResult.authorized) {
-            return authResult.error?.includes('not an administrator')
-                ? createForbiddenResponse(authResult.error)
-                : createUnauthorizedResponse(authResult.error)
-        }
-
-        // Fetch all users from the Auth.js `user` table.
-        const userRows = await db
+        const rows = await db
             .select({
                 id: users.id,
                 name: users.name,
                 email: users.email,
                 image: users.image,
-                githubLogin: users.githubLogin,
-            })
-            .from(users)
-
-        // Fetch all profiles (one per user when created).
-        const profileRows = await db
-            .select({
-                userId: profiles.userId,
+                emailVerified: users.emailVerified,
+                createdAt: users.createdAt,
+                lastLoginAt: users.lastLoginAt,
                 displayName: profiles.displayName,
                 avatarUrl: profiles.avatarUrl,
-                createdAt: profiles.createdAt,
-                lastLoginAt: profiles.lastLoginAt,
+                profileCreatedAt: profiles.createdAt,
+                profileLastLoginAt: profiles.lastLoginAt,
             })
-            .from(profiles)
+            .from(users)
+            .leftJoin(profiles, eq(profiles.userId, users.id))
 
-        // Build a lookup map: userId -> profile.
-        const profileMap = new Map(profileRows.map((p) => [p.userId, p]))
+        // OAuth accounts (GitHub); an account without one signs in by email.
+        const linked = await db
+            .select({ userId: accounts.userId, provider: accounts.provider })
+            .from(accounts)
+        const providersByUser = new Map<string, string[]>()
+        for (const { userId, provider } of linked) {
+            providersByUser.set(userId, [...(providersByUser.get(userId) ?? []), provider])
+        }
 
-        const userList = userRows
-            .map((u) => {
-                const profile = profileMap.get(u.id)
-                const createdAtMs = profile?.createdAt ?? 0
-                const lastLoginMs = profile?.lastLoginAt ?? createdAtMs
-                return {
-                    uid: u.id,
-                    email: u.email ?? 'No email',
-                    displayName:
-                        profile?.displayName ?? u.name ?? u.email?.split('@')[0] ?? 'Anonymous',
-                    photoURL: profile?.avatarUrl ?? u.image ?? null,
-                    // Magic-link sign-in proves the email; we don't store
-                    // emailVerified separately in the new schema.
-                    emailVerified: true,
-                    disabled: false,
-                    // Keep ISO-string shape expected by the UI.
-                    createdAt: createdAtMs
-                        ? new Date(createdAtMs).toISOString()
-                        : new Date(0).toISOString(),
-                    lastSignInAt: lastLoginMs
-                        ? new Date(lastLoginMs).toISOString()
-                        : new Date(createdAtMs).toISOString(),
-                    providerData: u.email
-                        ? [{ providerId: 'email', uid: u.email }]
-                        : [{ providerId: 'unknown', uid: u.id }],
-                }
-            })
-            // Newest first.
-            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        const userList = rows
+            .map((u) => ({
+                uid: u.id,
+                email: u.email ?? 'No email',
+                displayName: u.displayName ?? u.name ?? u.email?.split('@')[0] ?? 'No name',
+                photoURL: u.avatarUrl ?? u.image ?? null,
+                emailVerified: u.emailVerified !== null,
+                createdAt: iso(u.createdAt ?? u.profileCreatedAt),
+                lastSignInAt: iso(u.lastLoginAt ?? u.profileLastLoginAt),
+                providers: providersByUser.get(u.id) ?? ['email'],
+            }))
+            .sort(
+                (a, b) =>
+                    (b.createdAt ? Date.parse(b.createdAt) : 0) -
+                    (a.createdAt ? Date.parse(a.createdAt) : 0)
+            )
 
-        return NextResponse.json({
-            users: userList,
-            totalCount: userList.length,
-        })
+        return NextResponse.json({ users: userList, totalCount: userList.length })
     } catch (error) {
         console.error('Admin users list error:', error)
-        return NextResponse.json(
-            {
-                error: 'Failed to fetch users',
-                details: error instanceof Error ? error.message : 'Unknown error',
-            },
-            { status: 500 }
-        )
+        return serverError('Failed to fetch users')
     }
 }

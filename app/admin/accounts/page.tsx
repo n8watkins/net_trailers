@@ -5,18 +5,13 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Search, Download } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
+import { toCsv } from '@/lib/csv'
 
-interface UserInfo {
-    uid: string
-    email: string
-    displayName: string
-    photoURL?: string
-    emailVerified: boolean
-    disabled: boolean
-    createdAt: string
-    lastSignInAt: string
-    providerData: Array<{ providerId: string; uid: string }>
-}
+import type { AdminUserRow as UserInfo } from '@/types/admin'
+
+/** A date, or "Unknown" for accounts made before dates were recorded. */
+const formatDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString() : 'Unknown')
+const formatTime = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString() : '')
 
 export default function AccountsPage() {
     const router = useRouter()
@@ -55,7 +50,7 @@ export default function AccountsPage() {
             } else {
                 showError('Failed to load users')
             }
-        } catch (error) {
+        } catch {
             showError('Failed to load users')
         } finally {
             setLoading(false)
@@ -70,9 +65,7 @@ export default function AccountsPage() {
             user.displayName.toLowerCase().includes(searchQuery.toLowerCase())
 
         // Provider filter
-        const matchesProvider =
-            filterProvider === 'all' ||
-            user.providerData.some((p) => p.providerId.includes(filterProvider))
+        const matchesProvider = filterProvider === 'all' || user.providers.includes(filterProvider)
 
         // Verified filter
         const matchesVerified =
@@ -88,19 +81,19 @@ export default function AccountsPage() {
         const rows = filteredUsers.map((user) => [
             user.displayName,
             user.email,
-            new Date(user.createdAt).toLocaleDateString(),
-            new Date(user.lastSignInAt).toLocaleDateString(),
+            formatDate(user.createdAt),
+            formatDate(user.lastSignInAt),
             user.emailVerified ? 'Yes' : 'No',
-            user.providerData[0]?.providerId.replace('.com', ''),
+            user.providers.join(' '),
         ])
 
-        const csvContent = [headers, ...rows].map((row) => row.join(',')).join('\n')
-        const blob = new Blob([csvContent], { type: 'text/csv' })
+        const blob = new Blob([toCsv([headers, ...rows])], { type: 'text/csv;charset=utf-8' })
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
         a.download = `accounts-${new Date().toISOString().split('T')[0]}.csv`
         a.click()
+        window.URL.revokeObjectURL(url)
     }
 
     if (isAdminLoading || loading) {
@@ -158,8 +151,8 @@ export default function AccountsPage() {
                                 className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
                             >
                                 <option value="all">All Providers</option>
-                                <option value="google">Google</option>
-                                <option value="password">Email/Password</option>
+                                <option value="email">Email</option>
+                                <option value="github">GitHub</option>
                             </select>
                         </div>
 
@@ -219,7 +212,7 @@ export default function AccountsPage() {
                                 {filteredUsers.map((user) => (
                                     <tr
                                         key={user.uid}
-                                        className="hover:bg-gray-750 transition-colors"
+                                        className="hover:bg-gray-700/50 transition-colors"
                                     >
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-3">
@@ -248,18 +241,18 @@ export default function AccountsPage() {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm text-gray-300">
-                                                {new Date(user.createdAt).toLocaleDateString()}
+                                                {formatDate(user.createdAt)}
                                             </div>
                                             <div className="text-xs text-gray-500">
-                                                {new Date(user.createdAt).toLocaleTimeString()}
+                                                {formatTime(user.createdAt)}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm text-gray-300">
-                                                {new Date(user.lastSignInAt).toLocaleDateString()}
+                                                {formatDate(user.lastSignInAt)}
                                             </div>
                                             <div className="text-xs text-gray-500">
-                                                {new Date(user.lastSignInAt).toLocaleTimeString()}
+                                                {formatTime(user.lastSignInAt)}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
@@ -271,10 +264,11 @@ export default function AccountsPage() {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm text-gray-300">
-                                                {user.providerData[0]?.providerId.replace(
-                                                    '.com',
-                                                    ''
-                                                )}
+                                                {user.providers
+                                                    .map((p) =>
+                                                        p === 'github' ? 'GitHub' : 'Email'
+                                                    )
+                                                    .join(', ')}
                                             </div>
                                         </td>
                                     </tr>
