@@ -24,11 +24,46 @@ describe('mayUseEdgeCache', () => {
         expect(mayUseEdgeCache(at('/', { headers: { rsc: '1' } }), host)).toBe(false)
     })
 
+    it('serves the public page shells only to signed-out visitors, never their RSC payloads', () => {
+        for (const path of [
+            '/smartsearch?example=mind-bending-sci-fi',
+            '/search',
+            '/privacy',
+            '/changelog',
+            '/community/rankings',
+            '/community/thread/abc',
+            '/genres/movie/28?name=Action',
+            '/person/287',
+            '/sitemap.xml',
+        ]) {
+            expect(mayUseEdgeCache(at(path), host)).toBe(true)
+            expect(mayUseEdgeCache(at(path, signedIn), host)).toBe(false)
+            expect(mayUseEdgeCache(at(path, childSafe), host)).toBe(false)
+        }
+        expect(mayUseEdgeCache(at('/smartsearch?_rsc=abc'), host)).toBe(false)
+        expect(
+            mayUseEdgeCache(at('/search', { headers: { 'next-router-prefetch': '1' } }), host)
+        ).toBe(false)
+    })
+
+    it('keeps personal pages away from it', () => {
+        for (const path of [
+            '/settings/preferences',
+            '/profile',
+            '/rankings',
+            '/admin',
+            '/person/x',
+            '/notifications',
+        ]) {
+            expect(mayUseEdgeCache(at(path), host)).toBe(false)
+        }
+    })
+
     it('keeps personal routes, writes and other hosts away from it', () => {
         expect(mayUseEdgeCache(at('/api/notifications'), host)).toBe(false)
         expect(mayUseEdgeCache(at('/api/auth/session'), host)).toBe(false)
         expect(mayUseEdgeCache(at('/api/moviesx'), host)).toBe(false)
-        expect(mayUseEdgeCache(at('/collections'), host)).toBe(false)
+        expect(mayUseEdgeCache(at('/collections', signedIn), host)).toBe(false)
         expect(mayUseEdgeCache(at('/api/movies/trending', { method: 'POST' }), host)).toBe(false)
         expect(
             mayUseEdgeCache(new Request('https://net-trailers.example.workers.dev/'), host)
@@ -67,10 +102,27 @@ describe('forEdge', () => {
 describe('cheapAnswer', () => {
     it('answers the uptime check and scanner probes, and nothing else', () => {
         expect(cheapAnswer(at('/healthz'))?.status).toBe(200)
-        for (const path of ['/.env', '/.git/config', '/wp-login.php', '/config/app.php']) {
+        for (const path of [
+            '/.env',
+            '/.git/config',
+            '/wp-login.php',
+            '/config/app.php',
+            '/REDACTED.jpg',
+            '/dump/db.sql',
+            '/backup.zip',
+            '/_next/static/chunks/gone.js',
+        ]) {
             expect(cheapAnswer(at(path))?.status).toBe(404)
         }
-        for (const path of ['/', '/.well-known/security.txt', '/api/health/ai', '/search']) {
+        for (const path of [
+            '/',
+            '/.well-known/security.txt',
+            '/api/health/ai',
+            '/search',
+            '/uploads/a.png',
+            '/sitemap.xml',
+            '/person/287',
+        ]) {
             expect(cheapAnswer(at(path))).toBeNull()
         }
     })
