@@ -119,7 +119,10 @@ function AuthStateProvider({ children }: AuthProviderProps) {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
     return (
-        <SessionProvider>
+        // No session read each time the tab regains focus: sign-in and sign-out
+        // still reach other tabs through next-auth's broadcast channel, and each
+        // read of a signed-in session is a Worker request with a database read.
+        <SessionProvider refetchOnWindowFocus={false}>
             <AuthStateProvider>{children}</AuthStateProvider>
         </SessionProvider>
     )
