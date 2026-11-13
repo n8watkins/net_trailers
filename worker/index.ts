@@ -12,7 +12,7 @@ import { WorkerEntrypoint } from 'cloudflare:workers'
 
 import { errorSummary, logError, pathOf } from '../lib/log'
 import { isInternalPath, readAdminStats } from './adminStats'
-import { canonicalRedirect } from './canonical'
+import { canonicalRedirect, visitorScheme } from './canonical'
 import { cheapAnswer, forEdge, mayUseEdgeCache } from './edgeCache'
 import { runCron, type FetchHandler, type WorkerEnv } from './crons'
 import { withNotificationsCache } from './notificationsCache'
@@ -52,8 +52,12 @@ function withUploads(env: WorkerEnv): WorkerEnv {
 export default {
     async fetch(request, env, ctx) {
         try {
-            // The old address and workers.dev forward to the site's own (worker/canonical.ts).
-            const canonical = canonicalRedirect(request.url, env.PUBLIC_URL)
+            // The old address, workers.dev and plain http forward to the site's own (worker/canonical.ts).
+            const canonical = canonicalRedirect(
+                request.url,
+                env.PUBLIC_URL,
+                visitorScheme(request.headers.get('cf-visitor'))
+            )
             if (canonical) return Response.redirect(canonical.location, canonical.status)
             // A signed-out visitor's session read is `null` without starting Next (worker/anonymousSession.ts).
             const anonymous = anonymousSession(request)
