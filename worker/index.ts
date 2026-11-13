@@ -12,6 +12,7 @@ import { WorkerEntrypoint } from 'cloudflare:workers'
 
 import { errorSummary, logError, pathOf } from '../lib/log'
 import { isInternalPath, readAdminStats } from './adminStats'
+import { anonymousSession } from './anonymousSession'
 import { canonicalRedirect } from './canonical'
 import { cheapAnswer, forEdge, mayUseEdgeCache } from './edgeCache'
 import { runCron, type FetchHandler, type WorkerEnv } from './crons'
@@ -60,6 +61,9 @@ export default {
                 return await serveUpload(request, env.UPLOADS)
             const cheap = cheapAnswer(request)
             if (cheap) return cheap
+            // A signed-out visitor's session read is `null` without starting Next (worker/anonymousSession.ts).
+            const anonymous = anonymousSession(request)
+            if (anonymous) return anonymous
             // The catalogue, images and the anonymous home page (worker/edgeCache.ts).
             if (env.PUBLIC_URL && mayUseEdgeCache(request, new URL(env.PUBLIC_URL).host)) {
                 const cached = (ctx as ExecutionContext & CachedPagesExports).exports.CachedPages
