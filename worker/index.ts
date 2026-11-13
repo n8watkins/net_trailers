@@ -54,6 +54,9 @@ export default {
             // The old address and workers.dev forward to the site's own (worker/canonical.ts).
             const canonical = canonicalRedirect(request.url, env.PUBLIC_URL)
             if (canonical) return Response.redirect(canonical.location, canonical.status)
+            // A signed-out visitor's session read is `null` without starting Next (worker/anonymousSession.ts).
+            const anonymous = anonymousSession(request)
+            if (anonymous) return anonymous
             // Service-only routes (worker/adminStats.ts) are never served to the internet.
             if (isInternalPath(new URL(request.url).pathname))
                 return new Response('Not found', { status: 404 })
@@ -61,9 +64,6 @@ export default {
                 return await serveUpload(request, env.UPLOADS)
             const cheap = cheapAnswer(request)
             if (cheap) return cheap
-            // A signed-out visitor's session read is `null` without starting Next (worker/anonymousSession.ts).
-            const anonymous = anonymousSession(request)
-            if (anonymous) return anonymous
             // The catalogue, images and the anonymous home page (worker/edgeCache.ts).
             if (env.PUBLIC_URL && mayUseEdgeCache(request, new URL(env.PUBLIC_URL).host)) {
                 const cached = (ctx as ExecutionContext & CachedPagesExports).exports.CachedPages
