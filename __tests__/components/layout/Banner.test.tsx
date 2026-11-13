@@ -18,7 +18,6 @@ jest.mock('next/image', () => ({
         useEffect(() => {
             mounts[props.src] = (mounts[props.src] ?? 0) + 1
         }, [props.src])
-        // eslint-disable-next-line @next/next/no-img-element
         return <img src={props.src} alt={props.alt} className={props.className} />
     },
 }))
