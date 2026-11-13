@@ -15,7 +15,7 @@ interface Props {
     variant?: 'default' | 'compact'
 }
 
-// TMDB's own sizes: next/image resizes from these instead of the multi-megabyte originals
+// TMDB images: next/image's loader swaps the size for the one each slot needs (lib/imageLoader.ts)
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/w1280'
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w342'
 const CAROUSEL_SIZE = 5

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react'
-import { Content, getTitle } from '../../typings'
+import { Content } from '../../typings'
 import { ChevronLeftIcon, ChevronRightIcon, PencilIcon } from '@heroicons/react/24/solid'
 import { InformationCircleIcon } from '@heroicons/react/24/outline'
 import ContentCard from '../common/ContentCard'
@@ -330,27 +330,6 @@ function Row({
                 })
                 consecutiveDuplicatesRef.current = 0
             }
-
-            // Preload images for new content in the background
-            filtered.forEach((item: Content) => {
-                if (item.poster_path) {
-                    const img = new Image()
-                    img.onload = () => {
-                        debugLog('✅', `Image loaded successfully`, {
-                            id: item.id,
-                            title: getTitle(item),
-                        })
-                    }
-                    img.onerror = () => {
-                        debugLog('⚠️', `Image failed to load`, {
-                            id: item.id,
-                            title: getTitle(item),
-                        })
-                    }
-                    img.src = `https://image.tmdb.org/t/p/w500${item.poster_path}`
-                }
-            })
-            debugLog('🖼️', `Preloading images for ${filtered.length} items`)
 
             // Update content and increment page only if we have unique items
             setAllContent((prev) => [...prev, ...filtered])
