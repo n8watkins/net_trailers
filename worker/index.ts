@@ -12,11 +12,11 @@ import { WorkerEntrypoint } from 'cloudflare:workers'
 
 import { errorSummary, logError, pathOf } from '../lib/log'
 import { isInternalPath, readAdminStats } from './adminStats'
-import { anonymousSession } from './anonymousSession'
 import { canonicalRedirect } from './canonical'
 import { cheapAnswer, forEdge, mayUseEdgeCache } from './edgeCache'
 import { runCron, type FetchHandler, type WorkerEnv } from './crons'
 import { assetsWithUploads, isUploadPath, serveUpload } from './uploads'
+import { anonymousSession } from './anonymousSession'
 
 // The ISR revalidation queue (wrangler.jsonc durable_objects).
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
