@@ -15,7 +15,9 @@ import { isInternalPath, readAdminStats } from './adminStats'
 import { canonicalRedirect, visitorScheme } from './canonical'
 import { cheapAnswer, forEdge, mayUseEdgeCache } from './edgeCache'
 import { runCron, type FetchHandler, type WorkerEnv } from './crons'
+import { withNotificationsCache } from './notificationsCache'
 import { assetsWithUploads, isUploadPath, serveUpload } from './uploads'
+import { anonymousSession } from './anonymousSession'
 
 // The ISR revalidation queue (wrangler.jsonc durable_objects).
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -57,6 +59,9 @@ export default {
                 visitorScheme(request.headers.get('cf-visitor'))
             )
             if (canonical) return Response.redirect(canonical.location, canonical.status)
+            // A signed-out visitor's session read is `null` without starting Next (worker/anonymousSession.ts).
+            const anonymous = anonymousSession(request)
+            if (anonymous) return anonymous
             // Service-only routes (worker/adminStats.ts) are never served to the internet.
             if (isInternalPath(new URL(request.url).pathname))
                 return new Response('Not found', { status: 404 })
@@ -64,6 +69,14 @@ export default {
                 return await serveUpload(request, env.UPLOADS)
             const cheap = cheapAnswer(request)
             if (cheap) return cheap
+            // A signed-in tab's notification poll, cached a minute per session (worker/notificationsCache.ts).
+            const notifications = await withNotificationsCache(
+                request,
+                async (r) => forBrowsers(await app.fetch(r, withUploads(env), ctx)),
+                caches.default,
+                (promise) => ctx.waitUntil(promise)
+            )
+            if (notifications) return notifications
             // The catalogue, images and the anonymous home page (worker/edgeCache.ts).
             if (env.PUBLIC_URL && mayUseEdgeCache(request, new URL(env.PUBLIC_URL).host)) {
                 const cached = (ctx as ExecutionContext & CachedPagesExports).exports.CachedPages

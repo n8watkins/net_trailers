@@ -32,6 +32,9 @@ const customJestConfig = {
         // @react-email/render loads react-dom/server with a dynamic import, which
         // Jest refuses; the shim renders with react-dom/server's static import.
         '^@react-email/render$': '<rootDir>/jest.react-email-render.js',
+        // next/image's loader (next.config.js images.loaderFile): the build aliases
+        // Next's default loader to it, so the tests do the same.
+        '^next/dist/shared/lib/image-loader$': '<rootDir>/lib/imageLoader.ts',
         // Handle module aliases (if you use them in your Next.js app)
         '^@/components/(.*)$': '<rootDir>/components/$1',
         '^@/app/(.*)$': '<rootDir>/app/$1',

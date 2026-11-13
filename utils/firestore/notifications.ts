@@ -10,9 +10,10 @@
  * callers continue to compile without changes.
  *
  * NOTE: `subscribeToNotifications` previously used a Firestore onSnapshot
- * listener for real-time updates. It now polls GET /api/notifications on a
- * 30-second interval and invokes the same `onUpdate` callback. The returned
- * unsubscribe function cancels the interval (identical contract to before).
+ * listener for real-time updates. It now polls GET /api/notifications only
+ * while the tab is visible, every 2 minutes, backing off to 10 minutes while
+ * nothing changes, and invokes the same `onUpdate` callback. The returned
+ * unsubscribe function stops it (identical contract to before).
  */
 
 import { authenticatedFetch } from '@/lib/authenticatedFetch'
@@ -28,8 +29,14 @@ import { PaginatedResult, createPaginatedResult } from '../../types/pagination'
 /*  Internal fetch helpers                                                     */
 /* -------------------------------------------------------------------------- */
 
-/** Polling interval for subscribeToNotifications (ms). */
-const POLL_INTERVAL_MS = 30_000
+/**
+ * Polling for subscribeToNotifications (ms): every 2 minutes, doubling up to
+ * 10 minutes while nothing changes, and never while the tab is hidden. Each
+ * poll is a Worker request (Workers bills its CPU), and a tab left open
+ * polled every 30 seconds for as long as it stayed open.
+ */
+export const POLL_BASE_INTERVAL_MS = 2 * 60_000
+export const POLL_MAX_INTERVAL_MS = 10 * 60_000
 
 async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
     return authenticatedFetch(path, init)
@@ -213,15 +220,18 @@ export async function getNotificationStats(userId: string): Promise<Notification
 /**
  * Subscribe to notification updates via polling.
  *
- * Replaces the Firestore onSnapshot listener with a setInterval that calls
- * GET /api/notifications every POLL_INTERVAL_MS (30 s). The callback signature
- * and the returned unsubscribe function are identical to the old implementation
- * so stores/notificationStore.ts requires no changes.
+ * Replaces the Firestore onSnapshot listener. Polls GET /api/notifications
+ * while the tab is visible: at once, then every POLL_BASE_INTERVAL_MS,
+ * doubling up to POLL_MAX_INTERVAL_MS while the list stays the same (or a
+ * poll fails). A hidden tab stops polling; when it is shown again it polls at
+ * once if the last poll is older than the base interval. The callback
+ * signature and the returned unsubscribe function are identical to the old
+ * implementation so stores/notificationStore.ts requires no changes.
  *
  * @param userId   - Authenticated user id (used only for the guard check; the
  *                   actual session cookie is what the API trusts).
- * @param onUpdate - Called immediately with the first poll result, then on
- *                   every subsequent interval tick.
+ * @param onUpdate - Called with the first poll result, then whenever the list
+ *                   changes.
  * @returns Unsubscribe function - call it to stop polling.
  */
 export function subscribeToNotifications(
@@ -234,10 +244,19 @@ export function subscribeToNotifications(
     }
 
     let cancelled = false
+    let timer: ReturnType<typeof setTimeout> | null = null
+    let delay = POLL_BASE_INTERVAL_MS
+    let lastPollAt = 0
+    let polling = false
+    // What the last update showed: ids and read state, newest first.
+    let lastSeen: string | null = null
+
+    const isHidden = () => typeof document !== 'undefined' && document.hidden
 
     async function poll() {
-        if (cancelled) return
-
+        if (cancelled || polling) return
+        polling = true
+        lastPollAt = Date.now()
         try {
             const res = await apiFetch(
                 `/api/notifications?limit=${NOTIFICATION_CONSTRAINTS.FETCH_LIMIT}&offset=0`
@@ -246,8 +265,9 @@ export function subscribeToNotifications(
             if (cancelled) return // Guard against late response after unsubscribe
 
             if (!res.ok) {
-                // Non-fatal - keep polling; the store will retain stale data
+                // Non-fatal - keep polling, more slowly; the store will retain stale data
                 console.error('[Notifications] Poll failed:', res.status)
+                delay = Math.min(delay * 2, POLL_MAX_INTERVAL_MS)
                 return
             }
 
@@ -255,8 +275,14 @@ export function subscribeToNotifications(
                 success: boolean
                 notifications: Notification[]
             }
+            if (cancelled) return
 
-            if (!cancelled) {
+            const seen = json.notifications.map((n) => `${n.id}:${n.isRead ? 1 : 0}`).join(',')
+            if (seen === lastSeen) {
+                delay = Math.min(delay * 2, POLL_MAX_INTERVAL_MS)
+            } else {
+                lastSeen = seen
+                delay = POLL_BASE_INTERVAL_MS
                 onUpdate(json.notifications)
             }
         } catch (error) {
@@ -264,18 +290,51 @@ export function subscribeToNotifications(
                 console.error('[Notifications] Poll error:', error)
                 // Do not invoke onUpdate([]) - keep showing stale data rather
                 // than wiping the notification list on a transient network error.
+                delay = Math.min(delay * 2, POLL_MAX_INTERVAL_MS)
             }
+        } finally {
+            polling = false
         }
     }
 
-    // Fire the first poll immediately so the UI gets data without waiting 30 s
-    poll()
+    function schedule() {
+        if (timer) clearTimeout(timer)
+        timer = null
+        if (cancelled || isHidden()) return
+        timer = setTimeout(async () => {
+            await poll()
+            schedule()
+        }, delay)
+    }
 
-    const intervalId = setInterval(poll, POLL_INTERVAL_MS)
+    function onVisibilityChange() {
+        if (cancelled) return
+        if (isHidden()) {
+            if (timer) clearTimeout(timer)
+            timer = null
+            return
+        }
+        if (Date.now() - lastPollAt >= POLL_BASE_INTERVAL_MS) {
+            delay = POLL_BASE_INTERVAL_MS
+            void poll().then(schedule)
+        } else {
+            schedule()
+        }
+    }
+
+    if (typeof document !== 'undefined') {
+        document.addEventListener('visibilitychange', onVisibilityChange)
+    }
+    // The first poll at once, so the UI gets data without waiting (or when the tab is shown)
+    if (!isHidden()) void poll().then(schedule)
 
     return () => {
         cancelled = true
-        clearInterval(intervalId)
+        if (timer) clearTimeout(timer)
+        timer = null
+        if (typeof document !== 'undefined') {
+            document.removeEventListener('visibilitychange', onVisibilityChange)
+        }
     }
 }
 

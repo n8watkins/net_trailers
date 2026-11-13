@@ -83,7 +83,11 @@ describe('no admin through GitHub', () => {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const fs = require('node:fs') as typeof import('node:fs')
         const auth = fs.readFileSync(`${__dirname}/../../auth.ts`, 'utf8')
+        // The session callback builds the session in lib/sessionPayload.ts
+        const payload = fs.readFileSync(`${__dirname}/../../lib/sessionPayload.ts`, 'utf8')
         expect(auth).not.toMatch(/githubLogin|ADMIN_GITHUB_LOGIN|profile\.login/)
-        expect(auth).toContain('isAdminEmail(user.email)')
+        expect(payload).not.toMatch(/githubLogin|ADMIN_GITHUB_LOGIN|profile\.login/)
+        expect(auth).toContain('sessionPayload(session, user)')
+        expect(payload).toContain('isAdminEmail(user.email)')
     })
 })
