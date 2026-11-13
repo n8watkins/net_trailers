@@ -5,7 +5,9 @@
  *
  * - the old custom domain, nettrailers.n8builds.dev, with a permanent 301, so
  *   search engines and old links move to the new address;
- * - the workers.dev address with a 308, which also keeps the method and body.
+ * - the workers.dev address with a 308, which also keeps the method and body;
+ * - plain http on the site's own address with a 301 to https, so a page is
+ *   never rendered (or cached at the edge) twice, once per scheme.
  *
  * Local and test hosts are never redirected.
  */
@@ -25,9 +27,10 @@ export function canonicalRedirect(
     if (!publicUrl) return null
     const url = new URL(requestUrl)
     const canonical = new URL(publicUrl)
-    if (canonical.protocol !== 'https:' || url.host === canonical.host) return null
+    if (canonical.protocol !== 'https:') return null
+    if (url.host === canonical.host && url.protocol === 'https:') return null
     let status: 301 | 308
-    if (LEGACY_HOSTS.includes(url.hostname)) status = 301
+    if (url.host === canonical.host || LEGACY_HOSTS.includes(url.hostname)) status = 301
     else if (url.hostname.endsWith('.workers.dev')) status = 308
     else return null
     // Set the path on the canonical URL rather than resolving it: a path such

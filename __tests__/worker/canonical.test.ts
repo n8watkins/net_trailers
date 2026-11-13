@@ -29,6 +29,18 @@ describe('canonicalRedirect', () => {
         ).toEqual({ location: 'https://net-trailers.n8builds.dev/search?q=alien', status: 308 })
     })
 
+    it('moves plain http on the site itself to https with a 301', () => {
+        expect(
+            canonicalRedirect('http://net-trailers.n8builds.dev/search?q=x', PUBLIC_URL)
+        ).toEqual({
+            location: 'https://net-trailers.n8builds.dev/search?q=x',
+            status: 301,
+        })
+        expect(canonicalRedirect('http://nettrailers.n8builds.dev/', PUBLIC_URL)?.location).toBe(
+            'https://net-trailers.n8builds.dev/'
+        )
+    })
+
     it('cannot be turned into a redirect to another host', () => {
         expect(
             canonicalRedirect('https://nettrailers.n8builds.dev//evil.example/x', PUBLIC_URL)
