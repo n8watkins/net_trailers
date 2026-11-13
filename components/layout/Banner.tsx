@@ -15,7 +15,7 @@ interface Props {
     variant?: 'default' | 'compact'
 }
 
-// TMDB's own sizes: next/image resizes from these instead of the multi-megabyte originals
+// TMDB images: next/image's loader swaps the size for the one each slot needs (lib/imageLoader.ts)
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/w1280'
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w342'
 const CAROUSEL_SIZE = 5
@@ -51,10 +51,12 @@ function Banner({ trending, variant = 'default' }: Props) {
         // Clear any existing interval
         if (intervalRef.current) {
             clearInterval(intervalRef.current)
+            intervalRef.current = null
         }
 
-        // Only start if we have multiple items
+        // Only start if we have multiple items, and never in a background tab
         if (carouselContent.length <= 1) return
+        if (typeof document !== 'undefined' && document.hidden) return
 
         // Create new interval
         intervalRef.current = setInterval(() => {
@@ -66,12 +68,16 @@ function Banner({ trending, variant = 'default' }: Props) {
         }, 8000)
     }, [carouselContent.length])
 
-    // Auto-advance carousel every 8 seconds with smooth transition
+    // Auto-advance carousel every 8 seconds with smooth transition, paused
+    // while the tab is hidden (a background tab never cycles the slides)
     useEffect(() => {
         startAutoAdvance()
+        const onVisibilityChange = () => startAutoAdvance()
+        document.addEventListener('visibilitychange', onVisibilityChange)
 
         // Cleanup on unmount or when dependencies change
         return () => {
+            document.removeEventListener('visibilitychange', onVisibilityChange)
             if (intervalRef.current) {
                 clearInterval(intervalRef.current)
                 intervalRef.current = null
@@ -96,39 +102,66 @@ function Banner({ trending, variant = 'default' }: Props) {
 
     const featuredContent = carouselContent[currentIndex] || null
 
-    const contentImgUrl = featuredContent?.backdrop_path || featuredContent?.poster_path
+    // Backdrops stay mounted once shown, stacked and faded by opacity, so a
+    // rotation never asks for an image again. The next slide's backdrop is
+    // mounted one slide early, so it has loaded before it fades in.
+    const [mountedIds, setMountedIds] = useState<number[]>([])
+    const nextContent =
+        carouselContent.length > 1
+            ? carouselContent[(currentIndex + 1) % carouselContent.length]
+            : null
+    useEffect(() => {
+        const wanted = [featuredContent?.id, nextContent?.id].filter(
+            (id): id is number => typeof id === 'number'
+        )
+        setMountedIds((ids) =>
+            wanted.every((id) => ids.includes(id))
+                ? ids
+                : [...ids, ...wanted.filter((id) => !ids.includes(id))]
+        )
+    }, [featuredContent?.id, nextContent?.id])
+    // The first slide renders on the server too, before the effect runs.
+    const backdrops = carouselContent.filter(
+        (content) =>
+            (content.backdrop_path || content.poster_path) &&
+            (content.id === featuredContent?.id || mountedIds.includes(content.id))
+    )
 
     return (
         <>
             {/* AI-Powered Smart Search Overlay - Position varies by variant */}
             {/* background image with mobile-responsive container */}
             <div className="absolute inset-0 z-0 font-sans overflow-hidden">
-                {contentImgUrl && (
-                    <div className="relative w-full h-full">
-                        <Image
-                            src={
-                                featuredContent?.backdrop_path
-                                    ? `${BACKDROP_BASE}${featuredContent.backdrop_path}`
-                                    : `${POSTER_BASE}${featuredContent?.poster_path}`
-                            }
-                            alt={
-                                featuredContent
-                                    ? `${getTitle(featuredContent)} backdrop`
-                                    : 'Content backdrop'
-                            }
-                            fill
-                            priority={currentIndex === 0}
-                            fetchPriority={currentIndex === 0 ? 'high' : 'auto'}
-                            sizes="100vw"
-                            style={{
-                                objectFit: 'cover',
-                            }}
-                            className={`select-none transition-opacity duration-300 object-[10%_center] sm:object-[15%_center] md:object-center ${
-                                isTransitioning ? 'opacity-0' : 'opacity-100'
-                            }`}
-                        />
-                    </div>
-                )}
+                {backdrops.map((content) => {
+                    const isCurrent = content.id === featuredContent?.id
+                    const isFirst = content.id === carouselContent[0]?.id
+                    return (
+                        <div
+                            key={content.id}
+                            className="absolute inset-0"
+                            aria-hidden={isCurrent ? undefined : true}
+                        >
+                            <Image
+                                src={
+                                    content.backdrop_path
+                                        ? `${BACKDROP_BASE}${content.backdrop_path}`
+                                        : `${POSTER_BASE}${content.poster_path}`
+                                }
+                                alt={isCurrent ? `${getTitle(content)} backdrop` : ''}
+                                fill
+                                priority={isFirst}
+                                fetchPriority={isFirst ? 'high' : 'auto'}
+                                sizes="100vw"
+                                style={{
+                                    objectFit: 'cover',
+                                }}
+                                className={`select-none transition-opacity duration-300 object-[10%_center] sm:object-[15%_center] md:object-center ${
+                                    isCurrent && !isTransitioning ? 'opacity-100' : 'opacity-0'
+                                }`}
+                            />
+                        </div>
+                    )
+                })}
                 {/* Scrim: keeps the title and description readable on bright backdrops */}
                 <div className="absolute inset-0 pointer-events-none bg-black/30" />
                 <div className="absolute inset-y-0 left-0 w-full md:w-3/4 pointer-events-none bg-gradient-to-r from-black/80 via-black/50 to-transparent" />

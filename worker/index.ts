@@ -17,6 +17,7 @@ import { cheapAnswer, forEdge, mayUseEdgeCache } from './edgeCache'
 import { runCron, type FetchHandler, type WorkerEnv } from './crons'
 import { withNotificationsCache } from './notificationsCache'
 import { assetsWithUploads, isUploadPath, serveUpload } from './uploads'
+import { anonymousSession } from './anonymousSession'
 
 // The ISR revalidation queue (wrangler.jsonc durable_objects).
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -54,6 +55,9 @@ export default {
             // The old address and workers.dev forward to the site's own (worker/canonical.ts).
             const canonical = canonicalRedirect(request.url, env.PUBLIC_URL)
             if (canonical) return Response.redirect(canonical.location, canonical.status)
+            // A signed-out visitor's session read is `null` without starting Next (worker/anonymousSession.ts).
+            const anonymous = anonymousSession(request)
+            if (anonymous) return anonymous
             // Service-only routes (worker/adminStats.ts) are never served to the internet.
             if (isInternalPath(new URL(request.url).pathname))
                 return new Response('Not found', { status: 404 })

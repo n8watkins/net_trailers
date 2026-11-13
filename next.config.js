@@ -31,11 +31,12 @@ const nextConfig = {
             process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
     },
     images: {
+        // TMDB images load straight from image.tmdb.org at TMDB's own sizes;
+        // only uploads and avatars go through the optimizer (lib/imageLoader.ts).
+        // image.tmdb.org is not a remote pattern, so /_next/image never resizes it.
+        loader: 'custom',
+        loaderFile: './lib/imageLoader.ts',
         remotePatterns: [
-            {
-                protocol: 'https',
-                hostname: 'image.tmdb.org',
-            },
             {
                 protocol: 'https',
                 hostname: 'rb.gy',
