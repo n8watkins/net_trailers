@@ -20,11 +20,11 @@ import type { Provider } from 'next-auth/providers'
 import { db } from '@/db'
 import { accounts, sessions, users, verificationTokens } from '@/db/schema'
 import { authLogger } from '@/lib/log'
-import { isAdminEmail } from '@/lib/admin'
 import { isGitHubAuthConfigured } from '@/lib/authConfig'
 import { githubUser, isGitHubSignInAllowed } from '@/lib/githubAuth'
 import { recordSignIn, recordSignUp } from '@/lib/authEvents'
 import { isTestMode } from '@/lib/testMode'
+import { sessionPayload } from '@/lib/sessionPayload'
 import { deliverSignInLink } from '@/lib/email/gate'
 import { SIGN_IN_EMAIL_LIMIT_ERROR, reserveSignInEmail } from '@/lib/email/signInLimits'
 import { TestEmailProvider } from '@/lib/testEmailProvider'
@@ -104,16 +104,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             }
             return true
         },
+        // Only who is signed in and until when, never the session row (lib/sessionPayload.ts).
         session({ session, user }) {
-            if (session.user) {
-                session.user.id = user.id
-                session.user.isAdmin = isAdminEmail(user.email)
-                // When this session was created, for the admin fresh sign-in check
-                // (lib/admin/guard.ts). The adapter passes the whole session row.
-                session.user.signedInAt =
-                    (session as unknown as { createdAt?: number | null }).createdAt ?? null
-            }
-            return session
+            return sessionPayload(session, user)
         },
     },
     // Sign-up counts, last sign-in and login events for the admin pages, for
