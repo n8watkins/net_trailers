@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 
-import { canonicalRedirect } from '../../worker/canonical'
+import { canonicalRedirect, visitorScheme } from '../../worker/canonical'
 
 const PUBLIC_URL = 'https://net-trailers.n8builds.dev'
 
@@ -29,16 +29,22 @@ describe('canonicalRedirect', () => {
         ).toEqual({ location: 'https://net-trailers.n8builds.dev/search?q=alien', status: 308 })
     })
 
-    it('moves plain http on the site itself to https with a 301', () => {
+    it('moves a visitor on plain http to https with a 301', () => {
         expect(
-            canonicalRedirect('http://net-trailers.n8builds.dev/search?q=x', PUBLIC_URL)
-        ).toEqual({
-            location: 'https://net-trailers.n8builds.dev/search?q=x',
-            status: 301,
-        })
-        expect(canonicalRedirect('http://nettrailers.n8builds.dev/', PUBLIC_URL)?.location).toBe(
-            'https://net-trailers.n8builds.dev/'
-        )
+            canonicalRedirect('http://net-trailers.n8builds.dev/search?q=x', PUBLIC_URL, 'http')
+        ).toEqual({ location: 'https://net-trailers.n8builds.dev/search?q=x', status: 301 })
+        // wrangler dev serves http under the site's host name, without CF-Visitor
+        expect(canonicalRedirect('http://net-trailers.n8builds.dev/x', PUBLIC_URL)).toBeNull()
+        expect(
+            canonicalRedirect('https://net-trailers.n8builds.dev/x', PUBLIC_URL, 'https')
+        ).toBeNull()
+    })
+
+    it('reads the scheme from CF-Visitor', () => {
+        expect(visitorScheme('{"scheme":"http"}')).toBe('http')
+        expect(visitorScheme('{"scheme":"https"}')).toBe('https')
+        expect(visitorScheme(null)).toBeNull()
+        expect(visitorScheme('not json')).toBeNull()
     })
 
     it('cannot be turned into a redirect to another host', () => {

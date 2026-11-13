@@ -12,7 +12,7 @@ import { WorkerEntrypoint } from 'cloudflare:workers'
 
 import { errorSummary, logError, pathOf } from '../lib/log'
 import { isInternalPath, readAdminStats } from './adminStats'
-import { canonicalRedirect } from './canonical'
+import { canonicalRedirect, visitorScheme } from './canonical'
 import { cheapAnswer, forEdge, mayUseEdgeCache } from './edgeCache'
 import { runCron, type FetchHandler, type WorkerEnv } from './crons'
 import { assetsWithUploads, isUploadPath, serveUpload } from './uploads'
@@ -50,8 +50,12 @@ function withUploads(env: WorkerEnv): WorkerEnv {
 export default {
     async fetch(request, env, ctx) {
         try {
-            // The old address and workers.dev forward to the site's own (worker/canonical.ts).
-            const canonical = canonicalRedirect(request.url, env.PUBLIC_URL)
+            // The old address, workers.dev and plain http forward to the site's own (worker/canonical.ts).
+            const canonical = canonicalRedirect(
+                request.url,
+                env.PUBLIC_URL,
+                visitorScheme(request.headers.get('cf-visitor'))
+            )
             if (canonical) return Response.redirect(canonical.location, canonical.status)
             // Service-only routes (worker/adminStats.ts) are never served to the internet.
             if (isInternalPath(new URL(request.url).pathname))
