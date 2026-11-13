@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 import { desc, isNotNull } from 'drizzle-orm'
 import { ArrowRight, CircleAlert, CircleCheck, CircleDashed, LoaderCircle } from 'lucide-react'
 

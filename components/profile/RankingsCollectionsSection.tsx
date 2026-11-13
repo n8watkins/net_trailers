@@ -5,7 +5,7 @@
  * Used in both private profile and public profile pages
  */
 
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 import {
     TrophyIcon,
     HeartIcon,

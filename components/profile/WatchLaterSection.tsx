@@ -8,7 +8,7 @@
  * - Indigo/blue accent theme
  */
 
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 import { ClockIcon } from '@heroicons/react/24/outline'
 import { ClockIcon as ClockSolidIcon } from '@heroicons/react/24/solid'
 import type { Movie, TVShow } from '../../typings'

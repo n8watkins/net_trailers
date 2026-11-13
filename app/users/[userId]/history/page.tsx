@@ -16,7 +16,7 @@ import { ClockIcon, UserIcon } from '@heroicons/react/24/outline'
 import type { Movie, TVShow } from '../../../../typings'
 import type { PublicProfilePayload } from '@/lib/publicProfile'
 import type { WatchHistoryEntry as ApiWatchHistoryEntry } from '../../../../types/watchHistory'
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 
 interface WatchHistoryEntry {
     content: Movie | TVShow

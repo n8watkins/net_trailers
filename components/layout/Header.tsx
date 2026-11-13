@@ -22,7 +22,7 @@ import {
     HandThumbUpIcon as HandThumbUpIconSolid,
 } from '@heroicons/react/24/solid'
 import { useRouter, usePathname } from 'next/navigation'
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 import Image from 'next/image'
 import SearchBar from '../search/SearchBar'
 import useAuth from '../../hooks/useAuth'

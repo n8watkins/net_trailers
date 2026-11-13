@@ -1,7 +1,7 @@
 'use client'
 
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 
 export default function DocsIndexPage() {
     // Only available in development

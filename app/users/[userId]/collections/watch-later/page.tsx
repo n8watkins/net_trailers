@@ -18,7 +18,7 @@ import PageLoader from '../../../../../components/common/PageLoader'
 import { ClockIcon, UserIcon } from '@heroicons/react/24/outline'
 import type { Movie, TVShow } from '../../../../../typings'
 import type { PublicProfilePayload } from '@/lib/publicProfile'
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 
 export default function UserWatchLaterPage() {
     const params = useParams()

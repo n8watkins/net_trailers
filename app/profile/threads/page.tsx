@@ -10,7 +10,7 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 import { useRouter } from 'next/navigation'
 import { useForumStore } from '@/stores/forumStore'
 import { useSessionStore } from '@/stores/sessionStore'

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 
 export default function DebugDocumentation() {

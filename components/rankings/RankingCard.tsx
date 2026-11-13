@@ -13,7 +13,7 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Ranking } from '@/types/rankings'

@@ -1,5 +1,5 @@
 import { redirect, notFound } from 'next/navigation'
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import type { Metadata } from 'next'
 

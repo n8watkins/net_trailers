@@ -25,7 +25,7 @@ import PageLoader from '../../../components/common/PageLoader'
 import { UserList } from '../../../types/collections'
 import CollectionEditorModal from '../../../components/modals/CollectionEditorModal'
 import { useChildSafety } from '../../../hooks/useChildSafety'
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 import { useModalStore } from '../../../stores/modalStore'
 import { readableTextOn } from '../../../utils/readableText'
 

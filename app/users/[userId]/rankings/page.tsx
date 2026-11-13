@@ -15,7 +15,7 @@ import PageLoader from '../../../../components/common/PageLoader'
 import { TrophyIcon, UserIcon } from '@heroicons/react/24/outline'
 import type { Ranking } from '../../../../types/rankings'
 import type { PublicProfilePayload } from '@/lib/publicProfile'
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 
 export default function UserRankingsPage() {
     const params = useParams()

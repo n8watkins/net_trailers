@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 import { usePathname } from 'next/navigation'
 import {
     ChevronDownIcon,

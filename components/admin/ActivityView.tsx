@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 
 import { AdminPageHeader } from '@/components/admin/shell/AdminPageHeader'
 import { DataTable } from '@/components/admin/shell/DataTable'

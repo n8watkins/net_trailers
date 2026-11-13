@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 import { usePathname } from 'next/navigation'
 
 import { isTabActive, sectionFor } from '@/lib/admin/nav'

@@ -3,7 +3,7 @@
 import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline'
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 import PageLoader from '../../components/common/PageLoader'
 
 function UnsubscribedContent() {
