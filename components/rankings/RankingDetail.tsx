@@ -16,7 +16,7 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 import { Ranking } from '@/types/rankings'
 import { getTitle, getPosterPath, getYear } from '@/typings'
 import { CommentSection } from './CommentSection'

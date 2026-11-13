@@ -8,7 +8,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useMemo } from 'react'
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 import { CheckIcon, Cog6ToothIcon } from '@heroicons/react/24/outline'
 import { useNotificationStore } from '../../stores/notificationStore'
 import { useSessionStore } from '../../stores/sessionStore'

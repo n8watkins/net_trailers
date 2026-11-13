@@ -8,7 +8,7 @@
  * - Red/pink accent theme
  */
 
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 import { HeartIcon } from '@heroicons/react/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid'
 import type { Movie, TVShow } from '../../typings'

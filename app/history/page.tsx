@@ -21,7 +21,7 @@ import { useWatchHistory } from '../../hooks/useWatchHistory'
 import { getTitle } from '../../typings'
 import { useSessionStore } from '../../stores/sessionStore'
 import useUserData from '../../hooks/useUserData'
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 
 export default function WatchHistoryPage() {
     const router = useRouter()

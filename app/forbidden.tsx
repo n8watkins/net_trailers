@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 
 export const metadata: Metadata = {
     title: 'Not allowed - NetTrailers',

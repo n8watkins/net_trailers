@@ -9,7 +9,7 @@
  * - Cinematic typography
  */
 
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 import Image from 'next/image'
 import {
     TrophyIcon,

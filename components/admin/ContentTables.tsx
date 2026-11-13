@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 
 import { DataTable, type FilterGroup } from '@/components/admin/shell/DataTable'
 import { CARD } from '@/components/admin/shell/ui'

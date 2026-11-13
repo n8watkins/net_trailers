@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 import { UserList } from '../../types/collections'
 import { getCollectionPath } from '../../utils/slugify'
 import { EyeIcon, SparklesIcon, FilmIcon } from '@heroicons/react/24/solid'

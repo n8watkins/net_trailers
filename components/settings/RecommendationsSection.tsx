@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 import { ChevronRightIcon } from '@heroicons/react/24/outline'
 import { UpgradeAccountBanner } from '../auth/UpgradeAccountBanner'
 import { useAuthStore } from '../../stores/authStore'

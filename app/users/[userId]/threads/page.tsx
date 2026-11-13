@@ -16,7 +16,7 @@ import PageLoader from '../../../../components/common/PageLoader'
 import { ChatBubbleLeftRightIcon, UserIcon, HeartIcon, EyeIcon } from '@heroicons/react/24/outline'
 import type { ThreadSummary } from '../../../../types/forum'
 import type { PublicProfilePayload } from '@/lib/publicProfile'
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 
 export default function UserThreadsPage() {
     const params = useParams()

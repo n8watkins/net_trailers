@@ -14,7 +14,7 @@ import PageLoader from '../../../../components/common/PageLoader'
 import { ChartBarIcon, UserIcon, CheckCircleIcon, ClockIcon } from '@heroicons/react/24/outline'
 import type { Poll } from '../../../../types/forum'
 import type { PublicProfilePayload } from '@/lib/publicProfile'
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 
 // PollRow from the API uses epoch-ms numbers, not Firestore Timestamps
 type ApiBacked = Omit<Poll, 'createdAt' | 'expiresAt' | 'votedAt'> & {

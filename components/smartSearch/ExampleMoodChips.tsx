@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 import { EXAMPLE_MOODS } from '../../constants/exampleMoods'
 
 interface ExampleMoodChipsProps {

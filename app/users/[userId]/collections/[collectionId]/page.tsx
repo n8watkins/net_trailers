@@ -15,7 +15,7 @@ import PageLoader from '../../../../../components/common/PageLoader'
 import { RectangleStackIcon, UserIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
 import type { UserList } from '../../../../../types/collections'
 import type { PublicProfilePayload } from '@/lib/publicProfile'
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 
 interface CollectionDetailPageProps {
     params: Promise<{

@@ -22,7 +22,7 @@ import PageLoader from '../../components/common/PageLoader'
 import PageHeader from '../../components/layout/PageHeader'
 import PageEmptyState, { emptyStateActionClass } from '../../components/layout/PageEmptyState'
 import { FilterPills, ListSearchInput, ManageMenu } from '../../components/layout/PageToolbar'
-import Link from 'next/link'
+import Link from '@/components/common/Link'
 import TitlePreferenceModal from '../../components/recommendations/TitlePreferenceModal'
 
 type RatingValue = 'like' | 'dislike'
