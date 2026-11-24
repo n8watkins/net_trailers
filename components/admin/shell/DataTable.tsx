@@ -91,7 +91,7 @@ export function DataTable<T>({
                                     setPage(0)
                                 }}
                                 placeholder={search.placeholder}
-                                className="min-h-9 w-full rounded-lg border border-white/10 bg-black/40 pr-3 pl-9 text-sm text-white placeholder:text-gray-500 focus:border-amber-400/60 focus:outline-none"
+                                className="min-h-9 w-full rounded-lg border border-white/10 bg-black/40 pr-3 pl-9 text-sm text-white placeholder:text-gray-500 focus:border-brand-400/60 focus:outline-none"
                             />
                         </label>
                     )}
@@ -112,9 +112,9 @@ export function DataTable<T>({
                                         setPage(0)
                                     }}
                                     className={cx(
-                                        'min-h-8 rounded-full px-3 text-[13px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-amber-400',
+                                        'min-h-8 rounded-full px-3 text-[13px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-brand-400',
                                         f.id === chosen[group.id]
-                                            ? 'bg-amber-500/20 text-amber-200 ring-1 ring-amber-400/40'
+                                            ? 'bg-brand-500/20 text-brand-200 ring-1 ring-brand-400/40'
                                             : 'bg-white/5 text-gray-300 hover:bg-white/10'
                                     )}
                                 >
@@ -188,7 +188,7 @@ export function DataTable<T>({
                                 onClick={() => setPage(current - 1)}
                                 disabled={current === 0}
                                 aria-label="Previous page"
-                                className="grid size-8 place-items-center rounded-lg hover:bg-white/5 disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-amber-400"
+                                className="grid size-8 place-items-center rounded-lg hover:bg-white/5 disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-brand-400"
                             >
                                 <ChevronLeft aria-hidden className="size-4" />
                             </button>
@@ -200,7 +200,7 @@ export function DataTable<T>({
                                 onClick={() => setPage(current + 1)}
                                 disabled={current >= pages - 1}
                                 aria-label="Next page"
-                                className="grid size-8 place-items-center rounded-lg hover:bg-white/5 disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-amber-400"
+                                className="grid size-8 place-items-center rounded-lg hover:bg-white/5 disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-brand-400"
                             >
                                 <ChevronRight aria-hidden className="size-4" />
                             </button>

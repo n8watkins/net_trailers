@@ -110,7 +110,7 @@ export default async function ContentPage() {
                     <div key={t.label} className={`${CARD} px-4 py-3`}>
                         <dt className="text-[13px] text-gray-400">{t.label}</dt>
                         <dd
-                            className={`text-xl font-semibold tabular-nums ${t.tone ? 'text-amber-300' : 'text-white'}`}
+                            className={`text-xl font-semibold tabular-nums ${t.tone ? 'text-brand-300' : 'text-white'}`}
                         >
                             {t.value}
                         </dd>

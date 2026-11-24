@@ -100,7 +100,7 @@ export default function RankingsContent() {
             {/* Atmospheric Background */}
             <div className="fixed inset-0 pointer-events-none">
                 <div className="absolute inset-0 bg-black" />
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-yellow-900/20 via-transparent to-transparent opacity-50" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-brand-900/20 via-transparent to-transparent opacity-50" />
                 <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black opacity-60" />
             </div>
 
@@ -111,10 +111,10 @@ export default function RankingsContent() {
                     {/* Animated Background Gradients */}
                     <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900/80 to-black" />
                     <div
-                        className="absolute inset-0 bg-gradient-to-t from-yellow-900/20 via-amber-900/10 to-black/50 animate-pulse"
+                        className="absolute inset-0 bg-gradient-to-t from-brand-900/20 via-brand-900/10 to-black/50 animate-pulse"
                         style={{ animationDuration: '4s' }}
                     />
-                    <div className="absolute inset-0 bg-gradient-radial from-yellow-500/10 via-yellow-900/5 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-radial from-brand-500/10 via-brand-900/5 to-transparent" />
 
                     {/* Soft edge vignetting for subtle blending */}
                     <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/80" />
@@ -124,13 +124,13 @@ export default function RankingsContent() {
                     <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-6">
                         {/* Trophy Icon with glow */}
                         <div className="relative mb-4">
-                            <div className="absolute inset-0 bg-yellow-500/30 blur-2xl scale-150" />
+                            <div className="absolute inset-0 bg-brand-500/30 blur-2xl scale-150" />
                             <TrophyIcon className="relative w-16 h-16 text-yellow-400 drop-shadow-[0_0_20px_rgba(234,179,8,0.5)]" />
                         </div>
 
                         {/* Title */}
                         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-2 text-center tracking-tight">
-                            <span className="bg-gradient-to-r from-yellow-200 via-amber-100 to-yellow-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
+                            <span className="bg-gradient-to-r from-brand-200 via-brand-100 to-brand-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
                                 Community Rankings
                             </span>
                         </h1>
@@ -148,7 +148,7 @@ export default function RankingsContent() {
                                         id: 'rankings',
                                         label: 'Rankings',
                                         icon: TrophyIcon,
-                                        color: 'text-yellow-500',
+                                        color: 'text-brand-400',
                                     },
                                     {
                                         id: 'threads',
@@ -184,7 +184,7 @@ export default function RankingsContent() {
                                             </div>
                                             {/* Active glow ring */}
                                             {isActive && (
-                                                <div className="absolute inset-0 rounded-lg ring-2 ring-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.3)]" />
+                                                <div className="absolute inset-0 rounded-lg ring-2 ring-brand-500/50 shadow-[0_0_20px_rgba(229, 9, 20,0.3)]" />
                                             )}
                                         </button>
                                     )
@@ -212,7 +212,7 @@ export default function RankingsContent() {
                                         }
                                         className={`group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 ${
                                             isSelected
-                                                ? 'bg-yellow-500/90 text-black border-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.3)] scale-105'
+                                                ? 'bg-brand-500/90 text-black border-brand-400 shadow-[0_0_10px_rgba(229, 9, 20,0.3)] scale-105'
                                                 : 'bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105 hover:shadow-[0_0_8px_rgba(255,255,255,0.08)]'
                                         }`}
                                     >
@@ -223,7 +223,7 @@ export default function RankingsContent() {
                                         )}
                                         <span className="relative z-10">{option.label}</span>
                                         {isSelected && (
-                                            <div className="absolute inset-0 rounded-full bg-yellow-500 blur-md opacity-15 animate-pulse" />
+                                            <div className="absolute inset-0 rounded-full bg-brand-500 blur-md opacity-15 animate-pulse" />
                                         )}
                                     </button>
                                 )
@@ -233,13 +233,13 @@ export default function RankingsContent() {
                         {/* Enhanced Search Bar */}
                         <div className="w-full max-w-4xl relative">
                             <div className="relative group">
-                                <MagnifyingGlassIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 z-10 transition-colors group-focus-within:text-yellow-400" />
+                                <MagnifyingGlassIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 z-10 transition-colors group-focus-within:text-brand-400" />
                                 <input
                                     type="text"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     placeholder="Search rankings..."
-                                    className="w-full pl-14 pr-14 py-4 bg-zinc-900/40 backdrop-blur-lg border border-zinc-800/50 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-yellow-500 focus:shadow-[0_0_25px_rgba(234,179,8,0.3)] transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700"
+                                    className="w-full pl-14 pr-14 py-4 bg-zinc-900/40 backdrop-blur-lg border border-zinc-800/50 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-brand-500 focus:shadow-[0_0_25px_rgba(229, 9, 20,0.3)] transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700"
                                 />
                                 {isSupported && (
                                     <button
@@ -251,15 +251,15 @@ export default function RankingsContent() {
                                         <div className="relative">
                                             {isListening && (
                                                 <>
-                                                    <span className="absolute inset-0 rounded-full bg-amber-400/40 animate-ping" />
-                                                    <span className="absolute inset-0 rounded-full bg-amber-400/30 animate-pulse" />
+                                                    <span className="absolute inset-0 rounded-full bg-brand-400/40 animate-ping" />
+                                                    <span className="absolute inset-0 rounded-full bg-brand-400/30 animate-pulse" />
                                                 </>
                                             )}
                                             <MicrophoneIcon
                                                 className={`w-6 h-6 relative z-10 transition-all ${
                                                     isListening
-                                                        ? 'text-amber-400 scale-110 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]'
-                                                        : 'text-gray-400 hover:text-yellow-400'
+                                                        ? 'text-brand-400 scale-110 drop-shadow-[0_0_8px_rgba(255, 90, 97,0.8)]'
+                                                        : 'text-gray-400 hover:text-brand-300'
                                                 }`}
                                             />
                                         </div>
@@ -267,7 +267,7 @@ export default function RankingsContent() {
                                 )}
 
                                 {/* Glowing border effect on focus */}
-                                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-yellow-500 to-amber-500 opacity-0 group-focus-within:opacity-20 blur-xl transition-opacity duration-300 -z-10" />
+                                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-brand-500 to-brand-500 opacity-0 group-focus-within:opacity-20 blur-xl transition-opacity duration-300 -z-10" />
                             </div>
                         </div>
                     </div>
@@ -293,7 +293,7 @@ export default function RankingsContent() {
                     {!isLoading && communityRankings.length === 0 && (
                         <div className="flex flex-col items-center justify-center py-20 text-center">
                             <div className="relative mb-6">
-                                <div className="absolute inset-0 bg-yellow-500/20 blur-2xl scale-150" />
+                                <div className="absolute inset-0 bg-brand-500/20 blur-2xl scale-150" />
                                 <div className="relative w-24 h-24 rounded-full bg-zinc-900/60 backdrop-blur-lg flex items-center justify-center border-2 border-zinc-800/50">
                                     <TrophyIcon className="w-12 h-12 text-yellow-500" />
                                 </div>
@@ -308,7 +308,7 @@ export default function RankingsContent() {
                                 className={`px-8 py-4 font-bold rounded-xl transition-all duration-300 ${
                                     isGuest
                                         ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                                        : 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-black shadow-[0_0_30px_rgba(234,179,8,0.4)] hover:shadow-[0_0_40px_rgba(234,179,8,0.6)] scale-100 hover:scale-105'
+                                        : 'bg-gradient-to-r from-brand-500 to-brand-500 hover:from-brand-600 hover:to-brand-600 text-white shadow-[0_0_30px_rgba(229, 9, 20,0.4)] hover:shadow-[0_0_40px_rgba(229, 9, 20,0.6)] scale-100 hover:scale-105'
                                 }`}
                                 disabled={isGuest}
                             >
@@ -364,12 +364,12 @@ export default function RankingsContent() {
                                 className="group relative px-8 py-4 font-bold rounded-xl transition-all duration-300"
                             >
                                 {/* Glow effect */}
-                                <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <div className="absolute inset-0 bg-gradient-to-r from-brand-500/20 to-brand-500/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
 
                                 {/* Button */}
-                                <div className="relative flex items-center gap-3 px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl border border-zinc-700 group-hover:border-yellow-500/50 transition-all">
+                                <div className="relative flex items-center gap-3 px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl border border-zinc-700 group-hover:border-brand-500/50 transition-all">
                                     <span>Load More Rankings</span>
-                                    <SparklesIcon className="w-5 h-5 text-yellow-400" />
+                                    <SparklesIcon className="w-5 h-5 text-brand-400" />
                                 </div>
                             </button>
                         </div>
@@ -387,10 +387,10 @@ export default function RankingsContent() {
                     >
                         <div className="relative">
                             {/* Glowing background */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-amber-500 rounded-full blur-lg opacity-30 group-hover:opacity-40 transition-opacity" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-brand-500 to-brand-500 rounded-full blur-lg opacity-30 group-hover:opacity-40 transition-opacity" />
 
                             {/* Button */}
-                            <div className="relative flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-yellow-500 via-amber-500 to-yellow-600 rounded-full text-black font-bold text-sm shadow-[0_0_20px_rgba(234,179,8,0.3)] group-hover:shadow-[0_0_30px_rgba(234,179,8,0.4)] group-hover:scale-105 transition-all duration-300">
+                            <div className="relative flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-brand-500 via-brand-500 to-brand-600 rounded-full text-white font-bold text-sm shadow-[0_0_20px_rgba(229, 9, 20,0.3)] group-hover:shadow-[0_0_30px_rgba(229, 9, 20,0.4)] group-hover:scale-105 transition-all duration-300">
                                 <TrophyIcon className="w-5 h-5" />
                                 <span className="hidden sm:inline">New Ranking</span>
                             </div>

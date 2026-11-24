@@ -237,10 +237,10 @@ export function RankingDetail({
                             <>
                                 <button
                                     onClick={onEdit}
-                                    className="group p-3 bg-zinc-800/80 hover:bg-zinc-700 backdrop-blur-sm text-white rounded-xl transition-all duration-300 border border-zinc-700/50 hover:border-yellow-500/50"
+                                    className="group p-3 bg-zinc-800/80 hover:bg-zinc-700 backdrop-blur-sm text-white rounded-xl transition-all duration-300 border border-zinc-700/50 hover:border-brand-500/50"
                                     title="Edit ranking"
                                 >
-                                    <PencilIcon className="w-5 h-5 group-hover:text-yellow-400 transition-colors" />
+                                    <PencilIcon className="w-5 h-5 group-hover:text-brand-300 transition-colors" />
                                 </button>
                                 <button
                                     onClick={handleDelete}
@@ -279,17 +279,17 @@ export function RankingDetail({
                                     alt={ranking.userName || 'User'}
                                     width={48}
                                     height={48}
-                                    className="rounded-full ring-2 ring-yellow-500/30"
+                                    className="rounded-full ring-2 ring-brand-500/30"
                                 />
                             ) : (
-                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-500 to-amber-600 flex items-center justify-center font-bold text-lg text-black shadow-lg">
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center font-bold text-lg text-white shadow-lg">
                                     {ranking.userName?.[0]?.toUpperCase() || '?'}
                                 </div>
                             )}
                             <div>
                                 <Link
                                     href={`/users/${ranking.userUsername || ranking.userId}`}
-                                    className="text-white font-semibold text-lg hover:text-yellow-400 transition-colors"
+                                    className="text-white font-semibold text-lg hover:text-brand-300 transition-colors"
                                 >
                                     {ranking.userName || 'Unknown User'}
                                 </Link>
@@ -396,7 +396,7 @@ export function RankingDetail({
                         >
                             {/* Rank Badge */}
                             <div className="absolute -left-3 -top-3 z-20">
-                                <div className="w-14 h-14 flex items-center justify-center rounded-xl shadow-lg bg-gradient-to-br from-yellow-500 to-yellow-600 border border-yellow-400">
+                                <div className="w-14 h-14 flex items-center justify-center rounded-xl shadow-lg bg-gradient-to-br from-brand-500 to-brand-600 border border-brand-400">
                                     <span className="text-xl font-black text-black">
                                         #{item.position}
                                     </span>
@@ -423,9 +423,9 @@ export function RankingDetail({
 
                                     {/* Rating Badge */}
                                     {item.content.vote_average && (
-                                        <div className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900/80 rounded-full border border-yellow-600/30">
+                                        <div className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900/80 rounded-full border border-brand-600/30">
                                             <StarIcon className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                                            <span className="font-bold text-yellow-400">
+                                            <span className="font-bold text-brand-400">
                                                 {item.content.vote_average.toFixed(1)}
                                             </span>
                                         </div>

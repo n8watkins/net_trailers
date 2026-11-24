@@ -163,7 +163,7 @@ export default function EmailComposer({ onSent }: { onSent?: () => void }) {
                         )}
                     </ul>
                     {confirm.skippedOptedOut > 0 && (
-                        <p className="text-amber-400">
+                        <p className="text-brand-400">
                             {confirm.skippedOptedOut} selected{' '}
                             {confirm.skippedOptedOut === 1 ? 'user has' : 'users have'} email off
                             and will be skipped.
@@ -194,9 +194,9 @@ export default function EmailComposer({ onSent }: { onSent?: () => void }) {
                                     key={template.id}
                                     onClick={() => setSelectedTemplate(template.id)}
                                     aria-pressed={selectedTemplate === template.id}
-                                    className={`rounded-lg border p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-amber-400 ${
+                                    className={`rounded-lg border p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-brand-400 ${
                                         selectedTemplate === template.id
-                                            ? 'border-amber-400 bg-amber-500/10'
+                                            ? 'border-brand-400 bg-brand-500/10'
                                             : 'border-white/10 bg-black/30 hover:border-white/20'
                                     }`}
                                 >
@@ -230,7 +230,7 @@ export default function EmailComposer({ onSent }: { onSent?: () => void }) {
                             value={subject}
                             onChange={(e) => setSubject(e.target.value)}
                             placeholder="Enter email subject..."
-                            className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-amber-400/60 focus:outline-none focus:ring-2 focus:ring-amber-400/20"
+                            className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-brand-400/60 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
                         />
                     </div>
 
@@ -249,7 +249,7 @@ export default function EmailComposer({ onSent }: { onSent?: () => void }) {
                                 onChange={(e) => setCustomMessage(e.target.value)}
                                 placeholder="Enter your announcement message..."
                                 rows={6}
-                                className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-amber-400/60 focus:outline-none focus:ring-2 focus:ring-amber-400/20"
+                                className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-brand-400/60 focus:outline-none focus:ring-2 focus:ring-brand-400/20"
                             />
                         </div>
                     )}
@@ -273,14 +273,14 @@ export default function EmailComposer({ onSent }: { onSent?: () => void }) {
                         <button
                             onClick={handlePreview}
                             disabled={selectedUserIds.length === 0 || sending}
-                            className="flex-1 rounded-lg border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-medium text-gray-100 transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="flex-1 rounded-lg border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-medium text-gray-100 transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             Preview Email
                         </button>
                         <button
                             onClick={handleSendTest}
                             disabled={sending}
-                            className="flex-1 rounded-lg border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-medium text-gray-100 transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="flex-1 rounded-lg border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-medium text-gray-100 transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             Send a test to me
                         </button>

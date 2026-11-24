@@ -260,7 +260,7 @@ const PreferencesPage: React.FC = () => {
                         <button
                             type="button"
                             onClick={onOpenWelcome}
-                            className="h-10 shrink-0 rounded-lg border border-zinc-600 px-4 text-sm font-medium text-white transition-colors hover:border-amber-500 hover:text-amber-300"
+                            className="h-10 shrink-0 rounded-lg border border-zinc-600 px-4 text-sm font-medium text-white transition-colors hover:border-brand-500 hover:text-brand-300"
                         >
                             Show the welcome
                         </button>

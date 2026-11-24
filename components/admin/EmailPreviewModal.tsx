@@ -111,7 +111,7 @@ export default function EmailPreviewModal({
                             onClick={() => setViewMode('desktop')}
                             className={`flex items-center gap-2 rounded-lg px-4 py-2 transition-colors ${
                                 viewMode === 'desktop'
-                                    ? 'bg-amber-500 text-black'
+                                    ? 'bg-brand-500 text-white'
                                     : 'bg-white/5 text-gray-400 hover:bg-white/10'
                             }`}
                         >
@@ -122,7 +122,7 @@ export default function EmailPreviewModal({
                             onClick={() => setViewMode('mobile')}
                             className={`flex items-center gap-2 rounded-lg px-4 py-2 transition-colors ${
                                 viewMode === 'mobile'
-                                    ? 'bg-amber-500 text-black'
+                                    ? 'bg-brand-500 text-white'
                                     : 'bg-white/5 text-gray-400 hover:bg-white/10'
                             }`}
                         >
@@ -145,7 +145,7 @@ export default function EmailPreviewModal({
                 <div className="flex flex-1 items-center justify-center overflow-auto bg-black/40 p-6">
                     {loading ? (
                         <div className="flex flex-col items-center gap-4">
-                            <div className="h-12 w-12 animate-spin rounded-full border-4 border-amber-400 border-t-transparent" />
+                            <div className="h-12 w-12 animate-spin rounded-full border-4 border-brand-400 border-t-transparent" />
                             <p className="text-gray-400">Generating preview...</p>
                         </div>
                     ) : html ? (

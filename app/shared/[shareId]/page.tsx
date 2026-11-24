@@ -179,7 +179,7 @@ export default function SharedCollectionViewPage() {
         return (
             <div className="min-h-screen bg-black flex items-center justify-center">
                 <div className="text-center">
-                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-amber-500 border-t-transparent mx-auto mb-4" />
+                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-brand-500 border-t-transparent mx-auto mb-4" />
                     <p className="text-white text-lg">Loading shared collection...</p>
                 </div>
             </div>
@@ -191,8 +191,8 @@ export default function SharedCollectionViewPage() {
         return (
             <div className="min-h-screen bg-black flex items-center justify-center">
                 <div className="text-center max-w-md mx-auto px-4">
-                    <div className="rounded-full bg-amber-500/20 p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                        <LinkIcon className="h-8 w-8 text-amber-400" />
+                    <div className="rounded-full bg-brand-500/20 p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                        <LinkIcon className="h-8 w-8 text-brand-400" />
                     </div>
                     <h1 className="text-2xl font-bold text-white mb-2">Share Link Not Found</h1>
                     <p className="text-gray-400 mb-6">
@@ -201,7 +201,7 @@ export default function SharedCollectionViewPage() {
                     </p>
                     <button
                         onClick={() => router.push('/')}
-                        className="px-6 py-3 rounded-md bg-amber-500 text-zinc-950 font-medium hover:bg-amber-600 transition inline-flex items-center gap-2"
+                        className="px-6 py-3 rounded-md bg-brand-500 text-white font-medium hover:bg-brand-600 transition inline-flex items-center gap-2"
                     >
                         <ArrowLeftIcon className="h-5 w-5" />
                         Go to Home
@@ -291,8 +291,8 @@ export default function SharedCollectionViewPage() {
 
                     {/* Info banner if duplication disabled */}
                     {!canDuplicate && (
-                        <div className="mt-4 rounded-md bg-yellow-600/10 border border-yellow-600/20 px-4 py-3">
-                            <p className="text-sm text-yellow-400">
+                        <div className="mt-4 rounded-md bg-brand-600/10 border border-brand-600/20 px-4 py-3">
+                            <p className="text-sm text-brand-400">
                                 <strong>Note:</strong> The owner has disabled saving this
                                 collection. You can only view the contents.
                             </p>

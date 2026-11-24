@@ -41,7 +41,7 @@ export default function MobileNavMenu({
                     const Icon = item.icon
                     const active = isNavItemActive(item, pathname)
                     const stateClass = active
-                        ? 'bg-amber-500/20 font-semibold text-white'
+                        ? 'bg-brand-500/20 font-semibold text-white'
                         : 'text-gray-200 hover:bg-white/10'
 
                     if (item.kind === 'genres') {
@@ -51,7 +51,7 @@ export default function MobileNavMenu({
                                     type="button"
                                     aria-expanded={genresOpen}
                                     onClick={() => setGenresOpen((open) => !open)}
-                                    className={`${rowClass} ${pathname?.startsWith('/genres') ? 'bg-amber-500/20 font-semibold text-white' : 'text-gray-200 hover:bg-white/10'}`}
+                                    className={`${rowClass} ${pathname?.startsWith('/genres') ? 'bg-brand-500/20 font-semibold text-white' : 'text-gray-200 hover:bg-white/10'}`}
                                 >
                                     <Icon className="h-5 w-5" />
                                     <span className="flex-1">{item.label}</span>

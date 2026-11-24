@@ -83,7 +83,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
             title={title}
             className={`rounded p-2 transition-colors ${
                 active
-                    ? 'bg-amber-500 text-black'
+                    ? 'bg-brand-500 text-white'
                     : 'text-gray-400 hover:bg-white/10 hover:text-white'
             }`}
         >

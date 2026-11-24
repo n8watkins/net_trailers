@@ -72,7 +72,7 @@ export function SmartStep1Input({ onContinue, initialData }: SmartStep1InputProp
             <button
                 onClick={handleContinue}
                 disabled={!canContinue}
-                className="w-full px-6 py-4 bg-amber-500 text-zinc-950 rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-lg shadow-lg shadow-amber-500/20"
+                className="w-full px-6 py-4 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-lg shadow-lg shadow-brand-500/20"
             >
                 🔍 Generate Suggestions →
             </button>

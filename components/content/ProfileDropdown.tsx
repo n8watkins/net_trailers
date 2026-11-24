@@ -94,7 +94,7 @@ function ProfileDropdown() {
             </button>
 
             {isOpen && (
-                <div className="absolute top-full left-0 mt-6 w-[min(75vw,208px)] sm:w-52 bg-black border border-amber-400/40 rounded-xl shadow-2xl shadow-amber-400/20 z-[250]">
+                <div className="absolute top-full left-0 mt-6 w-[min(75vw,208px)] sm:w-52 bg-black border border-brand-400/40 rounded-xl shadow-2xl shadow-brand-400/20 z-[250]">
                     <div className="py-2">
                         <Link href="/history" onClick={handleLinkClick}>
                             <div

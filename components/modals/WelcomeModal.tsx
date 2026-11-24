@@ -46,7 +46,7 @@ export default function WelcomeModal({
     if (!isOpen) return null
 
     const itemClass =
-        'flex w-full items-start gap-3 rounded-xl border border-zinc-800 bg-zinc-900/70 p-3 text-left transition-colors hover:border-amber-500/60 hover:bg-zinc-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400'
+        'flex w-full items-start gap-3 rounded-xl border border-zinc-800 bg-zinc-900/70 p-3 text-left transition-colors hover:border-brand-500/60 hover:bg-zinc-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400'
 
     return (
         <div className="fixed inset-0 z-[300] flex items-end justify-center sm:items-center sm:p-4">
@@ -81,7 +81,7 @@ export default function WelcomeModal({
                         type="button"
                         onClick={onClose}
                         aria-label="Close welcome"
-                        className="-mr-2 -mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+                        className="-mr-2 -mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
                     >
                         <XMarkIcon className="h-6 w-6" />
                     </button>
@@ -96,7 +96,7 @@ export default function WelcomeModal({
                     <ul className="mt-4 space-y-2">
                         <li>
                             <button type="button" onClick={onTryMood} className={itemClass}>
-                                <SparklesIcon className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
+                                <SparklesIcon className="mt-0.5 h-5 w-5 shrink-0 text-brand-400" />
                                 <span>
                                     <span className="block font-semibold text-white">
                                         Describe a mood
@@ -110,7 +110,7 @@ export default function WelcomeModal({
                         </li>
                         <li>
                             <Link href="/recommendations" onClick={onClose} className={itemClass}>
-                                <HeartIcon className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
+                                <HeartIcon className="mt-0.5 h-5 w-5 shrink-0 text-brand-400" />
                                 <span>
                                     <span className="block font-semibold text-white">
                                         Pick 5 you love
@@ -123,7 +123,7 @@ export default function WelcomeModal({
                         </li>
                         <li>
                             <button type="button" onClick={onOpenAbout} className={itemClass}>
-                                <InformationCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
+                                <InformationCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-brand-400" />
                                 <span>
                                     <span className="block font-semibold text-white">
                                         About this project
@@ -141,7 +141,7 @@ export default function WelcomeModal({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="h-11 w-full rounded-lg bg-amber-500 text-sm font-semibold text-zinc-950 transition-colors hover:bg-amber-400"
+                        className="h-11 w-full rounded-lg bg-brand-500 text-sm font-semibold text-white transition-colors hover:bg-brand-400"
                     >
                         Start exploring
                     </button>

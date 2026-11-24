@@ -215,7 +215,7 @@ Live at **https://net-trailers.n8builds.dev**.
     - Responsive design for all devices (mobile, tablet, desktop)
     - Streaming-style UI/UX with smooth animations and cinematic styling
     - Consistent atmospheric hero sections across major pages with theme-specific gradients:
-        - Notifications (red/rose), Ratings (purple/violet), Rankings (yellow/amber)
+        - Notifications (red/rose), Ratings (purple/violet), Rankings (red)
         - Collections (blue/cyan), Settings (gray/slate), Security (green), Changelog (blue)
     - Glowing icons with drop-shadow effects and animated gradient backgrounds
     - Backdrop blur effects and rounded-2xl design language throughout

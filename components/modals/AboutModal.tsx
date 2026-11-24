@@ -31,7 +31,7 @@ interface AboutModalProps {
 }
 
 const focusRing =
-    'focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0d0f]'
+    'focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0d0f]'
 
 /**
  * "About this project": what NetTrailers is, how to use it in four steps, and
@@ -100,7 +100,7 @@ export default function AboutModal({ isOpen, onClose, onStartTour }: AboutModalP
                                 href={ABOUT_LINKS.portfolio}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className={`${outboundBase} bg-amber-500 text-zinc-950 hover:bg-amber-400`}
+                                className={`${outboundBase} bg-brand-500 text-white hover:bg-brand-400`}
                             >
                                 Portfolio
                                 <ArrowTopRightOnSquareIcon className="h-4 w-4" aria-hidden="true" />
@@ -109,7 +109,7 @@ export default function AboutModal({ isOpen, onClose, onStartTour }: AboutModalP
                                 href={ABOUT_LINKS.writeUp}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className={`${outboundBase} border border-zinc-700 text-gray-100 hover:border-amber-500/60 hover:bg-zinc-900`}
+                                className={`${outboundBase} border border-zinc-700 text-gray-100 hover:border-brand-500/60 hover:bg-zinc-900`}
                             >
                                 <span className="sm:hidden">Write-up</span>
                                 <span className="hidden sm:inline">Project write-up</span>
@@ -118,7 +118,7 @@ export default function AboutModal({ isOpen, onClose, onStartTour }: AboutModalP
                                 href={ABOUT_LINKS.source}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className={`${outboundBase} border border-zinc-700 text-gray-100 hover:border-amber-500/60 hover:bg-zinc-900`}
+                                className={`${outboundBase} border border-zinc-700 text-gray-100 hover:border-brand-500/60 hover:bg-zinc-900`}
                             >
                                 <Image
                                     src="/icons/github.svg"
@@ -159,7 +159,7 @@ export default function AboutModal({ isOpen, onClose, onStartTour }: AboutModalP
                                 <li key={step.title} className="flex gap-3">
                                     <span
                                         aria-hidden="true"
-                                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-amber-500/50 text-sm font-semibold text-amber-400"
+                                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-brand-500/50 text-sm font-semibold text-brand-400"
                                     >
                                         {index + 1}
                                     </span>
@@ -172,7 +172,7 @@ export default function AboutModal({ isOpen, onClose, onStartTour }: AboutModalP
                                             <Link
                                                 href={step.action.href}
                                                 onClick={onClose}
-                                                className={`inline-flex items-center gap-1 whitespace-nowrap rounded font-medium text-amber-400 hover:text-amber-300 ${focusRing}`}
+                                                className={`inline-flex items-center gap-1 whitespace-nowrap rounded font-medium text-brand-400 hover:text-brand-300 ${focusRing}`}
                                             >
                                                 {step.action.label}
                                                 <ArrowRightIcon
@@ -192,7 +192,7 @@ export default function AboutModal({ isOpen, onClose, onStartTour }: AboutModalP
                                     onClose()
                                     onStartTour()
                                 }}
-                                className={`mt-4 inline-flex h-10 items-center gap-2 rounded-lg border border-amber-500/60 px-4 text-sm font-semibold text-amber-300 transition-colors hover:bg-amber-500/10 ${focusRing}`}
+                                className={`mt-4 inline-flex h-10 items-center gap-2 rounded-lg border border-brand-500/60 px-4 text-sm font-semibold text-brand-300 transition-colors hover:bg-brand-500/10 ${focusRing}`}
                             >
                                 <CursorArrowRaysIcon className="h-4 w-4" aria-hidden="true" />
                                 Show me around
@@ -271,14 +271,14 @@ export default function AboutModal({ isOpen, onClose, onStartTour }: AboutModalP
                                             >
                                                 {item.title}
                                                 <ChevronDownIcon
-                                                    className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${open ? 'rotate-180 text-amber-400' : ''}`}
+                                                    className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${open ? 'rotate-180 text-brand-400' : ''}`}
                                                     aria-hidden="true"
                                                 />
                                             </button>
                                             <ul
                                                 id={panelId}
                                                 hidden={!open}
-                                                className="list-disc space-y-1 pb-3 pl-8 pr-3.5 text-sm leading-snug text-gray-400 marker:text-amber-500/70"
+                                                className="list-disc space-y-1 pb-3 pl-8 pr-3.5 text-sm leading-snug text-gray-400 marker:text-brand-500/70"
                                             >
                                                 {item.bullets.map((bullet) => (
                                                     <li key={bullet}>{bullet}</li>

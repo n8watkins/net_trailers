@@ -95,7 +95,7 @@ export default function SystemConfigPage() {
                                     href={l.href}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 text-sm text-gray-100 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-amber-400"
+                                    className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 text-sm text-gray-100 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-brand-400"
                                 >
                                     {l.label}
                                     <ArrowUpRight aria-hidden className="size-4 text-gray-400" />

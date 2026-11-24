@@ -210,7 +210,7 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
                                 performSearch(query)
                             }
                         }}
-                        className="mt-4 px-4 py-2 bg-amber-500 text-zinc-950 rounded-lg hover:bg-amber-600 transition-colors"
+                        className="mt-4 px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
                         disabled={isLoading}
                     >
                         {isLoading ? 'Retrying...' : 'Try Again'}
@@ -315,7 +315,7 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
                             }}
                             className={`relative ${
                                 isOnSearchPage && selectedIndex === index
-                                    ? 'ring-2 ring-amber-400 rounded-full'
+                                    ? 'ring-2 ring-brand-400 rounded-full'
                                     : ''
                             }`}
                         >
@@ -339,7 +339,7 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
                             }}
                             className={`relative ${
                                 isOnSearchPage && selectedIndex === index
-                                    ? 'ring-2 ring-amber-400 rounded-lg'
+                                    ? 'ring-2 ring-brand-400 rounded-lg'
                                     : ''
                             }`}
                         >
@@ -355,7 +355,7 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
                 filteredResults.length > 0 && (
                     <div className="flex justify-center py-8">
                         <div className="flex items-center gap-2">
-                            <div className="animate-spin h-8 w-8 border-2 border-amber-400 border-t-transparent rounded-full"></div>
+                            <div className="animate-spin h-8 w-8 border-2 border-brand-400 border-t-transparent rounded-full"></div>
                             {isLoadingAll && (
                                 <span className="text-gray-400 text-sm">
                                     Loading all results for filtering...
@@ -380,7 +380,7 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
             {/* Initial Loading */}
             {isLoading && currentResultsLength === 0 && (
                 <div className="flex flex-col items-center justify-center py-12">
-                    <div className="animate-spin h-8 w-8 border-2 border-amber-400 border-t-transparent rounded-full mb-4"></div>
+                    <div className="animate-spin h-8 w-8 border-2 border-brand-400 border-t-transparent rounded-full mb-4"></div>
                     <div className="text-gray-400">
                         {searchMode === 'people' ? 'Searching for people...' : 'Searching...'}
                     </div>

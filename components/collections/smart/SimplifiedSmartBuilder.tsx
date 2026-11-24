@@ -283,7 +283,7 @@ export function SimplifiedSmartBuilder({
             <div className="flex items-center justify-between p-6 border-b border-gray-700">
                 <div className="flex-1">
                     <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                        <SparklesIcon className="w-6 h-6 text-yellow-400" />
+                        <SparklesIcon className="w-6 h-6 text-brand-400" />
                         Collection Builder
                     </h2>
                     <p className="text-gray-400 text-sm mt-1">Build your collection step by step</p>
@@ -298,7 +298,7 @@ export function SimplifiedSmartBuilder({
                                     onClick={() => onModeChange('smart')}
                                     className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                                         mode === 'smart'
-                                            ? 'bg-amber-500 text-zinc-950'
+                                            ? 'bg-brand-500 text-white'
                                             : 'text-gray-400 hover:text-white hover:bg-gray-700'
                                     }`}
                                 >
@@ -308,7 +308,7 @@ export function SimplifiedSmartBuilder({
                                     onClick={() => onModeChange('traditional')}
                                     className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                                         mode === 'traditional'
-                                            ? 'bg-amber-500 text-zinc-950'
+                                            ? 'bg-brand-500 text-white'
                                             : 'text-gray-400 hover:text-white hover:bg-gray-700'
                                     }`}
                                 >
@@ -396,7 +396,7 @@ export function SimplifiedSmartBuilder({
                             <button
                                 onClick={handleGenerate}
                                 disabled={isGenerating}
-                                className="flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                                className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
                             >
                                 <SparklesIcon className="w-4 h-4" />
                                 {isGenerating ? 'Generating...' : 'Generate More'}
@@ -424,7 +424,7 @@ export function SimplifiedSmartBuilder({
                                     type="button"
                                     onClick={() => setEnableInfiniteContent(!enableInfiniteContent)}
                                     className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                        enableInfiniteContent ? 'bg-amber-500' : 'bg-gray-600'
+                                        enableInfiniteContent ? 'bg-brand-500' : 'bg-gray-600'
                                     }`}
                                 >
                                     <span
@@ -542,7 +542,7 @@ export function SimplifiedSmartBuilder({
                             <button
                                 onClick={handleCreate}
                                 disabled={isCreating}
-                                className="px-6 py-2 bg-amber-500 text-zinc-950 rounded-lg hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                className="px-6 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
                                 {isCreating ? 'Creating...' : 'Create Collection'}
                             </button>

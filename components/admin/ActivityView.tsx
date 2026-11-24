@@ -41,8 +41,8 @@ function PeriodSwitch({ period, onChange }: { period: Period; onChange: (p: Peri
                     aria-pressed={period === p}
                     onClick={() => onChange(p)}
                     className={cx(
-                        'min-h-8 rounded-md px-3 text-[13px] font-medium focus-visible:outline-2 focus-visible:outline-amber-400',
-                        period === p ? 'bg-amber-500 text-black' : 'text-gray-300 hover:text-white'
+                        'min-h-8 rounded-md px-3 text-[13px] font-medium focus-visible:outline-2 focus-visible:outline-brand-400',
+                        period === p ? 'bg-brand-500 text-white' : 'text-gray-300 hover:text-white'
                     )}
                 >
                     {p === 'week' ? 'This week' : 'This month'}
@@ -105,7 +105,7 @@ export function ActivityView({ type }: { type: 'login' | 'view' }) {
                                 href={
                                     type === 'login' ? '/admin/activity' : '/admin/activity/views'
                                 }
-                                className="text-amber-400 hover:text-amber-300"
+                                className="text-brand-400 hover:text-brand-300"
                             >
                                 Show everyone
                             </Link>
@@ -148,7 +148,7 @@ export function ActivityView({ type }: { type: 'login' | 'view' }) {
                                     {r.userId ? (
                                         <Link
                                             href={`?userId=${encodeURIComponent(r.userId)}`}
-                                            className="break-all text-white hover:text-amber-300"
+                                            className="break-all text-white hover:text-brand-300"
                                         >
                                             {r.userEmail ?? r.userId}
                                         </Link>

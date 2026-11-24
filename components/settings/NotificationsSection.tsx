@@ -164,7 +164,7 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
                                     }
                                     className="sr-only peer"
                                 />
-                                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
                             </label>
                         </div>
                     </div>
@@ -198,7 +198,7 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
                                     }
                                     className="sr-only peer"
                                 />
-                                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
                             </label>
                         </div>
 
@@ -226,7 +226,7 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
                                     }
                                     className="sr-only peer"
                                 />
-                                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
                             </label>
                         </div>
 
@@ -256,7 +256,7 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
                                         }
                                         className="sr-only peer"
                                     />
-                                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
                                 </label>
                             </div>
 
@@ -306,7 +306,7 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
                                     }
                                     className="sr-only peer"
                                 />
-                                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
                             </label>
                         </div>
                     </div>
@@ -338,7 +338,7 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
                                     }
                                     className="sr-only peer"
                                 />
-                                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
                             </label>
                         </div>
 
@@ -369,7 +369,7 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
                                         }
                                         className="sr-only peer"
                                     />
-                                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
                                 </label>
                             </div>
 
@@ -386,7 +386,7 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
                                             }
                                             className={`px-4 py-2 rounded-lg border transition-all duration-200 ${
                                                 notifications.emailDigest === 'weekly'
-                                                    ? 'border-amber-500 bg-amber-500/10 text-white'
+                                                    ? 'border-brand-500 bg-brand-500/10 text-white'
                                                     : 'border-[#313131] bg-[#1a1a1a] text-[#b3b3b3] hover:bg-[#2a2a2a]'
                                             }`}
                                         >
@@ -401,7 +401,7 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
                                             }
                                             className={`px-4 py-2 rounded-lg border transition-all duration-200 ${
                                                 notifications.emailDigest === 'never'
-                                                    ? 'border-amber-500 bg-amber-500/10 text-white'
+                                                    ? 'border-brand-500 bg-brand-500/10 text-white'
                                                     : 'border-[#313131] bg-[#1a1a1a] text-[#b3b3b3] hover:bg-[#2a2a2a]'
                                             }`}
                                         >
@@ -428,7 +428,7 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
                     <div className="flex justify-end pt-6 border-t border-[#313131]">
                         <button
                             onClick={onSave}
-                            className="px-6 py-3 bg-amber-500 text-zinc-950 rounded-lg font-medium transition-all duration-200 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-[#141414]"
+                            className="px-6 py-3 bg-brand-500 text-white rounded-lg font-medium transition-all duration-200 hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-[#141414]"
                         >
                             Save Changes
                         </button>

@@ -31,7 +31,7 @@ export const FORUM_CATEGORIES: CategoryInfo[] = [
         name: 'Recommendations',
         description: 'Get and share recommendations',
         icon: '⭐',
-        color: 'text-yellow-400',
+        color: 'text-brand-400',
     },
     {
         id: 'rankings',

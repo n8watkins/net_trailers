@@ -32,9 +32,9 @@ export function FilterPills<T extends string>({
                         role="radio"
                         aria-checked={selected}
                         onClick={() => onChange(option.value)}
-                        className={`inline-flex h-9 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${
+                        className={`inline-flex h-9 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 ${
                             selected
-                                ? 'border-amber-500 bg-amber-500 text-zinc-950'
+                                ? 'border-brand-500 bg-brand-500 text-white'
                                 : 'border-zinc-700 bg-zinc-900 text-gray-300 hover:border-zinc-500 hover:text-white'
                         }`}
                     >
@@ -83,7 +83,7 @@ export function ListSearchInput({
                 onChange={(e) => onChange(e.target.value)}
                 placeholder={placeholder}
                 aria-label={placeholder.replace(/\.+$/, '')}
-                className={`h-11 w-full rounded-lg border border-zinc-700 bg-zinc-900 pl-10 text-base text-white placeholder-gray-500 transition-colors hover:border-zinc-500 focus:border-amber-500 focus:outline-none sm:text-sm ${
+                className={`h-11 w-full rounded-lg border border-zinc-700 bg-zinc-900 pl-10 text-base text-white placeholder-gray-500 transition-colors hover:border-zinc-500 focus:border-brand-500 focus:outline-none sm:text-sm ${
                     showVoice ? 'pr-20' : 'pr-10'
                 } [&::-webkit-search-cancel-button]:hidden`}
             />
@@ -105,7 +105,7 @@ export function ListSearchInput({
                         aria-label={isListening ? 'Stop listening' : 'Search by voice'}
                         className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors ${
                             isListening
-                                ? 'animate-pulse bg-amber-500 text-zinc-950'
+                                ? 'animate-pulse bg-brand-500 text-white'
                                 : 'text-gray-400 hover:text-white'
                         }`}
                     >

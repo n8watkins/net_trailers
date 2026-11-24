@@ -59,7 +59,7 @@ export function revealAndFocus(
 }
 
 /**
- * Show an amber ring on `ring` and an example in `input`'s placeholder for
+ * Show a red ring on `ring` and an example in `input`'s placeholder for
  * HIGHLIGHT_MS, then put the placeholder back.
  */
 export function highlightBriefly(

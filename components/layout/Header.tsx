@@ -394,7 +394,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                     <button
                         type="button"
                         aria-label="NetTrailers home"
-                        className="shrink-0 select-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+                        className="shrink-0 select-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
                         onClick={() => {
                             if (pathname === '/') {
                                 // Already on home page - smooth scroll to top
@@ -438,7 +438,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                             }
                                             title="Jump to a random movie or TV show"
                                         >
-                                            <span className="absolute -inset-3 opacity-0 group-hover:opacity-50 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-amber-300 via-amber-200/60 via-40% to-transparent rounded-md blur-lg transition-opacity duration-400" />
+                                            <span className="absolute -inset-3 opacity-0 group-hover:opacity-50 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-brand-300 via-brand-200/60 via-40% to-transparent rounded-md blur-lg transition-opacity duration-400" />
                                             <Icon
                                                 className={`h-5 w-5 relative z-10 ${isRandomLoading ? 'animate-pulse' : ''}`}
                                             />
@@ -606,7 +606,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                             data-tour={dataTourAttr}
                                             className={`group relative flex items-center justify-center gap-2 whitespace-nowrap border-b-2 px-2 sm:px-1 py-2 sm:py-3 text-sm font-medium transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 ${
                                                 isActive
-                                                    ? 'border-amber-500 text-amber-500'
+                                                    ? 'border-brand-500 text-brand-400'
                                                     : 'border-transparent text-gray-400 hover:text-gray-200'
                                             }`}
                                         >

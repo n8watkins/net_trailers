@@ -61,9 +61,9 @@ export function GenrePills({
         if (priority === 1) {
             return {
                 size: 'w-5 h-5 text-xs',
-                color: 'bg-yellow-500',
+                color: 'bg-brand-500',
                 textColor: 'text-gray-900',
-                ring: 'ring-2 ring-yellow-400',
+                ring: 'ring-2 ring-brand-400',
             }
         } else if (priority === 2) {
             return {
@@ -95,7 +95,7 @@ export function GenrePills({
                     onClick={() => handleToggleGenre('all')}
                     className={`relative px-4 py-2 rounded-full text-sm font-medium transition-all ${
                         isAllGenresSelected
-                            ? 'bg-amber-500 text-zinc-950 border-2 border-amber-500 hover:bg-amber-600 hover:border-amber-600'
+                            ? 'bg-brand-500 text-white border-2 border-brand-500 hover:bg-brand-600 hover:border-brand-600'
                             : 'bg-gray-800 text-gray-300 border-2 border-gray-700 hover:border-gray-600 hover:bg-gray-700'
                     }`}
                 >
@@ -122,7 +122,7 @@ export function GenrePills({
                                 relative px-4 py-2 rounded-full text-sm font-medium transition-all
                                 ${
                                     isSelected
-                                        ? 'bg-amber-500 text-zinc-950 border-2 border-amber-500 hover:bg-amber-600 hover:border-amber-600'
+                                        ? 'bg-brand-500 text-white border-2 border-brand-500 hover:bg-brand-600 hover:border-brand-600'
                                         : isDisabled
                                           ? 'bg-gray-800 text-gray-500 border-2 border-gray-700 cursor-not-allowed opacity-50'
                                           : 'bg-gray-800 text-gray-300 border-2 border-gray-700 hover:border-gray-600 hover:bg-gray-700'

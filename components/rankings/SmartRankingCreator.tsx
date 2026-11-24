@@ -133,13 +133,13 @@ function SortableItem({
                             onKeyDown={handleRankKeyDown}
                             min={1}
                             max={totalItems}
-                            className="w-12 bg-zinc-800 border border-yellow-500 rounded px-2 py-1 text-center text-yellow-500 font-bold focus:outline-none"
+                            className="w-12 bg-zinc-800 border border-brand-500 rounded px-2 py-1 text-center text-brand-400 font-bold focus:outline-none"
                             autoFocus
                         />
                     ) : (
                         <button
                             onClick={() => setEditingRank(true)}
-                            className="text-2xl font-bold text-yellow-500 hover:text-yellow-400 transition-colors"
+                            className="text-2xl font-bold text-brand-400 hover:text-brand-300 transition-colors"
                         >
                             #{index + 1}
                         </button>
@@ -172,7 +172,7 @@ function SortableItem({
                         onChange={(e) => onNoteChange(e.target.value)}
                         placeholder="Note..."
                         maxLength={200}
-                        className="w-full h-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 resize-none"
+                        className="w-full h-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-brand-500 resize-none"
                     />
                 </div>
 
@@ -672,7 +672,7 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
         <SubPageLayout
             title={stepTitle}
             icon={<TrophyIcon className="w-8 h-8" />}
-            iconColor="text-yellow-500"
+            iconColor="text-brand-400"
             description={stepDescription}
             titleActions={
                 onSwitchToTraditional ? (
@@ -725,7 +725,7 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                             </div>
 
                             {isLoading && (
-                                <div className="flex items-center justify-center gap-2 text-yellow-500">
+                                <div className="flex items-center justify-center gap-2 text-brand-400">
                                     <ArrowPathIcon className="w-5 h-5 animate-spin" />
                                     <span>Generating ranking...</span>
                                 </div>
@@ -768,7 +768,7 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                         {lastSearchQuery && (
                             <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
                                 <div className="flex items-start gap-3">
-                                    <SparklesIcon className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                                    <SparklesIcon className="w-5 h-5 text-brand-400 flex-shrink-0 mt-0.5" />
                                     <div className="flex-1">
                                         <p className="text-sm text-gray-400 mb-1">
                                             AI generated from:
@@ -789,7 +789,7 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                                     Drag to reorder, click to add notes, or remove items
                                 </p>
                                 {selectedItems.length < RANKING_CONSTRAINTS.MIN_ITEM_COUNT && (
-                                    <p className="text-sm text-amber-300 mt-1">
+                                    <p className="text-sm text-brand-300 mt-1">
                                         ⚠️ Add at least {RANKING_CONSTRAINTS.MIN_ITEM_COUNT} items
                                         to continue
                                     </p>
@@ -807,7 +807,7 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                                     disabled={
                                         selectedItems.length < RANKING_CONSTRAINTS.MIN_ITEM_COUNT
                                     }
-                                    className="px-4 py-2 bg-yellow-500 text-black font-medium rounded-lg hover:bg-yellow-400 disabled:bg-zinc-800 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors"
+                                    className="px-4 py-2 bg-brand-500 text-white font-medium rounded-lg hover:bg-brand-400 disabled:bg-zinc-800 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors"
                                 >
                                     Continue
                                 </button>
@@ -822,7 +822,7 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                                     <button
                                         onClick={handleGetMoreSuggestions}
                                         disabled={isLoading}
-                                        className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-black font-medium rounded-lg hover:bg-yellow-400 disabled:bg-zinc-700 disabled:text-gray-500 disabled:cursor-not-allowed transition-colors"
+                                        className="flex items-center gap-2 px-4 py-2 bg-brand-500 text-white font-medium rounded-lg hover:bg-brand-400 disabled:bg-zinc-700 disabled:text-gray-500 disabled:cursor-not-allowed transition-colors"
                                     >
                                         <SparklesIcon className="w-5 h-5" />
                                         Get More AI Suggestions
@@ -847,11 +847,11 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                                             handleContentSearch(e.target.value)
                                         }}
                                         placeholder="Search for movies or TV shows..."
-                                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500"
+                                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-brand-500"
                                     />
                                     {isSearching && (
                                         <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                            <ArrowPathIcon className="w-5 h-5 animate-spin text-yellow-500" />
+                                            <ArrowPathIcon className="w-5 h-5 animate-spin text-brand-400" />
                                         </div>
                                     )}
                                 </div>
@@ -880,7 +880,7 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                                                         {getContentYear(result)}
                                                     </p>
                                                 </div>
-                                                <PlusIcon className="w-5 h-5 text-yellow-500" />
+                                                <PlusIcon className="w-5 h-5 text-brand-400" />
                                             </button>
                                         ))}
                                     </div>
@@ -951,18 +951,18 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                                 className={`w-full bg-zinc-800 border rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none ${
                                     !title.trim() ||
                                     title.length < RANKING_CONSTRAINTS.MIN_TITLE_LENGTH
-                                        ? 'border-amber-400 focus:border-amber-300'
-                                        : 'border-zinc-700 focus:border-yellow-500'
+                                        ? 'border-brand-400 focus:border-brand-300'
+                                        : 'border-zinc-700 focus:border-brand-500'
                                 }`}
                             />
                             <div className="flex items-center justify-between mt-1">
                                 <div>
                                     {!title.trim() && (
-                                        <p className="text-xs text-amber-300">Title is required</p>
+                                        <p className="text-xs text-brand-300">Title is required</p>
                                     )}
                                     {title.trim() &&
                                         title.length < RANKING_CONSTRAINTS.MIN_TITLE_LENGTH && (
-                                            <p className="text-xs text-amber-300">
+                                            <p className="text-xs text-brand-300">
                                                 Title must be at least{' '}
                                                 {RANKING_CONSTRAINTS.MIN_TITLE_LENGTH} characters
                                             </p>
@@ -984,7 +984,7 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                                 onChange={(e) => setDescription(e.target.value)}
                                 placeholder="Add context about your ranking..."
                                 maxLength={RANKING_CONSTRAINTS.MAX_DESCRIPTION_LENGTH}
-                                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 resize-none"
+                                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-brand-500 resize-none"
                                 rows={4}
                             />
                             <p className="text-xs text-gray-500 mt-1">
@@ -1037,7 +1037,7 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                                 title.length < RANKING_CONSTRAINTS.MIN_TITLE_LENGTH ||
                                 isLoading
                             }
-                            className="w-full px-6 py-3 bg-yellow-500 text-black font-medium rounded-lg hover:bg-yellow-400 disabled:bg-zinc-800 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors"
+                            className="w-full px-6 py-3 bg-brand-500 text-white font-medium rounded-lg hover:bg-brand-400 disabled:bg-zinc-800 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors"
                         >
                             {isLoading ? 'Creating...' : 'Create Ranking'}
                         </button>

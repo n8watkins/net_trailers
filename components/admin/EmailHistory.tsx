@@ -57,7 +57,7 @@ export default function EmailHistory() {
             {/* History List */}
             {loading ? (
                 <div className="flex items-center justify-center py-12">
-                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-brand-500 border-t-transparent" />
                 </div>
             ) : history.length === 0 ? (
                 <div className="rounded-lg border-2 border-dashed border-white/10 bg-black/30 p-12 text-center">
@@ -141,7 +141,7 @@ export default function EmailHistory() {
                                             {record.successCount} / {record.recipientCount}
                                         </p>
                                         {record.failureCount > 0 && (
-                                            <p className="mt-2 text-amber-300">
+                                            <p className="mt-2 text-brand-300">
                                                 <span className="font-medium">Failures:</span>{' '}
                                                 {record.failureCount}
                                             </p>

@@ -44,7 +44,7 @@ export default function NewRankingPage() {
             <SubPageLayout
                 title="Create Ranking"
                 icon={<TrophyIcon className="w-8 h-8" />}
-                iconColor="text-yellow-500"
+                iconColor="text-brand-400"
             >
                 <PageLoader />
             </SubPageLayout>
@@ -57,7 +57,7 @@ export default function NewRankingPage() {
             <SubPageLayout
                 title="Create Ranking"
                 icon={<TrophyIcon className="w-8 h-8" />}
-                iconColor="text-yellow-500"
+                iconColor="text-brand-400"
             >
                 <GuestModeNotification />
                 <div className="mt-6 text-center">
