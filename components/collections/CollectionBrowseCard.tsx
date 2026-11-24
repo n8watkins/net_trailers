@@ -47,9 +47,11 @@ export default function CollectionBrowseCard({ collection }: CollectionBrowseCar
     return (
         <Link href={href} className="block group h-full">
             <div
-                className="relative flex h-full flex-col bg-zinc-900/60 backdrop-blur-lg border-2 rounded-xl p-5 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/10"
+                className="relative flex h-full flex-col bg-zinc-900/60 backdrop-blur-lg border rounded-xl p-5 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/10"
                 style={{
-                    borderColor: hexToRgba(listColor, 0.5),
+                    // Thin, low-opacity border: the list colour is an accent, and a bold
+                    // red border (the default Watch Later colour) would read as an alert
+                    borderColor: hexToRgba(listColor, 0.3),
                 }}
             >
                 {/* Colored glow on hover */}
@@ -65,9 +67,9 @@ export default function CollectionBrowseCard({ collection }: CollectionBrowseCar
                     <div
                         className="flex items-center justify-center w-12 h-12 rounded-lg"
                         style={{
-                            backgroundColor: hexToRgba(listColor, 0.2),
-                            borderColor: listColor,
-                            borderWidth: '2px',
+                            backgroundColor: hexToRgba(listColor, 0.15),
+                            borderColor: hexToRgba(listColor, 0.4),
+                            borderWidth: '1px',
                         }}
                     >
                         {getIcon()}
