@@ -152,7 +152,7 @@ export default function UsersPage() {
                                         </span>
                                     ))}
                                     {!u.emailVerified && (
-                                        <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-xs text-amber-300">
+                                        <span className="rounded-full bg-brand-500/10 px-2 py-0.5 text-xs text-brand-300">
                                             Unverified
                                         </span>
                                     )}

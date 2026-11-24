@@ -55,12 +55,12 @@ export default function PortfolioBanner() {
     ]
 
     return (
-        <div className="bg-gradient-to-r from-amber-800 to-amber-900 border border-amber-500/40 rounded-xl p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8">
+        <div className="bg-gradient-to-r from-brand-800 to-brand-900 border border-brand-500/40 rounded-xl p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8">
             <div className="flex items-center justify-center">
                 <div className="text-center w-full">
                     <div className="flex items-center justify-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
                         <span className="text-3xl sm:text-4xl">🎬</span>
-                        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-amber-500/90 tracking-wide">
+                        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-brand-500/90 tracking-wide">
                             NetTrailers
                         </h1>
                     </div>

@@ -4,6 +4,21 @@
     /* Custom breakpoint */
     --breakpoint-xs: 375px;
 
+    /* Brand accent: Netflix red #e50914 is the 500 step. Use 500 for fills
+       (white text on it is 4.79:1), 400 for red text on the dark page
+       (6.5:1 on #0a0a0a), 600 and up for pressed states and washes. */
+    --color-brand-50: #fff1f1;
+    --color-brand-100: #ffe1e2;
+    --color-brand-200: #ffc3c6;
+    --color-brand-300: #ff8f94;
+    --color-brand-400: #ff5a61;
+    --color-brand-500: #e50914;
+    --color-brand-600: #b8070f;
+    --color-brand-700: #93060c;
+    --color-brand-800: #6e0509;
+    --color-brand-900: #4a0406;
+    --color-brand-950: #2a0203;
+
     /* Custom animations */
     --animate-scaleUp: scaleUp 0.75s;
     --animate-yee: yee 0.75s;
@@ -350,9 +365,9 @@
         -webkit-line-clamp: 2;
     }
 
-    /* Welcome "Describe a mood": a short amber ring where the eye should land (lib/revealInView.ts) */
+    /* Welcome "Describe a mood": a short red ring where the eye should land (lib/revealInView.ts) */
     [data-attention] {
-        outline: 2px solid #f59e0b;
+        outline: 2px solid #e50914;
         outline-offset: 3px;
         animation: attention-ring 1.5s ease-out forwards;
     }
@@ -360,7 +375,7 @@
     @keyframes attention-ring {
         0%,
         70% {
-            outline-color: #f59e0b;
+            outline-color: #e50914;
         }
         100% {
             outline-color: transparent;
@@ -533,7 +548,7 @@
     }
 
     .drop-shadow-glow-red {
-        filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.8));
+        filter: drop-shadow(0 0 8px rgba(255, 90, 97, 0.8));
     }
 
     /* Shimmer animation for skeleton loading */
@@ -630,7 +645,7 @@
     right: 0;
     width: 8px;
     border-radius: 9999px;
-    background: rgb(245, 158, 11); /* amber-500 */
+    background: rgb(229, 9, 20); /* brand-500 */
     transition:
         background 0.2s ease,
         width 0.2s ease,
@@ -639,20 +654,20 @@
 }
 
 .custom-scrollbar-thumb:hover {
-    background: rgb(251, 191, 36); /* amber-400 */
+    background: rgb(255, 90, 97); /* brand-400 */
     width: 10px;
     left: 10px;
 }
 
 .custom-scrollbar.dragging .custom-scrollbar-thumb {
-    background: rgb(251, 191, 36); /* amber-400 */
+    background: rgb(255, 90, 97); /* brand-400 */
     cursor: grabbing;
 }
 
 /* Modal content scrollbar - overlay style with auto-hide on scroll */
 .modal-scrollbar {
     scrollbar-width: thin; /* Firefox */
-    scrollbar-color: rgb(245, 158, 11) transparent; /* amber-500 thumb, transparent track */
+    scrollbar-color: rgb(229, 9, 20) transparent; /* brand-500 thumb, transparent track */
 }
 
 /* Webkit/Chrome scrollbar */
@@ -669,12 +684,12 @@
 }
 
 .modal-scrollbar::-webkit-scrollbar-thumb {
-    background: rgb(245, 158, 11); /* amber-500 */
+    background: rgb(229, 9, 20); /* brand-500 */
     border-radius: 9999px;
 }
 
 .modal-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgb(251, 191, 36); /* amber-400 */
+    background: rgb(255, 90, 97); /* brand-400 */
 }
 
 /* Light blue scrollbar for collection creator modal */

@@ -82,7 +82,7 @@ export const CollectionCard = memo(function CollectionCard({
                     <button
                         {...dragHandleProps}
                         onKeyDown={handleKeyDown}
-                        className="flex items-center justify-center p-1.5 cursor-grab active:cursor-grabbing hover:bg-gray-800 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-amber-400"
+                        className="flex items-center justify-center p-1.5 cursor-grab active:cursor-grabbing hover:bg-gray-800 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-brand-400"
                         title="Drag to reorder or use arrow keys"
                         aria-label={`Drag to reorder ${row.name} or use arrow keys to move up or down`}
                         tabIndex={0}
@@ -103,7 +103,7 @@ export const CollectionCard = memo(function CollectionCard({
                                     {genreNames.map((genre) => (
                                         <span
                                             key={genre}
-                                            className="inline-block px-2 py-0.5 bg-amber-800/30 text-amber-200 rounded text-xs"
+                                            className="inline-block px-2 py-0.5 bg-brand-800/30 text-brand-200 rounded text-xs"
                                         >
                                             {genre}
                                         </span>

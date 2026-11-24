@@ -49,9 +49,9 @@ export const COLORS = {
         ink: '#ffffff',
         body: '#d4d4d8',
         subtle: '#a1a1aa',
-        link: '#fbbf24',
+        link: '#ff5a61',
         net: '#ffffff',
-        trailers: '#fcd34d',
+        trailers: '#ff5a61',
     },
     light: {
         page: '#f4f4f5',
@@ -61,12 +61,12 @@ export const COLORS = {
         ink: '#18181b',
         body: '#3f3f46',
         subtle: '#71717a',
-        link: '#b45309',
+        link: '#b8070f',
         net: '#18181b',
-        trailers: '#d97706',
+        trailers: '#e50914',
     },
-    amber: '#f59e0b',
-    onAmber: '#0a0a0a',
+    accent: '#e50914',
+    onAccent: '#ffffff',
 } as const
 
 export const SANS = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"

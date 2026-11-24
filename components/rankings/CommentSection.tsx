@@ -195,7 +195,7 @@ export function CommentSection({
                                         {userId && (
                                             <button
                                                 onClick={() => setReplyingTo(comment.id)}
-                                                className="flex items-center gap-1 text-gray-400 hover:text-yellow-500 transition-colors"
+                                                className="flex items-center gap-1 text-gray-400 hover:text-brand-300 transition-colors"
                                             >
                                                 <ChatBubbleLeftIcon className="w-4 h-4" />
                                                 <span>Reply</span>
@@ -221,14 +221,14 @@ export function CommentSection({
                                                 value={replyText}
                                                 onChange={(e) => setReplyText(e.target.value)}
                                                 placeholder="Write a reply..."
-                                                className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500"
+                                                className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-500"
                                                 maxLength={500}
                                                 autoFocus
                                             />
                                             <button
                                                 onClick={() => handleSubmitReply(comment.id)}
                                                 disabled={!replyText.trim() || isSubmitting}
-                                                className="px-3 py-2 bg-yellow-500 text-black text-sm font-medium rounded-lg hover:bg-yellow-400 disabled:bg-zinc-800 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors"
+                                                className="px-3 py-2 bg-brand-500 text-white text-sm font-medium rounded-lg hover:bg-brand-400 disabled:bg-zinc-800 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors"
                                             >
                                                 Reply
                                             </button>
@@ -335,7 +335,7 @@ export function CommentSection({
                             value={newCommentText}
                             onChange={(e) => setNewCommentText(e.target.value)}
                             placeholder="Add a comment..."
-                            className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 resize-none"
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-brand-500 resize-none"
                             rows={3}
                             maxLength={500}
                         />
@@ -346,7 +346,7 @@ export function CommentSection({
                             <button
                                 type="submit"
                                 disabled={!newCommentText.trim() || isSubmitting}
-                                className="px-4 py-2 bg-yellow-500 text-black font-medium rounded-lg hover:bg-yellow-400 disabled:bg-zinc-800 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                                className="px-4 py-2 bg-brand-500 text-white font-medium rounded-lg hover:bg-brand-400 disabled:bg-zinc-800 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                             >
                                 <PaperAirplaneIcon className="w-4 h-4" />
                                 {isSubmitting ? 'Posting...' : 'Post'}

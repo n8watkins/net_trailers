@@ -172,7 +172,7 @@ export default function RankingsPage() {
                                 <button
                                     type="button"
                                     onClick={handleCreateNew}
-                                    className="inline-flex h-9 items-center gap-2 rounded-full bg-amber-500 px-4 text-sm font-semibold text-zinc-950 transition-colors hover:bg-amber-400"
+                                    className="inline-flex h-9 items-center gap-2 rounded-full bg-brand-500 px-4 text-sm font-semibold text-white transition-colors hover:bg-brand-400"
                                 >
                                     <PlusIcon className="h-4 w-4" />
                                     New ranking
@@ -314,7 +314,7 @@ export default function RankingsPage() {
                                     <Link
                                         key={comment.id}
                                         href={`/rankings/${comment.rankingId}`}
-                                        className="block animate-fadeInUp rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 transition-colors hover:border-amber-500/40"
+                                        className="block animate-fadeInUp rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 transition-colors hover:border-brand-500/40"
                                         style={{
                                             animationDelay: `${Math.min(index * 50, 500)}ms`,
                                             animationFillMode: 'both',
@@ -332,7 +332,7 @@ export default function RankingsPage() {
                                             </span>
                                         </div>
                                         <p className="text-white">{comment.text}</p>
-                                        <div className="mt-2 text-sm text-amber-400">
+                                        <div className="mt-2 text-sm text-brand-400">
                                             View ranking →
                                         </div>
                                     </Link>

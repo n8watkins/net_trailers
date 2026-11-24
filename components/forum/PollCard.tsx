@@ -68,11 +68,11 @@ function PollCardComponent({ poll, userVote = [], onVote }: PollCardProps) {
             case 'tv-shows':
                 return 'border-l-purple-500'
             case 'recommendations':
-                return 'border-l-yellow-500'
+                return 'border-l-brand-500'
             case 'rankings':
                 return 'border-l-orange-500'
             case 'announcements':
-                return 'border-l-amber-400'
+                return 'border-l-brand-400'
             default:
                 return 'border-l-gray-400'
         }
@@ -85,11 +85,11 @@ function PollCardComponent({ poll, userVote = [], onVote }: PollCardProps) {
             case 'tv-shows':
                 return 'shadow-[0_0_30px_rgba(168,85,247,0.15)]'
             case 'recommendations':
-                return 'shadow-[0_0_30px_rgba(234,179,8,0.15)]'
+                return 'shadow-[0_0_30px_rgba(229, 9, 20,0.15)]'
             case 'rankings':
                 return 'shadow-[0_0_30px_rgba(249,115,22,0.15)]'
             case 'announcements':
-                return 'shadow-[0_0_30px_rgba(251,191,36,0.15)]'
+                return 'shadow-[0_0_30px_rgba(255, 90, 97,0.15)]'
             default:
                 return 'shadow-[0_0_30px_rgba(156,163,175,0.15)]'
         }
@@ -120,7 +120,7 @@ function PollCardComponent({ poll, userVote = [], onVote }: PollCardProps) {
                         className="rounded-full ring-2 ring-zinc-800/50"
                     />
                 ) : (
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-amber-400 flex items-center justify-center text-sm font-bold shadow-lg">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-brand-400 flex items-center justify-center text-sm font-bold shadow-lg">
                         {poll.userName[0]?.toUpperCase() || '?'}
                     </div>
                 )}
@@ -181,7 +181,7 @@ function PollCardComponent({ poll, userVote = [], onVote }: PollCardProps) {
                                 <div
                                     className={`absolute inset-0 transition-all duration-500 ${
                                         isSelected
-                                            ? 'bg-gradient-to-r from-pink-500 to-amber-400'
+                                            ? 'bg-gradient-to-r from-pink-500 to-brand-400'
                                             : 'bg-gradient-to-r from-zinc-700 to-zinc-800'
                                     }`}
                                     style={{ width: `${option.percentage}%` }}
@@ -244,7 +244,7 @@ function PollCardComponent({ poll, userVote = [], onVote }: PollCardProps) {
                 </div>
 
                 {isExpired ? (
-                    <span className="text-amber-300 font-semibold">Expired</span>
+                    <span className="text-brand-300 font-semibold">Expired</span>
                 ) : poll.expiresAt ? (
                     <span className="text-gray-500">
                         Expires {formatDistanceToNow(toDate(poll.expiresAt), { addSuffix: true })}

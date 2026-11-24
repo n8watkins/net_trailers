@@ -36,9 +36,9 @@ type JobInfo = {
 }
 
 const ICONS: Record<JobName, React.ReactNode> = {
-    trending: <Mail aria-hidden className="size-5 text-amber-400" />,
-    cache: <RefreshCw aria-hidden className="size-5 text-amber-400" />,
-    social: <Users aria-hidden className="size-5 text-amber-400" />,
+    trending: <Mail aria-hidden className="size-5 text-brand-400" />,
+    cache: <RefreshCw aria-hidden className="size-5 text-brand-400" />,
+    social: <Users aria-hidden className="size-5 text-brand-400" />,
 }
 
 /** What each job does, and what "for all users" means for it. */
@@ -198,7 +198,7 @@ export default function JobsPage() {
                             className={`${CARD} flex min-w-0 flex-col gap-4 p-4 sm:p-5`}
                         >
                             <div className="flex items-start gap-3">
-                                <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-amber-500/10">
+                                <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-brand-500/10">
                                     {ICONS[job.name]}
                                 </span>
                                 <div className="min-w-0">
@@ -210,7 +210,7 @@ export default function JobsPage() {
                             </div>
                             <p className="text-sm text-gray-300">{DETAILS[job.name].summary}</p>
                             <details className="group text-sm">
-                                <summary className="cursor-pointer text-[13px] text-amber-400 hover:text-amber-300">
+                                <summary className="cursor-pointer text-[13px] text-brand-400 hover:text-brand-300">
                                     What it does
                                 </summary>
                                 <ul className="mt-2 list-disc space-y-1 pl-5 text-[13px] text-gray-400">

@@ -215,7 +215,7 @@ function TastePicker({
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search to add a title..."
                     aria-label="Search to add a title"
-                    className="h-11 w-full rounded-lg border border-zinc-700 bg-zinc-900 pl-10 pr-10 text-base text-white placeholder-gray-500 focus:border-amber-500 focus:outline-none sm:text-sm [&::-webkit-search-cancel-button]:hidden"
+                    className="h-11 w-full rounded-lg border border-zinc-700 bg-zinc-900 pl-10 pr-10 text-base text-white placeholder-gray-500 focus:border-brand-500 focus:outline-none sm:text-sm [&::-webkit-search-cancel-button]:hidden"
                 />
                 {query && (
                     <button
@@ -265,8 +265,8 @@ function TastePicker({
                                     <span
                                         className={`relative block aspect-[2/3] overflow-hidden rounded-lg border-2 transition-all ${
                                             picked
-                                                ? 'border-amber-400 shadow-[0_0_0_3px_rgba(245,158,11,0.25)]'
-                                                : 'border-transparent group-hover:border-zinc-500 group-focus-visible:border-amber-300'
+                                                ? 'border-brand-400 shadow-[0_0_0_3px_rgba(229, 9, 20,0.25)]'
+                                                : 'border-transparent group-hover:border-zinc-500 group-focus-visible:border-brand-300'
                                         }`}
                                     >
                                         <Image
@@ -277,7 +277,7 @@ function TastePicker({
                                             className={`object-cover transition-opacity ${picked ? 'opacity-60' : ''}`}
                                         />
                                         {picked && (
-                                            <span className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-amber-500 text-zinc-950">
+                                            <span className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-brand-500 text-white">
                                                 <CheckIcon className="h-4 w-4 stroke-[3]" />
                                             </span>
                                         )}
@@ -296,7 +296,7 @@ function TastePicker({
             <div className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-800 bg-[#0b0b0d]/95 backdrop-blur pb-[env(safe-area-inset-bottom)]">
                 <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 md:px-8 lg:px-16">
                     <p className="text-sm text-gray-300" aria-live="polite">
-                        <HeartIcon className="mr-1.5 inline h-4 w-4 -translate-y-px text-amber-400" />
+                        <HeartIcon className="mr-1.5 inline h-4 w-4 -translate-y-px text-brand-400" />
                         {pickedCount} of {TARGET_PICKS} picked
                         {remaining > 0 && (
                             <span className="text-gray-500">
@@ -312,7 +312,7 @@ function TastePicker({
                         type="button"
                         onClick={onDone}
                         disabled={pickedCount < MIN_PICKS}
-                        className="h-11 shrink-0 rounded-lg bg-amber-500 px-5 text-sm font-semibold text-zinc-950 transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
+                        className="h-11 shrink-0 rounded-lg bg-brand-500 px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-400 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
                     >
                         Show my picks
                     </button>
@@ -381,7 +381,7 @@ function ForYouResults({
                 <button
                     type="button"
                     onClick={onChangePicks}
-                    className="mt-4 h-11 rounded-lg bg-amber-500 px-5 text-sm font-semibold text-zinc-950 hover:bg-amber-400"
+                    className="mt-4 h-11 rounded-lg bg-brand-500 px-5 text-sm font-semibold text-white hover:bg-brand-400"
                 >
                     Pick 5 you love
                 </button>
@@ -425,7 +425,7 @@ function ForYouResults({
 
             <div className="mt-3 min-h-5 space-y-1">
                 {status === 'ready' && data?.notice && (
-                    <p className="text-sm text-amber-200" role="status">
+                    <p className="text-sm text-brand-200" role="status">
                         {data.notice}
                     </p>
                 )}
@@ -455,7 +455,7 @@ function ForYouResults({
                     <button
                         type="button"
                         onClick={() => setReloadCount((n) => n + 1)}
-                        className="mt-4 h-11 rounded-lg bg-amber-500 px-5 text-sm font-semibold text-zinc-950 hover:bg-amber-400"
+                        className="mt-4 h-11 rounded-lg bg-brand-500 px-5 text-sm font-semibold text-white hover:bg-brand-400"
                     >
                         Try again
                     </button>
@@ -475,7 +475,7 @@ function ForYouResults({
                             <ContentCard content={pick.content} />
                             {/* w-0 + min-w-full: the reason wraps at the card's width */}
                             <p
-                                className={`mt-1 w-0 min-w-full px-1 text-xs leading-snug sm:text-sm ${pick.reason ? 'text-amber-200/90' : 'text-gray-500'}`}
+                                className={`mt-1 w-0 min-w-full px-1 text-xs leading-snug sm:text-sm ${pick.reason ? 'text-brand-200/90' : 'text-gray-500'}`}
                             >
                                 {pick.reason ?? `Similar to ${pick.becauseOf}`}
                             </p>

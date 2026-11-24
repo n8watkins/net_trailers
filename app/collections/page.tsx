@@ -91,7 +91,7 @@ const Collections = () => {
                         <button
                             type="button"
                             onClick={() => openCollectionBuilderModal()}
-                            className="inline-flex h-9 items-center gap-2 rounded-full bg-amber-500 px-4 text-sm font-semibold text-zinc-950 transition-colors hover:bg-amber-400"
+                            className="inline-flex h-9 items-center gap-2 rounded-full bg-brand-500 px-4 text-sm font-semibold text-white transition-colors hover:bg-brand-400"
                         >
                             <PlusIcon className="h-4 w-4" />
                             New collection

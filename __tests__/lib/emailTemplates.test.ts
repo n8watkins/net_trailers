@@ -123,7 +123,7 @@ describe('email templates', () => {
     it('uses the dark site palette by default, with the light variant behind a media query', async () => {
         const { html } = (await all()).digest
         expect(html).toContain('bgcolor="#0a0a0a"')
-        expect(html).toContain('#fcd34d')
+        expect(html).toContain('#ff5a61')
         expect(html).toContain('@media (prefers-color-scheme:light)')
         expect(html).not.toMatch(/text-transform:\s*uppercase/)
     })

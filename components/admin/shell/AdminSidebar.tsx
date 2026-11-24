@@ -25,15 +25,15 @@ function NavList({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: (
                             aria-current={active && pathname === section.href ? 'page' : undefined}
                             title={collapsed ? section.label : undefined}
                             data-active={active || undefined}
-                            className={`group flex min-h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 ${
+                            className={`group flex min-h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400 ${
                                 active
-                                    ? 'bg-amber-500/15 text-amber-300'
+                                    ? 'bg-brand-500/15 text-brand-300'
                                     : 'text-gray-300 hover:bg-white/5 hover:text-white'
                             } ${collapsed ? 'justify-center px-0' : ''}`}
                         >
                             <Icon
                                 aria-hidden
-                                className={`size-[18px] shrink-0 ${active ? 'text-amber-400' : 'text-gray-400 group-hover:text-gray-200'}`}
+                                className={`size-[18px] shrink-0 ${active ? 'text-brand-400' : 'text-gray-400 group-hover:text-gray-200'}`}
                             />
                             <span className={collapsed ? 'sr-only' : 'truncate'}>
                                 {section.label}
@@ -49,9 +49,9 @@ function NavList({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: (
                                                 href={tab.href}
                                                 onClick={onNavigate}
                                                 aria-current={tabActive ? 'page' : undefined}
-                                                className={`flex min-h-8 items-center rounded-md px-2 text-[13px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-amber-400 ${
+                                                className={`flex min-h-8 items-center rounded-md px-2 text-[13px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand-400 ${
                                                     tabActive
-                                                        ? 'font-medium text-amber-300'
+                                                        ? 'font-medium text-brand-300'
                                                         : 'text-gray-400 hover:text-white'
                                                 }`}
                                             >
@@ -71,7 +71,7 @@ function NavList({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: (
 
 function Footer({ email, collapsed }: { email: string | null; collapsed: boolean }) {
     const link =
-        'flex min-h-9 items-center gap-2 rounded-lg px-3 text-[13px] text-gray-400 hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-amber-400'
+        'flex min-h-9 items-center gap-2 rounded-lg px-3 text-[13px] text-gray-400 hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-brand-400'
     return (
         <div className="space-y-1 border-t border-white/10 pt-3">
             <Link
@@ -174,12 +174,12 @@ export function AdminSidebar({ email }: { email: string | null }) {
                     aria-label="Open the admin menu"
                     aria-expanded={open}
                     aria-controls="admin-drawer"
-                    className="-ml-2 grid size-10 place-items-center rounded-lg text-gray-200 hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-amber-400"
+                    className="-ml-2 grid size-10 place-items-center rounded-lg text-gray-200 hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-brand-400"
                 >
                     <Menu aria-hidden className="size-5" />
                 </button>
                 <span className="truncate text-sm font-semibold text-white">
-                    <span className="text-amber-400">Admin</span> · {current.label}
+                    <span className="text-brand-400">Admin</span> · {current.label}
                 </span>
             </div>
             {open && (
@@ -199,13 +199,13 @@ export function AdminSidebar({ email }: { email: string | null }) {
                     >
                         <div className="flex items-center justify-between">
                             <span className="text-base font-semibold text-white">
-                                NetTrailers <span className="text-amber-400">admin</span>
+                                NetTrailers <span className="text-brand-400">admin</span>
                             </span>
                             <button
                                 type="button"
                                 onClick={() => setOpen(false)}
                                 aria-label="Close the admin menu"
-                                className="grid size-10 place-items-center rounded-lg text-gray-300 hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-amber-400"
+                                className="grid size-10 place-items-center rounded-lg text-gray-300 hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-brand-400"
                             >
                                 <X aria-hidden className="size-5" />
                             </button>
@@ -229,7 +229,7 @@ export function AdminSidebar({ email }: { email: string | null }) {
                 >
                     {!collapsed && (
                         <Link href="/admin" className="truncate text-base font-semibold text-white">
-                            NetTrailers <span className="text-amber-400">admin</span>
+                            NetTrailers <span className="text-brand-400">admin</span>
                         </Link>
                     )}
                     <button
@@ -237,7 +237,7 @@ export function AdminSidebar({ email }: { email: string | null }) {
                         onClick={toggleCollapsed}
                         aria-label={collapsed ? 'Expand the sidebar' : 'Collapse the sidebar'}
                         aria-pressed={collapsed}
-                        className="grid size-9 place-items-center rounded-lg text-gray-400 hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-amber-400"
+                        className="grid size-9 place-items-center rounded-lg text-gray-400 hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-brand-400"
                     >
                         {collapsed ? (
                             <ChevronsRight aria-hidden className="size-4" />

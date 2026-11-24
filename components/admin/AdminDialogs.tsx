@@ -129,7 +129,7 @@ function FreshNote({ minutes }: { minutes: number }) {
             Fresh sign-in: {minutes} more minute{minutes === 1 ? '' : 's'} to act.
         </p>
     ) : (
-        <p className="mb-5 flex items-center gap-2 rounded-lg bg-amber-500/10 px-3 py-2 text-[13px] text-amber-200">
+        <p className="mb-5 flex items-center gap-2 rounded-lg bg-brand-500/10 px-3 py-2 text-[13px] text-brand-200">
             <ShieldAlert aria-hidden className="size-4 shrink-0" />
             This needs a sign-in from the last 15 minutes. Sign in again first.
         </p>

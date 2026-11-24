@@ -23,7 +23,7 @@ import {
 
 const D = COLORS.dark
 const L = COLORS.light
-const AMBER = COLORS.amber
+const ACCENT = COLORS.accent
 
 /** The legacy bgcolor attribute: older clients and recolouring ones read it where they ignore CSS. */
 const bgcolor = (color: string): Record<string, string> => ({ bgcolor: color })
@@ -40,7 +40,7 @@ img{border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic}
 .nt-content img{max-width:100%!important;height:auto!important}
 @media (prefers-color-scheme:light){
 .nt-bg{background:${L.page}!important}
-.nt-card{background:${L.card}!important;border-color:${L.border}!important;border-top-color:${AMBER}!important}
+.nt-card{background:${L.card}!important;border-color:${L.border}!important;border-top-color:${ACCENT}!important}
 .nt-panel{background:${L.panel}!important;border-color:${L.border}!important}
 .nt-rule{border-color:${L.border}!important}
 .nt-ink,.nt-content h2,.nt-content h3{color:${L.ink}!important}
@@ -150,7 +150,7 @@ export function Rule() {
     )
 }
 
-/** An amber button with near-black text; the colour sits on the cell and the link. */
+/** A red button with white text; the colour sits on the cell and the link. */
 export function Button({ href, children }: { href: string; children: React.ReactNode }) {
     return (
         <table
@@ -163,7 +163,7 @@ export function Button({ href, children }: { href: string; children: React.React
         >
             <tbody>
                 <tr>
-                    <td {...bgcolor(AMBER)} style={{ borderRadius: '8px', background: AMBER }}>
+                    <td {...bgcolor(ACCENT)} style={{ borderRadius: '8px', background: ACCENT }}>
                         <Link
                             className="nt-btn"
                             href={href}
@@ -171,10 +171,10 @@ export function Button({ href, children }: { href: string; children: React.React
                                 display: 'inline-block',
                                 padding: '13px 26px',
                                 font: `700 15px/20px ${SANS}`,
-                                color: COLORS.onAmber,
+                                color: COLORS.onAccent,
                                 textDecoration: 'none',
                                 borderRadius: '8px',
-                                background: AMBER,
+                                background: ACCENT,
                             }}
                         >
                             {children}
@@ -217,7 +217,7 @@ export function Panel({ children }: { children: React.ReactNode }) {
     )
 }
 
-/** A quoted piece of user text, with an amber bar. Line breaks are kept. */
+/** A quoted piece of user text, with a red bar. Line breaks are kept. */
 export function Quote({ children }: { children: React.ReactNode }) {
     return (
         <table
@@ -230,7 +230,7 @@ export function Quote({ children }: { children: React.ReactNode }) {
         >
             <tbody>
                 <tr>
-                    <td style={{ borderLeft: `3px solid ${AMBER}`, padding: '2px 0 2px 12px' }}>
+                    <td style={{ borderLeft: `3px solid ${ACCENT}`, padding: '2px 0 2px 12px' }}>
                         <p
                             className="nt-ink"
                             style={{
@@ -409,7 +409,7 @@ export function EmailLayout({
                                                 style={{
                                                     background: D.card,
                                                     border: `1px solid ${D.border}`,
-                                                    borderTop: `3px solid ${AMBER}`,
+                                                    borderTop: `3px solid ${ACCENT}`,
                                                     borderRadius: '12px',
                                                     padding: '32px 36px',
                                                 }}

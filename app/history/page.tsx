@@ -117,13 +117,13 @@ export default function WatchHistoryPage() {
                     }
                 >
                     {isInitialized && !trackWatchHistory && hasHistory && (
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-amber-600/30 bg-amber-600/10 px-4 py-3 text-sm">
-                            <span className="text-amber-500">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-brand-600/30 bg-brand-600/10 px-4 py-3 text-sm">
+                            <span className="text-brand-400">
                                 Watch history tracking is turned off.
                             </span>
                             <Link
                                 href="/settings/preferences"
-                                className="font-medium text-amber-500 underline underline-offset-2 hover:text-amber-400"
+                                className="font-medium text-brand-400 underline underline-offset-2 hover:text-brand-300"
                             >
                                 Turn it on in Settings
                             </Link>
@@ -195,7 +195,7 @@ export default function WatchHistoryPage() {
                         {Object.entries(groupedHistory).map(([date, items]) => (
                             <div key={date} className="space-y-4">
                                 <div className="flex items-center gap-3 py-2">
-                                    <CalendarIcon className="h-5 w-5 text-amber-400" />
+                                    <CalendarIcon className="h-5 w-5 text-brand-400" />
                                     <h2 className="text-lg font-semibold text-white">{date}</h2>
                                     <span className="rounded-full bg-zinc-800 px-2 py-0.5 text-sm text-gray-400">
                                         {items.length}

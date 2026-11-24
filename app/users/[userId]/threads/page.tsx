@@ -87,8 +87,8 @@ export default function UserThreadsPage() {
             movies: 'bg-blue-600',
             'tv-shows': 'bg-purple-600',
             recommendations: 'bg-green-600',
-            rankings: 'bg-yellow-600',
-            announcements: 'bg-amber-500',
+            rankings: 'bg-brand-600',
+            announcements: 'bg-brand-500',
         }
         return colors[category] || 'bg-gray-600'
     }

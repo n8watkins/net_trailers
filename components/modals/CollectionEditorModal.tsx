@@ -871,7 +871,7 @@ export default function CollectionEditorModal({
                                                     }
                                                     className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
                                                         enableInfiniteContent || !canEditFull
-                                                            ? 'bg-amber-500'
+                                                            ? 'bg-brand-500'
                                                             : 'bg-gray-600'
                                                     } ${!canEditFull ? 'opacity-50 cursor-pointer' : ''}`}
                                                 >
@@ -893,7 +893,7 @@ export default function CollectionEditorModal({
                                         <div
                                             className={`bg-gray-800/50 rounded-lg border p-4 transition-all duration-500 ${
                                                 highlightMediaType
-                                                    ? 'border-yellow-500 bg-yellow-500/20'
+                                                    ? 'border-brand-500 bg-brand-500/20'
                                                     : 'border-gray-700'
                                             }`}
                                         >
@@ -917,7 +917,7 @@ export default function CollectionEditorModal({
                                                             disabled={canOnlyToggle}
                                                             className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
                                                                 isMovieEnabled
-                                                                    ? 'bg-amber-500'
+                                                                    ? 'bg-brand-500'
                                                                     : 'bg-gray-600'
                                                             } ${canOnlyToggle ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                         >
@@ -946,7 +946,7 @@ export default function CollectionEditorModal({
                                                             disabled={canOnlyToggle}
                                                             className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
                                                                 isTVEnabled
-                                                                    ? 'bg-amber-500'
+                                                                    ? 'bg-brand-500'
                                                                     : 'bg-gray-600'
                                                             } ${canOnlyToggle ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                         >
@@ -983,14 +983,14 @@ export default function CollectionEditorModal({
                                                 </div>
                                                 <div className="flex flex-wrap gap-2">
                                                     {selectedGenres.length === 0 ? (
-                                                        <span className="px-4 py-2 rounded-full text-sm font-medium bg-amber-500 text-zinc-950">
+                                                        <span className="px-4 py-2 rounded-full text-sm font-medium bg-brand-500 text-white">
                                                             All Genres
                                                         </span>
                                                     ) : (
                                                         selectedGenres.map((genreId, index) => (
                                                             <span
                                                                 key={`${genreId}-${index}`}
-                                                                className="group relative px-4 py-2 rounded-full text-sm font-medium bg-amber-500 text-zinc-950"
+                                                                className="group relative px-4 py-2 rounded-full text-sm font-medium bg-brand-500 text-white"
                                                             >
                                                                 {selectedGenreNames[index]}
                                                                 <button

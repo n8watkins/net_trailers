@@ -72,7 +72,7 @@ function SimpleContentCard({
             <div className="relative aspect-[2/3] bg-gray-800 rounded-md overflow-hidden">
                 {!imageLoaded && (
                     <div className="w-full h-full bg-gray-800 animate-pulse flex items-center justify-center">
-                        <div className="w-6 h-6 border-2 border-gray-600 border-t-amber-500 rounded-full animate-spin"></div>
+                        <div className="w-6 h-6 border-2 border-gray-600 border-t-brand-500 rounded-full animate-spin"></div>
                     </div>
                 )}
 
@@ -981,7 +981,7 @@ export default function CollectionCreatorModal() {
                                             onClick={handleToggleInfinite}
                                             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                                                 enableInfiniteContent
-                                                    ? 'bg-amber-500'
+                                                    ? 'bg-brand-500'
                                                     : 'bg-gray-600'
                                             }`}
                                         >
@@ -1001,14 +1001,14 @@ export default function CollectionCreatorModal() {
                                     <div className="flex items-center justify-between gap-3 w-full">
                                         <div className="flex flex-wrap gap-2 flex-1">
                                             {selectedGenres.length === 0 ? (
-                                                <span className="px-3 py-1 text-sm font-bold rounded-full bg-amber-500 text-zinc-950">
+                                                <span className="px-3 py-1 text-sm font-bold rounded-full bg-brand-500 text-white">
                                                     All Genres
                                                 </span>
                                             ) : (
                                                 selectedGenres.map((genreId, index) => (
                                                     <span
                                                         key={`${genreId}-${index}`}
-                                                        className="relative group/genre px-3 py-1 text-sm font-bold rounded-full bg-amber-500 text-zinc-950 cursor-default select-none"
+                                                        className="relative group/genre px-3 py-1 text-sm font-bold rounded-full bg-brand-500 text-white cursor-default select-none"
                                                     >
                                                         {GENRE_LOOKUP.get(genreId) || genreId}
                                                         <button
@@ -1070,7 +1070,7 @@ export default function CollectionCreatorModal() {
                                 <div
                                     className={`flex-1 bg-gray-800/50 rounded-lg border p-4 transition-all duration-500 flex items-center ${
                                         highlightMediaType
-                                            ? 'border-yellow-500 bg-yellow-500/20'
+                                            ? 'border-brand-500 bg-brand-500/20'
                                             : 'border-gray-700'
                                     }`}
                                 >
@@ -1085,7 +1085,7 @@ export default function CollectionCreatorModal() {
                                                 type="button"
                                                 onClick={() => handleMediaTypeToggle('movie')}
                                                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                                                    isMovieEnabled ? 'bg-amber-500' : 'bg-gray-600'
+                                                    isMovieEnabled ? 'bg-brand-500' : 'bg-gray-600'
                                                 }`}
                                             >
                                                 <span
@@ -1107,7 +1107,7 @@ export default function CollectionCreatorModal() {
                                                 type="button"
                                                 onClick={() => handleMediaTypeToggle('tv')}
                                                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                                                    isTVEnabled ? 'bg-amber-500' : 'bg-gray-600'
+                                                    isTVEnabled ? 'bg-brand-500' : 'bg-gray-600'
                                                 }`}
                                             >
                                                 <span
@@ -1155,7 +1155,7 @@ export default function CollectionCreatorModal() {
                                 <button
                                     onClick={handlePrevPage}
                                     disabled={currentPage === 0}
-                                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-zinc-950 bg-gradient-to-r from-amber-500 to-amber-400 rounded-lg hover:from-amber-400 hover:to-amber-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
+                                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-brand-500 to-brand-400 rounded-lg hover:from-brand-400 hover:to-brand-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
                                 >
                                     <ChevronLeftIcon className="w-5 h-5" />
                                     Previous
@@ -1166,7 +1166,7 @@ export default function CollectionCreatorModal() {
                                 <button
                                     onClick={handleNextPage}
                                     disabled={currentPage === totalPages - 1}
-                                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-zinc-950 bg-gradient-to-r from-amber-400 to-amber-500 rounded-lg hover:from-amber-300 hover:to-amber-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
+                                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-brand-400 to-brand-500 rounded-lg hover:from-brand-300 hover:to-brand-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
                                 >
                                     Next
                                     <ChevronRightIcon className="w-5 h-5" />

@@ -34,13 +34,13 @@ function Tile({
     return (
         <Link
             href={href}
-            className={`${CARD} group flex min-w-0 flex-col gap-1 p-4 transition-colors hover:border-amber-400/40 hover:bg-[#181818] focus-visible:outline-2 focus-visible:outline-amber-400`}
+            className={`${CARD} group flex min-w-0 flex-col gap-1 p-4 transition-colors hover:border-brand-400/40 hover:bg-[#181818] focus-visible:outline-2 focus-visible:outline-brand-400`}
         >
             <span className="flex items-center justify-between gap-2 text-[13px] text-gray-400">
                 {label}
                 <ArrowRight
                     aria-hidden
-                    className="size-3.5 text-gray-600 transition-transform group-hover:translate-x-0.5 group-hover:text-amber-400"
+                    className="size-3.5 text-gray-600 transition-transform group-hover:translate-x-0.5 group-hover:text-brand-300"
                 />
             </span>
             <span
@@ -48,7 +48,7 @@ function Tile({
                     tone === 'bad'
                         ? 'text-red-300'
                         : tone === 'warn'
-                          ? 'text-amber-300'
+                          ? 'text-brand-300'
                           : 'text-white'
                 }`}
             >
@@ -65,7 +65,7 @@ function Tile({
                     className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-white/10"
                 >
                     <span
-                        className={`block h-full rounded-full ${share >= 1 ? 'bg-red-400' : share >= 0.7 ? 'bg-amber-300' : 'bg-amber-500'}`}
+                        className={`block h-full rounded-full ${share >= 1 ? 'bg-red-400' : share >= 0.7 ? 'bg-brand-300' : 'bg-brand-500'}`}
                         style={{ width: `${Math.max(share * 100, meter.value > 0 ? 2 : 0)}%` }}
                     />
                 </span>
@@ -89,7 +89,7 @@ function PanelHead({ title, href, link }: { title: string; href: string; link: s
             <h2 className="text-sm font-semibold text-white">{title}</h2>
             <Link
                 href={href}
-                className="text-[13px] text-amber-400 hover:text-amber-300 focus-visible:outline-2 focus-visible:outline-amber-400"
+                className="text-[13px] text-brand-400 hover:text-brand-300 focus-visible:outline-2 focus-visible:outline-brand-400"
             >
                 {link}
             </Link>
@@ -237,7 +237,7 @@ export default async function AdminOverview() {
                                     >
                                         <CircleAlert
                                             aria-hidden
-                                            className={`size-4 shrink-0 ${a.tone === 'bad' ? 'text-red-400' : 'text-amber-300'}`}
+                                            className={`size-4 shrink-0 ${a.tone === 'bad' ? 'text-red-400' : 'text-brand-300'}`}
                                         />
                                         {a.text}
                                     </Link>

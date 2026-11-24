@@ -269,7 +269,7 @@ export function WizardStep3NamePreview({
                     {activeFilterCount > 0 && (
                         <>
                             <div className="border-t border-gray-700 my-2 pt-2">
-                                <span className="text-amber-300 font-medium text-xs">
+                                <span className="text-brand-300 font-medium text-xs">
                                     {activeFilterCount} Advanced Filter
                                     {activeFilterCount > 1 ? 's' : ''} Applied
                                 </span>
@@ -301,7 +301,7 @@ export function WizardStep3NamePreview({
                                 }}
                                 placeholder="e.g., Epic Sci-Fi Adventures"
                                 maxLength={CUSTOM_ROW_CONSTRAINTS.MAX_NAME_LENGTH}
-                                className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                                className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-400"
                                 autoFocus
                             />
                             <button
@@ -352,7 +352,7 @@ export function WizardStep3NamePreview({
                     <div>
                         {nameError && <p className="text-sm text-red-500">{nameError}</p>}
                         {!isNameValid && formData.name.length > 0 && (
-                            <p className="text-sm text-yellow-500">
+                            <p className="text-sm text-brand-400">
                                 {formData.name.length < CUSTOM_ROW_CONSTRAINTS.MIN_NAME_LENGTH
                                     ? `At least ${CUSTOM_ROW_CONSTRAINTS.MIN_NAME_LENGTH} characters required`
                                     : 'Name too long'}
@@ -410,7 +410,7 @@ export function WizardStep3NamePreview({
                                 {previewContent.map((content, index) => (
                                     <div
                                         key={`${content.id}-${index}`}
-                                        className="relative aspect-[2/3] bg-gray-800 rounded-md overflow-hidden group cursor-pointer hover:ring-2 hover:ring-amber-400 transition-all"
+                                        className="relative aspect-[2/3] bg-gray-800 rounded-md overflow-hidden group cursor-pointer hover:ring-2 hover:ring-brand-400 transition-all"
                                         style={{
                                             gridColumn:
                                                 Math.floor(index / 10) === currentPreviewPage
@@ -435,7 +435,7 @@ export function WizardStep3NamePreview({
                                         {content.vote_average > 0 && (
                                             <div className="absolute top-2 left-2 bg-black/80 backdrop-blur-sm rounded-full px-2 py-1 z-10">
                                                 <div className="flex items-center gap-1">
-                                                    <span className="text-yellow-400 text-xs">
+                                                    <span className="text-brand-400 text-xs">
                                                         ⭐
                                                     </span>
                                                     <span className="text-white text-xs font-medium">
@@ -513,7 +513,7 @@ export function WizardStep3NamePreview({
                     type="button"
                     onClick={onCreate}
                     disabled={!isNameValid || isCreating}
-                    className="flex-1 px-6 py-3 bg-amber-500 text-zinc-950 rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                    className="flex-1 px-6 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                 >
                     {isCreating ? 'Creating Collection...' : 'Create Collection'}
                 </button>

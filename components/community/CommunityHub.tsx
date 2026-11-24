@@ -49,7 +49,7 @@ export default function CommunityHub({ activeTab }: CommunityHubProps) {
             <SubPageLayout
                 title="Community"
                 icon={<UsersIcon className="w-8 h-8" />}
-                iconColor="text-yellow-500"
+                iconColor="text-brand-400"
             >
                 <PageLoader />
             </SubPageLayout>

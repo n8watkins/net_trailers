@@ -90,7 +90,7 @@ export default function NotificationBell() {
             {/* Unread Badge */}
             {hasUnread && (
                 <span
-                    className="absolute right-0 top-0 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-xs font-bold text-zinc-950"
+                    className="absolute right-0 top-0 flex h-5 w-5 items-center justify-center rounded-full bg-brand-400 text-xs font-bold text-white"
                     aria-hidden="true"
                 >
                     {safeUnreadCount > 9 ? '9+' : safeUnreadCount}

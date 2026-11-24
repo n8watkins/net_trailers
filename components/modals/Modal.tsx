@@ -898,8 +898,8 @@ function Modal() {
                                                         <SparklesIcon
                                                             className={`h-4 w-4 sm:h-6 sm:w-6 text-white/70 transition-colors ${
                                                                 isRandomLoading
-                                                                    ? 'animate-spin text-amber-300'
-                                                                    : 'group-hover:text-amber-300'
+                                                                    ? 'animate-spin text-brand-300'
+                                                                    : 'group-hover:text-brand-300'
                                                             }`}
                                                         />
                                                     </button>

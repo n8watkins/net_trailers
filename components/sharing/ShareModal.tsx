@@ -323,7 +323,7 @@ export default function ShareModal({
                                     onClick={handleToggleActive}
                                     className={`px-4 py-2 rounded-md text-sm font-medium transition ${
                                         shareLink.isActive
-                                            ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
+                                            ? 'bg-brand-500/20 text-brand-400 hover:bg-brand-500/30'
                                             : 'bg-green-600/20 text-green-500 hover:bg-green-600/30'
                                     }`}
                                 >

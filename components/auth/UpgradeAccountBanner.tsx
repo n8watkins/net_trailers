@@ -14,7 +14,7 @@ export function UpgradeAccountBanner() {
             <button
                 type="button"
                 onClick={() => openAuthModal('signin')}
-                className="shrink-0 rounded-md bg-amber-500 px-3 py-1.5 text-sm font-semibold text-zinc-950 transition-colors hover:bg-amber-400"
+                className="shrink-0 rounded-md bg-brand-500 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-brand-400"
             >
                 Sign in
             </button>

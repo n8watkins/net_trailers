@@ -69,7 +69,7 @@ export default function SearchBar({
         green: 'focus:ring-green-500',
         blue: 'focus:ring-blue-500',
         gray: 'focus:ring-gray-400',
-        yellow: 'focus:ring-yellow-500',
+        yellow: 'focus:ring-brand-500',
         pink: 'focus:ring-pink-500',
     }
 
@@ -109,13 +109,13 @@ export default function SearchBar({
                         {/* Animated pulsing rings when listening */}
                         {isListening && (
                             <>
-                                <span className="absolute inset-0 rounded-full bg-amber-400/40 animate-ping" />
+                                <span className="absolute inset-0 rounded-full bg-brand-400/40 animate-ping" />
                                 <span
-                                    className="absolute inset-0 rounded-full bg-amber-400/30 animate-pulse"
+                                    className="absolute inset-0 rounded-full bg-brand-400/30 animate-pulse"
                                     style={{ animationDuration: '1s' }}
                                 />
                                 <span
-                                    className="absolute inset-0 rounded-full bg-amber-400/20 animate-pulse"
+                                    className="absolute inset-0 rounded-full bg-brand-400/20 animate-pulse"
                                     style={{ animationDuration: '1.5s', animationDelay: '0.3s' }}
                                 />
                             </>
@@ -123,7 +123,7 @@ export default function SearchBar({
                         <MicrophoneIcon
                             className={`h-5 w-5 relative z-10 transition-all ${
                                 isListening
-                                    ? 'scale-110 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)] !text-amber-400'
+                                    ? 'scale-110 drop-shadow-[0_0_8px_rgba(255, 90, 97,0.8)] !text-brand-400'
                                     : ''
                             }`}
                         />

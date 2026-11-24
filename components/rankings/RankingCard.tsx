@@ -119,7 +119,7 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
 
                         {/* Trending badge */}
                         {ranking.likes > 50 && (
-                            <div className="absolute top-2 left-2 px-2 py-1 bg-gradient-to-r from-orange-500 to-amber-400 rounded-full text-[10px] font-bold text-white flex items-center gap-1 shadow-md">
+                            <div className="absolute top-2 left-2 px-2 py-1 bg-gradient-to-r from-orange-500 to-brand-400 rounded-full text-[10px] font-bold text-white flex items-center gap-1 shadow-md">
                                 <FireIcon className="w-3 h-3" />
                                 <span>HOT</span>
                             </div>
@@ -157,7 +157,7 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
                                         className="rounded-full ring-1 ring-zinc-700/50"
                                     />
                                 ) : (
-                                    <div className="w-[18px] h-[18px] rounded-full bg-gradient-to-br from-yellow-500 to-amber-600 flex items-center justify-center text-[9px] font-bold text-black">
+                                    <div className="w-[18px] h-[18px] rounded-full bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center text-[9px] font-bold text-white">
                                         {ranking.userName?.[0]?.toUpperCase() || '?'}
                                     </div>
                                 )}
@@ -187,8 +187,8 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
                             <span
                                 className={`text-xs font-medium transition-colors ${
                                     isLiked
-                                        ? 'text-amber-300'
-                                        : 'text-gray-500 group-hover/like:text-amber-300'
+                                        ? 'text-brand-300'
+                                        : 'text-gray-500 group-hover/like:text-brand-300'
                                 }`}
                             >
                                 {ranking.likes}

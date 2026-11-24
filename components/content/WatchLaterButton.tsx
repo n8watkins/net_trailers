@@ -115,7 +115,7 @@ function WatchLaterButton({
                     }}
                     className={`p-3 rounded-full border-2 transition-all duration-200 flex items-center justify-center ${
                         isButtonOrDropdownHovered
-                            ? 'bg-amber-500 border-amber-400 text-black'
+                            ? 'bg-brand-500 border-brand-400 text-white'
                             : 'bg-black border-white/30 text-white'
                     } ${className}`}
                     title={inWatchlist ? 'In Lists' : 'Add to Lists'}

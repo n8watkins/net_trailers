@@ -91,9 +91,9 @@ function FilterSelect({
                     id={id}
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
-                    className={`appearance-none bg-gray-800 text-white rounded-lg pl-3 pr-9 h-10 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 transition-colors border ${
+                    className={`appearance-none bg-gray-800 text-white rounded-lg pl-3 pr-9 h-10 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 transition-colors border ${
                         fullWidth ? 'w-full' : 'min-w-[9.5rem]'
-                    } ${isActive ? 'border-amber-400' : 'border-gray-600 hover:border-gray-500'}`}
+                    } ${isActive ? 'border-brand-400' : 'border-gray-600 hover:border-gray-500'}`}
                 >
                     {options.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -133,9 +133,9 @@ function SegmentedControl({
                         role="radio"
                         aria-checked={selected}
                         onClick={() => onChange(option.value)}
-                        className={`flex items-center gap-1.5 h-10 px-3 sm:px-4 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-400 ${
+                        className={`flex items-center gap-1.5 h-10 px-3 sm:px-4 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-400 ${
                             selected
-                                ? 'bg-amber-500 text-zinc-950'
+                                ? 'bg-brand-500 text-white'
                                 : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                         }`}
                     >
@@ -222,7 +222,7 @@ function FiltersSheet({
                     <button
                         type="button"
                         onClick={() => onApply(draft)}
-                        className="h-11 flex-[2] rounded-lg bg-amber-500 text-sm font-semibold text-zinc-950 hover:bg-amber-400"
+                        className="h-11 flex-[2] rounded-lg bg-brand-500 text-sm font-semibold text-white hover:bg-brand-400"
                     >
                         Apply
                     </button>
@@ -293,14 +293,14 @@ export default function SearchFilters({ className = '' }: SearchFiltersProps) {
                             onClick={() => setSheetOpen(true)}
                             className={`md:hidden flex items-center gap-2 h-10 px-3 rounded-lg border text-sm font-medium transition-colors ${
                                 activeDetailCount > 0
-                                    ? 'border-amber-400 text-amber-300'
+                                    ? 'border-brand-400 text-brand-300'
                                     : 'border-gray-600 text-gray-200 hover:bg-white/5'
                             }`}
                         >
                             <AdjustmentsHorizontalIcon className="w-5 h-5" />
                             Filters
                             {activeDetailCount > 0 && (
-                                <span className="ml-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-xs font-bold text-zinc-950">
+                                <span className="ml-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-500 px-1.5 text-xs font-bold text-white">
                                     {activeDetailCount}
                                 </span>
                             )}
@@ -330,7 +330,7 @@ export default function SearchFilters({ className = '' }: SearchFiltersProps) {
                                 <button
                                     type="button"
                                     onClick={() => updateFilters(DEFAULT_DETAIL_FILTERS)}
-                                    className="h-10 px-2 text-sm text-amber-300 hover:text-amber-200 underline-offset-4 hover:underline"
+                                    className="h-10 px-2 text-sm text-brand-300 hover:text-brand-200 underline-offset-4 hover:underline"
                                 >
                                     Clear filters
                                 </button>

@@ -12,7 +12,7 @@ interface FooterProps {
 }
 
 const linkClass = 'text-sm text-gray-300 transition-colors duration-200 hover:text-white'
-const headingClass = 'mb-3 text-sm font-semibold uppercase tracking-wide text-amber-400'
+const headingClass = 'mb-3 text-sm font-semibold uppercase tracking-wide text-brand-400'
 
 /**
  * Compact site footer: three short groups (Navigate, Project, Help & legal).
@@ -82,7 +82,7 @@ function Footer({
                                 href="https://github.com/n8watkins"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-gray-400 transition-colors hover:text-amber-400"
+                                className="text-gray-400 transition-colors hover:text-brand-300"
                                 aria-label="GitHub"
                             >
                                 <svg
@@ -99,7 +99,7 @@ function Footer({
                                 href="https://www.linkedin.com/in/n8watkins/"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-gray-400 transition-colors hover:text-amber-400"
+                                className="text-gray-400 transition-colors hover:text-brand-300"
                                 aria-label="LinkedIn"
                             >
                                 <svg
@@ -116,7 +116,7 @@ function Footer({
                                 href="https://x.com/n8watkins"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-gray-400 transition-colors hover:text-amber-400"
+                                className="text-gray-400 transition-colors hover:text-brand-300"
                                 aria-label="Twitter/X"
                             >
                                 <svg
@@ -222,7 +222,7 @@ function Footer({
                             href="https://www.themoviedb.org/"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-amber-400 transition-colors hover:text-amber-300"
+                            className="text-brand-400 transition-colors hover:text-brand-300"
                         >
                             TMDB
                         </a>

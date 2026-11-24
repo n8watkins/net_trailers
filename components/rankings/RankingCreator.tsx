@@ -345,7 +345,7 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                                             <div
                                                 className={`relative flex items-center justify-center w-12 h-12 rounded-full font-bold text-lg transition-all duration-300 ${
                                                     step === currentStep
-                                                        ? 'bg-yellow-500 text-black scale-110 ring-4 ring-yellow-500/20'
+                                                        ? 'bg-brand-500 text-white scale-110 ring-4 ring-brand-500/20'
                                                         : step < currentStep
                                                           ? 'bg-green-500 text-white'
                                                           : 'bg-zinc-800 text-gray-500'
@@ -380,7 +380,7 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                                 <div className="flex-1 text-left">
                                     <span
                                         className={`text-sm font-medium transition-colors duration-200 ${
-                                            currentStep === 1 ? 'text-yellow-400' : 'text-gray-400'
+                                            currentStep === 1 ? 'text-brand-400' : 'text-gray-400'
                                         }`}
                                     >
                                         Pick Content
@@ -389,7 +389,7 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                                 <div className="flex-1 text-center">
                                     <span
                                         className={`text-sm font-medium transition-colors duration-200 ${
-                                            currentStep === 2 ? 'text-yellow-400' : 'text-gray-400'
+                                            currentStep === 2 ? 'text-brand-400' : 'text-gray-400'
                                         }`}
                                     >
                                         Order & Notes
@@ -398,7 +398,7 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                                 <div className="flex-1 text-right">
                                     <span
                                         className={`text-sm font-medium transition-colors duration-200 ${
-                                            currentStep === 3 ? 'text-yellow-400' : 'text-gray-400'
+                                            currentStep === 3 ? 'text-brand-400' : 'text-gray-400'
                                         }`}
                                     >
                                         Name & Share
@@ -432,7 +432,7 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                                                 value={query}
                                                 onChange={(e) => updateQuery(e.target.value)}
                                                 placeholder="Search for movies and TV shows..."
-                                                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-12 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500"
+                                                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-12 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-brand-500"
                                             />
                                         </div>
 
@@ -511,7 +511,7 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                                                                                     </div>
                                                                                 ) : canSelect ? (
                                                                                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                                        <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center">
+                                                                                        <div className="w-12 h-12 bg-brand-500 rounded-full flex items-center justify-center">
                                                                                             <PlusIcon className="w-8 h-8 text-black" />
                                                                                         </div>
                                                                                     </div>
@@ -612,7 +612,7 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                                                             selectedItems.length >=
                                                             RANKING_CONSTRAINTS.MIN_ITEM_COUNT
                                                                 ? 'bg-green-500/20 text-green-400'
-                                                                : 'bg-yellow-500/20 text-yellow-400'
+                                                                : 'bg-brand-500/20 text-brand-400'
                                                         }`}
                                                     >
                                                         {selectedItems.length}
@@ -649,7 +649,7 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                                                                     onClick={() =>
                                                                         handleToggleItem(content)
                                                                     }
-                                                                    className="flex-shrink-0 w-6 h-6 bg-amber-400 hover:bg-amber-500 text-zinc-950 rounded-full flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100"
+                                                                    className="flex-shrink-0 w-6 h-6 bg-brand-400 hover:bg-brand-500 text-white rounded-full flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100"
                                                                 >
                                                                     <XMarkIcon className="w-4 h-4" />
                                                                 </button>
@@ -700,8 +700,8 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                                                 </div>
                                             </div>
                                             <div className="flex items-start gap-3 p-4 bg-zinc-800/50 border border-zinc-700 rounded-lg">
-                                                <div className="flex-shrink-0 w-8 h-8 bg-yellow-500/10 rounded-full flex items-center justify-center">
-                                                    <Bars3Icon className="w-5 h-5 text-yellow-500" />
+                                                <div className="flex-shrink-0 w-8 h-8 bg-brand-500/10 rounded-full flex items-center justify-center">
+                                                    <Bars3Icon className="w-5 h-5 text-brand-400" />
                                                 </div>
                                                 <div className="flex-1 text-sm">
                                                     <p className="text-gray-300 mb-1">
@@ -733,14 +733,14 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                                                         onDragEnd={handleDragEnd}
                                                         className={`group relative flex items-start gap-4 rounded-lg p-5 transition-all duration-200 ${
                                                             draggedIndex === actualIndex
-                                                                ? 'opacity-50 scale-95 bg-yellow-500/10 border-2 border-yellow-500 border-dashed'
+                                                                ? 'opacity-50 scale-95 bg-brand-500/10 border-2 border-brand-500 border-dashed'
                                                                 : 'bg-zinc-800 hover:bg-zinc-750 border-2 border-transparent cursor-move'
                                                         }`}
                                                     >
                                                         {/* Drag handle */}
                                                         <div className="flex flex-col items-center gap-2 flex-shrink-0">
-                                                            <Bars3Icon className="w-7 h-7 text-gray-500 group-hover:text-yellow-500 transition-colors" />
-                                                            <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 text-black font-bold rounded-full flex items-center justify-center text-xl shadow-lg ring-2 ring-black/20">
+                                                            <Bars3Icon className="w-7 h-7 text-gray-500 group-hover:text-brand-300 transition-colors" />
+                                                            <div className="w-12 h-12 bg-gradient-to-br from-brand-400 to-brand-600 text-white font-bold rounded-full flex items-center justify-center text-xl shadow-lg ring-2 ring-black/20">
                                                                 #{actualIndex + 1}
                                                             </div>
                                                         </div>
@@ -775,7 +775,7 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                                                         {/* Content info and note */}
                                                         <div className="flex-1 min-w-0 space-y-3">
                                                             <div>
-                                                                <h3 className="text-xl font-bold text-white group-hover:text-yellow-400 transition-colors line-clamp-2">
+                                                                <h3 className="text-xl font-bold text-white group-hover:text-brand-300 transition-colors line-clamp-2">
                                                                     {getTitle(item.content)}
                                                                 </h3>
                                                                 <div className="flex items-center gap-3 mt-1">
@@ -784,7 +784,7 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                                                                     </p>
                                                                     {item.content.vote_average && (
                                                                         <div className="flex items-center gap-1">
-                                                                            <span className="text-yellow-400">
+                                                                            <span className="text-brand-400">
                                                                                 ★
                                                                             </span>
                                                                             <span className="text-sm font-medium text-gray-300">
@@ -815,7 +815,7 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                                                                     maxLength={
                                                                         RANKING_CONSTRAINTS.MAX_NOTE_LENGTH
                                                                     }
-                                                                    className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all"
+                                                                    className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all"
                                                                     onClick={(e) =>
                                                                         e.stopPropagation()
                                                                     }
@@ -871,7 +871,7 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                                                             setItemsPerPage(Number(e.target.value))
                                                             setCurrentPage(1) // Reset to first page
                                                         }}
-                                                        className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20"
+                                                        className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
                                                     >
                                                         <option value={5}>5</option>
                                                         <option value={10}>10</option>
@@ -931,7 +931,7 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                                                                     }
                                                                     className={`min-w-[40px] h-10 rounded-lg text-sm font-medium transition-all ${
                                                                         page === currentPage
-                                                                            ? 'bg-yellow-500 text-black'
+                                                                            ? 'bg-brand-500 text-white'
                                                                             : 'bg-zinc-800 hover:bg-zinc-700 text-white'
                                                                     }`}
                                                                 >
@@ -987,7 +987,7 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                                 {/* Title */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                                        Title <span className="text-amber-400">*</span>
+                                        Title <span className="text-brand-400">*</span>
                                     </label>
                                     <input
                                         type="text"
@@ -995,7 +995,7 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                                         onChange={(e) => setTitle(e.target.value)}
                                         placeholder="My Top 10 Sci-Fi Movies"
                                         maxLength={RANKING_CONSTRAINTS.MAX_TITLE_LENGTH}
-                                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500"
+                                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-brand-500"
                                     />
                                     <p className="text-sm text-gray-500 mt-1">
                                         {title.length}/{RANKING_CONSTRAINTS.MAX_TITLE_LENGTH}{' '}
@@ -1014,7 +1014,7 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                                         placeholder="Describe your ranking criteria or theme..."
                                         maxLength={RANKING_CONSTRAINTS.MAX_DESCRIPTION_LENGTH}
                                         rows={4}
-                                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 resize-none"
+                                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-brand-500 resize-none"
                                     />
                                     <p className="text-sm text-gray-500 mt-1">
                                         {description.length}/
@@ -1032,7 +1032,7 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                                             onClick={() => setIsPublic(true)}
                                             className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-colors ${
                                                 isPublic
-                                                    ? 'border-yellow-500 bg-yellow-500/10 text-yellow-500'
+                                                    ? 'border-brand-500 bg-brand-500/10 text-brand-400'
                                                     : 'border-zinc-700 bg-zinc-800 text-gray-400 hover:border-zinc-600'
                                             }`}
                                         >
@@ -1043,7 +1043,7 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                                             onClick={() => setIsPublic(false)}
                                             className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-colors ${
                                                 !isPublic
-                                                    ? 'border-yellow-500 bg-yellow-500/10 text-yellow-500'
+                                                    ? 'border-brand-500 bg-brand-500/10 text-brand-400'
                                                     : 'border-zinc-700 bg-zinc-800 text-gray-400 hover:border-zinc-600'
                                             }`}
                                         >
@@ -1085,7 +1085,7 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                                             (currentStep === 1 && !isStep1Valid) ||
                                             (currentStep === 2 && !isStep2Valid)
                                         }
-                                        className="flex items-center gap-2 px-6 py-3 bg-yellow-500 hover:bg-yellow-400 text-black font-medium rounded-lg disabled:bg-zinc-800 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors"
+                                        className="flex items-center gap-2 px-6 py-3 bg-brand-500 hover:bg-brand-400 text-white font-medium rounded-lg disabled:bg-zinc-800 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors"
                                     >
                                         Next
                                         <ChevronRightIcon className="w-5 h-5" />

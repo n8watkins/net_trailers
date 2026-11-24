@@ -193,7 +193,7 @@ function RatingsPageContent() {
                                 onClick={() => setShowTitleModal(true)}
                                 className="inline-flex h-9 items-center gap-2 rounded-full border border-zinc-700 bg-zinc-900 px-4 text-sm font-medium text-gray-300 transition-colors hover:border-zinc-500 hover:text-white"
                             >
-                                <FilmIcon className="h-4 w-4 text-amber-400" />
+                                <FilmIcon className="h-4 w-4 text-brand-400" />
                                 Rate titles
                             </button>
                             <ManageMenu
@@ -340,7 +340,7 @@ function RatingsPageContent() {
                             <button
                                 onClick={handleResetAllRatings}
                                 disabled={isResetting}
-                                className="flex-1 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-zinc-950 rounded-lg transition-colors disabled:opacity-50"
+                                className="flex-1 px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg transition-colors disabled:opacity-50"
                             >
                                 {isResetting ? 'Resetting...' : 'Reset All'}
                             </button>

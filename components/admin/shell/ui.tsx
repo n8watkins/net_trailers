@@ -38,7 +38,7 @@ export function Loading({ label = 'Loading' }: { label?: string }) {
             role="status"
             className="flex items-center justify-center gap-2 py-10 text-sm text-gray-400"
         >
-            <LoaderCircle aria-hidden className="size-4 animate-spin text-amber-400" />
+            <LoaderCircle aria-hidden className="size-4 animate-spin text-brand-400" />
             {label}
         </div>
     )
@@ -66,8 +66,8 @@ export function ErrorNote({ children }: { children: React.ReactNode }) {
 
 export const BUTTON = {
     primary:
-        'inline-flex min-h-9 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-amber-500 px-3.5 text-sm font-semibold text-black hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300',
+        'inline-flex min-h-9 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-brand-500 px-3.5 text-sm font-semibold text-white hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-300',
     secondary:
-        'inline-flex min-h-9 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-white/15 bg-white/5 px-3.5 text-sm font-medium text-gray-100 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400',
+        'inline-flex min-h-9 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-white/15 bg-white/5 px-3.5 text-sm font-medium text-gray-100 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400',
     danger: 'inline-flex min-h-9 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-red-600 px-3.5 text-sm font-semibold text-white hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300',
 }

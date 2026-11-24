@@ -42,9 +42,9 @@ export function AdminPageHeader({
                                         href={tab.href}
                                         aria-current={active ? 'page' : undefined}
                                         className={cx(
-                                            '-mb-px flex min-h-10 items-center border-b-2 px-3 text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-amber-400',
+                                            '-mb-px flex min-h-10 items-center border-b-2 px-3 text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-brand-400',
                                             active
-                                                ? 'border-amber-400 text-amber-300'
+                                                ? 'border-brand-400 text-brand-300'
                                                 : 'border-transparent text-gray-400 hover:text-white'
                                         )}
                                     >

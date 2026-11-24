@@ -8,7 +8,7 @@ import WebAnalytics from '../components/utility/WebAnalytics'
 import { NONCE_HEADER } from '../lib/csp'
 
 export const viewport: Viewport = {
-    themeColor: '#f59e0b',
+    themeColor: '#e50914',
 }
 
 export const metadata: Metadata = {

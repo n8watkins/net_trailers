@@ -21,7 +21,7 @@ interface PageHeaderProps {
 export default function PageHeader({
     title,
     icon,
-    iconColor = 'text-amber-400',
+    iconColor = 'text-brand-400',
     actions,
     children,
 }: PageHeaderProps) {

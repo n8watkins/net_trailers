@@ -31,7 +31,7 @@ function UnsubscribedContent() {
                             <div className="space-y-3">
                                 <Link
                                     href="/settings/preferences"
-                                    className="block w-full px-4 py-3 bg-amber-500 text-zinc-950 rounded-lg font-medium transition-all duration-200 hover:bg-amber-600"
+                                    className="block w-full px-4 py-3 bg-brand-500 text-white rounded-lg font-medium transition-all duration-200 hover:bg-brand-600"
                                 >
                                     Go to Settings
                                 </Link>
@@ -60,7 +60,7 @@ function UnsubscribedContent() {
                             <div className="space-y-3">
                                 <Link
                                     href="/settings/preferences"
-                                    className="block w-full px-4 py-3 bg-amber-500 text-zinc-950 rounded-lg font-medium transition-all duration-200 hover:bg-amber-600"
+                                    className="block w-full px-4 py-3 bg-brand-500 text-white rounded-lg font-medium transition-all duration-200 hover:bg-brand-600"
                                 >
                                     Manage Email Settings
                                 </Link>

@@ -166,9 +166,9 @@ export function SmartCollectionBuilder({
                                             <div
                                                 className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition-all ${
                                                     isCompleted
-                                                        ? 'bg-amber-500 text-zinc-950'
+                                                        ? 'bg-brand-500 text-white'
                                                         : isCurrent
-                                                          ? 'bg-amber-500 text-zinc-950 ring-4 ring-amber-500/30'
+                                                          ? 'bg-brand-500 text-white ring-4 ring-brand-500/30'
                                                           : 'bg-gray-700 text-gray-400'
                                                 }`}
                                             >
@@ -181,7 +181,7 @@ export function SmartCollectionBuilder({
                                             {step < 3 && (
                                                 <div
                                                     className={`flex-1 h-1 rounded transition-all ${
-                                                        isCompleted ? 'bg-amber-500' : 'bg-gray-700'
+                                                        isCompleted ? 'bg-brand-500' : 'bg-gray-700'
                                                     }`}
                                                 />
                                             )}

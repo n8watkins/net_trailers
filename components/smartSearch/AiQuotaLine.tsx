@@ -19,7 +19,7 @@ export default function AiQuotaLine({ className = '' }: { className?: string }) 
 
     if (quota.remaining <= 0) {
         return (
-            <p className={`text-xs text-amber-200 sm:text-sm ${className}`} role="status">
+            <p className={`text-xs text-brand-200 sm:text-sm ${className}`} role="status">
                 {quota.exhausted === 'global'
                     ? 'AI search has hit its daily limit for everyone. The example moods still work.'
                     : `You've used today's ${quota.limit} AI searches. The example moods still work.`}

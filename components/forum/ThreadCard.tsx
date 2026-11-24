@@ -116,7 +116,7 @@ function ThreadCardComponent({ thread, onClick }: ThreadCardProps) {
             case 'tv-shows':
                 return 'border-l-purple-500'
             case 'recommendations':
-                return 'border-l-yellow-500'
+                return 'border-l-brand-500'
             case 'rankings':
                 return 'border-l-orange-500'
             case 'announcements':
@@ -134,7 +134,7 @@ function ThreadCardComponent({ thread, onClick }: ThreadCardProps) {
             case 'tv-shows':
                 return 'shadow-[0_0_30px_rgba(168,85,247,0.15)]'
             case 'recommendations':
-                return 'shadow-[0_0_30px_rgba(234,179,8,0.15)]'
+                return 'shadow-[0_0_30px_rgba(229, 9, 20,0.15)]'
             case 'rankings':
                 return 'shadow-[0_0_30px_rgba(249,115,22,0.15)]'
             case 'announcements':
@@ -152,7 +152,7 @@ function ThreadCardComponent({ thread, onClick }: ThreadCardProps) {
             case 'tv-shows':
                 return 'bg-purple-500/20 border-purple-500/40 text-purple-400'
             case 'recommendations':
-                return 'bg-yellow-500/20 border-yellow-500/40 text-yellow-400'
+                return 'bg-brand-500/20 border-brand-500/40 text-brand-400'
             case 'rankings':
                 return 'bg-orange-500/20 border-orange-500/40 text-orange-400'
             case 'announcements':
@@ -216,7 +216,7 @@ function ThreadCardComponent({ thread, onClick }: ThreadCardProps) {
 
                 {/* Pinned indicator */}
                 {thread.isPinned && (
-                    <div className="px-3 py-1.5 bg-yellow-500/20 border border-yellow-500/40 rounded-full text-xs font-bold text-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.2)]">
+                    <div className="px-3 py-1.5 bg-brand-500/20 border border-brand-500/40 rounded-full text-xs font-bold text-brand-400 shadow-[0_0_15px_rgba(229, 9, 20,0.2)]">
                         Pinned
                     </div>
                 )}

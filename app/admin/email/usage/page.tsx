@@ -44,7 +44,7 @@ function Meter({
                 <div
                     className={cx(
                         'h-full rounded-full',
-                        share >= 1 ? 'bg-red-400' : share >= 0.7 ? 'bg-amber-300' : 'bg-amber-500'
+                        share >= 1 ? 'bg-red-400' : share >= 0.7 ? 'bg-brand-300' : 'bg-brand-500'
                     )}
                     style={{ width: `${Math.max(share * 100, used > 0 ? 1.5 : 0)}%` }}
                 />
@@ -106,7 +106,7 @@ export default async function EmailUsagePage() {
                                     <td
                                         className={cx(
                                             'px-3 py-2.5 text-right tabular-nums',
-                                            c.refused > 0 ? 'text-amber-300' : 'text-gray-500'
+                                            c.refused > 0 ? 'text-brand-300' : 'text-gray-500'
                                         )}
                                     >
                                         {c.refused}

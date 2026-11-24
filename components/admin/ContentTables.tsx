@@ -82,7 +82,7 @@ export function ContentTables({
                                     {r.isPublic ? (
                                         <Link
                                             href={`/rankings/${r.id}`}
-                                            className="text-white hover:text-amber-300"
+                                            className="text-white hover:text-brand-300"
                                         >
                                             {r.title}
                                         </Link>
@@ -136,7 +136,7 @@ export function ContentTables({
                                 <div className="min-w-0">
                                     <p className="text-white">
                                         {r.href ? (
-                                            <Link href={r.href} className="hover:text-amber-300">
+                                            <Link href={r.href} className="hover:text-brand-300">
                                                 {r.contentType}
                                             </Link>
                                         ) : (

@@ -61,7 +61,7 @@ export function GuestModeNotification({
                     <div className="flex items-center">
                         <button
                             onClick={() => openAuthModal('signin')}
-                            className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-zinc-950 text-sm font-medium rounded-md transition-colors whitespace-nowrap shadow-lg"
+                            className="px-4 py-2 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white text-sm font-medium rounded-md transition-colors whitespace-nowrap shadow-lg"
                         >
                             Sign In
                         </button>

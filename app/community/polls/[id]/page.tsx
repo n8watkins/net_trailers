@@ -281,7 +281,7 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
                                 className="rounded-full"
                             />
                         ) : (
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-amber-400 flex items-center justify-center text-lg font-bold">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-brand-400 flex items-center justify-center text-lg font-bold">
                                 {currentPoll.userName[0]?.toUpperCase() || '?'}
                             </div>
                         )}
@@ -338,7 +338,7 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
                                             className={`px-3 py-2 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 ${
                                                 currentPoll.isHidden
                                                     ? 'text-green-400 hover:text-green-300 hover:bg-green-900/20'
-                                                    : 'text-yellow-400 hover:text-yellow-300 hover:bg-yellow-900/20'
+                                                    : 'text-brand-400 hover:text-brand-300 hover:bg-brand-900/20'
                                             }`}
                                         >
                                             {currentPoll.isHidden ? (
@@ -385,12 +385,12 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
                             </span>
                         )}
                         {isExpired ? (
-                            <span className="px-3 py-1 bg-amber-400/10 border border-amber-400/30 rounded-full text-sm text-amber-300 flex items-center gap-1">
+                            <span className="px-3 py-1 bg-brand-400/10 border border-brand-400/30 rounded-full text-sm text-brand-300 flex items-center gap-1">
                                 <XCircleIcon className="w-4 h-4" />
                                 Expired
                             </span>
                         ) : currentPoll.expiresAt ? (
-                            <span className="px-3 py-1 bg-yellow-500/10 border border-yellow-500/30 rounded-full text-sm text-yellow-400 flex items-center gap-1">
+                            <span className="px-3 py-1 bg-brand-500/10 border border-brand-500/30 rounded-full text-sm text-brand-400 flex items-center gap-1">
                                 <ClockIcon className="w-4 h-4" />
                                 Expires{' '}
                                 {formatDistanceToNow(toDate(currentPoll.expiresAt), {

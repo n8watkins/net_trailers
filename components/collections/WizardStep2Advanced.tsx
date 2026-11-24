@@ -62,7 +62,7 @@ export function WizardStep2Advanced({
                 <button
                     type="button"
                     onClick={onContinue}
-                    className="px-6 py-3 bg-amber-500 text-zinc-950 rounded-lg hover:bg-amber-600 transition-colors font-medium"
+                    className="px-6 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors font-medium"
                 >
                     Next →
                 </button>

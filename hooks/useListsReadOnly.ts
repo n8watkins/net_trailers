@@ -29,7 +29,7 @@ export const useListsReadOnly = () => {
             name: 'Watch Later',
             items: defaultWatchlist,
             emoji: '📺',
-            color: '#F59E0B',
+            color: '#e50914',
             collectionType: 'manual',
             displayAsRow: true,
             order: 0,

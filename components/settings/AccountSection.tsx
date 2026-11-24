@@ -63,7 +63,7 @@ const AccountSection: React.FC<AccountSectionProps> = ({
                     >
                         <div className="bg-[#141414] rounded-lg p-4 border border-[#313131]">
                             <div className="flex items-center gap-2 mb-2">
-                                <BookmarkIcon className="w-5 h-5 text-amber-400" />
+                                <BookmarkIcon className="w-5 h-5 text-brand-400" />
                                 <p className="text-[#b3b3b3] text-sm">Watch Later</p>
                             </div>
                             <p className="text-white text-2xl font-bold">

@@ -57,7 +57,7 @@ export default function StartupHealthCheck() {
                     <span className="text-gray-400">{isExpanded ? '▼' : '▶'}</span>
                 </div>
                 {!isExpanded && (
-                    <div className={healthy ? 'text-green-400' : 'text-yellow-400'}>
+                    <div className={healthy ? 'text-green-400' : 'text-brand-400'}>
                         {healthy
                             ? 'All systems operational'
                             : `${errors.length} error(s), ${warnings.length} warning(s)`}
@@ -98,7 +98,7 @@ export default function StartupHealthCheck() {
                             <div className="font-semibold text-yellow-400 mb-1">Warnings:</div>
                             <div className="space-y-1">
                                 {warnings.map((warning, index) => (
-                                    <div key={index} className="text-yellow-300 pl-2">
+                                    <div key={index} className="text-brand-300 pl-2">
                                         ⚠️ {warning}
                                     </div>
                                 ))}

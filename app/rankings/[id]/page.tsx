@@ -138,7 +138,7 @@ export default function RankingDetailPage() {
             <SubPageLayout
                 title="Loading Ranking..."
                 icon={<TrophyIcon className="w-8 h-8" />}
-                iconColor="text-yellow-500"
+                iconColor="text-brand-400"
             >
                 <PageLoader />
             </SubPageLayout>
@@ -151,7 +151,7 @@ export default function RankingDetailPage() {
             <SubPageLayout
                 title="Ranking Not Found"
                 icon={<TrophyIcon className="w-8 h-8" />}
-                iconColor="text-yellow-500"
+                iconColor="text-brand-400"
             >
                 <div className="max-w-2xl mx-auto text-center py-16">
                     <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-zinc-800 flex items-center justify-center">
@@ -163,7 +163,7 @@ export default function RankingDetailPage() {
                     </p>
                     <button
                         onClick={handleBack}
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-yellow-500 hover:bg-yellow-400 text-black font-medium rounded-lg transition-colors"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-brand-500 hover:bg-brand-400 text-white font-medium rounded-lg transition-colors"
                     >
                         <ArrowLeftIcon className="w-5 h-5" />
                         Back to Rankings
@@ -177,7 +177,7 @@ export default function RankingDetailPage() {
         <SubPageLayout
             title={currentRanking.title}
             icon={<TrophyIcon className="w-8 h-8" />}
-            iconColor="text-yellow-500"
+            iconColor="text-brand-400"
             headerActions={
                 <button
                     onClick={handleBack}
