@@ -25,6 +25,7 @@ import { GenrePills } from '../collections/GenrePills'
 import { getUnifiedGenresByMediaType } from '../../constants/unifiedGenres'
 import { useChildSafety } from '../../hooks/useChildSafety'
 import { useSessionStore } from '../../stores/sessionStore'
+import { DANGER_BUTTON_CLASS } from '@/components/common/DangerButton'
 import { AdvancedFilters } from '../../types/collections'
 import { AdvancedFiltersModal } from './AdvancedFiltersModal'
 
@@ -710,7 +711,7 @@ export default function CollectionEditorModal({
                                 (isSystemCollection && collection.canDelete === true)) && (
                                 <button
                                     onClick={() => setShowDeleteModal(true)}
-                                    className="ml-4 px-3 py-2 bg-red-600/20 border border-red-600 text-red-400 rounded-lg font-medium transition-all duration-200 hover:bg-red-600/30 hover:text-red-300 flex items-center gap-2"
+                                    className={`${DANGER_BUTTON_CLASS} ml-4 px-3 py-2`}
                                     title="Delete collection"
                                 >
                                     <TrashIcon className="w-5 h-5" />

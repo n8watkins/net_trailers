@@ -7,6 +7,7 @@
 
 'use client'
 
+import ErrorNote from '@/components/common/ErrorNote'
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import SubPageLayout from '../../components/layout/SubPageLayout'
@@ -259,11 +260,7 @@ export default function RankingsPage() {
                     />
                 )}
 
-                {!isGuest && error && (
-                    <div className="max-w-2xl rounded-xl border border-red-700/60 bg-red-900/20 p-4">
-                        <p className="text-red-400">{error}</p>
-                    </div>
-                )}
+                {!isGuest && error && <ErrorNote className="max-w-2xl">{error}</ErrorNote>}
 
                 {!isGuest && !isLoading && !hasAnything && !error && (
                     <PageEmptyState

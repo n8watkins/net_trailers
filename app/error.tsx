@@ -63,7 +63,7 @@ export default function Error({
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <button
                             onClick={handleGoHome}
-                            className="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+                            className="bg-brand-500 hover:bg-brand-400 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
                         >
                             🏠 Go to Home
                         </button>

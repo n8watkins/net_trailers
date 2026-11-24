@@ -11,6 +11,7 @@ import {
 import { useToast } from '../../hooks/useToast'
 import { useSessionStore } from '../../stores/sessionStore'
 import { authenticatedFetch } from '../../lib/authenticatedFetch'
+import { DANGER_BUTTON_CLASS } from '@/components/common/DangerButton'
 import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 interface ShareModalProps {
@@ -335,7 +336,7 @@ export default function ShareModal({
                         {/* Delete Button */}
                         <button
                             onClick={handleDeleteShare}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-md bg-red-600/20 text-red-500 font-medium hover:bg-red-600/30 transition"
+                            className={`${DANGER_BUTTON_CLASS} w-full px-4 py-3`}
                         >
                             <TrashIcon className="h-5 w-5" />
                             Delete Share Link

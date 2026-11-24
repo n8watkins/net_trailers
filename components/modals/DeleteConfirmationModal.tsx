@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { ClipboardDocumentIcon, CheckIcon } from '@heroicons/react/24/outline'
+import { TrashIcon } from '@heroicons/react/24/outline'
+import { DANGER_BUTTON_CLASS } from '@/components/common/DangerButton'
 import { Z_INDEX } from '../../constants/zIndex'
 
 interface DeleteConfirmationModalProps {
@@ -250,14 +252,15 @@ export function DeleteConfirmationModal({
                     <button
                         onClick={handleConfirm}
                         disabled={!isDeleteEnabled || isDeleting}
-                        className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
+                        className={`flex-1 px-4 py-2 ${
                             isDeleteEnabled && !isDeleting
-                                ? 'bg-red-600 hover:bg-red-700 text-white'
-                                : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                ? DANGER_BUTTON_CLASS
+                                : 'rounded-lg font-medium bg-gray-700 text-gray-500 cursor-not-allowed flex items-center justify-center gap-2'
                         }`}
                         aria-disabled={!isDeleteEnabled || isDeleting}
                     >
-                        {isDeleting ? 'Deleting...' : 'Delete'}
+                        <TrashIcon aria-hidden className="h-4 w-4" />
+                        {isDeleting ? 'Deleting...' : 'Delete collection'}
                     </button>
                     <button
                         onClick={onClose}

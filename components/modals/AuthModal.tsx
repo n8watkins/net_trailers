@@ -1,3 +1,4 @@
+import ErrorNote from '@/components/common/ErrorNote'
 import React from 'react'
 import { XMarkIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 import useAuth from '../../hooks/useAuth'
@@ -141,7 +142,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                         <button
                             onClick={handleLogout}
                             disabled={isWorking}
-                            className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white py-3 rounded-md font-medium transition-colors"
+                            className="w-full bg-brand-500 hover:bg-brand-400 disabled:bg-gray-600 text-white py-3 rounded-md font-medium transition-colors"
                         >
                             Sign Out
                         </button>
@@ -156,9 +157,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                         </div>
 
                         {inApp && (
-                            <div className="mb-5 flex gap-2 p-3 bg-brand-500/15 border border-brand-500/40 rounded-md">
+                            <div className="mb-5 flex gap-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-md">
                                 <ExclamationTriangleIcon className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-                                <p className="text-brand-200 text-sm">
+                                <p className="text-amber-200 text-sm">
                                     You&apos;re in an in-app browser. For sign-in to work, open this
                                     page in your default browser (Safari/Chrome) - use the menu
                                     (&hellip;) and choose{' '}
@@ -222,9 +223,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                                         ref={turnstileBox}
                                         className={`flex justify-center ${challengeShown ? '' : '!mt-0'}`}
                                     />
-                                    {emailError && (
-                                        <p className="text-red-400 text-sm">{emailError}</p>
-                                    )}
+                                    {emailError && <ErrorNote>{emailError}</ErrorNote>}
                                     <button
                                         type="submit"
                                         disabled={isWorking || loading}

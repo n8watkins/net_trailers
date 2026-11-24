@@ -1,3 +1,4 @@
+import ErrorNote from '@/components/common/ErrorNote'
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useSearch } from '../../hooks/useSearch'
@@ -202,8 +203,10 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
         return (
             <div className={`${className} flex flex-col items-center justify-center py-12`}>
                 <div className="text-center">
-                    <div className="text-red-400 text-lg font-medium mb-2">Search Error</div>
-                    <div className="text-gray-400">{error}</div>
+                    <ErrorNote className="mb-2 text-left">
+                        <span className="block font-medium">Search error</span>
+                        {error}
+                    </ErrorNote>
                     <button
                         onClick={() => {
                             if (query.trim()) {

@@ -1,4 +1,5 @@
 import React from 'react'
+import DangerButton from '@/components/common/DangerButton'
 import { UserList } from '../../../types/collections'
 
 interface DeleteConfirmationModalProps {
@@ -55,13 +56,13 @@ function DeleteConfirmationModal({
                     />
                 </div>
                 <div className="flex space-x-3">
-                    <button
+                    <DangerButton
                         onClick={confirmDeleteList}
                         disabled={deleteConfirmationInput !== deletingList.name}
-                        className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium transition-all duration-200 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex-1 px-4 py-2"
                     >
-                        Delete
-                    </button>
+                        Delete list
+                    </DangerButton>
                     <button
                         onClick={cancelDeleteList}
                         className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg font-medium transition-all duration-200 hover:bg-gray-600"

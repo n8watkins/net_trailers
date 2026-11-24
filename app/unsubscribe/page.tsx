@@ -1,5 +1,6 @@
 'use client'
 
+import ErrorNote from '@/components/common/ErrorNote'
 import { Suspense, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 
@@ -87,11 +88,7 @@ function UnsubscribeContent() {
                     Are you sure you want to unsubscribe from email notifications?
                 </p>
 
-                {status === 'error' && (
-                    <div className="bg-red-900/20 border border-red-700/60 rounded-md p-3 mb-4">
-                        <p className="text-red-400 text-sm">{errorMessage}</p>
-                    </div>
-                )}
+                {status === 'error' && <ErrorNote className="mb-4">{errorMessage}</ErrorNote>}
 
                 <button
                     onClick={handleUnsubscribe}

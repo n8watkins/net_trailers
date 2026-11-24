@@ -1,5 +1,6 @@
 'use client'
 
+import ErrorNote from '@/components/common/ErrorNote'
 import React, { useState } from 'react'
 import { GenrePills } from './GenrePills'
 import { AdvancedFiltersSection } from './AdvancedFiltersSection'
@@ -158,7 +159,7 @@ export function CustomRowForm({ initialData, onSubmit, onCancel, isLoading }: Cu
                     disabled={isGeneratingName}
                 />
                 <div className="flex justify-between mt-1">
-                    {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
+                    {errors.name && <ErrorNote>{errors.name}</ErrorNote>}
                     <p className="text-sm text-gray-400 ml-auto">
                         {formData.name.length}/{CUSTOM_ROW_CONSTRAINTS.MAX_NAME_LENGTH}
                     </p>
@@ -226,7 +227,7 @@ export function CustomRowForm({ initialData, onSubmit, onCancel, isLoading }: Cu
                     onChange={(genres) => setFormData({ ...formData, genres })}
                     mediaType={formData.mediaType}
                 />
-                {errors.genres && <p className="text-sm text-red-500 mt-2">{errors.genres}</p>}
+                {errors.genres && <ErrorNote className="mt-2">{errors.genres}</ErrorNote>}
             </div>
 
             {/* Genre Logic */}

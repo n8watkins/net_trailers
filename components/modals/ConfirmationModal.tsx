@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { XMarkIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+import { DANGER_BUTTON_CLASS } from '@/components/common/DangerButton'
 import { useEscapeKey } from '../../hooks/useEscapeKey'
 
 interface ConfirmationModalProps {
@@ -67,7 +68,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             border: 'border-red-600/50',
             icon: 'text-red-500',
             text: 'text-red-400',
-            button: 'bg-red-600 hover:bg-red-700',
+            button: DANGER_BUTTON_CLASS,
         },
     }
 
@@ -144,7 +145,9 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                         className={`flex-1 px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center justify-center ${
                             isConfirmDisabled
                                 ? 'bg-gray-600 cursor-not-allowed opacity-50 text-white'
-                                : `${colorScheme.button} text-white`
+                                : dangerLevel === 'danger'
+                                  ? colorScheme.button
+                                  : `${colorScheme.button} text-white`
                         }`}
                     >
                         {isLoading ? (
@@ -153,7 +156,15 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                                 Processing...
                             </>
                         ) : (
-                            confirmButtonText
+                            <>
+                                {dangerLevel === 'danger' && (
+                                    <ExclamationTriangleIcon
+                                        aria-hidden
+                                        className="mr-2 size-4 shrink-0"
+                                    />
+                                )}
+                                {confirmButtonText}
+                            </>
                         )}
                     </button>
                     <button

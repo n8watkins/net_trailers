@@ -1,5 +1,6 @@
 'use client'
 
+import ErrorNote from '@/components/common/ErrorNote'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useRankingStore } from '@/stores/rankingStore'
@@ -276,11 +277,7 @@ export default function RankingsContent() {
                 {/* Main Content Area */}
                 <div className="px-6 sm:px-8 lg:px-12 py-8 space-y-6">
                     {/* Error State */}
-                    {error && (
-                        <div className="bg-red-900/20 border border-red-700/60 rounded-lg p-4">
-                            <p className="text-red-400">{error}</p>
-                        </div>
-                    )}
+                    {error && <ErrorNote>{error}</ErrorNote>}
 
                     {/* Loading state */}
                     {isLoading && (

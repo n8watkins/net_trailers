@@ -133,7 +133,8 @@ const SettingsLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
         switch (priority) {
             case 'danger':
-                return 'border-l-red-500'
+                // A quiet gray, not red: red here reads as the active (brand) item
+                return 'border-l-zinc-600'
             case 'high':
                 return 'border-l-orange-500'
             case 'medium':
@@ -148,7 +149,7 @@ const SettingsLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
         switch (priority) {
             case 'danger':
-                return 'text-red-400'
+                return 'text-gray-500'
             case 'high':
                 return 'text-orange-500'
             case 'medium':

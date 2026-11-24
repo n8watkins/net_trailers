@@ -1,5 +1,6 @@
 'use client'
 
+import ErrorNote from '@/components/common/ErrorNote'
 import { useState, useEffect, useCallback } from 'react'
 import Link from '@/components/common/Link'
 import {
@@ -177,7 +178,7 @@ export default function ChangelogPage() {
                             {/* Error State */}
                             {error && (
                                 <div className="text-center py-12">
-                                    <div className="text-red-400">{error}</div>
+                                    <ErrorNote className="mx-auto max-w-md">{error}</ErrorNote>
                                 </div>
                             )}
 

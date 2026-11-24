@@ -6,6 +6,7 @@ import {
 } from '@heroicons/react/24/outline'
 import useUserData from '../../hooks/useUserData'
 import { createErrorHandler } from '../../utils/errorHandler'
+import { DANGER_BUTTON_CLASS } from '@/components/common/DangerButton'
 import { useToast } from '../../hooks/useToast'
 
 interface DataSummary {
@@ -348,7 +349,7 @@ export default function AccountManagement() {
                         <button
                             onClick={handleDeleteAccount}
                             disabled={isLoading}
-                            className="w-full flex items-center justify-center gap-2 p-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white rounded-lg transition-colors"
+                            className={`${DANGER_BUTTON_CLASS} w-full p-3`}
                         >
                             <TrashIcon className="w-5 h-5" />
                             Delete Account Permanently
@@ -392,8 +393,9 @@ export default function AccountManagement() {
                                     <button
                                         onClick={handleDeleteAccount}
                                         disabled={confirmText !== 'DELETE MY ACCOUNT'}
-                                        className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-md transition-colors duration-200"
+                                        className={`${DANGER_BUTTON_CLASS} flex-1 px-4 py-2`}
                                     >
+                                        <TrashIcon aria-hidden className="w-4 h-4" />
                                         Delete Account
                                     </button>
                                 </div>

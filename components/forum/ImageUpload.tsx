@@ -6,6 +6,7 @@
 
 'use client'
 
+import ErrorNote from '@/components/common/ErrorNote'
 import { useState, useCallback, useId, useRef, forwardRef, useImperativeHandle } from 'react'
 import Image from 'next/image'
 import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline'
@@ -172,11 +173,7 @@ const ImageUpload = forwardRef<ImageUploadHandle, ImageUploadProps>(function Ima
             )}
 
             {/* Error message */}
-            {error && (
-                <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-3">
-                    <p className="text-red-400 text-sm">{error}</p>
-                </div>
-            )}
+            {error && <ErrorNote>{error}</ErrorNote>}
 
             {/* Preview grid */}
             {previewUrls.length > 0 && (

@@ -194,7 +194,7 @@ export function ReportModal({
                             <button
                                 type="submit"
                                 disabled={!selectedReason || isSubmitting}
-                                className="flex-1 px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex-1 px-6 py-3 bg-brand-500 hover:bg-brand-400 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isSubmitting ? 'Submitting...' : 'Submit Report'}
                             </button>
