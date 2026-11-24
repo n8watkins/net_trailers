@@ -48,7 +48,7 @@ function Tile({
                     tone === 'bad'
                         ? 'text-red-300'
                         : tone === 'warn'
-                          ? 'text-brand-300'
+                          ? 'text-amber-300'
                           : 'text-white'
                 }`}
             >
@@ -65,7 +65,7 @@ function Tile({
                     className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-white/10"
                 >
                     <span
-                        className={`block h-full rounded-full ${share >= 1 ? 'bg-red-400' : share >= 0.7 ? 'bg-brand-300' : 'bg-brand-500'}`}
+                        className={`block h-full rounded-full ${share >= 1 ? 'bg-red-400' : share >= 0.7 ? 'bg-amber-400' : 'bg-emerald-500'}`}
                         style={{ width: `${Math.max(share * 100, meter.value > 0 ? 2 : 0)}%` }}
                     />
                 </span>
@@ -237,7 +237,7 @@ export default async function AdminOverview() {
                                     >
                                         <CircleAlert
                                             aria-hidden
-                                            className={`size-4 shrink-0 ${a.tone === 'bad' ? 'text-red-400' : 'text-brand-300'}`}
+                                            className={`size-4 shrink-0 ${a.tone === 'bad' ? 'text-red-400' : 'text-amber-300'}`}
                                         />
                                         {a.text}
                                     </Link>
