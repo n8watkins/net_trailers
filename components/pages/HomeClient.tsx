@@ -292,9 +292,9 @@ export default function HomeClient({ data }: HomeClientProps) {
                                     110deg,
                                     transparent 0%,
                                     transparent 30%,
-                                    rgba(252, 211, 77, 0.3) 45%,
-                                    rgba(253, 230, 138, 0.5) 50%,
-                                    rgba(252, 211, 77, 0.3) 55%,
+                                    rgba(255, 143, 148, 0.3) 45%,
+                                    rgba(255, 195, 198, 0.5) 50%,
+                                    rgba(255, 143, 148, 0.3) 55%,
                                     transparent 70%,
                                     transparent 100%
                                 );
@@ -312,9 +312,9 @@ export default function HomeClient({ data }: HomeClientProps) {
                                     135deg,
                                     transparent 0%,
                                     transparent 35%,
-                                    rgba(252, 211, 77, 0.25) 45%,
-                                    rgba(253, 230, 138, 0.4) 50%,
-                                    rgba(252, 211, 77, 0.25) 55%,
+                                    rgba(255, 143, 148, 0.25) 45%,
+                                    rgba(255, 195, 198, 0.4) 50%,
+                                    rgba(255, 143, 148, 0.25) 55%,
                                     transparent 65%,
                                     transparent 100%
                                 );
