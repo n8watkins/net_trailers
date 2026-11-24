@@ -47,7 +47,7 @@ function UnsubscribeContent() {
         return (
             <div className="min-h-screen bg-neutral-950 flex items-center justify-center p-4">
                 <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-8 max-w-md w-full text-center">
-                    <div className="text-brand-400 text-4xl mb-4">!</div>
+                    <div className="text-amber-400 text-4xl mb-4">!</div>
                     <h1 className="text-xl font-semibold text-white mb-2">Invalid Link</h1>
                     <p className="text-neutral-400">
                         This unsubscribe link is invalid or has expired. Please use the link from

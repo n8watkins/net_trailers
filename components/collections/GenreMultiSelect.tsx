@@ -60,7 +60,7 @@ export function GenreMultiSelect({
                             key={genreId}
                             type="button"
                             onClick={() => handleRemoveGenre(genreId)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600/20 text-red-400 rounded-full text-sm font-medium hover:bg-red-600/30 transition-colors"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-500/20 text-brand-200 rounded-full text-sm font-medium hover:bg-brand-500/30 transition-colors"
                         >
                             <span>{getGenreName(genreId)}</span>
                             <XMarkIcon className="w-4 h-4" />

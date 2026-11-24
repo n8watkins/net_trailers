@@ -1,5 +1,6 @@
 'use client'
 
+import ErrorNote from '@/components/common/ErrorNote'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Content, sanitizePosterPath } from '@/typings'
@@ -957,9 +958,7 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                             />
                             <div className="flex items-center justify-between mt-1">
                                 <div>
-                                    {!title.trim() && (
-                                        <p className="text-xs text-brand-300">Title is required</p>
-                                    )}
+                                    {!title.trim() && <ErrorNote>Title is required</ErrorNote>}
                                     {title.trim() &&
                                         title.length < RANKING_CONSTRAINTS.MIN_TITLE_LENGTH && (
                                             <p className="text-xs text-brand-300">

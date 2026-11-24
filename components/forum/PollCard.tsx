@@ -244,7 +244,7 @@ function PollCardComponent({ poll, userVote = [], onVote }: PollCardProps) {
                 </div>
 
                 {isExpired ? (
-                    <span className="text-brand-300 font-semibold">Expired</span>
+                    <span className="text-amber-300 font-semibold">Expired</span>
                 ) : poll.expiresAt ? (
                     <span className="text-gray-500">
                         Expires {formatDistanceToNow(toDate(poll.expiresAt), { addSuffix: true })}

@@ -353,7 +353,7 @@ export function WizardStep3NamePreview({
                     <div>
                         {nameError && <ErrorNote>{nameError}</ErrorNote>}
                         {!isNameValid && formData.name.length > 0 && (
-                            <p className="text-sm text-brand-400">
+                            <p className="text-sm text-amber-300">
                                 {formData.name.length < CUSTOM_ROW_CONSTRAINTS.MIN_NAME_LENGTH
                                     ? `At least ${CUSTOM_ROW_CONSTRAINTS.MIN_NAME_LENGTH} characters required`
                                     : 'Name too long'}
