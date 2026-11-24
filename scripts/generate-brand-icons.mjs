@@ -18,7 +18,11 @@ const holes = (fill, opacity) =>
 const play = `<path d="M26 21.5 L44 32 L26 42.5 Z" fill="${RED}" stroke="${RED}" stroke-width="5" stroke-linejoin="round"/>`
 
 // The mark inside a rounded tile (icon.svg, nettrailers-mark.svg, the logo's left half).
-const tile = `<rect x="0.75" y="0.75" width="62.5" height="62.5" rx="14.25" fill="${TILE}" stroke="${EDGE}" stroke-width="1.5"/>${holes(RED, 0.55)}${play}`
+// The favicon frames use a lighter, thicker edge so the dark tile still reads on a dark browser tab.
+const makeTile = (edge, edgeWidth) =>
+    `<rect x="${edgeWidth / 2}" y="${edgeWidth / 2}" width="${64 - edgeWidth}" height="${64 - edgeWidth}" rx="${15 - edgeWidth / 2}" fill="${TILE}" stroke="${edge}" stroke-width="${edgeWidth}"/>${holes(RED, 0.55)}${play}`
+const tile = makeTile(EDGE, 1.5)
+const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">${makeTile('#3A3A3A', 3)}</svg>`
 
 const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="NetTrailers">\n  ${tile}\n</svg>\n`
 writeFileSync(path.join(root, 'icon.svg'), iconSvg)
@@ -44,7 +48,7 @@ await png(maskable, 512, 'icon-maskable-512.png')
 
 // favicon.ico: 16 and 32 px PNG frames in an ICO container.
 const frames = await Promise.all(
-    [16, 32].map((s) => sharp(Buffer.from(iconSvg), { density: 384 }).resize(s, s).png().toBuffer())
+    [16, 32].map((s) => sharp(Buffer.from(faviconSvg),{ density: 384 }).resize(s, s).png().toBuffer())
 )
 const header = Buffer.alloc(6)
 header.writeUInt16LE(1, 2)
