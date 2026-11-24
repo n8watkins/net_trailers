@@ -155,7 +155,7 @@ export default function SearchFiltersDropdown({
                                         onChange={(e) => updateFilter('rating', e.target.value)}
                                         className={`w-full bg-[#0a0a0a] text-white rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none appearance-none transition-all duration-200 border ${
                                             filters.rating !== 'all'
-                                                ? 'border-brand-400 shadow-[0_0_8px_rgba(255, 90, 97,0.4)] hover:shadow-[0_0_12px_rgba(255, 90, 97,0.5)] focus:shadow-[0_0_12px_rgba(255, 90, 97,0.5)]'
+                                                ? 'border-brand-400 shadow-[0_0_8px_rgba(255,90,97,0.4)] hover:shadow-[0_0_12px_rgba(255,90,97,0.5)] focus:shadow-[0_0_12px_rgba(255,90,97,0.5)]'
                                                 : 'border-gray-600/50 focus:ring-2 focus:ring-brand-400 focus:border-brand-400'
                                         }`}
                                     >
@@ -180,7 +180,7 @@ export default function SearchFiltersDropdown({
                                             onChange={(e) => updateFilter('year', e.target.value)}
                                             className={`w-full bg-[#0a0a0a] text-white rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none appearance-none transition-all duration-200 border ${
                                                 filters.year !== 'all'
-                                                    ? 'border-brand-400 shadow-[0_0_8px_rgba(255, 90, 97,0.4)] hover:shadow-[0_0_12px_rgba(255, 90, 97,0.5)] focus:shadow-[0_0_12px_rgba(255, 90, 97,0.5)]'
+                                                    ? 'border-brand-400 shadow-[0_0_8px_rgba(255,90,97,0.4)] hover:shadow-[0_0_12px_rgba(255,90,97,0.5)] focus:shadow-[0_0_12px_rgba(255,90,97,0.5)]'
                                                     : 'border-gray-600/50 focus:ring-2 focus:ring-brand-400 focus:border-brand-400'
                                             }`}
                                         >
@@ -204,7 +204,7 @@ export default function SearchFiltersDropdown({
                                             onChange={(e) => updateFilter('sortBy', e.target.value)}
                                             className={`w-full bg-[#0a0a0a] text-white rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none appearance-none transition-all duration-200 border ${
                                                 filters.sortBy !== 'popularity.desc'
-                                                    ? 'border-brand-400 shadow-[0_0_8px_rgba(255, 90, 97,0.4)] hover:shadow-[0_0_12px_rgba(255, 90, 97,0.5)] focus:shadow-[0_0_12px_rgba(255, 90, 97,0.5)]'
+                                                    ? 'border-brand-400 shadow-[0_0_8px_rgba(255,90,97,0.4)] hover:shadow-[0_0_12px_rgba(255,90,97,0.5)] focus:shadow-[0_0_12px_rgba(255,90,97,0.5)]'
                                                     : 'border-gray-600/50 focus:ring-2 focus:ring-brand-400 focus:border-brand-400'
                                             }`}
                                         >

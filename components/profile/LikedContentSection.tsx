@@ -34,7 +34,7 @@ function ProfileImageCard({ content }: { content: Movie | TVShow }) {
                     <img
                         src={imageToUse}
                         alt={getTitle(content)}
-                        className="relative w-full h-full object-cover rounded-lg ring-1 ring-white/10 group-hover:ring-brand-300/30 transition-all duration-300 shadow-lg group-hover:shadow-[0_8px_25px_rgba(255, 90, 97,0.2)]"
+                        className="relative w-full h-full object-cover rounded-lg ring-1 ring-white/10 group-hover:ring-brand-300/30 transition-all duration-300 shadow-lg group-hover:shadow-[0_8px_25px_rgba(255,90,97,0.2)]"
                         onError={handleImageError}
                     />
                 ) : (

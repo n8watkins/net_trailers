@@ -33,10 +33,10 @@ export function RankingsSection({ rankings, userId, isPublic = false }: Rankings
     return (
         <section id="rankings-section" className="relative group/section">
             {/* Ambient glow behind section */}
-            <div className="absolute -inset-1 bg-gradient-to-br from-brand-500/8 via-brand-500/6 to-brand-500/8 rounded-2xl blur-xl opacity-60 group-hover/section:opacity-100 transition-all duration-300" />
+            <div className="absolute -inset-1 bg-gradient-to-br from-yellow-500/8 via-amber-500/6 to-yellow-500/8 rounded-2xl blur-xl opacity-60 group-hover/section:opacity-100 transition-all duration-300" />
 
             {/* Main container - Glassmorphic */}
-            <div className="relative bg-gradient-to-br from-brand-950/20 via-zinc-900/80 to-brand-950/20 backdrop-blur-lg rounded-xl overflow-hidden border border-brand-500/10 group-hover/section:border-brand-500/20 transition-all duration-300 shadow-lg">
+            <div className="relative bg-gradient-to-br from-yellow-950/20 via-zinc-900/80 to-amber-950/20 backdrop-blur-lg rounded-xl overflow-hidden border border-yellow-500/10 group-hover/section:border-yellow-500/20 transition-all duration-300 shadow-lg">
                 {/* Inner padding container */}
                 <div className="p-5 sm:p-6">
                     {/* Section Header */}
@@ -44,7 +44,7 @@ export function RankingsSection({ rankings, userId, isPublic = false }: Rankings
                         <div className="flex items-center gap-3">
                             {/* Icon with glow */}
                             <div className="relative">
-                                <div className="absolute inset-0 bg-brand-500/30 blur-lg opacity-60" />
+                                <div className="absolute inset-0 bg-yellow-500/30 blur-lg opacity-60" />
                                 <TrophySolidIcon className="relative w-6 h-6 text-yellow-400 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" />
                             </div>
                             <h2 className="text-xl sm:text-2xl font-bold text-white">Rankings</h2>
@@ -52,12 +52,12 @@ export function RankingsSection({ rankings, userId, isPublic = false }: Rankings
                         {rankings.length > 0 && (
                             <Link
                                 href={rankingsUrl}
-                                className="group/link flex items-center gap-2 text-sm text-brand-400 hover:text-brand-300 transition-colors"
+                                className="group/link flex items-center gap-2 text-sm text-yellow-400 hover:text-yellow-300 transition-colors"
                             >
                                 <span className="group-hover/link:underline">
                                     View all {rankings.length}
                                 </span>
-                                <span className="text-brand-500/50 group-hover/link:translate-x-0.5 transition-transform">
+                                <span className="text-yellow-500/50 group-hover/link:translate-x-0.5 transition-transform">
                                     &rarr;
                                 </span>
                             </Link>
@@ -78,13 +78,13 @@ export function RankingsSection({ rankings, userId, isPublic = false }: Rankings
                                     }}
                                 >
                                     {/* Card glow */}
-                                    <div className="absolute -inset-1 bg-gradient-to-br from-brand-500/10 via-brand-500/8 to-brand-500/10 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-all duration-300" />
+                                    <div className="absolute -inset-1 bg-gradient-to-br from-yellow-500/10 via-amber-500/8 to-yellow-500/10 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-all duration-300" />
 
                                     {/* Card container */}
-                                    <div className="relative bg-gradient-to-br from-brand-950/30 via-zinc-900/60 to-brand-950/30 backdrop-blur-lg rounded-xl overflow-hidden border border-brand-500/15 group-hover:border-brand-500/30 transition-all duration-300">
+                                    <div className="relative bg-gradient-to-br from-yellow-950/30 via-zinc-900/60 to-amber-950/30 backdrop-blur-lg rounded-xl overflow-hidden border border-yellow-500/15 group-hover:border-yellow-500/30 transition-all duration-300">
                                         {/* Poster collage - larger height */}
                                         <div className="relative h-32 sm:h-36 overflow-hidden">
-                                            <div className="absolute inset-0 bg-gradient-to-br from-brand-950/40 via-zinc-900/80 to-brand-950/40" />
+                                            <div className="absolute inset-0 bg-gradient-to-br from-yellow-950/40 via-zinc-900/80 to-amber-950/40" />
                                             <div className="absolute inset-0 flex justify-center items-center gap-2 px-3 py-2">
                                                 {ranking.rankedItems
                                                     ?.slice(0, 4)
@@ -114,7 +114,7 @@ export function RankingsSection({ rankings, userId, isPublic = false }: Rankings
 
                                         {/* Content */}
                                         <div className="relative z-20 p-4">
-                                            <h3 className="text-sm font-bold text-white group-hover:text-brand-200 transition-colors line-clamp-1 mb-2">
+                                            <h3 className="text-sm font-bold text-white group-hover:text-yellow-200 transition-colors line-clamp-1 mb-2">
                                                 {ranking.title}
                                             </h3>
                                             <div className="flex items-center gap-3 text-xs text-gray-500">
@@ -139,7 +139,7 @@ export function RankingsSection({ rankings, userId, isPublic = false }: Rankings
                     ) : (
                         <div className="flex flex-col items-center justify-center py-12 text-center">
                             <div className="relative mb-4">
-                                <div className="absolute inset-0 bg-brand-500/20 blur-2xl scale-150" />
+                                <div className="absolute inset-0 bg-yellow-500/20 blur-2xl scale-150" />
                                 <div className="relative w-20 h-20 rounded-full bg-zinc-900/60 backdrop-blur-lg flex items-center justify-center border border-zinc-800/50">
                                     <TrophyIcon className="w-10 h-10 text-yellow-900" />
                                 </div>

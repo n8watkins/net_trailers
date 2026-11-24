@@ -672,7 +672,7 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
         <SubPageLayout
             title={stepTitle}
             icon={<TrophyIcon className="w-8 h-8" />}
-            iconColor="text-brand-400"
+            iconColor="text-yellow-500"
             description={stepDescription}
             titleActions={
                 onSwitchToTraditional ? (

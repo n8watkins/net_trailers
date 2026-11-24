@@ -167,6 +167,7 @@ export default function RankingsPage() {
                 <PageHeader
                     title="My Rankings"
                     icon={<TrophyIcon />}
+                    iconColor="text-yellow-500"
                     actions={
                         !isGuest && (
                             <>
@@ -246,6 +247,7 @@ export default function RankingsPage() {
                 {isGuest && (
                     <PageEmptyState
                         icon={<TrophyIcon />}
+                        iconColor="text-yellow-500"
                         title="Sign in to make rankings"
                         description="Rank your favourite movies and shows, share the list, and see what others think."
                         action={
@@ -265,6 +267,7 @@ export default function RankingsPage() {
                 {!isGuest && !isLoading && !hasAnything && !error && (
                     <PageEmptyState
                         icon={<TrophyIcon />}
+                        iconColor="text-yellow-500"
                         title="No rankings yet"
                         description="Pick a handful of titles and put them in order. Your rankings, comments and likes show up here."
                         action={

@@ -160,7 +160,7 @@ function ContentImage({
                     className="relative w-full h-full
                               transition-all duration-300 ease-out
                               rounded-md overflow-hidden
-                              group-hover:shadow-[0_0_15px_rgba(229, 9, 20,0.4),0_0_30px_rgba(229, 9, 20,0.2)]
+                              group-hover:shadow-[0_0_15px_rgba(229,9,20,0.4),0_0_30px_rgba(229,9,20,0.2)]
                               group-hover:ring-1 group-hover:ring-brand-400/50"
                 >
                     {imageToUse ? (
@@ -185,7 +185,7 @@ function ContentImage({
                             <div
                                 className="absolute inset-0 rounded-md
                                           transition-all duration-300 ease-out
-                                          group-hover:shadow-[inset_0_0_10px_rgba(229, 9, 20,0.1)]"
+                                          group-hover:shadow-[inset_0_0_10px_rgba(229,9,20,0.1)]"
                             ></div>
                         </>
                     ) : (

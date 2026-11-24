@@ -123,7 +123,7 @@ export default function SearchBar({
                         <MicrophoneIcon
                             className={`h-5 w-5 relative z-10 transition-all ${
                                 isListening
-                                    ? 'scale-110 drop-shadow-[0_0_8px_rgba(255, 90, 97,0.8)] !text-brand-400'
+                                    ? 'scale-110 drop-shadow-[0_0_8px_rgba(255,90,97,0.8)] !text-brand-400'
                                     : ''
                             }`}
                         />

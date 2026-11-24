@@ -234,15 +234,15 @@ export function SmartInput({
     const getBackgroundClasses = () => {
         if (variant === 'transparent') {
             if (isFocused || isActive) {
-                return 'bg-black/50 backdrop-blur-xl shadow-[0_0_30px_rgba(255, 90, 97,0.6)]'
+                return 'bg-black/50 backdrop-blur-xl shadow-[0_0_30px_rgba(255,90,97,0.6)]'
             }
-            return 'bg-white/5 backdrop-blur-lg shadow-[0_0_20px_rgba(255, 90, 97,0.4)]'
+            return 'bg-white/5 backdrop-blur-lg shadow-[0_0_20px_rgba(255,90,97,0.4)]'
         }
         // Solid variant
         if (isFocused || isActive) {
-            return 'bg-gray-800 shadow-[0_0_30px_rgba(255, 90, 97,0.6)]'
+            return 'bg-gray-800 shadow-[0_0_30px_rgba(255,90,97,0.6)]'
         }
-        return 'bg-gray-800 shadow-[0_0_20px_rgba(255, 90, 97,0.4)]'
+        return 'bg-gray-800 shadow-[0_0_20px_rgba(255,90,97,0.4)]'
     }
 
     // Size-specific classes
@@ -496,7 +496,7 @@ export function SmartInput({
                     relative flex items-center
                     transition-all duration-300 ease-out
                     overflow-hidden
-                    hover:shadow-[0_0_30px_rgba(255, 90, 97,0.6)]
+                    hover:shadow-[0_0_30px_rgba(255,90,97,0.6)]
                     ${currentSize.container}
                     ${getBackgroundClasses()}
                     ${getShimmerClasses()}

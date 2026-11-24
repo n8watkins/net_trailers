@@ -74,7 +74,7 @@ export default function UserRankingsPage() {
             <SubPageLayout
                 title="Loading Rankings..."
                 icon={<TrophyIcon className="w-8 h-8" />}
-                iconColor="text-brand-400"
+                iconColor="text-yellow-500"
             >
                 <PageLoader />
             </SubPageLayout>
@@ -86,7 +86,7 @@ export default function UserRankingsPage() {
             <SubPageLayout
                 title="Error"
                 icon={<TrophyIcon className="w-8 h-8" />}
-                iconColor="text-brand-400"
+                iconColor="text-yellow-500"
             >
                 <div className="max-w-2xl mx-auto text-center py-16">
                     <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-zinc-800 flex items-center justify-center">
@@ -103,7 +103,7 @@ export default function UserRankingsPage() {
         <SubPageLayout
             title={`${displayName}'s Rankings`}
             icon={<TrophyIcon className="w-8 h-8" />}
-            iconColor="text-brand-400"
+            iconColor="text-yellow-500"
             description={`${rankings.length} public ${rankings.length === 1 ? 'ranking' : 'rankings'}`}
         >
             {/* Back to Profile Link */}

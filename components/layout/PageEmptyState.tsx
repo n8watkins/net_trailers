@@ -2,6 +2,8 @@ import type { ReactNode } from 'react'
 
 interface PageEmptyStateProps {
     icon?: ReactNode
+    /** Tailwind text color for the icon (trophies and rating stars are gold) */
+    iconColor?: string
     title: string
     description?: ReactNode
     /** The one thing to do next (a button or link) */
@@ -9,12 +11,18 @@ interface PageEmptyStateProps {
 }
 
 /** The empty state shown on account pages while a list has nothing in it. */
-export default function PageEmptyState({ icon, title, description, action }: PageEmptyStateProps) {
+export default function PageEmptyState({
+    icon,
+    iconColor = 'text-brand-400',
+    title,
+    description,
+    action,
+}: PageEmptyStateProps) {
     return (
         <div className="flex flex-col items-center justify-center px-4 py-16 text-center sm:py-20">
             {icon && (
                 <div
-                    className="mb-5 flex h-16 w-16 items-center justify-center rounded-full border border-zinc-800 bg-zinc-900 text-brand-400 [&>svg]:h-8 [&>svg]:w-8"
+                    className={`mb-5 flex h-16 w-16 items-center justify-center rounded-full border border-zinc-800 bg-zinc-900 ${iconColor} [&>svg]:h-8 [&>svg]:w-8`}
                     aria-hidden="true"
                 >
                     {icon}

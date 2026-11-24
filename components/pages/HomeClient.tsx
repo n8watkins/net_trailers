@@ -259,7 +259,7 @@ export default function HomeClient({ data }: HomeClientProps) {
                         <div className="flex justify-center pt-12 pb-8 px-4">
                             <button
                                 onClick={() => openCollectionBuilderModal()}
-                                className="create-collection-btn group relative flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-brand-500/60 via-brand-800/65 to-black/70 backdrop-blur-sm text-white rounded-lg transition-all duration-300 shadow-[0_0_30px_rgba(229, 9, 20,0.3)] hover:shadow-[0_0_50px_rgba(229, 9, 20,0.5)] hover:scale-105 font-bold text-xl tracking-wide border border-brand-400/30 overflow-hidden"
+                                className="create-collection-btn group relative flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-brand-500/60 via-brand-800/65 to-black/70 backdrop-blur-sm text-white rounded-lg transition-all duration-300 shadow-[0_0_30px_rgba(229,9,20,0.3)] hover:shadow-[0_0_50px_rgba(229,9,20,0.5)] hover:scale-105 font-bold text-xl tracking-wide border border-brand-400/30 overflow-hidden"
                             >
                                 <PlusIcon className="w-7 h-7 transition-transform duration-300 group-hover:rotate-90 relative z-20" />
                                 <span className="relative z-20">Create Your Own Collection</span>
