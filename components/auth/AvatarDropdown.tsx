@@ -8,6 +8,7 @@ import {
     CommandLineIcon,
     AcademicCapIcon,
     HandRaisedIcon,
+    ChevronDownIcon,
 } from '@heroicons/react/24/outline'
 import useAuth from '../../hooks/useAuth'
 import { useRouter } from 'next/navigation'
@@ -103,15 +104,36 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
     if (!isAuthenticated) {
         return (
             <div className={`relative ${className}`} ref={dropdownRef}>
-                {/* Avatar Button - Not Logged In */}
-                <button
-                    onClick={() => setIsOpen(!isOpen)}
-                    className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-full bg-gray-600 hover:bg-gray-500 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.6)] focus:shadow-[0_0_15px_rgba(255,255,255,0.6)] transition-all duration-300"
-                    aria-label="User menu"
-                    aria-expanded={isOpen}
-                >
-                    <UserCircleIcon className="w-6 h-6 md:w-7 md:h-7 text-white" />
-                </button>
+                {/* One guest control. Phones and tablets: a round button that opens the
+                    guest menu (Sign In is its first item). Desktop: a single pill, "Sign in"
+                    on the left and the same menu on the right. The tour points at the
+                    menu button by its label (constants/tourSteps.ts), so keep it. */}
+                <div className="flex items-center lg:h-10 lg:rounded-full lg:bg-brand-500 lg:shadow-lg">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setIsOpen(false)
+                            onOpenAuthModal?.()
+                        }}
+                        className="hidden lg:flex h-full items-center whitespace-nowrap rounded-l-full pl-4 pr-3 text-sm font-semibold text-white transition-colors hover:bg-brand-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/70"
+                    >
+                        Sign in
+                    </button>
+                    <span aria-hidden="true" className="hidden lg:block h-5 w-px bg-white/30" />
+                    <button
+                        type="button"
+                        onClick={() => setIsOpen(!isOpen)}
+                        className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-full bg-gray-600 hover:bg-gray-500 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.6)] focus:shadow-[0_0_15px_rgba(255,255,255,0.6)] transition-all duration-300 lg:h-full lg:w-auto lg:gap-0.5 lg:rounded-l-none lg:rounded-r-full lg:bg-transparent lg:pl-2 lg:pr-3 lg:hover:bg-brand-400 lg:hover:scale-100 lg:hover:shadow-none lg:focus:shadow-none focus:outline-none lg:focus-visible:ring-2 lg:focus-visible:ring-inset lg:focus-visible:ring-white/70"
+                        aria-label="User menu"
+                        aria-expanded={isOpen}
+                    >
+                        <UserCircleIcon className="w-6 h-6 md:w-7 md:h-7 lg:w-5 lg:h-5 text-white" />
+                        <ChevronDownIcon
+                            aria-hidden="true"
+                            className={`hidden lg:block w-3.5 h-3.5 text-white transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                        />
+                    </button>
+                </div>
 
                 {/* Dropdown Menu - Not Logged In */}
                 {isOpen && (
