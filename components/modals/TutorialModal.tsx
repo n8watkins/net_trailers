@@ -58,8 +58,7 @@ function useHasShortcuts(): boolean {
     useEffect(() => {
         const check = () =>
             setHas(
-                !('ontouchstart' in window) &&
-                    navigator.maxTouchPoints === 0 &&
+                !('ontouchstart' in window || navigator.maxTouchPoints > 0) &&
                     window.innerWidth >= 1024
             )
         check()
@@ -298,7 +297,7 @@ export default function TutorialModal({
                     {/* Every feature, under four headings */}
                     <div
                         ref={tilesRef}
-                        className="mt-3 flex flex-col gap-2.5 md:grid md:grid-cols-2 md:gap-x-4 md:gap-y-3"
+                        className="mt-3 flex flex-col gap-2.5 md:grid md:grid-cols-2 md:gap-x-1.5 md:gap-y-3"
                     >
                         {HELP_CATEGORIES.map((category) => {
                             const headingId = `${ids}-${category.id}`
