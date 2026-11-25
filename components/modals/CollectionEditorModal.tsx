@@ -1,33 +1,48 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import {
     XMarkIcon,
-    QuestionMarkCircleIcon,
     MagnifyingGlassIcon,
     FilmIcon,
     TvIcon,
-    TrashIcon,
     PencilIcon,
-    PlusIcon,
+    EyeSlashIcon,
+    TrashIcon,
 } from '@heroicons/react/24/outline'
 import { DeleteConfirmationModal } from './DeleteConfirmationModal'
 import { UserList } from '../../types/collections'
 import { Content, getTitle, getYear } from '../../typings'
 import useUserData from '../../hooks/useUserData'
 import { useToast } from '../../hooks/useToast'
+import { useEscapeKey } from '../../hooks/useEscapeKey'
+import { useFocusTrap } from '../../hooks/useFocusTrap'
 import IconPickerModal from './IconPickerModal'
 import ColorPickerModal from './ColorPickerModal'
 import InlineSearchBar from './InlineSearchBar'
-import { GenrePills } from '../collections/GenrePills'
+import { AdvancedFiltersModal } from './AdvancedFiltersModal'
 import { getUnifiedGenresByMediaType } from '../../constants/unifiedGenres'
 import { useChildSafety } from '../../hooks/useChildSafety'
-import { useSessionStore } from '../../stores/sessionStore'
-import { DANGER_BUTTON_CLASS } from '@/components/common/DangerButton'
-import { AdvancedFilters } from '../../types/collections'
-import { AdvancedFiltersModal } from './AdvancedFiltersModal'
+import CollectionIcon from '../collections/CollectionIcon'
+import Switch from '../collections/Switch'
+import GenrePickerDialog from '../collections/editor/GenrePickerDialog'
+import {
+    AUTO_FILL_SWITCH_LABEL,
+    HOME_HIDDEN_LABEL,
+    HOME_SHOWN_LABEL,
+    contentsLabel,
+    isBuiltInCollection,
+} from '../collections/collectionMeta'
+import {
+    EditorForm,
+    buildUpdate,
+    formFromCollection,
+    isDirty,
+    mediaTypeOf,
+    validate,
+} from '../collections/editor/editorForm'
 
 interface CollectionEditorModalProps {
     collection: UserList | null
@@ -35,1550 +50,713 @@ interface CollectionEditorModalProps {
     onClose: () => void
 }
 
+const focusRing =
+    'focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0d0f]'
+const sectionTitle = 'text-xs font-semibold uppercase tracking-[0.12em] text-gray-400'
+const card = 'rounded-xl border border-zinc-800 bg-zinc-900/60 p-4'
+const secondaryButton = `inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-zinc-700 px-4 text-sm font-medium text-gray-100 transition-colors hover:border-zinc-500 hover:bg-zinc-900 ${focusRing}`
+const smallButton = `inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-zinc-700 px-3 text-sm text-gray-200 transition-colors hover:border-zinc-500 hover:text-white ${focusRing}`
+const primaryButton = `inline-flex h-10 items-center justify-center rounded-lg bg-brand-500 px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-brand-500 ${focusRing}`
+
+/**
+ * Edit a collection. One saving model: changes stay in a draft until Save.
+ * Cancel, the close button, Escape and a click outside all do the same thing:
+ * close straight away when nothing changed, otherwise ask before discarding.
+ */
 export default function CollectionEditorModal({
     collection,
     isOpen,
     onClose,
 }: CollectionEditorModalProps) {
     const { isEnabled: isChildSafetyEnabled } = useChildSafety()
-    const getUserId = useSessionStore((state) => state.getUserId)
-    const sessionType = useSessionStore((state) => state.sessionType)
-    const _userId = getUserId()
-    const _isAuth = sessionType === 'authenticated'
+    const { updateList, addToList, removeFromList, deleteList } = useUserData()
+    const { showSuccess, showError } = useToast()
+    const ids = useId()
+    const titleId = `${ids}-title`
+    const dialogRef = useRef<HTMLDivElement>(null)
+    const keepEditingRef = useRef<HTMLButtonElement>(null)
 
-    const GENRE_LOOKUP = useMemo(() => {
+    const [initial, setInitial] = useState<EditorForm | null>(null)
+    const [form, setForm] = useState<EditorForm | null>(null)
+    const [confirmDiscard, setConfirmDiscard] = useState(false)
+    const [saving, setSaving] = useState(false)
+    const [mounted, setMounted] = useState(false)
+    const [titleFilter, setTitleFilter] = useState('')
+    const [showIconPicker, setShowIconPicker] = useState(false)
+    const [showColorPicker, setShowColorPicker] = useState(false)
+    const [showGenreDialog, setShowGenreDialog] = useState(false)
+    const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
+    const [showDeleteModal, setShowDeleteModal] = useState(false)
+
+    useEffect(() => setMounted(true), [])
+
+    // Start a fresh draft each time the editor opens on a collection
+    const collectionId = collection?.id
+    useEffect(() => {
+        if (!collection || !isOpen) {
+            setForm(null)
+            setInitial(null)
+            return
+        }
+        const start = formFromCollection(collection)
+        setInitial(start)
+        setForm(start)
+        setConfirmDiscard(false)
+        setTitleFilter('')
+        // Only on open or when it switches to another collection, not on every store update
+    }, [collectionId, isOpen])
+
+    const dirty = !!form && !!initial && isDirty(initial, form)
+    const open = isOpen && !!collection && !!form
+
+    const requestClose = useCallback(() => {
+        if (saving) return
+        if (dirty) setConfirmDiscard(true)
+        else onClose()
+    }, [dirty, onClose, saving])
+
+    // Escape: back out of the discard question first, otherwise the same as Cancel
+    useEscapeKey(open && !showDeleteModal, () => {
+        if (confirmDiscard) setConfirmDiscard(false)
+        else requestClose()
+    })
+    useFocusTrap(dialogRef, open, {
+        paused: showGenreDialog || showAdvancedFilters || showDeleteModal,
+    })
+
+    useEffect(() => {
+        if (confirmDiscard) keepEditingRef.current?.focus()
+    }, [confirmDiscard])
+
+    // Lock the page behind
+    useEffect(() => {
+        if (!open) return
+        const previous = document.body.style.overflow
+        document.body.style.overflow = 'hidden'
+        return () => {
+            document.body.style.overflow = previous
+        }
+    }, [open])
+
+    // Leaving the page (reload, closing the tab, typing an address) asks first
+    useEffect(() => {
+        if (!open || !dirty) return
+        const onBeforeUnload = (event: BeforeUnloadEvent) => {
+            event.preventDefault()
+            event.returnValue = ''
+        }
+        window.addEventListener('beforeunload', onBeforeUnload)
+        return () => window.removeEventListener('beforeunload', onBeforeUnload)
+    }, [open, dirty])
+
+    const genreNames = useMemo(() => {
         const map = new Map<string, string>()
-        const allGenres = getUnifiedGenresByMediaType('both', isChildSafetyEnabled)
-        allGenres.forEach((genre) => {
-            map.set(genre.id, genre.name)
-        })
+        getUnifiedGenresByMediaType('both', isChildSafetyEnabled).forEach((g) =>
+            map.set(g.id, g.name)
+        )
         return map
     }, [isChildSafetyEnabled])
 
-    const { updateList, addToList, removeFromList, deleteList } = useUserData()
-    const { showSuccess, showError } = useToast()
+    if (!open || !mounted || !collection || !form) return null
 
-    // Collection metadata
-    const [name, setName] = useState('')
-    const [emoji, setEmoji] = useState('📺')
-    const [color, setColor] = useState('#3b82f6')
-    const [displayAsRow, setDisplayAsRow] = useState(true)
-    const [showOnPublicProfile, setShowOnPublicProfile] = useState(true)
-    const [enableInfiniteContent, setEnableInfiniteContent] = useState(false)
-    const [mediaType, setMediaType] = useState<'movie' | 'tv' | 'both'>('both')
-    const [selectedGenres, setSelectedGenres] = useState<string[]>([])
-    const [genreLogic, setGenreLogic] = useState<'AND' | 'OR'>('AND')
-    const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({})
-
-    // UI state
-    const [showIconPicker, setShowIconPicker] = useState(false)
-    const [showColorPicker, setShowColorPicker] = useState(false)
-    const [showInfiniteTooltip, setShowInfiniteTooltip] = useState(false)
-    const [showGenreModal, setShowGenreModal] = useState(false)
-    const [showAdvancedFiltersModal, setShowAdvancedFiltersModal] = useState(false)
-    const [showDeleteModal, setShowDeleteModal] = useState(false)
-    const [searchFilter, setSearchFilter] = useState('')
-    const [_isSaving, _setIsSaving] = useState(false)
-    const [mounted, setMounted] = useState(false)
-    const [highlightMediaType, setHighlightMediaType] = useState(false)
-    const [isEditingIdentity, setIsEditingIdentity] = useState(false)
-
-    // Media type enabled states (independent toggles)
-    const [isMovieEnabled, setIsMovieEnabled] = useState(true)
-    const [isTVEnabled, setIsTVEnabled] = useState(true)
-
-    // Cast and director states
-    const [showActorInput, setShowActorInput] = useState(false)
-    const [showDirectorInput, setShowDirectorInput] = useState(false)
-    const [actorInput, setActorInput] = useState('')
-    const [directorInput, setDirectorInput] = useState('')
-    const [actorSearchResults, setActorSearchResults] = useState<any[]>([])
-    const [directorSearchResults, setDirectorSearchResults] = useState<any[]>([])
-    const [isSearchingActors, setIsSearchingActors] = useState(false)
-    const [isSearchingDirector, setIsSearchingDirector] = useState(false)
-    const [selectedActorIndex, setSelectedActorIndex] = useState(0)
-    const [selectedDirectorIndex, setSelectedDirectorIndex] = useState(0)
-    const [actorProfileImages, setActorProfileImages] = useState<Record<string, string | null>>({})
-
-    // Content management
-    const [content, setContent] = useState<Content[]>([])
-    const [removedIds, setRemovedIds] = useState<Set<number>>(new Set())
-
-    // Track mousedown location for click-outside detection
-    const mouseDownTargetRef = React.useRef<EventTarget | null>(null)
-    const genreModalMouseDownTargetRef = React.useRef<EventTarget | null>(null)
-    const identityContainerRef = React.useRef<HTMLDivElement | null>(null)
-
-    // Mount the portal after client-side render
-    useEffect(() => {
-        setMounted(true)
-        return () => setMounted(false)
-    }, [])
-
-    // Load collection data when modal opens
-    useEffect(() => {
-        if (collection && isOpen) {
-            setName(collection.name)
-            setEmoji(collection.emoji || '📺')
-            setColor(collection.color || '#3b82f6')
-            setDisplayAsRow(collection.displayAsRow ?? true)
-            setShowOnPublicProfile(collection.showOnPublicProfile ?? true)
-            const collectionMediaType = collection.mediaType || 'both'
-            setMediaType(collectionMediaType)
-            // Set individual enabled states based on media type
-            setIsMovieEnabled(collectionMediaType === 'movie' || collectionMediaType === 'both')
-            setIsTVEnabled(collectionMediaType === 'tv' || collectionMediaType === 'both')
-            setSelectedGenres(collection.genres || [])
-            setGenreLogic(
-                collection.genreLogic || ((collection.genres?.length ?? 0) >= 2 ? 'AND' : 'OR')
-            )
-            setEnableInfiniteContent(
-                collection.canGenerateMore ?? !!(collection.genres && collection.genres.length > 0)
-            )
-            setContent(collection.items || [])
-            setRemovedIds(new Set())
-            setSearchFilter('')
-            setHighlightMediaType(false)
-            setAdvancedFilters(collection.advancedFilters || {})
-        }
-    }, [collection, isOpen])
-
-    useEffect(() => {
-        if (enableInfiniteContent && selectedGenres.length === 0) {
-            setEnableInfiniteContent(false)
-        }
-    }, [enableInfiniteContent, selectedGenres.length])
-
-    // Auto-set genre logic based on infinite content toggle
-    useEffect(() => {
-        if (enableInfiniteContent) {
-            setGenreLogic('OR') // Match ANY for infinite generation
-        } else {
-            setGenreLogic('AND') // Match ALL by default (more strict)
-        }
-    }, [enableInfiniteContent])
-
-    // Sync mediaType with individual enabled states
-    useEffect(() => {
-        if (isMovieEnabled && isTVEnabled) {
-            setMediaType('both')
-        } else if (isMovieEnabled) {
-            setMediaType('movie')
-        } else if (isTVEnabled) {
-            setMediaType('tv')
-        } else {
-            // Both disabled - keep as 'both' for storage but UI shows both off
-            setMediaType('both')
-        }
-    }, [isMovieEnabled, isTVEnabled])
-
-    // Auto-disable display on page when both media types are disabled
-    useEffect(() => {
-        if (!isMovieEnabled && !isTVEnabled && displayAsRow) {
-            setDisplayAsRow(false)
-        }
-    }, [isMovieEnabled, isTVEnabled, displayAsRow])
-
-    // Handle escape key to close modal (respecting nested modals)
-    useEffect(() => {
-        if (!isOpen) return
-
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
-                e.preventDefault()
-                // Close nested modals first, then main modal
-                if (showDeleteModal) {
-                    setShowDeleteModal(false)
-                } else if (showGenreModal) {
-                    setShowGenreModal(false)
-                } else {
-                    onClose()
-                }
-            }
-        }
-
-        document.addEventListener('keydown', handleKeyDown)
-        return () => document.removeEventListener('keydown', handleKeyDown)
-    }, [isOpen, showDeleteModal, showGenreModal, onClose])
-
-    // Handle click-outside for identity edit mode
-    useEffect(() => {
-        if (!isEditingIdentity) return
-
-        const handleClickOutside = (e: MouseEvent) => {
-            if (
-                identityContainerRef.current &&
-                !identityContainerRef.current.contains(e.target as Node)
-            ) {
-                setIsEditingIdentity(false)
-            }
-        }
-
-        document.addEventListener('mousedown', handleClickOutside)
-        return () => document.removeEventListener('mousedown', handleClickOutside)
-    }, [isEditingIdentity])
-
-    if (!isOpen || !collection) return null
-
-    // Determine editing capabilities based on collection properties
-    // Default genre collections (Action-Packed, Comedy, etc.) have canEdit=true AND canDelete=true
-    // These should be treated as fully editable, just like user-created collections
-    const isSystemCollection = collection.isSystemCollection || collection.id.startsWith('system-')
-    const isFullyEditableSystemCollection =
-        isSystemCollection && collection.canEdit === true && collection.canDelete === true
-    const canEditFull = !isSystemCollection || isFullyEditableSystemCollection // User-created OR fully editable system collections
-    const canEditLimited =
-        isSystemCollection && collection.canEdit && !isFullyEditableSystemCollection // Partial edit (currently unused)
-    const canOnlyToggle = isSystemCollection && !collection.canEdit // Non-editable system collections (Trending, Top Rated)
-
-    const resetModalState = () => {
-        setName('')
-        setEmoji('📺')
-        setColor('#3b82f6')
-        setDisplayAsRow(true)
-        setEnableInfiniteContent(false)
-        setMediaType('both')
-        setIsMovieEnabled(true)
-        setIsTVEnabled(true)
-        setSelectedGenres([])
-        setGenreLogic('AND')
-        setContent([])
-        setRemovedIds(new Set())
-        setSearchFilter('')
-        setHighlightMediaType(false)
-        setAdvancedFilters({})
+    const limited = collection.canEdit === false
+    const builtIn = isBuiltInCollection(collection)
+    const update = (patch: Partial<EditorForm>) =>
+        setForm((prev) => (prev ? { ...prev, ...patch } : prev))
+    const draftCollection = {
+        ...collection,
+        emoji: form.emoji || undefined,
+        color: form.color,
+        name: form.name,
     }
 
-    const handleClose = async (options?: { skipWaitForSave?: boolean }) => {
-        const shouldAwaitSave = !(options?.skipWaitForSave ?? false)
+    const removed = new Set(form.removed)
+    const titles = [...collection.items, ...form.added].filter((item) => !removed.has(item.id))
+    const visibleTitles = titleFilter.trim()
+        ? titles.filter((item) =>
+              getTitle(item).toLowerCase().includes(titleFilter.trim().toLowerCase())
+          )
+        : titles
 
-        if (shouldAwaitSave) {
-            await handleSave()
-        } else {
-            void handleSave()
+    const save = async (overrides: Partial<EditorForm> = {}) => {
+        const draft = { ...form, ...overrides }
+        const problem = validate(draft)
+        if (problem) {
+            showError(problem)
+            return
         }
-
-        onClose()
-        resetModalState()
+        setSaving(true)
+        try {
+            await updateList(collection.id, buildUpdate(draft, { limited }))
+            if (!limited) {
+                const removedIds = new Set(draft.removed)
+                for (const item of draft.added) {
+                    if (!removedIds.has(item.id)) await addToList(collection.id, item)
+                }
+                const addedIds = new Set(draft.added.map((item) => item.id))
+                for (const id of draft.removed) {
+                    if (!addedIds.has(id)) await removeFromList(collection.id, id)
+                }
+            }
+            showSuccess('Saved', `"${draft.name.trim()}" is up to date`)
+            onClose()
+        } catch (error) {
+            console.error('Save collection error:', error)
+            showError(
+                'Could not save the collection',
+                error instanceof Error ? error.message : undefined
+            )
+        } finally {
+            setSaving(false)
+        }
     }
 
     const handleDeleteConfirm = async () => {
-        if (!collection) return
-
         try {
-            // All collections are now unified - use deleteList for all
             await deleteList(collection.id)
-            showSuccess('Collection deleted!', `"${collection.name}" has been removed`)
+            showSuccess('Collection deleted', `"${collection.name}" has been removed`)
             setShowDeleteModal(false)
-            handleClose()
+            onClose()
         } catch (error) {
             console.error('Delete collection error:', error)
-            const description = error instanceof Error ? error.message : undefined
-            showError('Failed to delete collection', description)
-            // Re-throw so DeleteConfirmationModal knows it failed and stays open
+            showError(
+                'Failed to delete collection',
+                error instanceof Error ? error.message : undefined
+            )
             throw error
         }
     }
 
-    const handleSave = async () => {
-        // For non-toggle-only collections, validate name
-        if (!canOnlyToggle && !name.trim()) {
-            showError('Please enter a collection name')
-            return
-        }
-
-        if (enableInfiniteContent && selectedGenres.length === 0) {
-            showError('Add at least one genre', 'Infinite content requires genre filters')
-            return
-        }
-
-        _setIsSaving(true)
-
-        try {
-            // Build update object based on edit capabilities
-            let updates: Partial<typeof collection> = {}
-
-            if (canOnlyToggle) {
-                // For non-editable system collections (Trending, Top Rated)
-                // Only update displayAsRow (enable/disable)
-                updates = {
-                    displayAsRow,
-                    showOnPublicProfile,
-                }
-            } else if (canEditLimited) {
-                // For editable system collections (Action, Comedy, etc.)
-                // Update name, emoji, displayAsRow, genres, genreLogic, showOnPublicProfile
-                updates = {
-                    name: name.trim(),
-                    emoji,
-                    displayAsRow,
-                    showOnPublicProfile,
-                    genres: selectedGenres,
-                    genreLogic,
-                    advancedFilters,
-                }
-            } else {
-                // For user-created collections
-                // Update everything
-                updates = {
-                    name: name.trim(),
-                    emoji,
-                    color,
-                    displayAsRow,
-                    showOnPublicProfile,
-                    genres: selectedGenres,
-                    genreLogic,
-                    mediaType,
-                    canGenerateMore: enableInfiniteContent && selectedGenres.length > 0,
-                    advancedFilters,
-                }
-            }
-
-            // Update collection metadata - all collections now unified
-            await updateList(collection.id, updates)
-
-            // Handle removed items (for all collections with full edit capability)
-            if (canEditFull) {
-                for (const removedId of removedIds) {
-                    await removeFromList(collection.id, removedId)
-                }
-            }
-
-            // Don't show success toast for auto-save on close
-            // Don't call handleClose here anymore (creates circular call)
-        } catch (error) {
-            console.error('Save collection error:', error)
-            const description = error instanceof Error ? error.message : undefined
-            showError('Failed to save collection', description)
-        } finally {
-            _setIsSaving(false)
-        }
+    const setMedia = (patch: Partial<Pick<EditorForm, 'movies' | 'tv'>>) => {
+        const next = { ...form, ...patch }
+        // A collection with neither movies nor TV has nothing to show on home
+        update({ ...patch, shownOnHome: next.movies || next.tv ? form.shownOnHome : false })
     }
 
-    const handleRemoveContent = (contentId: number) => {
-        setRemovedIds((prev) => new Set(prev).add(contentId))
-    }
+    const setGenres = (genres: string[]) =>
+        update({ genres, autoFill: genres.length === 0 ? false : form.autoFill })
 
-    const handleAddContent = (newContent: Content) => {
-        // Add to local state
-        setContent((prev) => [...prev, newContent])
-        // Add to actual collection
-        addToList(collection.id, newContent)
-    }
+    const filters = form.advancedFilters
+    const filterSummary = [
+        names(filters.withCast).length ? `Actors: ${names(filters.withCast).join(', ')}` : null,
+        names(filters.withDirector).length
+            ? `Directors: ${names(filters.withDirector).join(', ')}`
+            : null,
+        filters.yearMin || filters.yearMax
+            ? `Years ${filters.yearMin || 1900} to ${filters.yearMax || new Date().getFullYear()}`
+            : null,
+        filters.ratingMin !== undefined || filters.ratingMax !== undefined
+            ? `Rating ${filters.ratingMin ?? 0} to ${filters.ratingMax ?? 10}`
+            : null,
+        filters.popularity || filters.voteCount ? 'Popularity or vote count set' : null,
+    ].filter(Boolean) as string[]
 
-    const handleToggleInfinite = () => {
-        if (!enableInfiniteContent && selectedGenres.length === 0) {
-            showError('Add at least one genre', 'Select genres before enabling infinite content.')
-            return
-        }
-
-        // If disabling infinite content and collection has no manual items, also disable display
-        const actualContent = content.filter((item) => !removedIds.has(item.id))
-        if (enableInfiniteContent && actualContent.length === 0) {
-            setEnableInfiniteContent(false)
-            setDisplayAsRow(false)
-            showError(
-                'Display disabled',
-                'This collection has no content. Add items or re-enable infinite content to display it.'
-            )
-            return
-        }
-
-        setEnableInfiniteContent((prev) => !prev)
-    }
-
-    const handleMediaTypeToggle = (type: 'movie' | 'tv') => {
-        // Simple unrestricted toggle
-        if (type === 'movie') {
-            setIsMovieEnabled(!isMovieEnabled)
-        } else {
-            setIsTVEnabled(!isTVEnabled)
-        }
-        // With unified genre system, no need to clear genres when changing media type
-    }
-
-    const handleDisplayOnPageToggle = () => {
-        // Check if no media types are selected
-        if (!isMovieEnabled && !isTVEnabled) {
-            // Highlight the media type container and show toast simultaneously
-            setHighlightMediaType(true)
-            showError(
-                'Enable a media type first',
-                'You must select Movies or TV Shows before displaying this collection on the page'
-            )
-            // Fade back after 2 seconds
-            setTimeout(() => setHighlightMediaType(false), 2000)
-            return
-        }
-        setDisplayAsRow(!displayAsRow)
-    }
-
-    // Check if any media type is enabled
-    const hasMediaTypeEnabled = isMovieEnabled || isTVEnabled
-
-    // Filter content based on search and removed IDs
-    const visibleContent = content
-        .filter((item) => !removedIds.has(item.id))
-        .filter((item) => {
-            if (!searchFilter.trim()) return true
-            const title = getTitle(item).toLowerCase()
-            return title.includes(searchFilter.toLowerCase().trim())
-        })
-
-    const selectedGenreNames = selectedGenres.map((id) => GENRE_LOOKUP.get(id) || `Genre ${id}`)
-
-    // Search for people
-    const searchPeople = async (query: string): Promise<any[]> => {
-        if (query.trim().length < 2) return []
-
-        try {
-            const response = await fetch(`/api/search/people?query=${encodeURIComponent(query)}`)
-            if (!response.ok) throw new Error('Search failed')
-            const data = await response.json()
-            return data.results || []
-        } catch (error) {
-            console.error('Person search error:', error)
-            return []
-        }
-    }
-
-    const handleActorInputChange = async (value: string) => {
-        setActorInput(value)
-
-        if (value.trim().length >= 2) {
-            setIsSearchingActors(true)
-            const results = await searchPeople(value.trim())
-            setActorSearchResults(results.filter((p) => p.known_for_department === 'Acting'))
-            setSelectedActorIndex(0)
-            setIsSearchingActors(false)
-        } else {
-            setActorSearchResults([])
-            setSelectedActorIndex(0)
-        }
-    }
-
-    const handleDirectorInputChange = async (value: string) => {
-        setDirectorInput(value)
-
-        if (value.trim().length >= 2) {
-            setIsSearchingDirector(true)
-            const results = await searchPeople(value.trim())
-            setDirectorSearchResults(results.filter((p) => p.known_for_department === 'Directing'))
-            setSelectedDirectorIndex(0)
-            setIsSearchingDirector(false)
-        } else {
-            setDirectorSearchResults([])
-            setSelectedDirectorIndex(0)
-        }
-    }
-
-    const handleActorKeyDown = (e: React.KeyboardEvent) => {
-        if (actorSearchResults.length === 0) return
-
-        if (e.key === 'ArrowDown') {
-            e.preventDefault()
-            setSelectedActorIndex((prev) => Math.min(prev + 1, actorSearchResults.length - 1))
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault()
-            setSelectedActorIndex((prev) => Math.max(prev - 1, 0))
-        } else if (e.key === 'Enter') {
-            e.preventDefault()
-            if (actorSearchResults[selectedActorIndex]) {
-                addActor(actorSearchResults[selectedActorIndex])
-            }
-        }
-    }
-
-    const handleDirectorKeyDown = (e: React.KeyboardEvent) => {
-        if (directorSearchResults.length === 0) return
-
-        if (e.key === 'ArrowDown') {
-            e.preventDefault()
-            setSelectedDirectorIndex((prev) => Math.min(prev + 1, directorSearchResults.length - 1))
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault()
-            setSelectedDirectorIndex((prev) => Math.max(prev - 1, 0))
-        } else if (e.key === 'Enter') {
-            e.preventDefault()
-            if (directorSearchResults[selectedDirectorIndex]) {
-                setDirector(directorSearchResults[selectedDirectorIndex])
-            }
-        }
-    }
-
-    const addActor = (actor: any) => {
-        const currentActors = advancedFilters.withCast || []
-        const currentActorIds = advancedFilters.withCastIds || []
-        if (!currentActors.includes(actor.name)) {
-            setAdvancedFilters({
-                ...advancedFilters,
-                withCast: [...currentActors, actor.name],
-                withCastIds: [...currentActorIds, actor.id], // Store TMDB person ID
-            })
-            // Store the profile image for this actor
-            setActorProfileImages((prev) => ({
-                ...prev,
-                [actor.name]: actor.profile_path,
-            }))
-        }
-        setActorInput('')
-        setActorSearchResults([])
-        setShowActorInput(false)
-        setSelectedActorIndex(0)
-    }
-
-    const removeActor = (actorName: string) => {
-        const currentActors = advancedFilters.withCast || []
-        const currentActorIds = advancedFilters.withCastIds || []
-        const actorIndex = currentActors.indexOf(actorName)
-
-        setAdvancedFilters({
-            ...advancedFilters,
-            withCast: currentActors.filter((name) => name !== actorName),
-            withCastIds: currentActorIds.filter((_, index) => index !== actorIndex), // Remove corresponding ID
-        })
-    }
-
-    const setDirector = (director: any) => {
-        setAdvancedFilters({
-            ...advancedFilters,
-            withDirector: director.name,
-            withDirectorId: director.id, // Store TMDB person ID
-        })
-        setDirectorInput('')
-        setDirectorSearchResults([])
-        setShowDirectorInput(false)
-    }
-
-    const removeDirector = () => {
-        setAdvancedFilters({
-            ...advancedFilters,
-            withDirector: undefined,
-            withDirectorId: undefined, // Clear director ID
-        })
-    }
-
-    const modalContent = (
-        <div className="fixed inset-0 z-modal-editor overflow-y-auto">
-            {/* Atmospheric backdrop */}
-            <div className="fixed inset-0 pointer-events-none z-modal-editor-bg">
-                <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" />
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-purple-900/20 via-transparent to-transparent opacity-50" />
-            </div>
-
-            {/* Modal */}
+    const editor = (
+        <div className="fixed inset-0 z-modal-editor flex items-end justify-center sm:items-center sm:p-4">
             <div
-                className="relative min-h-screen flex items-center justify-center p-4 z-modal-editor"
-                onMouseDown={(e) => {
-                    if (e.target === e.currentTarget) {
-                        mouseDownTargetRef.current = e.target
-                    }
-                }}
-                onMouseUp={(e) => {
-                    if (e.target === e.currentTarget && mouseDownTargetRef.current === e.target) {
-                        void handleClose({ skipWaitForSave: true })
-                    }
-                    mouseDownTargetRef.current = null
-                }}
+                className="absolute inset-0 bg-black/75 backdrop-blur-sm"
+                aria-hidden="true"
+                data-testid="collection-editor-backdrop"
+                onClick={requestClose}
+            />
+            <div
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={titleId}
+                tabIndex={-1}
+                data-testid="collection-editor"
+                className="relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl border border-zinc-700 bg-[#0d0d0f] shadow-2xl outline-none sm:max-w-3xl sm:rounded-2xl"
             >
-                <div
-                    className={`relative z-modal-editor bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-2xl shadow-2xl w-full border border-gray-700 ${
-                        isSystemCollection ? 'max-w-2xl' : 'max-w-7xl'
-                    }`}
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    {/* Header with Collection Identity */}
-                    <div className="p-6 border-b border-zinc-800/50">
-                        <div className="flex items-start justify-between">
-                            {/* Collection Identity Section */}
-                            {!canOnlyToggle ? (
-                                <div
-                                    ref={identityContainerRef}
-                                    className="flex-1 p-4 rounded-xl border-2 transition-all duration-200 min-h-[100px] flex items-center"
-                                    style={{
-                                        backgroundColor: `${color}15`,
-                                        borderColor: `${color}80`,
-                                    }}
-                                >
-                                    {!isEditingIdentity ? (
-                                        /* Display Mode */
-                                        <div className="flex items-center gap-4 w-full">
-                                            {/* Emoji Display */}
-                                            <div className="text-5xl">{emoji}</div>
-                                            {/* Collection Name Display */}
-                                            <h3 className="text-2xl font-bold text-white">
-                                                {name || 'Untitled Collection'}
-                                            </h3>
-                                            {/* Edit Button (Pencil Icon) */}
-                                            <button
-                                                onClick={() => setIsEditingIdentity(true)}
-                                                className="p-2 bg-zinc-800/60 hover:bg-zinc-700/80 text-white rounded-lg transition-all duration-200 border border-zinc-700/50 hover:border-zinc-600"
-                                                title="Edit collection identity"
-                                            >
-                                                <PencilIcon className="w-5 h-5" />
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        /* Edit Mode - Inside the same colored container */
-                                        <div className="flex items-center space-x-3 w-full">
-                                            {/* Icon Picker */}
-                                            <div className="relative flex-shrink-0">
-                                                <button
-                                                    onClick={() => setShowIconPicker(true)}
-                                                    className="w-14 h-14 bg-gray-800 border border-gray-600 rounded-lg flex items-center justify-center text-3xl transition-all duration-200 hover:bg-gray-700 hover:border-gray-500"
-                                                    title="Choose an icon"
-                                                >
-                                                    {emoji}
-                                                </button>
+                {/* Header: which collection, and the way out */}
+                <div className="flex items-start gap-3 border-b border-zinc-800 px-5 pb-4 pt-5 sm:px-6">
+                    <CollectionIcon collection={draftCollection} />
+                    <div className="min-w-0 flex-1">
+                        <h2
+                            id={titleId}
+                            className="break-words text-xl font-bold leading-tight text-white"
+                        >
+                            {form.name.trim() || 'Untitled collection'}
+                        </h2>
+                        <p className="mt-1 text-sm text-gray-400">
+                            Edit collection · {contentsLabel(collection)} ·{' '}
+                            {form.shownOnHome ? HOME_SHOWN_LABEL : HOME_HIDDEN_LABEL}
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={requestClose}
+                        aria-label="Close editor"
+                        className={`-mr-2 -mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-white/10 hover:text-white ${focusRing}`}
+                    >
+                        <XMarkIcon className="h-6 w-6" />
+                    </button>
+                </div>
 
-                                                <IconPickerModal
-                                                    isOpen={showIconPicker}
-                                                    selectedIcon={emoji}
-                                                    onSelectIcon={(selectedEmoji) => {
-                                                        setEmoji(selectedEmoji)
-                                                        setShowIconPicker(false)
-                                                    }}
-                                                    onClose={() => setShowIconPicker(false)}
-                                                />
-                                            </div>
+                {/* Body: the only part that scrolls */}
+                <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6">
+                    {!limited && (
+                        <section aria-labelledby={`${ids}-look`} className="space-y-3">
+                            <h3 id={`${ids}-look`} className={sectionTitle}>
+                                Name and look
+                            </h3>
+                            <div className="flex items-center gap-2">
+                                <div className="relative">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowIconPicker(true)}
+                                        aria-label="Choose an icon"
+                                        className={`flex h-11 w-11 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 text-2xl hover:border-zinc-500 ${focusRing}`}
+                                    >
+                                        <CollectionIcon
+                                            collection={draftCollection}
+                                            size="md"
+                                            bare
+                                        />
+                                    </button>
+                                    <IconPickerModal
+                                        isOpen={showIconPicker}
+                                        selectedIcon={form.emoji}
+                                        onSelectIcon={(emoji) => {
+                                            update({ emoji })
+                                            setShowIconPicker(false)
+                                        }}
+                                        onClose={() => setShowIconPicker(false)}
+                                    />
+                                </div>
+                                <div className="relative">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowColorPicker(true)}
+                                        aria-label="Choose a colour"
+                                        className={`flex h-11 w-11 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 p-2 hover:border-zinc-500 ${focusRing}`}
+                                    >
+                                        <span
+                                            className="h-full w-full rounded-md"
+                                            style={{ backgroundColor: form.color }}
+                                        />
+                                    </button>
+                                    <ColorPickerModal
+                                        isOpen={showColorPicker}
+                                        selectedColor={form.color}
+                                        onSelectColor={(color) => {
+                                            update({ color })
+                                            setShowColorPicker(false)
+                                        }}
+                                        onClose={() => setShowColorPicker(false)}
+                                    />
+                                </div>
+                                <input
+                                    type="text"
+                                    aria-label="Collection name"
+                                    placeholder="Collection name"
+                                    value={form.name}
+                                    maxLength={80}
+                                    onChange={(e) => update({ name: e.target.value })}
+                                    className="h-11 min-w-0 flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 text-white placeholder-gray-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                                />
+                            </div>
+                        </section>
+                    )}
 
-                                            {/* Color Picker - Available for user collections and editable system collections */}
-                                            {(canEditFull || canEditLimited) && (
-                                                <div className="relative flex-shrink-0">
-                                                    <button
-                                                        onClick={() => setShowColorPicker(true)}
-                                                        className="w-14 h-14 bg-gray-800 border-2 border-gray-700 rounded-lg transition-all duration-200 hover:bg-gray-700 hover:border-gray-600 p-2 flex items-center justify-center"
-                                                        title="Choose a color"
+                    <section aria-labelledby={`${ids}-where`} className="space-y-3">
+                        <h3 id={`${ids}-where`} className={sectionTitle}>
+                            Where it shows
+                        </h3>
+                        <ul className="divide-y divide-zinc-800 rounded-xl border border-zinc-800 bg-zinc-900/60">
+                            <SwitchRow
+                                label="Show on home"
+                                hint={
+                                    form.movies || form.tv || limited
+                                        ? 'A row on the home page.'
+                                        : 'Turn on Movies or TV shows first.'
+                                }
+                                checked={form.shownOnHome}
+                                disabled={!limited && !form.movies && !form.tv}
+                                onChange={(shownOnHome) => update({ shownOnHome })}
+                            />
+                            <SwitchRow
+                                label="Show on public profile"
+                                hint="Visible to people who open your profile."
+                                checked={form.showOnPublicProfile}
+                                onChange={(showOnPublicProfile) => update({ showOnPublicProfile })}
+                            />
+                            {!limited && (
+                                <SwitchRow
+                                    label={AUTO_FILL_SWITCH_LABEL}
+                                    hint={
+                                        form.genres.length > 0
+                                            ? 'After your titles, keep adding titles from its genres.'
+                                            : 'Pick a genre first.'
+                                    }
+                                    checked={form.autoFill}
+                                    disabled={form.genres.length === 0}
+                                    onChange={(autoFill) => update({ autoFill })}
+                                />
+                            )}
+                        </ul>
+                    </section>
+
+                    {!limited && (
+                        <section aria-labelledby={`${ids}-what`} className="space-y-3">
+                            <h3 id={`${ids}-what`} className={sectionTitle}>
+                                What it includes
+                            </h3>
+                            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                <div className={card}>
+                                    <h4 className="mb-3 font-semibold text-white">Media type</h4>
+                                    <div className="space-y-3">
+                                        <MediaRow
+                                            icon={<FilmIcon className="h-4 w-4" />}
+                                            label="Movies"
+                                            checked={form.movies}
+                                            onChange={(movies) => setMedia({ movies })}
+                                        />
+                                        <MediaRow
+                                            icon={<TvIcon className="h-4 w-4" />}
+                                            label="TV shows"
+                                            checked={form.tv}
+                                            onChange={(tv) => setMedia({ tv })}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className={card}>
+                                    <div className="mb-3 flex items-center justify-between gap-3">
+                                        <h4 className="font-semibold text-white">Genres</h4>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowGenreDialog(true)}
+                                            className={smallButton}
+                                        >
+                                            <PencilIcon className="h-4 w-4" aria-hidden="true" />
+                                            Edit
+                                            <span className="sr-only"> genres</span>
+                                        </button>
+                                    </div>
+                                    <ul className="flex flex-wrap gap-2">
+                                        {form.genres.length === 0 ? (
+                                            <li className="rounded-full border border-zinc-700 px-3 py-1 text-sm text-gray-400">
+                                                All genres
+                                            </li>
+                                        ) : (
+                                            form.genres.map((id) => {
+                                                const name = genreNames.get(id) || id
+                                                return (
+                                                    <li
+                                                        key={id}
+                                                        className="inline-flex items-center gap-1 rounded-full border border-brand-500/50 bg-brand-500/15 py-1 pl-3 pr-1 text-sm text-white"
                                                     >
-                                                        <div
-                                                            className="w-full h-full rounded-md"
-                                                            style={{ backgroundColor: color }}
-                                                        />
-                                                    </button>
+                                                        {name}
+                                                        <button
+                                                            type="button"
+                                                            aria-label={`Remove ${name}`}
+                                                            onClick={() =>
+                                                                setGenres(
+                                                                    form.genres.filter(
+                                                                        (g) => g !== id
+                                                                    )
+                                                                )
+                                                            }
+                                                            className="flex h-6 w-6 items-center justify-center rounded-full text-gray-300 hover:bg-white/10 hover:text-white"
+                                                        >
+                                                            <XMarkIcon
+                                                                className="h-4 w-4"
+                                                                aria-hidden="true"
+                                                            />
+                                                        </button>
+                                                    </li>
+                                                )
+                                            })
+                                        )}
+                                    </ul>
+                                </div>
 
-                                                    <ColorPickerModal
-                                                        isOpen={showColorPicker}
-                                                        selectedColor={color}
-                                                        onSelectColor={(selectedColor) => {
-                                                            setColor(selectedColor)
-                                                            setShowColorPicker(false)
-                                                        }}
-                                                        onClose={() => setShowColorPicker(false)}
-                                                    />
-                                                </div>
-                                            )}
-
-                                            {/* Name Input */}
-                                            <div className="flex-1">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Collection name"
-                                                    value={name}
-                                                    onChange={(e) => setName(e.target.value)}
-                                                    disabled={canOnlyToggle}
-                                                    className={`w-full max-w-md h-14 px-4 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                                        canOnlyToggle
-                                                            ? 'opacity-50 cursor-not-allowed'
-                                                            : ''
-                                                    }`}
-                                                />
-                                            </div>
-
-                                            {/* Done Button */}
-                                            <button
-                                                onClick={() => setIsEditingIdentity(false)}
-                                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 text-sm font-medium"
-                                            >
-                                                Done
-                                            </button>
-                                        </div>
+                                <div className={`${card} md:col-span-2`}>
+                                    <div className="mb-3 flex items-center justify-between gap-3">
+                                        <h4 className="font-semibold text-white">
+                                            Cast, years and rating
+                                        </h4>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowAdvancedFilters(true)}
+                                            className={smallButton}
+                                        >
+                                            <PencilIcon className="h-4 w-4" aria-hidden="true" />
+                                            Edit
+                                            <span className="sr-only"> filters</span>
+                                        </button>
+                                    </div>
+                                    {filterSummary.length > 0 ? (
+                                        <ul className="space-y-1 text-sm text-gray-300">
+                                            {filterSummary.map((line) => (
+                                                <li key={line}>{line}</li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <p className="text-sm text-gray-500">
+                                            Any cast, any year, any rating.
+                                        </p>
                                     )}
                                 </div>
-                            ) : (
-                                /* System collection header */
-                                <div>
-                                    <h2 className="text-xl font-bold text-white">
-                                        {collection?.name}
-                                    </h2>
-                                    <p className="text-gray-300 text-sm mt-1">
-                                        System collection with limited customization
-                                    </p>
+                            </div>
+                        </section>
+                    )}
+
+                    {!limited && (
+                        <section aria-labelledby={`${ids}-titles`} className="space-y-3">
+                            <h3 id={`${ids}-titles`} className={sectionTitle}>
+                                Titles ({titles.length})
+                            </h3>
+                            <InlineSearchBar
+                                onAddContent={(item: Content) => {
+                                    if (form.removed.includes(item.id)) {
+                                        update({
+                                            removed: form.removed.filter((id) => id !== item.id),
+                                        })
+                                    } else {
+                                        update({ added: [...form.added, item] })
+                                    }
+                                }}
+                                existingContentIds={titles.map((c) => c.id)}
+                                placeholder="Search to add movies or TV shows..."
+                            />
+                            {titles.length > 6 && (
+                                <div className="relative sm:max-w-xs">
+                                    <MagnifyingGlassIcon
+                                        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+                                        aria-hidden="true"
+                                    />
+                                    <input
+                                        type="text"
+                                        aria-label="Filter titles"
+                                        placeholder="Filter titles..."
+                                        value={titleFilter}
+                                        onChange={(e) => setTitleFilter(e.target.value)}
+                                        className="h-10 w-full rounded-lg border border-zinc-700 bg-zinc-900 pl-9 pr-3 text-sm text-white placeholder-gray-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                                    />
                                 </div>
                             )}
-
-                            {/* Delete button - show for user collections and deletable system collections */}
-                            {(canEditFull ||
-                                (isSystemCollection && collection.canDelete === true)) && (
-                                <button
-                                    onClick={() => setShowDeleteModal(true)}
-                                    className={`${DANGER_BUTTON_CLASS} ml-4 px-3 py-2`}
-                                    title="Delete collection"
-                                >
-                                    <TrashIcon className="w-5 h-5" />
-                                    <span className="hidden sm:inline">Delete Collection</span>
-                                </button>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Content */}
-                    <div className="p-6 max-h-[calc(90vh-200px)] overflow-y-auto modal-scrollbar">
-                        <div className="space-y-6">
-                            {/* For non-editable system collections, show minimal UI */}
-                            {canOnlyToggle && (
-                                <div className="text-center py-8">
-                                    <div className="inline-flex flex-col items-center gap-4 p-6 bg-gray-800/50 rounded-lg border border-gray-700">
-                                        <div className="flex items-center justify-between gap-3 sm:gap-4 md:gap-6 lg:gap-8">
-                                            <label className="text-sm font-medium text-white flex items-center gap-2">
-                                                <span>🏠</span>
-                                                Display on Page
-                                            </label>
+                            {titles.length === 0 ? (
+                                <p className="rounded-xl border border-dashed border-zinc-800 px-4 py-6 text-center text-sm text-gray-400">
+                                    {collection.collectionType === 'tmdb-genre'
+                                        ? 'This collection fills itself from its genres. Titles you add here show first.'
+                                        : 'No titles yet. Search above to add some.'}
+                                </p>
+                            ) : (
+                                <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
+                                    {visibleTitles.map((item) => (
+                                        <li
+                                            key={item.id}
+                                            className="relative overflow-hidden rounded-lg bg-zinc-900"
+                                        >
+                                            <div className="relative aspect-[2/3]">
+                                                {item.poster_path ? (
+                                                    <Image
+                                                        src={`https://image.tmdb.org/t/p/w342${item.poster_path}`}
+                                                        alt={getTitle(item)}
+                                                        fill
+                                                        className="object-cover"
+                                                        sizes="(max-width: 640px) 33vw, 20vw"
+                                                    />
+                                                ) : (
+                                                    <div className="flex h-full w-full items-center justify-center p-2 text-center text-xs text-gray-400">
+                                                        {getTitle(item)}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <p className="truncate px-2 pt-1.5 text-xs font-medium text-gray-200">
+                                                {getTitle(item)}
+                                            </p>
+                                            <p className="px-2 pb-1.5 text-[11px] text-gray-500">
+                                                {getYear(item)}
+                                            </p>
                                             <button
                                                 type="button"
-                                                onClick={() => setDisplayAsRow(!displayAsRow)}
-                                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                                                    displayAsRow ? 'bg-blue-600' : 'bg-gray-600'
-                                                }`}
+                                                aria-label={`Remove ${getTitle(item)}`}
+                                                onClick={() => {
+                                                    if (form.added.some((a) => a.id === item.id)) {
+                                                        update({
+                                                            added: form.added.filter(
+                                                                (a) => a.id !== item.id
+                                                            ),
+                                                        })
+                                                    } else {
+                                                        update({
+                                                            removed: [...form.removed, item.id],
+                                                        })
+                                                    }
+                                                }}
+                                                className={`absolute right-1.5 top-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-black/75 text-white hover:bg-brand-500 ${focusRing}`}
                                             >
-                                                <span
-                                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                                        displayAsRow
-                                                            ? 'translate-x-6'
-                                                            : 'translate-x-1'
-                                                    }`}
-                                                />
+                                                <XMarkIcon className="h-4 w-4" aria-hidden="true" />
                                             </button>
-                                        </div>
-                                        <p className="text-xs text-gray-400 max-w-sm">
-                                            {displayAsRow
-                                                ? 'This collection will be visible on the page'
-                                                : 'This collection will be hidden from the page'}
-                                        </p>
-                                    </div>
-                                </div>
+                                        </li>
+                                    ))}
+                                </ul>
                             )}
-
-                            {/* For editable collections, show full or limited UI */}
-                            {!canOnlyToggle && (
-                                <>
-                                    {/* Toggle Settings - Single Column Layout */}
-                                    <div className="space-y-3">
-                                        {/* Display on Page Toggle */}
-                                        <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
-                                            <div className="flex items-center justify-between">
-                                                <label className="text-sm font-medium text-white flex items-center gap-1.5">
-                                                    <span>🏠</span>
-                                                    Display on Page
-                                                </label>
-                                                <button
-                                                    type="button"
-                                                    onClick={handleDisplayOnPageToggle}
-                                                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                                        displayAsRow
-                                                            ? 'bg-green-600'
-                                                            : 'bg-gray-600'
-                                                    } ${!hasMediaTypeEnabled ? 'opacity-50 cursor-pointer' : ''}`}
-                                                >
-                                                    <span
-                                                        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                                                            displayAsRow
-                                                                ? 'translate-x-5'
-                                                                : 'translate-x-0.5'
-                                                        }`}
-                                                    />
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        {/* Show on Public Profile Toggle */}
-                                        <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
-                                            <div className="flex items-center justify-between">
-                                                <label className="text-sm font-medium text-white flex items-center gap-1.5">
-                                                    <span>👁️</span>
-                                                    Public Profile
-                                                </label>
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        setShowOnPublicProfile(!showOnPublicProfile)
-                                                    }
-                                                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                                        showOnPublicProfile
-                                                            ? 'bg-blue-600'
-                                                            : 'bg-gray-600'
-                                                    }`}
-                                                >
-                                                    <span
-                                                        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                                                            showOnPublicProfile
-                                                                ? 'translate-x-5'
-                                                                : 'translate-x-0.5'
-                                                        }`}
-                                                    />
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        {/* Infinite Content Toggle */}
-                                        <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
-                                            <div className="relative flex items-center justify-between">
-                                                <label className="text-sm font-medium text-white flex items-center gap-1.5">
-                                                    <span>♾️</span>
-                                                    Infinite Content
-                                                    <button
-                                                        type="button"
-                                                        onMouseEnter={() =>
-                                                            setShowInfiniteTooltip(true)
-                                                        }
-                                                        onMouseLeave={() =>
-                                                            setShowInfiniteTooltip(false)
-                                                        }
-                                                        onClick={() =>
-                                                            setShowInfiniteTooltip(
-                                                                !showInfiniteTooltip
-                                                            )
-                                                        }
-                                                        className="text-gray-400 hover:text-white relative"
-                                                    >
-                                                        <QuestionMarkCircleIcon className="w-4 h-4" />
-                                                        {showInfiniteTooltip && (
-                                                            <div
-                                                                className={`absolute z-10 top-full left-1/2 -translate-x-1/2 mt-2 p-2 bg-gray-900 border border-gray-700 rounded-md shadow-xl whitespace-normal ${
-                                                                    canEditFull
-                                                                        ? 'max-w-xs'
-                                                                        : 'w-64 max-w-none'
-                                                                }`}
-                                                            >
-                                                                <p className="text-xs text-gray-300">
-                                                                    {canEditFull
-                                                                        ? 'After your curated titles, show more similar content based on genres'
-                                                                        : 'This is a system collection that is infinite by default'}
-                                                                </p>
-                                                            </div>
-                                                        )}
-                                                    </button>
-                                                </label>
-                                                <button
-                                                    type="button"
-                                                    onClick={
-                                                        canEditFull
-                                                            ? handleToggleInfinite
-                                                            : () => {
-                                                                  showError(
-                                                                      'Cannot disable infinite content',
-                                                                      'This is a system collection that is infinite by default'
-                                                                  )
-                                                              }
-                                                    }
-                                                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                                        enableInfiniteContent || !canEditFull
-                                                            ? 'bg-brand-500'
-                                                            : 'bg-gray-600'
-                                                    } ${!canEditFull ? 'opacity-50 cursor-pointer' : ''}`}
-                                                >
-                                                    <span
-                                                        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                                                            enableInfiniteContent || !canEditFull
-                                                                ? 'translate-x-5'
-                                                                : 'translate-x-0.5'
-                                                        }`}
-                                                    />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Media Type and Genres - Two Column */}
-                                    <div className="grid grid-cols-2 gap-3">
-                                        {/* Media Type Selection */}
-                                        <div
-                                            className={`bg-gray-800/50 rounded-lg border p-4 transition-all duration-500 ${
-                                                highlightMediaType
-                                                    ? 'border-brand-500 bg-brand-500/20'
-                                                    : 'border-gray-700'
-                                            }`}
-                                        >
-                                            <div className="space-y-4">
-                                                <p className="text-lg font-bold text-white">
-                                                    Media Type
-                                                </p>
-                                                <div className="space-y-2">
-                                                    {/* Movies Toggle */}
-                                                    <div className="flex items-center justify-between">
-                                                        <label className="text-sm font-medium text-white flex items-center gap-2">
-                                                            <FilmIcon className="w-4 h-4" />
-                                                            Movies
-                                                        </label>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                !canOnlyToggle &&
-                                                                handleMediaTypeToggle('movie')
-                                                            }
-                                                            disabled={canOnlyToggle}
-                                                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                                                isMovieEnabled
-                                                                    ? 'bg-brand-500'
-                                                                    : 'bg-gray-600'
-                                                            } ${canOnlyToggle ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                        >
-                                                            <span
-                                                                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                                                                    isMovieEnabled
-                                                                        ? 'translate-x-5'
-                                                                        : 'translate-x-0.5'
-                                                                }`}
-                                                            />
-                                                        </button>
-                                                    </div>
-
-                                                    {/* TV Shows Toggle */}
-                                                    <div className="flex items-center justify-between">
-                                                        <label className="text-sm font-medium text-white flex items-center gap-2">
-                                                            <TvIcon className="w-4 h-4" />
-                                                            TV Shows
-                                                        </label>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                !canOnlyToggle &&
-                                                                handleMediaTypeToggle('tv')
-                                                            }
-                                                            disabled={canOnlyToggle}
-                                                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                                                isTVEnabled
-                                                                    ? 'bg-brand-500'
-                                                                    : 'bg-gray-600'
-                                                            } ${canOnlyToggle ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                        >
-                                                            <span
-                                                                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                                                                    isTVEnabled
-                                                                        ? 'translate-x-5'
-                                                                        : 'translate-x-0.5'
-                                                                }`}
-                                                            />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Genres */}
-                                        <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
-                                            <div className="space-y-4">
-                                                <div className="flex items-start justify-between">
-                                                    <p className="text-lg font-bold text-white">
-                                                        Genres
-                                                    </p>
-                                                    {!canOnlyToggle && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setShowGenreModal(true)}
-                                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 text-sm font-medium flex-shrink-0"
-                                                        >
-                                                            <PencilIcon className="w-3.5 h-3.5" />
-                                                            Edit
-                                                        </button>
-                                                    )}
-                                                </div>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {selectedGenres.length === 0 ? (
-                                                        <span className="px-4 py-2 rounded-full text-sm font-medium bg-brand-500 text-white">
-                                                            All Genres
-                                                        </span>
-                                                    ) : (
-                                                        selectedGenres.map((genreId, index) => (
-                                                            <span
-                                                                key={`${genreId}-${index}`}
-                                                                className="group relative px-4 py-2 rounded-full text-sm font-medium bg-brand-500 text-white"
-                                                            >
-                                                                {selectedGenreNames[index]}
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() =>
-                                                                        setSelectedGenres(
-                                                                            selectedGenres.filter(
-                                                                                (_, i) =>
-                                                                                    i !== index
-                                                                            )
-                                                                        )
-                                                                    }
-                                                                    className="absolute -top-1 -right-1 w-5 h-5 bg-white hover:bg-gray-200 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
-                                                                    title="Remove genre"
-                                                                >
-                                                                    <XMarkIcon className="w-3 h-3 text-slate-600" />
-                                                                </button>
-                                                            </span>
-                                                        ))
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Cast & Director and Advanced Filters - Two Column */}
-                                    <div className="grid grid-cols-2 gap-3">
-                                        {/* Cast & Director Section */}
-                                        <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
-                                            <h3 className="text-base font-semibold text-white mb-3">
-                                                Cast & Director
-                                            </h3>
-
-                                            {/* Actors Section */}
-                                            <div className="mb-4">
-                                                <label className="block text-sm font-medium text-gray-200 mb-2">
-                                                    Actors
-                                                </label>
-
-                                                {/* Actor Pills */}
-                                                {advancedFilters.withCast &&
-                                                    advancedFilters.withCast.length > 0 && (
-                                                        <div className="flex flex-wrap gap-2 mb-2">
-                                                            {advancedFilters.withCast.map(
-                                                                (actorName) => (
-                                                                    <div
-                                                                        key={actorName}
-                                                                        className="group relative flex items-center gap-2 pl-1.5 pr-4 py-1.5 rounded-full text-sm font-medium bg-blue-600 text-white"
-                                                                    >
-                                                                        {/* Actor Profile Image */}
-                                                                        <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-700 flex-shrink-0">
-                                                                            {actorProfileImages[
-                                                                                actorName
-                                                                            ] ? (
-                                                                                <Image
-                                                                                    src={`https://image.tmdb.org/t/p/w185${actorProfileImages[actorName]}`}
-                                                                                    alt={actorName}
-                                                                                    width={32}
-                                                                                    height={32}
-                                                                                    className="object-cover"
-                                                                                />
-                                                                            ) : (
-                                                                                <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                                                                                    ?
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
-                                                                        {actorName}
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() =>
-                                                                                removeActor(
-                                                                                    actorName
-                                                                                )
-                                                                            }
-                                                                            className="absolute -top-1 -right-1 w-5 h-5 bg-white hover:bg-gray-200 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
-                                                                            title="Remove actor"
-                                                                        >
-                                                                            <XMarkIcon className="w-3 h-3 text-slate-600" />
-                                                                        </button>
-                                                                    </div>
-                                                                )
-                                                            )}
-                                                        </div>
-                                                    )}
-
-                                                {/* Add Actor Button / Input */}
-                                                {!showActorInput ? (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setShowActorInput(true)}
-                                                        className="flex items-center gap-2 px-3 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-xs hover:bg-gray-600 transition-colors"
-                                                    >
-                                                        <PlusIcon className="w-3.5 h-3.5" />
-                                                        Add Actor
-                                                    </button>
-                                                ) : (
-                                                    <div className="relative">
-                                                        <input
-                                                            type="text"
-                                                            placeholder="Search for an actor..."
-                                                            value={actorInput}
-                                                            onChange={(e) =>
-                                                                handleActorInputChange(
-                                                                    e.target.value
-                                                                )
-                                                            }
-                                                            onKeyDown={handleActorKeyDown}
-                                                            autoFocus
-                                                            className="w-full px-3 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                                        />
-
-                                                        {/* Actor Search Results */}
-                                                        {actorSearchResults.length > 0 && (
-                                                            <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden max-h-48">
-                                                                {actorSearchResults
-                                                                    .slice(0, 5)
-                                                                    .map((person, index) => (
-                                                                        <button
-                                                                            key={person.id}
-                                                                            type="button"
-                                                                            onClick={() =>
-                                                                                addActor(person)
-                                                                            }
-                                                                            className={`w-full flex items-center gap-2 p-2 transition-colors text-left ${
-                                                                                index ===
-                                                                                selectedActorIndex
-                                                                                    ? 'bg-blue-600/30'
-                                                                                    : 'hover:bg-gray-700'
-                                                                            }`}
-                                                                        >
-                                                                            <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-700 flex-shrink-0">
-                                                                                {person.profile_path ? (
-                                                                                    <Image
-                                                                                        src={`https://image.tmdb.org/t/p/w185${person.profile_path}`}
-                                                                                        alt={
-                                                                                            person.name
-                                                                                        }
-                                                                                        width={32}
-                                                                                        height={32}
-                                                                                        className="object-cover"
-                                                                                    />
-                                                                                ) : (
-                                                                                    <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs">
-                                                                                        ?
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                            <div className="flex-1 min-w-0">
-                                                                                <p className="text-white text-sm font-medium truncate">
-                                                                                    {person.name}
-                                                                                </p>
-                                                                            </div>
-                                                                        </button>
-                                                                    ))}
-                                                            </div>
-                                                        )}
-
-                                                        {isSearchingActors && (
-                                                            <div className="absolute right-3 top-2">
-                                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Director Section */}
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-200 mb-2">
-                                                    Director
-                                                </label>
-
-                                                {/* Director Pill */}
-                                                {advancedFilters.withDirector && (
-                                                    <div className="flex flex-wrap gap-2 mb-2">
-                                                        <div className="group relative px-3 py-1.5 rounded-full text-xs font-medium bg-purple-600 text-white">
-                                                            {advancedFilters.withDirector}
-                                                            <button
-                                                                type="button"
-                                                                onClick={removeDirector}
-                                                                className="absolute -top-1 -right-1 w-4 h-4 bg-white hover:bg-gray-200 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
-                                                                title="Remove director"
-                                                            >
-                                                                <XMarkIcon className="w-2.5 h-2.5 text-slate-600" />
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {/* Add Director Button / Input */}
-                                                {!advancedFilters.withDirector &&
-                                                    (!showDirectorInput ? (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                setShowDirectorInput(true)
-                                                            }
-                                                            className="flex items-center gap-2 px-3 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-xs hover:bg-gray-600 transition-colors"
-                                                        >
-                                                            <PlusIcon className="w-3.5 h-3.5" />
-                                                            Add Director
-                                                        </button>
-                                                    ) : (
-                                                        <div className="relative">
-                                                            <input
-                                                                type="text"
-                                                                placeholder="Search for a director..."
-                                                                value={directorInput}
-                                                                onChange={(e) =>
-                                                                    handleDirectorInputChange(
-                                                                        e.target.value
-                                                                    )
-                                                                }
-                                                                onKeyDown={handleDirectorKeyDown}
-                                                                autoFocus
-                                                                className="w-full px-3 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                                            />
-
-                                                            {/* Director Search Results */}
-                                                            {directorSearchResults.length > 0 && (
-                                                                <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden max-h-48">
-                                                                    {directorSearchResults
-                                                                        .slice(0, 5)
-                                                                        .map((person, index) => (
-                                                                            <button
-                                                                                key={person.id}
-                                                                                type="button"
-                                                                                onClick={() =>
-                                                                                    setDirector(
-                                                                                        person
-                                                                                    )
-                                                                                }
-                                                                                className={`w-full flex items-center gap-2 p-2 transition-colors text-left ${
-                                                                                    index ===
-                                                                                    selectedDirectorIndex
-                                                                                        ? 'bg-blue-600/30'
-                                                                                        : 'hover:bg-gray-700'
-                                                                                }`}
-                                                                            >
-                                                                                <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-700 flex-shrink-0">
-                                                                                    {person.profile_path ? (
-                                                                                        <Image
-                                                                                            src={`https://image.tmdb.org/t/p/w185${person.profile_path}`}
-                                                                                            alt={
-                                                                                                person.name
-                                                                                            }
-                                                                                            width={
-                                                                                                32
-                                                                                            }
-                                                                                            height={
-                                                                                                32
-                                                                                            }
-                                                                                            className="object-cover"
-                                                                                        />
-                                                                                    ) : (
-                                                                                        <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs">
-                                                                                            ?
-                                                                                        </div>
-                                                                                    )}
-                                                                                </div>
-                                                                                <div className="flex-1 min-w-0">
-                                                                                    <p className="text-white text-sm font-medium truncate">
-                                                                                        {
-                                                                                            person.name
-                                                                                        }
-                                                                                    </p>
-                                                                                </div>
-                                                                            </button>
-                                                                        ))}
-                                                                </div>
-                                                            )}
-
-                                                            {isSearchingDirector && (
-                                                                <div className="absolute right-3 top-2">
-                                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    ))}
-                                            </div>
-                                        </div>
-
-                                        {/* Advanced Filters Section */}
-                                        <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
-                                            <div className="flex items-center justify-between mb-6">
-                                                <div>
-                                                    <h3 className="text-base font-semibold text-white">
-                                                        Advanced Filters
-                                                    </h3>
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        setShowAdvancedFiltersModal(true)
-                                                    }
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 text-sm font-medium flex-shrink-0"
-                                                >
-                                                    <PencilIcon className="w-3.5 h-3.5" />
-                                                    Edit
-                                                </button>
-                                            </div>
-
-                                            {/* Preview of advanced filters */}
-                                            <div className="space-y-2 text-xs text-gray-300">
-                                                {advancedFilters.yearMin ||
-                                                advancedFilters.yearMax ? (
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-gray-400">Year:</span>
-                                                        <span className="px-2 py-1 bg-gray-700 rounded">
-                                                            {advancedFilters.yearMin || '1900'} -{' '}
-                                                            {advancedFilters.yearMax ||
-                                                                new Date().getFullYear()}
-                                                        </span>
-                                                    </div>
-                                                ) : null}
-
-                                                {advancedFilters.ratingMin !== undefined ||
-                                                advancedFilters.ratingMax !== undefined ? (
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-gray-400">
-                                                            Rating:
-                                                        </span>
-                                                        <span className="px-2 py-1 bg-gray-700 rounded">
-                                                            {advancedFilters.ratingMin ?? 0}/10 -{' '}
-                                                            {advancedFilters.ratingMax ?? 10}/10
-                                                        </span>
-                                                    </div>
-                                                ) : null}
-
-                                                {!advancedFilters.yearMin &&
-                                                    !advancedFilters.yearMax &&
-                                                    advancedFilters.ratingMin === undefined &&
-                                                    advancedFilters.ratingMax === undefined && (
-                                                        <p className="text-gray-500 italic">
-                                                            No advanced filters applied
-                                                        </p>
-                                                    )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </>
-                            )}
-
-                            {/* Content Management - Only for user-created collections */}
-                            {canEditFull && (
-                                <>
-                                    {/* Add Content Search Bar - Left Aligned */}
-                                    <div>
-                                        <div className="w-full max-w-2xl">
-                                            <InlineSearchBar
-                                                onAddContent={handleAddContent}
-                                                existingContentIds={content.map((c) => c.id)}
-                                                placeholder="Search to add movies or TV shows..."
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Content Grid */}
-                                    <div>
-                                        {visibleContent.length > 0 && (
-                                            <>
-                                                <h3 className="text-lg font-semibold text-white mb-4">
-                                                    Collection Content ({visibleContent.length}{' '}
-                                                    titles
-                                                    {removedIds.size > 0 && (
-                                                        <span className="text-gray-500 ml-2">
-                                                            · {removedIds.size} removed
-                                                        </span>
-                                                    )}
-                                                    )
-                                                </h3>
-
-                                                {/* Search Filter - Below heading */}
-                                                <div className="mb-4">
-                                                    <div className="relative w-96">
-                                                        <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                                                        <input
-                                                            type="text"
-                                                            placeholder="Filter titles..."
-                                                            value={searchFilter}
-                                                            onChange={(e) =>
-                                                                setSearchFilter(e.target.value)
-                                                            }
-                                                            className="w-full h-12 pl-12 pr-4 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                        />
-                                                        {searchFilter && (
-                                                            <button
-                                                                onClick={() => setSearchFilter('')}
-                                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-                                                            >
-                                                                <XMarkIcon className="h-5 w-5" />
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </>
-                                        )}
-
-                                        {visibleContent.length === 0 ? (
-                                            <div className="text-center py-8 text-gray-400">
-                                                No content in this collection. Use the search bar
-                                                above to add titles.
-                                            </div>
-                                        ) : (
-                                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-[400px] overflow-y-auto p-2">
-                                                {visibleContent.map((item) => (
-                                                    <div
-                                                        key={item.id}
-                                                        className="group relative rounded-lg overflow-hidden bg-gray-800 hover:ring-2 hover:ring-red-600 transition-all"
-                                                    >
-                                                        {/* Remove Button */}
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation()
-                                                                handleRemoveContent(item.id)
-                                                            }}
-                                                            className="
-                                                        absolute top-2 left-1/2 -translate-x-1/2 z-50
-                                                        w-8 h-8 rounded-full
-                                                        bg-white shadow-lg
-                                                        border-2 border-black
-                                                        opacity-0 group-hover:opacity-100
-                                                        transition-all duration-200
-                                                        hover:scale-110
-                                                        flex items-center justify-center
-                                                    "
-                                                            aria-label="Remove from collection"
-                                                        >
-                                                            <XMarkIcon className="h-5 w-5 text-black" />
-                                                        </button>
-
-                                                        {/* Poster */}
-                                                        <div className="aspect-[2/3] relative">
-                                                            {item.poster_path ? (
-                                                                <Image
-                                                                    src={`https://image.tmdb.org/t/p/w342${item.poster_path}`}
-                                                                    alt={getTitle(item)}
-                                                                    fill
-                                                                    className="object-cover"
-                                                                    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
-                                                                />
-                                                            ) : (
-                                                                <div className="w-full h-full flex items-center justify-center bg-gray-700 text-gray-500 text-xs p-2 text-center">
-                                                                    {getTitle(item)}
-                                                                </div>
-                                                            )}
-                                                        </div>
-
-                                                        {/* Hover overlay with info */}
-                                                        <div className="absolute inset-0 bg-black/90 opacity-0 group-hover:opacity-100 transition-opacity p-2 flex flex-col justify-end">
-                                                            <p className="text-white text-sm font-semibold line-clamp-2">
-                                                                {getTitle(item)}
-                                                            </p>
-                                                            <p className="text-gray-400 text-xs">
-                                                                {getYear(item)} • ⭐{' '}
-                                                                {item.vote_average.toFixed(1)}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    </div>
+                        </section>
+                    )}
                 </div>
-            </div>
-        </div>
-    )
 
-    // Genre Modal
-    const genreModal = showGenreModal && (
-        <div className="fixed inset-0 z-modal-editor-inner overflow-y-auto">
-            {/* Atmospheric backdrop */}
-            <div className="fixed inset-0 pointer-events-none z-modal-editor">
-                <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" />
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-purple-900/20 via-transparent to-transparent opacity-50" />
-            </div>
-
-            {/* Modal */}
-            <div
-                className="relative min-h-screen flex items-center justify-center p-4 z-modal-editor-inner"
-                onMouseDown={(e) => {
-                    if (e.target === e.currentTarget) {
-                        genreModalMouseDownTargetRef.current = e.target
-                    }
-                }}
-                onMouseUp={(e) => {
-                    if (
-                        e.target === e.currentTarget &&
-                        genreModalMouseDownTargetRef.current === e.target
-                    ) {
-                        setShowGenreModal(false)
-                    }
-                    genreModalMouseDownTargetRef.current = null
-                }}
-            >
+                {/* Footer: one way to keep changes, one way to drop them */}
                 <div
-                    className="relative z-modal-editor-inner bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-2xl shadow-2xl max-w-4xl w-full border border-gray-700"
-                    onClick={(e) => e.stopPropagation()}
+                    data-testid="collection-editor-footer"
+                    className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-800 px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-6"
                 >
-                    {/* Header */}
-                    <div className="flex items-center justify-between p-6 border-b border-zinc-800/50">
-                        <div>
-                            <h3 className="text-xl font-bold text-white">Edit Genre Collections</h3>
-                        </div>
-                        <button
-                            onClick={() => setShowGenreModal(false)}
-                            className="text-gray-400 hover:text-white transition-colors"
-                        >
-                            <XMarkIcon className="w-6 h-6" />
-                        </button>
-                    </div>
-
-                    {/* Content */}
-                    <div className="p-6 max-h-[calc(90vh-200px)] overflow-y-auto modal-scrollbar">
-                        {/* Genre Pills */}
-                        <div>
-                            <div className="mb-3">
-                                <div className="flex items-baseline justify-between mb-2">
-                                    <p className="text-sm font-medium text-gray-300">
-                                        Genres{' '}
-                                        {selectedGenres.length === 0
-                                            ? '(Any)'
-                                            : `(${selectedGenres.length})`}
-                                    </p>
-                                    <p className="text-xs text-gray-400">Select up to 3</p>
-                                </div>
-                                <p className="text-xs text-gray-400">
-                                    Click order determines priority (1 = most important, 3 = least
-                                    important)
-                                </p>
+                    {confirmDiscard ? (
+                        <>
+                            <p role="alert" className="text-sm font-medium text-white">
+                                Discard unsaved changes?
+                            </p>
+                            <div className="ml-auto flex gap-2">
+                                <button
+                                    ref={keepEditingRef}
+                                    type="button"
+                                    onClick={() => setConfirmDiscard(false)}
+                                    className={secondaryButton}
+                                >
+                                    Keep editing
+                                </button>
+                                <button type="button" onClick={onClose} className={primaryButton}>
+                                    Discard
+                                </button>
                             </div>
-                            <GenrePills
-                                selectedGenres={selectedGenres}
-                                onChange={setSelectedGenres}
-                                mediaType={mediaType}
-                                childSafeMode={isChildSafetyEnabled}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Footer */}
-                    <div className="p-6 border-t border-gray-700">
-                        <p className="text-base text-gray-300 mb-4 text-center">
-                            Note: Genres can be used for infinite content generation
-                        </p>
-                        <div className="flex items-center justify-center">
-                            <button
-                                onClick={() => setShowGenreModal(false)}
-                                className="px-16 py-2.5 bg-blue-600 text-white rounded-lg font-medium transition-all duration-200 hover:bg-blue-700"
-                            >
-                                Done
-                            </button>
-                        </div>
-                    </div>
+                        </>
+                    ) : (
+                        <>
+                            <div>
+                                {builtIn
+                                    ? form.shownOnHome &&
+                                      initial?.shownOnHome && (
+                                          <button
+                                              type="button"
+                                              onClick={() => save({ shownOnHome: false })}
+                                              disabled={saving}
+                                              className={`${secondaryButton} px-3`}
+                                          >
+                                              <EyeSlashIcon
+                                                  className="h-4 w-4"
+                                                  aria-hidden="true"
+                                              />
+                                              Hide from home
+                                          </button>
+                                      )
+                                    : collection.canDelete !== false && (
+                                          <button
+                                              type="button"
+                                              onClick={() => setShowDeleteModal(true)}
+                                              className={`inline-flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-red-300 transition-colors hover:bg-red-950/50 hover:text-red-200 ${focusRing}`}
+                                          >
+                                              <TrashIcon className="h-4 w-4" aria-hidden="true" />
+                                              Delete
+                                          </button>
+                                      )}
+                            </div>
+                            <div className="ml-auto flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={requestClose}
+                                    className={secondaryButton}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => save()}
+                                    disabled={!dirty || saving}
+                                    className={primaryButton}
+                                >
+                                    {saving ? 'Saving...' : 'Save'}
+                                </button>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
         </div>
     )
 
-    // Render via portal to document.body to escape any parent stacking contexts
-    if (!mounted || typeof window === 'undefined') return null
     return (
         <>
-            {createPortal(modalContent, document.body)}
-            {showGenreModal && createPortal(genreModal, document.body)}
-            {/* Advanced Filters Modal */}
-            <AdvancedFiltersModal
-                isOpen={showAdvancedFiltersModal}
-                filters={advancedFilters}
-                onChange={setAdvancedFilters}
-                onClose={() => setShowAdvancedFiltersModal(false)}
+            {createPortal(editor, document.body)}
+            <GenrePickerDialog
+                isOpen={showGenreDialog}
+                selectedGenres={form.genres}
+                onChange={setGenres}
+                mediaType={mediaTypeOf(form)}
+                childSafeMode={isChildSafetyEnabled}
+                onClose={() => setShowGenreDialog(false)}
             />
-            {/* Delete Confirmation Modal - uses its own portal */}
+            <AdvancedFiltersModal
+                isOpen={showAdvancedFilters}
+                filters={form.advancedFilters}
+                onChange={(advancedFilters) => update({ advancedFilters })}
+                onClose={() => setShowAdvancedFilters(false)}
+            />
             <DeleteConfirmationModal
                 isOpen={showDeleteModal}
                 onClose={() => setShowDeleteModal(false)}
                 onConfirm={handleDeleteConfirm}
-                itemName={collection?.name || ''}
-                emoji={collection?.emoji}
-                isSystemItem={isSystemCollection}
+                itemName={collection.name}
+                emoji={collection.emoji}
+                isSystemItem={false}
                 zIndexLayer="MODAL_EDITOR_DELETE"
             />
         </>
+    )
+}
+
+/** Older saves wrote a single director as a string instead of a list. */
+function names(value: unknown): string[] {
+    if (Array.isArray(value)) return value.filter((v): v is string => typeof v === 'string')
+    return typeof value === 'string' && value ? [value] : []
+}
+
+function SwitchRow({
+    label,
+    hint,
+    checked,
+    disabled,
+    onChange,
+}: {
+    label: string
+    hint: string
+    checked: boolean
+    disabled?: boolean
+    onChange: (next: boolean) => void
+}) {
+    return (
+        <li className="flex items-center justify-between gap-4 px-4 py-3">
+            <div className="min-w-0">
+                <p className="text-sm font-medium text-white">{label}</p>
+                <p className="text-xs text-gray-400">{hint}</p>
+            </div>
+            <Switch label={label} checked={checked} disabled={disabled} onChange={onChange} />
+        </li>
+    )
+}
+
+function MediaRow({
+    icon,
+    label,
+    checked,
+    onChange,
+}: {
+    icon: React.ReactNode
+    label: string
+    checked: boolean
+    onChange: (next: boolean) => void
+}) {
+    return (
+        <div className="flex items-center justify-between gap-3">
+            <span className="flex items-center gap-2 text-sm font-medium text-white">
+                <span className="text-gray-400" aria-hidden="true">
+                    {icon}
+                </span>
+                {label}
+            </span>
+            <Switch size="sm" label={label} checked={checked} onChange={onChange} />
+        </div>
     )
 }

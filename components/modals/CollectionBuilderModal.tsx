@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useModalStore } from '../../stores/modalStore'
 import { useSessionStore } from '../../stores/sessionStore'
@@ -15,6 +15,8 @@ import {
     inferTopGenresFromContent,
 } from '../../utils/collectionGenreUtils'
 import { useEscapeKey } from '../../hooks/useEscapeKey'
+import { useFocusTrap } from '../../hooks/useFocusTrap'
+import { BUILDER_TITLE_ID } from '../collections/BuilderHeader'
 
 type CreationMode = 'traditional' | 'smart'
 
@@ -39,6 +41,7 @@ function CollectionBuilderModal() {
 
     const [mode, setMode] = useState<CreationMode>('smart')
     const [mouseDownOnBackdrop, setMouseDownOnBackdrop] = useState(false)
+    const dialogRef = useRef<HTMLDivElement>(null)
 
     // Feature flag: Use simplified builder
     const USE_SIMPLIFIED_BUILDER = true
@@ -48,6 +51,16 @@ function CollectionBuilderModal() {
     const isAuthenticated = sessionType === 'authenticated'
 
     useEscapeKey(isOpen, closeCollectionBuilderModal)
+    useFocusTrap(dialogRef, isOpen)
+
+    useEffect(() => {
+        if (!isOpen) return
+        const previous = document.body.style.overflow
+        document.body.style.overflow = 'hidden'
+        return () => {
+            document.body.style.overflow = previous
+        }
+    }, [isOpen])
 
     if (!isOpen) return null
 
@@ -132,19 +145,25 @@ function CollectionBuilderModal() {
 
     return (
         <div
-            className="fixed inset-0 z-[56000] overflow-y-auto"
+            className="fixed inset-0 z-[56000] flex items-end justify-center sm:items-center sm:p-4"
             onMouseDown={handleBackdropMouseDown}
             onMouseUp={handleBackdropMouseUp}
         >
             {/* Backdrop */}
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" />
+            <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" aria-hidden="true" />
 
-            {/* Modal Container */}
-            <div className="relative min-h-screen flex items-center justify-center p-4">
-                <div
-                    data-modal-content
-                    className="relative bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-lg shadow-2xl max-w-6xl w-full border border-gray-700"
-                >
+            {/* Sized to its content, like About: no fixed 600px stage */}
+            <div
+                ref={dialogRef}
+                data-modal-content
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={BUILDER_TITLE_ID}
+                tabIndex={-1}
+                data-testid="collection-builder"
+                className="relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl border border-zinc-700 bg-[#0d0d0f] shadow-2xl outline-none sm:max-w-4xl sm:rounded-2xl"
+            >
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
                     {/* Render selected mode content */}
                     {mode === 'smart' ? (
                         USE_SIMPLIFIED_BUILDER ? (

@@ -6,14 +6,21 @@ import SubPageLayout from '../../../components/layout/SubPageLayout'
 import useUserData from '../../../hooks/useUserData'
 import useAuth from '../../../hooks/useAuth'
 import {
-    EyeIcon,
     MagnifyingGlassIcon,
     PencilIcon,
     Cog6ToothIcon,
     ChevronDownIcon,
     TrashIcon,
 } from '@heroicons/react/24/solid'
-import { XMarkIcon, RectangleStackIcon, MicrophoneIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, MicrophoneIcon } from '@heroicons/react/24/outline'
+import CollectionIcon from '../../../components/collections/CollectionIcon'
+import {
+    HOME_HIDDEN_LABEL,
+    HOME_SHOWN_LABEL,
+    contentsLabel,
+    hasHomeSetting,
+    isShownOnHome,
+} from '../../../components/collections/collectionMeta'
 import { useVoiceInput } from '../../../hooks/useVoiceInput'
 import { useToast } from '../../../hooks/useToast'
 import { Content } from '../../../typings'
@@ -382,16 +389,7 @@ const CollectionPage = ({ params }: CollectionPageProps) => {
     }
 
     // Helper functions for collection pills
-    const getListIcon = (list: UserList) => {
-        // Return emoji if the list has one (custom lists)
-        if (list.emoji) {
-            return <span className="text-sm">{list.emoji}</span>
-        }
-
-        // Default icons for system lists
-        const iconClass = `w-4 h-4`
-        return <EyeIcon className={iconClass} />
-    }
+    const getListIcon = (list: UserList) => <CollectionIcon collection={list} size="sm" bare />
 
     // Helper function to convert hex color to rgba with opacity
     const hexToRgba = (hex: string, opacity: number): string => {
@@ -416,7 +414,7 @@ const CollectionPage = ({ params }: CollectionPageProps) => {
                     {/* Atmospheric Background */}
                     <div className="fixed inset-0 pointer-events-none">
                         <div className="absolute inset-0 bg-black" />
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-blue-900/20 via-transparent to-transparent opacity-50" />
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-zinc-800/30 via-transparent to-transparent opacity-50" />
                         <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black opacity-60" />
                     </div>
 
@@ -426,11 +424,7 @@ const CollectionPage = ({ params }: CollectionPageProps) => {
                         <div className="relative overflow-hidden pt-12">
                             {/* Animated Background Gradients */}
                             <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900/80 to-black" />
-                            <div
-                                className="absolute inset-0 bg-gradient-to-t from-blue-900/20 via-cyan-900/10 to-black/50 animate-pulse"
-                                style={{ animationDuration: '4s' }}
-                            />
-                            <div className="absolute inset-0 bg-gradient-radial from-blue-500/10 via-blue-900/5 to-transparent" />
+                            <div className="absolute inset-0 bg-gradient-radial from-zinc-700/15 via-zinc-900/5 to-transparent" />
 
                             {/* Soft edge vignetting for subtle blending */}
                             <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/80" />
@@ -439,38 +433,38 @@ const CollectionPage = ({ params }: CollectionPageProps) => {
                             {/* Hero Content */}
                             <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-4">
                                 {/* Title with inline icon */}
-                                <div className="flex items-center gap-4 mb-2">
-                                    {/* Icon with glow */}
-                                    <div className="relative">
-                                        <div className="absolute inset-0 bg-blue-500/30 blur-2xl scale-150" />
-                                        {selectedList?.emoji ? (
-                                            <span className="relative text-5xl sm:text-6xl drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]">
-                                                {selectedList.emoji}
-                                            </span>
-                                        ) : (
-                                            <RectangleStackIcon className="relative w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 text-blue-400 drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
-                                        )}
-                                    </div>
-
-                                    {/* Title */}
-                                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white text-center tracking-tight">
-                                        <span className="bg-gradient-to-r from-blue-200 via-cyan-100 to-blue-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
-                                            {selectedList?.name || 'Collection'}
-                                        </span>
+                                <div className="flex items-center gap-3 sm:gap-4 mb-2">
+                                    {selectedList && (
+                                        <CollectionIcon collection={selectedList} size="lg" />
+                                    )}
+                                    <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight break-words">
+                                        {selectedList?.name || 'Collection'}
                                     </h1>
                                 </div>
 
-                                {/* Subtitle with item count */}
-                                <p className="text-base sm:text-lg text-gray-300 mb-4 text-center max-w-2xl">
-                                    {selectedList?.description || 'Your curated collection'}
-                                    {!isLoading &&
-                                        selectedList &&
-                                        selectedList.items.length > 0 && (
-                                            <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                                                {selectedList.items.length} items
+                                {selectedList?.description && (
+                                    <p className="text-base sm:text-lg text-gray-300 mb-2 text-center max-w-2xl">
+                                        {selectedList.description}
+                                    </p>
+                                )}
+
+                                {/* What it holds and whether it is on home: the same words as everywhere else */}
+                                {!isLoading && selectedList && (
+                                    <p className="mb-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm text-gray-400">
+                                        <span>{contentsLabel(selectedList)}</span>
+                                        {hasHomeSetting(selectedList) && (
+                                            <span className="inline-flex items-center gap-1.5">
+                                                <span
+                                                    aria-hidden="true"
+                                                    className={`h-1.5 w-1.5 rounded-full ${isShownOnHome(selectedList) ? 'bg-brand-500' : 'bg-zinc-600'}`}
+                                                />
+                                                {isShownOnHome(selectedList)
+                                                    ? HOME_SHOWN_LABEL
+                                                    : HOME_HIDDEN_LABEL}
                                             </span>
                                         )}
-                                </p>
+                                    </p>
+                                )}
 
                                 {/* Collection Pills Row */}
                                 <div className="flex flex-wrap gap-2 items-center justify-center mb-5 overflow-visible pb-2 px-4 max-w-4xl">
@@ -482,7 +476,7 @@ const CollectionPage = ({ params }: CollectionPageProps) => {
                                         })
                                         .map((list) => {
                                             const isSelected = collectionId === list.id
-                                            const listColor = list.color || '#3b82f6'
+                                            const listColor = list.color || '#71717a'
                                             const href =
                                                 list.id === 'default-watchlist'
                                                     ? '/collections/watch-later'
@@ -494,7 +488,7 @@ const CollectionPage = ({ params }: CollectionPageProps) => {
                                                     href={href}
                                                     className={`group relative rounded-full px-4 py-2 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 ${
                                                         isSelected
-                                                            ? 'scale-105 shadow-[0_0_10px_rgba(59,130,246,0.3)]'
+                                                            ? 'scale-105 shadow-[0_0_10px_rgba(255,255,255,0.12)]'
                                                             : 'hover:scale-105 hover:shadow-[0_0_8px_rgba(255,255,255,0.08)]'
                                                     }`}
                                                     style={
@@ -601,13 +595,13 @@ const CollectionPage = ({ params }: CollectionPageProps) => {
                                 {/* Enhanced Search Bar */}
                                 <div className="w-full max-w-4xl relative">
                                     <div className="relative group">
-                                        <MagnifyingGlassIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 z-10 transition-colors group-focus-within:text-blue-400" />
+                                        <MagnifyingGlassIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 z-10 transition-colors group-focus-within:text-brand-400" />
                                         <input
                                             type="text"
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
                                             placeholder="Search in this collection..."
-                                            className="w-full pl-14 pr-14 py-4 bg-zinc-900/40 backdrop-blur-lg border border-zinc-800/50 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:shadow-[0_0_25px_rgba(59,130,246,0.3)] transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700"
+                                            className="w-full pl-14 pr-14 py-4 bg-zinc-900/40 backdrop-blur-lg border border-zinc-800/50 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-brand-500 transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700"
                                         />
                                         {searchQuery && (
                                             <button
@@ -617,9 +611,6 @@ const CollectionPage = ({ params }: CollectionPageProps) => {
                                                 <XMarkIcon className="w-6 h-6" />
                                             </button>
                                         )}
-
-                                        {/* Glowing border effect on focus */}
-                                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-500 opacity-0 group-focus-within:opacity-20 blur-xl transition-opacity duration-300 -z-10" />
                                     </div>
                                 </div>
                             </div>
@@ -638,16 +629,9 @@ const CollectionPage = ({ params }: CollectionPageProps) => {
                             {!isLoading && allDisplayContent.length === 0 && (
                                 <div className="flex flex-col items-center justify-center py-20 text-center">
                                     <div className="relative mb-6">
-                                        <div className="absolute inset-0 bg-blue-500/20 blur-2xl scale-150" />
-                                        <div className="relative w-24 h-24 rounded-full bg-zinc-900/60 backdrop-blur-lg flex items-center justify-center border-2 border-zinc-800/50">
-                                            {selectedList?.emoji ? (
-                                                <span className="text-5xl">
-                                                    {selectedList.emoji}
-                                                </span>
-                                            ) : (
-                                                <RectangleStackIcon className="w-12 h-12 text-blue-500" />
-                                            )}
-                                        </div>
+                                        {selectedList && (
+                                            <CollectionIcon collection={selectedList} size="lg" />
+                                        )}
                                     </div>
                                     <h3 className="text-2xl font-bold text-white mb-3">
                                         {searchQuery
@@ -704,7 +688,7 @@ const CollectionPage = ({ params }: CollectionPageProps) => {
                                                             setMaxPages((prev) => prev + 10)
                                                             setHasMore(true)
                                                         }}
-                                                        className="group relative px-8 py-4 font-bold rounded-xl transition-all duration-300 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white shadow-[0_0_30px_rgba(59,130,246,0.4)] hover:shadow-[0_0_40px_rgba(59,130,246,0.6)] scale-100 hover:scale-105"
+                                                        className="group relative px-8 py-4 font-bold rounded-xl transition-all duration-300 bg-brand-500 hover:bg-brand-400 text-white"
                                                     >
                                                         Load More Results
                                                     </button>
