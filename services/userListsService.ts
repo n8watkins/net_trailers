@@ -233,6 +233,42 @@ export class UserListsService {
         }
     }
 
+    /**
+     * Put the built-in genre collections back as they ship: each one the user
+     * still has gets its default settings again (keeping its id, creation time,
+     * titles and public-profile choice), and each one that was deleted is added
+     * back. Collections the user made are left exactly as they are, and a
+     * built-in is never there twice.
+     */
+    static resetBuiltInCollections<T extends StateWithLists>(state: T, defaults: UserList[]): T {
+        const now = Date.now()
+        const defaultsById = new Map(defaults.map((d) => [d.id, d]))
+        const seen = new Set<string>()
+        const lists: UserList[] = []
+        for (const list of state.userCreatedWatchlists) {
+            const template = defaultsById.get(list.id)
+            if (!template) {
+                lists.push(list)
+                continue
+            }
+            if (seen.has(list.id)) continue // a stray second copy of the same built-in
+            seen.add(list.id)
+            lists.push({
+                ...template,
+                createdAt: list.createdAt,
+                updatedAt: now,
+                items: list.items ?? [],
+                showOnPublicProfile: list.showOnPublicProfile ?? template.showOnPublicProfile,
+            })
+        }
+        for (const template of defaults) {
+            if (!seen.has(template.id)) {
+                lists.push({ ...template, items: [], createdAt: now, updatedAt: now })
+            }
+        }
+        return { ...state, userCreatedWatchlists: lists }
+    }
+
     // Delete a list
     static deleteList<T extends StateWithLists>(state: T, listId: string): T {
         return {

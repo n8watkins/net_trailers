@@ -9,13 +9,12 @@ import { getCloudflareContext } from '@opennextjs/cloudflare'
  */
 export interface AppBindings {
     /** Uploaded images (lib/uploads.ts). */
-    UPLOADS?: {
+    UPLOADS?: import('@/lib/uploads').UploadBucket & {
         put(
             key: string,
             value: ArrayBuffer,
             options?: { httpMetadata?: { contentType?: string } }
         ): Promise<unknown>
-        delete(key: string): Promise<void>
     }
     /** Cloudflare Email Service (lib/email/cloudflare.ts). */
     EMAIL?: import('@/lib/email/cloudflare').EmailBinding

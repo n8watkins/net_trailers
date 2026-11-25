@@ -67,6 +67,7 @@ export const useSessionData = () => {
     const guestCreateList = useGuestStore((state) => state.createList)
     const guestUpdateList = useGuestStore((state) => state.updateList)
     const guestDeleteList = useGuestStore((state) => state.deleteList)
+    const guestResetBuiltIns = useGuestStore((state) => state.resetBuiltInCollections)
     const guestAddToList = useGuestStore((state) => state.addToList)
     const guestRemoveFromList = useGuestStore((state) => state.removeFromList)
     const guestClearAllData = useGuestStore((state) => state.clearAllData)
@@ -100,6 +101,7 @@ export const useSessionData = () => {
     const authCreateList = useAuthStore((state) => state.createList)
     const authUpdateList = useAuthStore((state) => state.updateList)
     const authDeleteList = useAuthStore((state) => state.deleteList)
+    const authResetBuiltIns = useAuthStore((state) => state.resetBuiltInCollections)
     const authAddToList = useAuthStore((state) => state.addToList)
     const authRemoveFromList = useAuthStore((state) => state.removeFromList)
     const authClearLocalCache = useAuthStore((state) => state.clearLocalCache)
@@ -145,6 +147,7 @@ export const useSessionData = () => {
     const createList = isAuth ? authCreateList : guestCreateList
     const updateList = isAuth ? authUpdateList : guestUpdateList
     const deleteList = isAuth ? authDeleteList : guestDeleteList
+    const resetBuiltInCollections = isAuth ? authResetBuiltIns : guestResetBuiltIns
     const addToList = isAuth ? authAddToList : guestAddToList
     const removeFromList = isAuth ? authRemoveFromList : guestRemoveFromList
     const updatePreferences = isAuth ? authUpdatePreferences : guestUpdatePreferences
@@ -186,6 +189,7 @@ export const useSessionData = () => {
         createList,
         updateList,
         deleteList,
+        resetBuiltInCollections,
         addToList,
         removeFromList,
 

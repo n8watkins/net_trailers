@@ -9,6 +9,7 @@ import { eq } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { userPreferences } from '@/db/schema'
+import { hasPIN } from '@/db/queries/childSafety'
 import { defaultAuthSession, type UserPreferences } from '@/types/shared'
 
 /** A fresh copy of the default preferences (with a current lastActive). */
@@ -55,9 +56,21 @@ export async function saveUserPreferences(
         })
 }
 
-/** Reset a user's preferences to defaults and return them. */
+/**
+ * Reset a user's preferences to defaults and return them. A Child Safety Mode
+ * that is on and protected by a PIN stays on (lib/childSafetyLock.ts): a reset
+ * must not be a way around the PIN.
+ */
 export async function clearUserPreferences(userId: string): Promise<UserPreferences> {
     const data = defaultPreferences()
+    const current = await db
+        .select({ data: userPreferences.data })
+        .from(userPreferences)
+        .where(eq(userPreferences.userId, userId))
+        .limit(1)
+    if (current[0]?.data.childSafetyMode === true && (await hasPIN(userId))) {
+        data.childSafetyMode = true
+    }
     await saveUserPreferences(userId, data)
     return data
 }

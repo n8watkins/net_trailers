@@ -22,6 +22,10 @@
  * (lib/durableLimit.ts), so the count holds across Worker isolates and deploys.
  * After 5 wrong PINs, verify, change and remove are refused until the current
  * 5-minute window ends; a correct PIN resets the count.
+ *
+ * A correct PIN on verify also records a one-time unlock: while the account
+ * has a PIN, Child Safety Mode can only be turned off by the save that follows
+ * it (lib/childSafetyLock.ts).
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -30,6 +34,7 @@ import { withAuth } from '@/lib/auth-middleware'
 import { getPINStatus, setPIN, verifyPIN, clearPIN } from '@/db/queries/childSafety'
 import { PIN_CONSTRAINTS } from '@/types/childSafety'
 import { countEvent, readCount, resetLimit, windowInfo } from '@/lib/durableLimit'
+import { recordPinUnlock } from '@/lib/childSafetyLock'
 
 /* -------------------------------------------------------------------------- */
 /*  Failed-attempt limit (durable: a Map would not hold across Worker isolates) */
@@ -125,6 +130,8 @@ export const POST = withAuth(async (request: NextRequest, userId: string) => {
             const result = await verifyPIN(userId, pin)
             if (result.success) {
                 await resetRateLimit(userId)
+                // Lets the next save turn a PIN-locked Child Safety Mode off (lib/childSafetyLock.ts).
+                await recordPinUnlock(userId)
                 return NextResponse.json({ success: true })
             } else {
                 await incrementRateLimit(userId)
