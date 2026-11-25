@@ -68,4 +68,18 @@ describe('Firebase leftovers', () => {
     it('storage.rules is gone', () => {
         expect(existsSync(path.join(root, 'storage.rules'))).toBe(false)
     })
+
+    it.each([
+        'utils/firestore',
+        'public/icons/firebase.png',
+        // The debug pages that probed the old Firebase profile and call tracker
+        'app/test-profile',
+        'app/docs',
+    ])('%s is gone', (file) => {
+        expect(existsSync(path.join(root, file))).toBe(false)
+    })
+
+    it('config/constants.ts has no Firebase settings', () => {
+        expect(read('config/constants.ts')).not.toMatch(/firebase|firestore/i)
+    })
 })

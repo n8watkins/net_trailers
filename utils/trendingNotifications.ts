@@ -6,7 +6,7 @@
  */
 
 import { Content, getTitle } from '../typings'
-import { createNotification } from './firestore/notifications'
+import { createNotification } from './notifications'
 
 export interface TrendingComparisonResult {
     newTrendingItems: Content[]

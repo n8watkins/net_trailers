@@ -18,7 +18,7 @@ import {
     deleteAllNotifications,
     getNotificationStats,
     subscribeToNotifications,
-} from '../utils/firestore/notifications'
+} from '../utils/notifications'
 
 const GUEST_ID_PREFIX = 'guest_'
 

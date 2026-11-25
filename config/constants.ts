@@ -22,8 +22,6 @@ export const TOAST_CONFIG = {
 export const CACHE_CONFIG = {
     /** TTL for main page cache (30 minutes) */
     MAIN_PAGE_TTL: 30 * 60 * 1000,
-    /** TTL for Firestore cache (5 minutes) */
-    FIRESTORE_TTL: 5 * 60 * 1000,
     /** SessionStorage key for main page data */
     SESSION_STORAGE_KEY: 'nettrailer-main-page-data',
     /** LocalStorage prefix for guest data */
@@ -80,16 +78,6 @@ export const TMDB_CONFIG = {
     POSTER_SIZES: ['w92', 'w154', 'w185', 'w342', 'w500', 'w780', 'original'] as const,
     /** Available backdrop sizes */
     BACKDROP_SIZES: ['w300', 'w780', 'w1280', 'original'] as const,
-} as const
-
-/**
- * Firebase configuration
- */
-export const FIREBASE_CONFIG = {
-    /** Timeout for Firestore operations (5 seconds) */
-    OPERATION_TIMEOUT: 5000,
-    /** Collection name for user data */
-    USERS_COLLECTION: 'users',
 } as const
 
 /**

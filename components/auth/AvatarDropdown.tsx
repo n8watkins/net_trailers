@@ -8,6 +8,7 @@ import {
     CommandLineIcon,
     AcademicCapIcon,
     HandRaisedIcon,
+    ChevronDownIcon,
 } from '@heroicons/react/24/outline'
 import useAuth from '../../hooks/useAuth'
 import { useRouter } from 'next/navigation'
@@ -36,8 +37,13 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
 }) => {
     const [isOpen, setIsOpen] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
-    const { user, logOut } = useAuth()
-    const { isAuthenticated, isLoading, hasOptimisticAuth } = useAuthStatus()
+    const { user, loading: authLoading, logOut } = useAuth()
+    const { hasOptimisticAuth } = useAuthStatus()
+    // Decide from the session itself, not the session store: a page that hands over
+    // the session it read on the server (SeedSession) knows it before the first
+    // paint, while the store only settles after its own effects have run.
+    const isLoading = authLoading && !hasOptimisticAuth
+    const isAuthenticated = Boolean(user) || (authLoading && hasOptimisticAuth)
     const userData = useUserData()
     const router = useRouter()
 
@@ -81,19 +87,16 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
         return email.charAt(0).toUpperCase()
     }
 
-    // Show loading state ONLY if we don't have cached data and auth is loading
-    // If we have cached data (hasOptimisticAuth), skip loading state entirely
-    if (isLoading && !hasOptimisticAuth) {
+    // Only while the session is still being read (a page the edge cache served the
+    // same to everyone): a quiet placeholder of the avatar's size, not a spinner
+    if (isLoading) {
         return (
             <div className={`relative ${className}`} ref={dropdownRef}>
-                {/* Avatar Button - Loading */}
-                <button
-                    disabled
-                    className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-full bg-gray-700 transition-all duration-200 focus:outline-none cursor-wait"
-                    aria-label="Loading user menu"
-                >
-                    <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                </button>
+                <div
+                    data-testid="account-placeholder"
+                    aria-hidden="true"
+                    className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/10"
+                />
             </div>
         )
     }
@@ -103,15 +106,36 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
     if (!isAuthenticated) {
         return (
             <div className={`relative ${className}`} ref={dropdownRef}>
-                {/* Avatar Button - Not Logged In */}
-                <button
-                    onClick={() => setIsOpen(!isOpen)}
-                    className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-full bg-gray-600 hover:bg-gray-500 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.6)] focus:shadow-[0_0_15px_rgba(255,255,255,0.6)] transition-all duration-300"
-                    aria-label="User menu"
-                    aria-expanded={isOpen}
-                >
-                    <UserCircleIcon className="w-6 h-6 md:w-7 md:h-7 text-white" />
-                </button>
+                {/* One guest control. Phones and tablets: a round button that opens the
+                    guest menu (Sign In is its first item). Desktop: a single pill, "Sign in"
+                    on the left and the same menu on the right. The tour points at the
+                    menu button by its label (constants/tourSteps.ts), so keep it. */}
+                <div className="flex items-center lg:h-10 lg:rounded-full lg:bg-brand-500 lg:shadow-lg">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setIsOpen(false)
+                            onOpenAuthModal?.()
+                        }}
+                        className="hidden lg:flex h-full items-center whitespace-nowrap rounded-l-full pl-4 pr-3 text-sm font-semibold text-white transition-colors hover:bg-brand-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/70"
+                    >
+                        Sign in
+                    </button>
+                    <span aria-hidden="true" className="hidden lg:block h-5 w-px bg-white/30" />
+                    <button
+                        type="button"
+                        onClick={() => setIsOpen(!isOpen)}
+                        className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-full bg-gray-600 hover:bg-gray-500 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.6)] focus:shadow-[0_0_15px_rgba(255,255,255,0.6)] transition-all duration-300 lg:h-full lg:w-auto lg:gap-0.5 lg:rounded-l-none lg:rounded-r-full lg:bg-transparent lg:pl-2 lg:pr-3 lg:hover:bg-brand-400 lg:hover:scale-100 lg:hover:shadow-none lg:focus:shadow-none focus:outline-none lg:focus-visible:ring-2 lg:focus-visible:ring-inset lg:focus-visible:ring-white/70"
+                        aria-label="User menu"
+                        aria-expanded={isOpen}
+                    >
+                        <UserCircleIcon className="w-6 h-6 md:w-7 md:h-7 lg:w-5 lg:h-5 text-white" />
+                        <ChevronDownIcon
+                            aria-hidden="true"
+                            className={`hidden lg:block w-3.5 h-3.5 text-white transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                        />
+                    </button>
+                </div>
 
                 {/* Dropdown Menu - Not Logged In */}
                 {isOpen && (
@@ -235,7 +259,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
         )
     }
 
-    // Use cached data for optimistic UI, fall back to Firebase user
+    // The session's user, or the cached one while a known session is confirmed
     const displayUser =
         user ||
         (cachedUser
@@ -245,23 +269,6 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                   photoURL: cachedUser.photoURL,
               }
             : null)
-
-    // Authenticated but no user data available at all (shouldn't happen with cache)
-    // Only show loading if we don't have optimistic auth
-    if (!displayUser && !hasOptimisticAuth) {
-        return (
-            <div className={`relative ${className}`} ref={dropdownRef}>
-                {/* Avatar Button - Loading user details */}
-                <button
-                    disabled
-                    className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-full bg-brand-500 transition-all duration-200 focus:outline-none cursor-wait"
-                    aria-label="Loading user details"
-                >
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                </button>
-            </div>
-        )
-    }
 
     // If we still don't have user data at this point, show guest UI
     if (!displayUser) {

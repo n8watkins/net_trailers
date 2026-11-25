@@ -4,7 +4,7 @@
  * Premium streaming-style user profile with:
  * - Cinematic hero header with atmospheric gradients
  * - Glassmorphic panels and cards
- * - Neon accent glows (blue for profile theme)
+ * - Brand-red accent glows
  * - Soft rim lighting on avatars and images
  * - Hover animations and micro-transitions
  */
@@ -60,17 +60,21 @@ export default function ProfilePage() {
     // Show loading state while data is being fetched
     const isLoading = !isInitialized || authLoading
 
-    // Load user rankings, threads, and polls
+    // Load the signed-in user's rankings, threads and polls. Guests have none (rankings
+    // need an account, and the community section is not shown to them), so ask for nothing.
     useEffect(() => {
-        const getUserId = useSessionStore.getState().getUserId
+        if (!isInitialized) return
+        const { getUserId, sessionType } = useSessionStore.getState()
         const userId = getUserId()
 
-        if (userId && isInitialized) {
-            loadUserRankings(userId)
-            loadThreads()
-            loadPolls()
+        if (sessionType !== 'authenticated' || !userId) {
+            loadUserRankings(null)
+            return
         }
-    }, [isInitialized, loadUserRankings, loadThreads, loadPolls])
+        loadUserRankings(userId)
+        loadThreads()
+        loadPolls()
+    }, [isInitialized, isGuest, loadUserRankings, loadThreads, loadPolls])
 
     const getUserId = useSessionStore((state) => state.getUserId)
     const currentUserId = getUserId()
@@ -278,7 +282,7 @@ export default function ProfilePage() {
             {/* Atmospheric Background - Fixed */}
             <div className="fixed inset-0 pointer-events-none">
                 <div className="absolute inset-0 bg-black" />
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-blue-900/20 via-transparent to-transparent opacity-50" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-brand-900/20 via-transparent to-transparent opacity-50" />
                 <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black opacity-60" />
             </div>
 
@@ -289,10 +293,10 @@ export default function ProfilePage() {
                     {/* Animated Background Gradients */}
                     <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900/80 to-black" />
                     <div
-                        className="absolute inset-0 bg-gradient-to-t from-blue-900/20 via-indigo-900/10 to-black/50 animate-pulse"
+                        className="absolute inset-0 bg-gradient-to-t from-brand-900/20 via-brand-950/10 to-black/50 animate-pulse"
                         style={{ animationDuration: '4s' }}
                     />
-                    <div className="absolute inset-0 bg-gradient-radial from-blue-500/10 via-blue-900/5 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-radial from-brand-500/10 via-brand-900/5 to-transparent" />
 
                     {/* Soft edge vignetting */}
                     <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/80" />
@@ -310,20 +314,20 @@ export default function ProfilePage() {
                         {/* Avatar and Username inline */}
                         <div className="flex items-center gap-6 mb-2">
                             {/* Avatar with atmospheric glow */}
-                            <div className="relative group cursor-pointer transition-transform duration-300 hover:-translate-y-1">
+                            <div className="relative group transition-transform duration-300 hover:-translate-y-1">
                                 {/* Ambient glow behind avatar */}
-                                <div className="absolute -inset-4 bg-gradient-to-br from-blue-500/30 via-indigo-500/20 to-purple-500/30 rounded-full blur-2xl opacity-60 group-hover:opacity-100 transition-opacity duration-300" />
+                                <div className="absolute -inset-4 bg-gradient-to-br from-brand-500/30 via-brand-600/20 to-brand-800/30 rounded-full blur-2xl opacity-60 group-hover:opacity-100 transition-opacity duration-300" />
 
                                 {/* Avatar container with rim light */}
                                 <div className="relative">
                                     {/* Rim light effect */}
-                                    <div className="absolute -inset-1 bg-gradient-to-br from-blue-400/40 via-indigo-500/30 to-purple-400/40 rounded-full blur-sm opacity-80 group-hover:opacity-100 transition-opacity" />
+                                    <div className="absolute -inset-1 bg-gradient-to-br from-brand-400/40 via-brand-500/30 to-brand-700/40 rounded-full blur-sm opacity-80 group-hover:opacity-100 transition-opacity" />
 
                                     {user?.photoURL ? (
                                         <img
                                             src={user.photoURL}
                                             alt={userName}
-                                            className="relative w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 rounded-full object-cover ring-2 ring-blue-500/50 group-hover:ring-blue-400/70 transition-all duration-300 shadow-[0_0_30px_rgba(59,130,246,0.3)]"
+                                            className="relative w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 rounded-full object-cover ring-2 ring-brand-500/50 group-hover:ring-brand-400/70 transition-all duration-300 shadow-[0_0_30px_rgba(229,9,20,0.3)]"
                                             referrerPolicy="no-referrer"
                                             onError={(e) => {
                                                 e.currentTarget.style.display = 'none'
@@ -334,7 +338,7 @@ export default function ProfilePage() {
                                         />
                                     ) : null}
                                     <div
-                                        className="relative w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 rounded-full bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center ring-2 ring-blue-500/50 group-hover:ring-blue-400/70 transition-all duration-300 shadow-[0_0_30px_rgba(59,130,246,0.3)]"
+                                        className="relative w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 rounded-full bg-gradient-to-br from-brand-500 via-brand-600 to-brand-800 flex items-center justify-center ring-2 ring-brand-500/50 group-hover:ring-brand-400/70 transition-all duration-300 shadow-[0_0_30px_rgba(229,9,20,0.3)]"
                                         style={{ display: user?.photoURL ? 'none' : 'flex' }}
                                     >
                                         <span className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
@@ -346,7 +350,7 @@ export default function ProfilePage() {
 
                             {/* Username with glow */}
                             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white text-center tracking-tight">
-                                <span className="bg-gradient-to-r from-blue-200 via-white to-blue-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
+                                <span className="bg-gradient-to-r from-brand-100 via-white to-brand-100 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
                                     {userName}
                                 </span>
                             </h1>
@@ -381,9 +385,9 @@ export default function ProfilePage() {
                                     className="group relative px-6 py-3 rounded-full font-bold text-sm transition-all duration-300"
                                 >
                                     {/* Button glow */}
-                                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/30 to-indigo-500/30 rounded-full opacity-0 group-hover:opacity-100 blur-lg transition-opacity" />
+                                    <div className="absolute inset-0 bg-gradient-to-r from-brand-500/30 to-brand-700/30 rounded-full opacity-0 group-hover:opacity-100 blur-lg transition-opacity" />
 
-                                    <div className="relative flex items-center gap-2 px-4 py-2 bg-blue-500/10 backdrop-blur-lg text-blue-400 rounded-full border border-blue-500/30 group-hover:border-blue-400/50 group-hover:bg-blue-500/20 group-hover:text-blue-300 transition-all shadow-lg shadow-blue-500/10">
+                                    <div className="relative flex items-center gap-2 px-4 py-2 bg-brand-500/10 backdrop-blur-lg text-brand-400 rounded-full border border-brand-500/30 group-hover:border-brand-400/50 group-hover:bg-brand-500/20 group-hover:text-brand-300 transition-all shadow-lg shadow-brand-500/10">
                                         <EyeIcon className="w-4 h-4" />
                                         <span>View Public Profile</span>
                                     </div>

@@ -1,6 +1,5 @@
 export { default as AccountManagement } from './AccountManagement'
 export { default as AvatarDropdown } from './AvatarDropdown'
-export { GuestModeIndicator } from './GuestModeIndicator'
 export { GuestModeNotification } from './GuestModeNotification'
 export { UpgradeAccountBanner } from './UpgradeAccountBanner'
 export { default as DemoMessage } from './DemoMessage'

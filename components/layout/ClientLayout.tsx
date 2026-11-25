@@ -9,7 +9,6 @@ import Footer from './Footer'
 import { hasSeenWelcome, isWelcomeSuppressedPath, markWelcomeSeen } from '../../lib/welcome'
 import { highlightBriefly, revealAndFocus } from '../../lib/revealInView'
 import ScrollToTopButton from '../common/ScrollToTopButton'
-import CustomScrollbar from '../common/CustomScrollbar'
 import { useModalStore } from '../../stores/modalStore'
 import { LayoutProvider } from '../../contexts/LayoutContext'
 import { useTourLauncher } from '../onboarding/useTourLauncher'
@@ -238,7 +237,6 @@ function ClientLayout({ children }: ClientLayoutProps) {
                 />
             )}
             <ScrollToTopButton />
-            <CustomScrollbar />
         </LayoutProvider>
     )
 }
