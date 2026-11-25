@@ -6,7 +6,7 @@ import { useRouter, useSearchParams, useParams } from 'next/navigation'
 import Header from '../../../../components/layout/Header'
 import Modal from '../../../../components/modals/Modal'
 import ContentCard from '../../../../components/common/ContentCard'
-import ContentGridSpacer from '../../../../components/common/ContentGridSpacer'
+import ContentGrid from '../../../../components/common/ContentGrid'
 import PageLoader from '../../../../components/common/PageLoader'
 import { Content } from '../../../../typings'
 import { useSessionData } from '../../../../hooks/useSessionData'
@@ -232,7 +232,7 @@ function GenrePageContent() {
         return (
             <div className="relative min-h-screen bg-gradient-to-b">
                 <Header />
-                <main className="relative pl-4 pb-16 lg:space-y-24 lg:pl-16">
+                <main className="relative px-4 pt-28 pb-16 lg:px-16">
                     <div className="flex items-center justify-center h-96">
                         <div className="text-center">
                             <div className="text-6xl mb-4">😵</div>
@@ -257,11 +257,12 @@ function GenrePageContent() {
         <div className="relative min-h-screen bg-gradient-to-b">
             <Header />
 
-            <main className="relative px-2 sm:px-4 md:px-8 lg:px-16 pb-8 sm:pb-12 md:pb-16">
-                <div className="flex flex-col space-y-4 sm:space-y-6 md:space-y-10 lg:space-y-24 py-8 sm:py-12 md:py-16 lg:py-20">
+            <main className="relative px-4 md:px-8 lg:px-16 pb-8 sm:pb-12 md:pb-16">
+                {/* Top padding clears the fixed header (components/layout/Header.tsx) */}
+                <div className="flex flex-col space-y-4 sm:space-y-6 md:space-y-10 lg:space-y-16 pt-28 sm:pt-32 md:pt-36 pb-8 sm:pb-12 md:pb-16 lg:pb-20">
                     {/* Header Section */}
                     <div className="space-y-3">
-                        <h1 className="text-3xl font-bold text-white md:text-4xl lg:text-5xl pt-3 sm:pt-4 md:pt-6">
+                        <h1 className="text-3xl font-bold text-white md:text-4xl lg:text-5xl">
                             {pageTitle ||
                                 `${genreName} ${mediaType === 'both' ? 'Movies & TV Shows' : mediaType === 'movie' ? 'Movies' : 'TV Shows'}`}
                         </h1>
@@ -278,18 +279,14 @@ function GenrePageContent() {
                     {/* Content Section */}
                     {content.length > 0 ? (
                         <div className="space-y-8">
-                            {/* Flex Layout */}
-                            <div className="flex flex-wrap justify-between gap-x-6 sm:gap-x-8 md:gap-x-10 lg:gap-x-12 gap-y-3 sm:gap-y-4 md:gap-y-5 [&>*]:flex-none">
+                            <ContentGrid>
                                 {contentToRender.map((item) => (
-                                    <div
+                                    <ContentCard
                                         key={`${item.media_type || 'unknown'}-${item.id}`}
-                                        className="overflow-visible"
-                                    >
-                                        <ContentCard content={item} />
-                                    </div>
+                                        content={item}
+                                    />
                                 ))}
-                                <ContentGridSpacer />
-                            </div>
+                            </ContentGrid>
 
                             {/* Loading indicator for pagination */}
                             {(loading || loadingMore) && (
