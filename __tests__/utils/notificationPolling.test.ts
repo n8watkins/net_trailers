@@ -2,7 +2,7 @@ import {
     POLL_BASE_INTERVAL_MS,
     POLL_MAX_INTERVAL_MS,
     subscribeToNotifications,
-} from '@/utils/firestore/notifications'
+} from '@/utils/notifications'
 import { authenticatedFetch } from '@/lib/authenticatedFetch'
 
 jest.mock('@/lib/authenticatedFetch', () => ({ authenticatedFetch: jest.fn() }))

@@ -2,7 +2,8 @@ import { create } from 'zustand'
 import { Content, getTitle } from '../typings'
 import { UserList, UpdateListRequest, CreateListRequest } from '../types/collections'
 import { UserListsService } from '../services/userListsService'
-import { StorageAdapter, StorageLogger } from '../services/storageAdapter'
+import { SaveResult, StorageAdapter, StorageLogger } from '../services/storageAdapter'
+import { ChildSafetyKeptError } from '../lib/childSafetyKept'
 import { DEFAULT_NOTIFICATION_PREFERENCES } from '../types/notifications'
 import type { NotificationPreferences } from '../types/notifications'
 import {
@@ -186,6 +187,8 @@ export interface UserActions {
     removeFromList: (listId: string, contentId: number) => Promise<void> | void
     updateList: (listId: string, updates: Omit<UpdateListRequest, 'id'>) => Promise<void> | void
     deleteList: (listId: string) => Promise<void> | void
+    /** Restore the built-in genre collections: defaults again, and any deleted one back. */
+    resetBuiltInCollections: () => Promise<void> | void
     updatePreferences: (prefs: Partial<UserState>) => Promise<void> | void
     updateSystemRecommendation: (
         id: string,
@@ -261,10 +264,14 @@ export function createUserStore(options: CreateUserStoreOptions) {
      * in flight, later calls share one follow-up save of the latest state.
      */
     let readLatestState: (() => UserState) | null = null
-    let saveInFlight: Promise<void> | null = null
-    let followUpSave: Promise<void> | null = null
+    /** Puts the server's corrections from a save into the store (set inside create). */
+    let applySaveResult: ((result: SaveResult) => void) | null = null
+    /** How many saves the server answered with "Child Safety Mode kept on". */
+    let childSafetyKeptCount = 0
+    let saveInFlight: Promise<SaveResult | void> | null = null
+    let followUpSave: Promise<SaveResult | void> | null = null
 
-    const saveToStorage = (state: UserState, context: string): Promise<void> => {
+    const saveToStorage = (state: UserState, context: string): Promise<SaveResult | void> => {
         if (!saveInFlight) {
             saveInFlight = writeToStorage(state, context).finally(() => {
                 saveInFlight = null
@@ -292,7 +299,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
         }
 
         try {
-            await adapter.save(id, {
+            const result = await adapter.save(id, {
                 likedMovies: state.likedMovies,
                 hiddenMovies: state.hiddenMovies,
                 defaultWatchlist: state.defaultWatchlist,
@@ -314,6 +321,8 @@ export function createUserStore(options: CreateUserStoreOptions) {
                 myRatings: state.myRatings ?? [],
             })
             logger.log(`✅ [${trackingContext}] Saved to ${adapter.name}`)
+            if (result) applySaveResult?.(result)
+            return result
         } catch (error) {
             logger.error(`❌ [${trackingContext}] Failed to save to ${adapter.name}:`, error)
             throw error
@@ -322,6 +331,20 @@ export function createUserStore(options: CreateUserStoreOptions) {
 
     return create<UserStore>((set, get) => {
         readLatestState = get
+        applySaveResult = (result) => {
+            // The server kept a PIN-locked Child Safety Mode on: show it as on.
+            if (result.childSafetyKept) childSafetyKeptCount++
+            if (result.childSafetyKept && get().childSafetyMode !== true) {
+                logger.warn(`🔒 [${trackingContext}] Child Safety Mode kept on by the server`)
+                set({ childSafetyMode: true })
+                // Anything fetched while it looked off may be unfiltered.
+                if (typeof window !== 'undefined') {
+                    import('./cacheStore').then(({ useCacheStore }) =>
+                        useCacheStore.getState().clearCache()
+                    )
+                }
+            }
+        }
         return {
             ...getDefaultState(),
 
@@ -736,6 +759,31 @@ export function createUserStore(options: CreateUserStoreOptions) {
                 logger.log(`🗑️ [${trackingContext}] Deleted list:`, listId)
             },
 
+            resetBuiltInCollections: async () => {
+                const state = get()
+                if (adapter.isAsync) set({ syncStatus: 'syncing' })
+
+                const updatedPrefs = UserListsService.resetBuiltInCollections(
+                    state,
+                    createDefaultCollectionsForUser()
+                )
+
+                set({
+                    userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
+                    lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+                })
+
+                try {
+                    await saveToStorage(get(), 'resetBuiltInCollections')
+                    if (adapter.isAsync) set({ syncStatus: 'synced' })
+                } catch (error) {
+                    if (adapter.isAsync) set({ syncStatus: 'offline' })
+                    throw error
+                }
+
+                logger.log(`↩️ [${trackingContext}] Reset built-in collections`)
+            },
+
             updatePreferences: async (prefs: Partial<UserState>) => {
                 // Guest-specific: Block child safety mode changes
                 if (enableGuestFeatures && 'childSafetyMode' in prefs) {
@@ -746,6 +794,10 @@ export function createUserStore(options: CreateUserStoreOptions) {
                     if (Object.keys(allowedPrefs).length === 0) return
                     prefs = allowedPrefs
                 }
+
+                // Whether this call switches Child Safety Mode off (the server may refuse).
+                const turningChildSafetyOff =
+                    prefs.childSafetyMode === false && get().childSafetyMode === true
 
                 // ✅ CRITICAL: Clear cache when child safety mode changes
                 // This prevents serving cached adult content when switching to child safety mode
@@ -773,6 +825,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                 })
 
                 const state = get()
+                const keptBefore = childSafetyKeptCount
 
                 try {
                     await saveToStorage(state, 'updatePreferences')
@@ -787,6 +840,12 @@ export function createUserStore(options: CreateUserStoreOptions) {
                 } catch (_error) {
                     if (adapter.isAsync) set({ syncStatus: 'offline' })
                     logger.error(`❌ [${trackingContext}] Failed to save preferences:`, _error)
+                }
+
+                // Asked to turn Child Safety Mode off, and the server kept it on
+                // (applySaveResult put it back): the PIN is needed again.
+                if (turningChildSafetyOff && childSafetyKeptCount !== keptBefore) {
+                    throw new ChildSafetyKeptError()
                 }
             },
 

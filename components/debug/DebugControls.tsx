@@ -8,7 +8,6 @@ import {
     ChevronDownIcon,
     ChevronRightIcon,
     TrashIcon,
-    DocumentTextIcon,
     CircleStackIcon,
     EnvelopeIcon,
     ClockIcon,
@@ -858,18 +857,6 @@ export default function DebugControls() {
                                     <TrashIcon className="w-3 h-3" />
                                     <span className="text-xs">Clear Storage</span>
                                 </button>
-
-                                <div className="w-px h-6 bg-gray-700" />
-
-                                {/* Docs Link */}
-                                <a
-                                    href="/docs/debugger-console"
-                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600/40"
-                                    title="View debug console documentation"
-                                >
-                                    <DocumentTextIcon className="w-3 h-3" />
-                                    <span className="text-xs">Docs</span>
-                                </a>
                             </>
                         )}
 

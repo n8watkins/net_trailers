@@ -38,8 +38,10 @@ export function ChildSafetyIndicator() {
 
     return (
         <button
+            type="button"
             onClick={handleClick}
-            className="flex items-center space-x-2 px-4 py-2 bg-[#141414] border border-[#454545] rounded-md hover:border-[#666666] transition-colors cursor-pointer"
+            aria-label="Child Safe"
+            className="flex items-center gap-2 px-2 xl:px-4 py-2 bg-[#141414] border border-[#454545] rounded-md hover:border-[#666666] transition-colors cursor-pointer"
             title={
                 isGuest
                     ? 'Child Safety Mode - Sign up to enable this feature'
@@ -47,7 +49,10 @@ export function ChildSafetyIndicator() {
             }
         >
             <ShieldCheckIcon className="w-5 h-5 text-brand-400 flex-shrink-0" />
-            <span className="text-sm font-medium text-[#e5e5e5] whitespace-nowrap">Child Safe</span>
+            {/* Icon only below xl, so the header fits from 1024 px up */}
+            <span className="hidden xl:inline text-sm font-medium text-[#e5e5e5] whitespace-nowrap">
+                Child Safe
+            </span>
         </button>
     )
 }

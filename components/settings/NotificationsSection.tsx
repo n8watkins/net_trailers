@@ -6,7 +6,7 @@ import { BellIcon, EnvelopeIcon } from '@heroicons/react/24/outline'
 import { NotificationPreferences } from '../../types/notifications'
 import { useToast } from '../../hooks/useToast'
 import useAuth from '../../hooks/useAuth'
-import { createNotification } from '../../utils/firestore/notifications'
+import { createNotification } from '../../utils/notifications'
 import { useDebugSettings } from '../debug/DebugControls'
 
 interface NotificationsSectionProps {

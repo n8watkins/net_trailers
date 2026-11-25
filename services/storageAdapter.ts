@@ -1,5 +1,11 @@
 import { UserPreferences } from '../types/shared'
 
+/** What the server did differently from what was sent. */
+export interface SaveResult {
+    /** A PIN-locked Child Safety Mode was kept on although the save turned it off (lib/childSafetyLock.ts). */
+    childSafetyKept?: boolean
+}
+
 /**
  * Storage adapter interface for user data persistence
  *
@@ -19,8 +25,9 @@ export interface StorageAdapter {
      * Save user data to storage
      * @param id - User ID or Guest ID
      * @param data - User preferences to save
+     * @returns What the server changed in the save, if anything (see SaveResult)
      */
-    save(id: string, data: UserPreferences): Promise<void>
+    save(id: string, data: UserPreferences): Promise<SaveResult | void>
 
     /**
      * Clear user data (reset to defaults)

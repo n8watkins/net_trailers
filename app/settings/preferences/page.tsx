@@ -9,6 +9,7 @@ import { useAppStore } from '../../../stores/appStore'
 import { useAuthStore } from '../../../stores/authStore'
 import { useGuestStore } from '../../../stores/guestStore'
 import { toggleChildSafetyAction } from '../../../lib/actions/childSafety'
+import { ChildSafetyKeptError } from '../../../lib/childSafetyKept'
 import PreferencesSection from '../../../components/settings/PreferencesSection'
 import ChildSafetyPINModal from '../../../components/settings/ChildSafetyPINModal'
 import InfoModal from '../../../components/modals/InfoModal'
@@ -42,6 +43,7 @@ const PreferencesPage: React.FC = () => {
         openSetupModal,
         closeSetupModal,
         isSetupModalOpen,
+        clearVerification: clearPINVerification,
     } = useChildSafetyPINStore()
 
     // 1) Define currentPreferences once using useMemo for stability
@@ -117,11 +119,32 @@ const PreferencesPage: React.FC = () => {
 
                 showSuccess(message)
             } catch (error) {
+                if (error instanceof ChildSafetyKeptError) {
+                    // The server kept the PIN-locked mode on (the PIN entry had
+                    // expired): show it on again and ask for the PIN.
+                    setChildSafetyMode(true)
+                    clearPINVerification()
+                    showError(
+                        'Child Safety Mode is still on',
+                        'Enter your PIN again to turn it off.'
+                    )
+                    setPendingChildSafetyToggle(false)
+                    setPinModalMode('verify')
+                    setShowPINModal(true)
+                    return
+                }
                 console.error(`❌ [Settings] Error saving ${key}:`, error)
                 showError(`Failed to save setting`)
             }
         },
-        [isGuest, guestStoreUpdatePrefs, authStoreUpdatePrefs, showSuccess, showError]
+        [
+            isGuest,
+            guestStoreUpdatePrefs,
+            authStoreUpdatePrefs,
+            showSuccess,
+            showError,
+            clearPINVerification,
+        ]
     )
 
     // Create stable callback references for memoized component

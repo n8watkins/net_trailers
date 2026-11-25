@@ -502,7 +502,8 @@ export function SmartInput({
                     ${getShimmerClasses()}
                 `}
             >
-                {/* Dice Icon - Surprise Me Button */}
+                {/* Dice Icon - Surprise Me Button. Its ::before widens the tap area to
+                    40 px (the icon is 24 px on phones) without moving anything. */}
                 {showSurpriseMe && (
                     <div className="absolute left-4 z-30">
                         <button
@@ -516,6 +517,7 @@ export function SmartInput({
                                 disabled:cursor-not-allowed disabled:opacity-50
                                 ${isGeneratingSurprise ? 'animate-spin-pulse' : 'hover:scale-110'}
                                 relative z-30
+                                before:absolute before:-inset-2 before:content-['']
                             `}
                             aria-label="Surprise me with a search idea"
                         >

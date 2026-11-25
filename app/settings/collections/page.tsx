@@ -11,14 +11,13 @@ import {
     HOME_SHOWN_LABEL,
     homeVisibilityUpdate,
 } from '../../../components/collections/collectionMeta'
-import { createDefaultCollectionsForUser } from '../../../constants/systemCollections'
 
 /**
  * Settings > Collections: the same list as /collections (CollectionList), with a
  * "Shown on home" switch and an Edit button on each card.
  */
 export default function CollectionsSettingsPage() {
-    const { getAllLists, updateList } = useUserData()
+    const { getAllLists, updateList, resetBuiltInCollections } = useUserData()
     const { showSuccess, showError } = useToast()
     const allLists = getAllLists()
 
@@ -36,20 +35,10 @@ export default function CollectionsSettingsPage() {
         }
     }
 
-    // Puts the built-in genre collections back to their default settings
+    // Puts the built-in genre collections back to their default settings, deleted ones included
     const handleResetToDefaults = async () => {
         try {
-            for (const defaultCol of createDefaultCollectionsForUser()) {
-                if (!allLists.some((c) => c.id === defaultCol.id)) continue
-                await updateList(defaultCol.id, {
-                    name: defaultCol.name,
-                    ...homeVisibilityUpdate(defaultCol.enabled),
-                    order: defaultCol.order,
-                    genres: defaultCol.genres,
-                    genreLogic: defaultCol.genreLogic,
-                    mediaType: defaultCol.mediaType,
-                })
-            }
+            await resetBuiltInCollections()
             showSuccess('Built-in collections reset')
         } catch (error) {
             console.error('Failed to reset to defaults:', error)

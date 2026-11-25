@@ -36,7 +36,6 @@ import { useToast } from '../../hooks/useToast'
 import { useDebugSettings } from '../debug/DebugControls'
 import { useModalStore } from '../../stores/modalStore'
 import { ChildSafetyIndicator } from '../content/ChildSafetyIndicator'
-import { GuestModeIndicator } from '../auth/GuestModeIndicator'
 import { useLayoutContext } from '../../contexts/LayoutContext'
 import NotificationBell from '../notifications/NotificationBell'
 import NotificationPanel from '../notifications/NotificationPanel'
@@ -170,7 +169,6 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
             '/terms',
             '/security',
             '/changelog',
-            '/docs',
             // Auth
             '/auth',
             // Admin
@@ -181,7 +179,6 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
             // Other app routes
             '/person',
             '/unsubscribed',
-            '/test-profile',
             // API routes (shouldn't appear in pathname but just in case)
             '/api',
         ]
@@ -429,22 +426,28 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                     )
                                 }
                                 if (item.kind === 'surprise') {
+                                    // Icon only below xl, so the header fits from 1024 px up
                                     return (
-                                        <li
-                                            key={item.id}
-                                            className={`headerLink cursor-pointer flex items-center space-x-1 select-none group relative overflow-visible ${
-                                                isRandomLoading ? 'cursor-wait' : ''
-                                            }`}
-                                            onClick={() =>
-                                                !isRandomLoading && handleRandomContent()
-                                            }
-                                            title="Jump to a random movie or TV show"
-                                        >
-                                            <span className="absolute -inset-3 opacity-0 group-hover:opacity-50 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-brand-300 via-brand-200/60 via-40% to-transparent rounded-md blur-lg transition-opacity duration-400" />
-                                            <Icon
-                                                className={`h-5 w-5 relative z-10 ${isRandomLoading ? 'animate-pulse' : ''}`}
-                                            />
-                                            <span className="relative z-10">{item.label}</span>
+                                        <li key={item.id}>
+                                            <button
+                                                type="button"
+                                                className={`headerLink flex items-center gap-1 select-none group relative overflow-visible rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 ${
+                                                    isRandomLoading ? 'cursor-wait' : ''
+                                                }`}
+                                                onClick={() =>
+                                                    !isRandomLoading && handleRandomContent()
+                                                }
+                                                aria-label={item.label}
+                                                title="Jump to a random movie or TV show"
+                                            >
+                                                <span className="absolute -inset-3 opacity-0 group-hover:opacity-50 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-brand-300 via-brand-200/60 via-40% to-transparent rounded-md blur-lg transition-opacity duration-400" />
+                                                <Icon
+                                                    className={`h-5 w-5 relative z-10 ${isRandomLoading ? 'animate-pulse' : ''}`}
+                                                />
+                                                <span className="relative z-10 hidden xl:inline">
+                                                    {item.label}
+                                                </span>
+                                            </button>
                                         </li>
                                     )
                                 }
@@ -453,13 +456,20 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                     // The logo already links home, so Home only shows on wide screens
                                     <li
                                         key={item.id}
-                                        className={`headerLink cursor-pointer items-center space-x-1 select-none ${
-                                            item.id === 'home' ? 'hidden 2xl:flex' : 'flex'
-                                        } ${active ? 'text-white hover:text-white font-semibold' : ''}`}
-                                        onClick={() => router.push(item.href!)}
+                                        className={item.id === 'home' ? 'hidden 2xl:block' : ''}
                                     >
-                                        <Icon className="h-5 w-5 relative z-10" />
-                                        <span className="relative z-10">{item.label}</span>
+                                        <Link
+                                            href={item.href!}
+                                            aria-current={active ? 'page' : undefined}
+                                            className={`headerLink flex items-center space-x-1 select-none ${
+                                                active
+                                                    ? 'text-white hover:text-white font-semibold'
+                                                    : ''
+                                            }`}
+                                        >
+                                            <Icon className="h-5 w-5 relative z-10" />
+                                            <span className="relative z-10">{item.label}</span>
+                                        </Link>
                                     </li>
                                 )
                             })}
@@ -481,7 +491,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                         </ul>
 
                         {/* Search Bar in Navigation */}
-                        <div className="flex flex-1 min-w-[18rem] items-center search-container">
+                        <div className="flex flex-1 min-w-[12rem] xl:min-w-[16rem] items-center search-container">
                             <div className="w-full max-w-xl">
                                 <SearchBar
                                     placeholder="Search movies & TV..."
@@ -505,14 +515,22 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                 <Link
                                     key={item.id}
                                     href={item.href!}
-                                    className={`headerLink flex shrink-0 items-center space-x-1 select-none whitespace-nowrap ${
+                                    aria-label={item.label}
+                                    title={item.label}
+                                    aria-current={
+                                        isNavItemActive(item, pathname) ? 'page' : undefined
+                                    }
+                                    className={`headerLink flex shrink-0 items-center gap-1 select-none whitespace-nowrap ${
                                         isNavItemActive(item, pathname)
                                             ? 'text-white hover:text-white font-semibold'
                                             : ''
                                     }`}
                                 >
                                     <Icon className="h-5 w-5 relative z-10" />
-                                    <span className="relative z-10">{item.label}</span>
+                                    {/* Icon only below xl, so the header fits from 1024 px up */}
+                                    <span className="relative z-10 hidden xl:inline">
+                                        {item.label}
+                                    </span>
                                 </Link>
                             )
                         })}
@@ -548,11 +566,6 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                     <Bars3Icon className="h-6 w-6 text-white" />
                                 )}
                             </button>
-                        </div>
-
-                        {/* Guest Mode Indicator - Desktop only */}
-                        <div className="hidden lg:block">
-                            <GuestModeIndicator />
                         </div>
 
                         {/* Notification Bell with Panel */}

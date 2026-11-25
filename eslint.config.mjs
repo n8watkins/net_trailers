@@ -21,6 +21,10 @@ export default [
       'worker/runtime.d.ts',
       'public/**',
       'coverage/**',
+      // Playwright output (traces hold bundled app code)
+      'test-results/**',
+      'playwright-report/**',
+      '.e2e/**',
       '.husky/**',
       'scripts/**', // Ignore all build scripts (use CommonJS legitimately)
     ],

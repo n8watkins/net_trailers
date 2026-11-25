@@ -26,8 +26,13 @@ interface Props {
     content?: Content
     className?: string
     size?: 'compact' | 'small' | 'normal'
+    /**
+     * Below `sm`, fill the width of its grid column (poster stays 2:3) instead of a
+     * fixed width. Used by ContentGrid, whose phone layout is two equal columns.
+     */
+    fluid?: boolean
 }
-function ContentCard({ content, className = '', size = 'normal' }: Props) {
+function ContentCard({ content, className = '', size = 'normal', fluid = false }: Props) {
     const posterImage = content?.poster_path
     const backdropImage = content?.backdrop_path
     const { openModal, openListModal } = useModalStore()
@@ -229,7 +234,9 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                 return 'w-[120px] h-[180px] sm:w-[140px] sm:h-[210px] md:w-[160px] md:h-[240px] lg:w-[180px] lg:h-[270px]'
             case 'normal':
             default:
-                return 'w-[120px] h-[180px] xs:w-[140px] xs:h-[210px] sm:w-[160px] sm:h-[240px] md:w-[180px] md:h-[270px] lg:w-[200px] lg:h-[300px] xl:w-[220px] xl:h-[330px]'
+                return fluid
+                    ? 'w-full aspect-[2/3] sm:aspect-auto sm:w-[160px] sm:h-[240px] md:w-[180px] md:h-[270px] lg:w-[200px] lg:h-[300px] xl:w-[220px] xl:h-[330px]'
+                    : 'w-[120px] h-[180px] xs:w-[140px] xs:h-[210px] sm:w-[160px] sm:h-[240px] md:w-[180px] md:h-[270px] lg:w-[200px] lg:h-[300px] xl:w-[220px] xl:h-[330px]'
         }
     }
 
@@ -242,7 +249,9 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                 return 'w-[120px] sm:w-[140px] md:w-[160px] lg:w-[180px]'
             case 'normal':
             default:
-                return 'w-[120px] xs:w-[140px] sm:w-[160px] md:w-[180px] lg:w-[200px] xl:w-[220px]'
+                return fluid
+                    ? 'w-full sm:w-[160px] md:w-[180px] lg:w-[200px] xl:w-[220px]'
+                    : 'w-[120px] xs:w-[140px] sm:w-[160px] md:w-[180px] lg:w-[200px] xl:w-[220px]'
         }
     }
 
@@ -301,7 +310,11 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                             fill
                             style={{ objectFit: 'cover' }}
                             className="rounded-md transition-all duration-300 select-none"
-                            sizes="(max-width: 640px) 140px, (max-width: 768px) 160px, (max-width: 1024px) 180px, 240px"
+                            sizes={
+                                fluid
+                                    ? '(max-width: 640px) 50vw, (max-width: 768px) 160px, (max-width: 1024px) 180px, 240px'
+                                    : '(max-width: 640px) 140px, (max-width: 768px) 160px, (max-width: 1024px) 180px, 240px'
+                            }
                             priority={false}
                             onLoad={() => setImageLoaded(true)}
                             onError={handleImageError}
@@ -326,12 +339,14 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                     </div>
                 )}
 
-                {/* Hover Action Buttons */}
+                {/* Hover Action Buttons. Sized to fit inside the poster at every card
+                    width: they are laid out even while hidden, so anything wider than
+                    the card would widen the page on phones. */}
                 {content && imageLoaded && (
                     <div
-                        className={`absolute bottom-4 left-4 right-4
+                        className={`absolute bottom-2 left-2 right-2 lg:bottom-4 lg:left-4 lg:right-4
                               transition-all duration-300 ease-out
-                              transform flex gap-3 ${
+                              transform flex gap-2 lg:gap-3 ${
                                   isCardHovered
                                       ? 'opacity-100 translate-y-0'
                                       : 'opacity-0 translate-y-4'
@@ -345,29 +360,36 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                                     openModal(content, true, true)
                                 }
                             }}
+                            aria-label="Watch"
                             className="bg-black text-white font-bold
-                                 px-4 py-1.5 md:px-6 md:py-2
-                                 text-xs md:text-sm
+                                 px-2 py-1.5 xl:px-6 xl:py-2
+                                 text-xs xl:text-sm
                                  rounded-full hover:bg-brand-600 hover:text-white hover:scale-105
                                  transition-all duration-200
-                                 flex-1 flex items-center justify-center gap-1.5
+                                 min-w-0 flex-1 flex items-center justify-center gap-1.5
                                  shadow-lg hover:shadow-xl hover:shadow-brand-500/20
                                  border-2 border-brand-400 hover:border-brand-500
                                  group/watch"
                         >
+                            {/* The label shows only where the card is wide enough for it */}
                             {size === 'compact' ? (
                                 <PlayIcon className="w-4 h-4" />
+                            ) : size === 'small' ? (
+                                <>
+                                    <PlayIcon className="w-4 h-4 sm:hidden" />
+                                    <span className="hidden sm:inline">Watch</span>
+                                </>
                             ) : (
                                 <>
-                                    {size !== 'small' && <PlayIcon className="w-4 h-4" />}
-                                    <span>Watch</span>
+                                    <PlayIcon className="w-4 h-4" />
+                                    <span className="hidden sm:inline">Watch</span>
                                 </>
                             )}
                         </button>
 
                         {/* Hover Menu with Bookmark Icon - Shows quick actions on hover */}
                         <div
-                            className="relative flex items-end"
+                            className="relative flex shrink-0 items-end"
                             onMouseEnter={() => setShowHoverActions(true)}
                             onMouseLeave={() => setShowHoverActions(false)}
                         >

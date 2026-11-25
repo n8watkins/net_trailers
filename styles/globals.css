@@ -134,21 +134,40 @@
 }
 
 @layer base {
-    html,
+    /* The viewport is the page's one scroller, and its native bar is the one
+       scroll bar: thin and brand red. Neither html nor body sets a height or
+       an overflow, so nothing else scrolls; a window that locks scrolling sets
+       overflow: hidden on body, which passes to the viewport. The gutter stays
+       reserved while it is locked, so the page does not shift sideways. */
+    html {
+        background-color: #0a0a0a;
+        color: white;
+        scrollbar-color: var(--color-brand-500) transparent;
+        scrollbar-width: thin;
+        scrollbar-gutter: stable;
+    }
     body {
-        height: 100%;
         margin: 0;
         background-color: #0a0a0a;
         color: white;
     }
-    body {
-        overflow: auto;
-        /* Hide native scrollbars */
-        scrollbar-width: none; /* Firefox */
-    }
-    body::-webkit-scrollbar {
-        width: 0;
-        height: 0;
+    /* Browsers without scrollbar-color (Safari) style the viewport bar this way */
+    @supports not (scrollbar-color: auto) {
+        html::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        html::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        html::-webkit-scrollbar-thumb {
+            background: var(--color-brand-500);
+            border-radius: 9999px;
+            border: 2px solid #0a0a0a;
+        }
+        html::-webkit-scrollbar-thumb:hover {
+            background: var(--color-brand-400);
+        }
     }
     header {
         position: fixed;
@@ -604,60 +623,6 @@
             opacity: 1;
         }
     }
-}
-
-/* Custom overlay scrollbar styles */
-.custom-scrollbar {
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: 20px; /* Wider hit area for easier hover/click */
-    z-index: 9999;
-    opacity: 0;
-    pointer-events: none; /* Don't block clicks when hidden */
-    transition:
-        opacity 0.3s ease,
-        pointer-events 0s 0.3s; /* Delay pointer-events change until fade completes */
-    cursor: pointer;
-}
-
-.custom-scrollbar.visible {
-    opacity: 1;
-    pointer-events: auto; /* Enable interaction when visible */
-    transition:
-        opacity 0.3s ease,
-        pointer-events 0s; /* Immediate pointer-events when showing */
-}
-
-/* While dragging, prevent text selection and ensure cursor stays as grabbing */
-.custom-scrollbar.dragging {
-    cursor: grabbing;
-}
-
-.custom-scrollbar-thumb {
-    position: absolute;
-    left: 12px; /* Position thumb on the right side of the track */
-    right: 0;
-    width: 8px;
-    border-radius: 9999px;
-    background: rgb(229, 9, 20); /* brand-500 */
-    transition:
-        background 0.2s ease,
-        width 0.2s ease,
-        left 0.2s ease;
-    cursor: grab;
-}
-
-.custom-scrollbar-thumb:hover {
-    background: rgb(255, 90, 97); /* brand-400 */
-    width: 10px;
-    left: 10px;
-}
-
-.custom-scrollbar.dragging .custom-scrollbar-thumb {
-    background: rgb(255, 90, 97); /* brand-400 */
-    cursor: grabbing;
 }
 
 /* Modal content scrollbar - overlay style with auto-hide on scroll */

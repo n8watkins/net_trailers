@@ -18,6 +18,11 @@ export function logoUrl(): string {
     return `${siteUrl()}/email/nettrailers-mark-96.png`
 }
 
+/** The n8builds icon, absolute and long-cached like the mark (emails cannot use relative URLs). */
+export function n8buildsMarkUrl(): string {
+    return `${siteUrl()}/email/n8builds-mark-48.png`
+}
+
 export function preferencesUrl(): string {
     return `${siteUrl()}/settings/notifications`
 }

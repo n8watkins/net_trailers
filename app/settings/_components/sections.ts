@@ -35,7 +35,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
         id: 'account-management',
         path: '/settings/account-management',
         title: 'Account Management',
-        description: 'Manage your email and password',
+        description: 'Your sign-in email, and signing out',
         priority: 'high',
         authenticatedOnly: true,
     },
