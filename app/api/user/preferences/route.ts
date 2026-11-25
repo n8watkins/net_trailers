@@ -14,6 +14,7 @@ import {
     loadUserPreferences,
     saveUserPreferences,
 } from '@/db/queries/userPreferences'
+import { applyChildSafetyLock } from '@/lib/childSafetyLock'
 import type { UserPreferences } from '@/types/shared'
 
 export const GET = withAuth(async (_request: NextRequest, userId: string) => {
@@ -42,8 +43,14 @@ export const PUT = withAuth(async (request: NextRequest, userId: string) => {
         )
     }
 
-    await saveUserPreferences(userId, preferences)
-    return NextResponse.json({ success: true })
+    // A PIN-locked Child Safety Mode stays on unless the PIN was just entered (lib/childSafetyLock.ts).
+    const locked = await applyChildSafetyLock(userId, preferences)
+    await saveUserPreferences(userId, locked.preferences)
+    return NextResponse.json(
+        locked.kept
+            ? { success: true, childSafetyMode: true, childSafetyKept: true }
+            : { success: true }
+    )
 })
 
 export const DELETE = withAuth(async (_request: NextRequest, userId: string) => {
