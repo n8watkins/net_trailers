@@ -186,6 +186,8 @@ export interface UserActions {
     removeFromList: (listId: string, contentId: number) => Promise<void> | void
     updateList: (listId: string, updates: Omit<UpdateListRequest, 'id'>) => Promise<void> | void
     deleteList: (listId: string) => Promise<void> | void
+    /** Restore the built-in genre collections: defaults again, and any deleted one back. */
+    resetBuiltInCollections: () => Promise<void> | void
     updatePreferences: (prefs: Partial<UserState>) => Promise<void> | void
     updateSystemRecommendation: (
         id: string,
@@ -734,6 +736,31 @@ export function createUserStore(options: CreateUserStoreOptions) {
                 }
 
                 logger.log(`🗑️ [${trackingContext}] Deleted list:`, listId)
+            },
+
+            resetBuiltInCollections: async () => {
+                const state = get()
+                if (adapter.isAsync) set({ syncStatus: 'syncing' })
+
+                const updatedPrefs = UserListsService.resetBuiltInCollections(
+                    state,
+                    createDefaultCollectionsForUser()
+                )
+
+                set({
+                    userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
+                    lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+                })
+
+                try {
+                    await saveToStorage(get(), 'resetBuiltInCollections')
+                    if (adapter.isAsync) set({ syncStatus: 'synced' })
+                } catch (error) {
+                    if (adapter.isAsync) set({ syncStatus: 'offline' })
+                    throw error
+                }
+
+                logger.log(`↩️ [${trackingContext}] Reset built-in collections`)
             },
 
             updatePreferences: async (prefs: Partial<UserState>) => {

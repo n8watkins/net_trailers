@@ -110,3 +110,35 @@ test('a built-in genre row is hidden, not deleted', async () => {
             .getByTestId('home-status')
     ).toHaveText('Hidden')
 })
+
+test('Reset to defaults brings back a built-in row that was deleted', async () => {
+    // Accounts could delete a built-in row before the editor hid Delete for
+    // them; this writes that state directly, as an old deletion left it.
+    const res = await page.request.get('/api/user/preferences')
+    const prefs = (await res.json()).preferences
+    prefs.userCreatedWatchlists = prefs.userCreatedWatchlists.filter(
+        (l: { id: string }) => l.id !== 'system-action'
+    )
+    const origin = new URL(page.url()).origin
+    const put = await page.request.put('/api/user/preferences', {
+        data: { preferences: prefs },
+        headers: { Origin: origin },
+    })
+    expect(put.ok()).toBe(true)
+
+    await page.goto('/settings/collections')
+    await expect(page.getByTestId('collection-card').first()).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Edit Big Action' })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Edit Action-Packed' })).toHaveCount(0)
+
+    await page.getByRole('button', { name: 'Reset to defaults' }).click()
+    await expect(page.getByRole('button', { name: 'Edit Action-Packed' })).toBeVisible()
+    await expect
+        .poll(async () => (await storedNames(page)).filter((n) => n === 'Action-Packed').length)
+        .toBe(1)
+
+    await page.reload()
+    await expect(page.getByRole('button', { name: 'Edit Action-Packed' })).toHaveCount(1)
+    const card = page.getByTestId('collection-card').filter({ hasText: 'Action-Packed' })
+    await expect(card.getByTestId('home-status')).toHaveText('Shown on home')
+})
