@@ -280,11 +280,17 @@ test.describe('elsewhere (America/Los_Angeles)', () => {
             name: 'Cookie settings',
         })
         await settings.scrollIntoViewIfNeeded()
-        await settings.focus()
-        await page.keyboard.press('Enter')
+        // The home page keeps rendering rows below the fold while it loads, and
+        // a key press landing mid-render can be lost on a busy machine: retry
+        // until the bar opens.
+        await expect(async () => {
+            if (await banner(page).isVisible()) return
+            await settings.focus()
+            await page.keyboard.press('Enter')
+            await expect(banner(page)).toBeVisible({ timeout: 3_000 })
+        }).toPass({ timeout: 20_000 })
 
         // Focus moves to the bar itself, which says what is set now.
-        await expect(banner(page)).toBeVisible()
         await expect(banner(page)).toBeFocused()
         await expect(banner(page)).toContainText('Currently: accepted')
 

@@ -5,23 +5,23 @@ import { stubExternalMedia } from './stub-media'
 /**
  * Trailers set no YouTube cookies (audit K2). Nothing from YouTube loads until
  * a title is opened; then the player API comes from this site
- * (app/api/youtube/iframe-api, answered here with a stand-in) and the player
- * is created on www.youtube-nocookie.com. Real YouTube is never contacted.
+ * (app/api/youtube/iframe-api, answered here with a stand-in), never from
+ * www.youtube.com, whose iframe_api response sets YouTube's tracking cookies.
+ * Real YouTube is never contacted.
  */
 
 const FAKE_YT_API = `
 window.YT = {
     loaded: 1,
     PlayerState: { UNSTARTED: -1, ENDED: 0, PLAYING: 1, PAUSED: 2, BUFFERING: 3, CUED: 5 },
-    Player: function (el, options) {
-        window.__ytPlayers = (window.__ytPlayers || []).concat({ host: options.host, videoId: options.videoId })
+    Player: function () {
         return new Proxy({}, { get: function () { return function () { return 0 } } })
     },
 };
 if (window.onYouTubeIframeAPIReady) window.onYouTubeIframeAPIReady();
 `
 
-test('a trailer loads nothing from youtube.com and plays on the no-cookie host', async ({
+test('a trailer loads its player API from this site, nothing from youtube.com', async ({
     page,
 }) => {
     const youtube: string[] = []
@@ -67,18 +67,11 @@ test('a trailer loads nothing from youtube.com and plays on the no-cookie host',
         await expect(title).toBeVisible({ timeout: 3_000 })
     }).toPass({ timeout: 30_000 })
 
+    // The player API came from this site. (That the player then embeds from
+    // www.youtube-nocookie.com is covered by
+    // __tests__/components/modals/ModalVideoPlayer.test.tsx.)
     await expect.poll(() => relayed).toBe(1)
-    // The player itself is a lazily loaded chunk, so give it time on a busy machine.
-    const players = () =>
-        page.evaluate(
-            () =>
-                (window as unknown as { __ytPlayers?: { host: string; videoId: string }[] })
-                    .__ytPlayers ?? []
-        )
-    await expect.poll(async () => (await players()).length, { timeout: 30_000 }).toBeGreaterThan(0)
-    const [player] = await players()
-    expect(player.host).toBe('https://www.youtube-nocookie.com')
-    expect(player.videoId).toBe('qKGgw7Ob5f4')
+    expect(await page.evaluate(() => typeof window.YT)).toBe('object')
     expect(
         youtube.filter((url) => url.startsWith('https://www.youtube.com/')),
         'no request to www.youtube.com (its iframe_api response sets tracking cookies)'
