@@ -42,6 +42,7 @@ export default function ChangelogView({ changelog, stats }: ChangelogViewProps) 
         <SubPageLayout
             title="Changelog"
             icon={<DocumentTextIcon />}
+            iconColor="text-brand-400"
             titleActions={
                 <>
                     {onOpenTutorial && (
