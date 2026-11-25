@@ -3,7 +3,7 @@
 ## Project Structure & Module Organization
 
 - Next.js app lives under `app/`, with feature-specific UI in `components/`, state stores in `stores/`, hooks in `hooks/`, and shared utilities in `utils/`.
-- Firebase configs, rules, and scripts reside in the repo root (`firebase.ts`, `storage.rules`, `scripts/`).
+- Data lives in Turso (libSQL) through Drizzle: schema in `db/schema.ts`, queries in `db/queries/`, migrations in `db/migrations/`. Sign-in is Auth.js (`auth.ts`), the Cloudflare Worker entry is under `worker/`, and scripts are in `scripts/`.
 - Tests sit in `__tests__/` alongside Jest config files (`jest.config.js`, `jest.setup.js`). Assets such as images and fonts are under `public/` and `styles/`, while large screenshots are kept outside the repo in `/home/natkins/win-res/screenshots` (reference this path when discussing screenshots; do not add them here).
 
 ## Build, Test, and Development Commands
@@ -18,7 +18,7 @@
 
 - TypeScript/React everywhere; prefer functional components and hooks.
 - Tailwind CSS powers styling, stored in class strings; avoid unseen dynamic class names.
-- Follow existing naming: camelCase for variables/functions, PascalCase for components, kebab-case for files/pages (`app/docs/debugger-console`).
+- Follow existing naming: camelCase for variables/functions, PascalCase for components, kebab-case for files/pages (`app/settings/account-management`).
 - Autoformat via Prettier and lint via ESLint before committing.
 
 ## Testing Guidelines
@@ -34,8 +34,8 @@
 
 ## Security & Configuration Tips
 
-- Secrets are managed via environment variables; never hard-code Firebase or TMDB keys.
-- Debug-only tooling (e.g., `app/docs/**`, `components/debug/**`) must stay development-gated with `process.env.NODE_ENV !== 'development'` checks.
+- Secrets are managed via environment variables; never hard-code TMDB, Gemini, Turso or other keys.
+- Debug-only tooling (e.g., `components/debug/**`) must stay development-gated with `process.env.NODE_ENV !== 'development'` checks.
 
 <!-- release-kit -->
 

@@ -1,19 +1,12 @@
 /**
- * Notification client utilities - Turso/Drizzle edition.
+ * Notification client utilities.
  *
- * Previously this module wrapped Firestore client SDK calls. It now calls the
- * REST API routes under /api/notifications/*, which in turn hit the Turso DB
- * via db/queries/notifications.ts.
+ * Calls the REST API routes under /api/notifications/*, which read and write
+ * the Turso database through db/queries/notifications.ts.
  *
- * PUBLIC SURFACE: every function that was exported before is still exported
- * with the same signature so that stores/notificationStore.ts and any other
- * callers continue to compile without changes.
- *
- * NOTE: `subscribeToNotifications` previously used a Firestore onSnapshot
- * listener for real-time updates. It now polls GET /api/notifications only
- * while the tab is visible, every 2 minutes, backing off to 10 minutes while
- * nothing changes, and invokes the same `onUpdate` callback. The returned
- * unsubscribe function stops it (identical contract to before).
+ * `subscribeToNotifications` polls GET /api/notifications only while the tab
+ * is visible, every 2 minutes, backing off to 10 minutes while nothing
+ * changes, and calls `onUpdate` with the result. The returned function stops it.
  */
 
 import { authenticatedFetch } from '@/lib/authenticatedFetch'
@@ -22,8 +15,8 @@ import {
     CreateNotificationRequest,
     NotificationStats,
     NOTIFICATION_CONSTRAINTS,
-} from '../../types/notifications'
-import { PaginatedResult, createPaginatedResult } from '../../types/pagination'
+} from '../types/notifications'
+import { PaginatedResult, createPaginatedResult } from '../types/pagination'
 
 /* -------------------------------------------------------------------------- */
 /*  Internal fetch helpers                                                     */

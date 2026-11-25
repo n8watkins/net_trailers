@@ -52,7 +52,8 @@ Setup and features: `README.md`; architecture and conventions for agents: `CLAUD
 4. **Code and dependency debt** (cleanup list, in order):
     1. Dependencies beyond the security fixes: `@types/node` is 18 while the runtime is 22; `@google/generative-ai` is in `dependencies` but nothing imports it (remove it); `@mui/material` 5 (latest 9) sits alongside Tailwind and is a candidate for removal; `@babel/core` is pinned to 7.28.4 for no recorded reason.
     2. Add a GitHub Actions CI workflow (type check, lint, tests, build) so PRs get a real gate.
-    3. Firebase leftovers after the Turso migration: `storage.rules`, `FIREBASE_CONFIG` in `config/constants.ts`, Firebase wording in `services/storageAdapter.ts` and several API routes, and Firebase references in `AGENTS.md`.
+    3. Firebase leftovers after the Turso migration: `storage.rules`, `FIREBASE_CONFIG`, `utils/firestore/`, `public/icons/firebase.png`, the `/test-profile` and `/docs` debug pages and the Firebase lines in `AGENTS.md` are gone (2026-11-25; `__tests__/app/securityPage.test.ts` keeps them gone).
+       What is left is wording only: comments that still say Firebase or Firestore in `services/storageAdapter.ts`, `db/queries/*`, several API routes and hooks.
     4. Dead docs: 32 Markdown files at the root and 116 under `docs/`, most of them finished plans, reviews and migration notes (`MIGRATION_*.md`, `RANKING_*.md`, `docs/*CODE_REVIEW*.md`, `TODO.md`, `PLAN.md`, `docs/current/current-priorities.md`).
        Move them to `docs/archive/` or delete them, keeping `README.md`, `CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING.md`, `SECURITY.md`, `DEPLOYMENT.md`, `CHANGELOG.md` and this file.
        `docs/INDEX.md` (last updated November 2025) has mojibake in its headings; rewrite or remove it.
