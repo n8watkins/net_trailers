@@ -194,8 +194,35 @@ test.describe('phone pages', () => {
         const cards = await grid
             .locator('[data-tour="content-card"]')
             .evaluateAll((els) => els.slice(0, 2).map((el) => el.getBoundingClientRect().toJSON()))
-        // Two columns with a small gap, not pushed to the edges
-        expect(cards[1].left - cards[0].right).toBeLessThanOrEqual(24)
+        // Two columns across the content width: the left card lines up with the
+        // title, the right one with the right gutter, 16 px apart
+        const titleLeft = titleBox.x
+        expect(Math.abs(cards[0].left - titleLeft)).toBeLessThanOrEqual(1)
+        expect(Math.abs(cards[1].right - (390 - titleLeft))).toBeLessThanOrEqual(1)
+        expect(Math.abs(cards[1].left - cards[0].right - 16)).toBeLessThanOrEqual(1)
+        // Posters keep their 2:3 shape
+        const poster = (await grid
+            .locator('[data-tour="content-card"] > div')
+            .first()
+            .boundingBox())!
+        expect(Math.abs(poster.height / poster.width - 1.5)).toBeLessThan(0.02)
         await context.close()
     })
+
+    for (const width of [360, 320]) {
+        test(`the genre page does not scroll sideways at ${width} px`, async ({
+            browser,
+            baseURL,
+        }) => {
+            const { context, page } = await open(browser, baseURL, {
+                ...PHONE,
+                viewport: { width, height: 800 },
+            })
+            await page.goto('/genres/movie/28')
+            await expect(page.getByTestId('content-grid')).toBeVisible({ timeout: 15_000 })
+            await page.waitForLoadState('networkidle')
+            expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width)
+            await context.close()
+        })
+    }
 })

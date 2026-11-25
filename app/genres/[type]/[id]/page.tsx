@@ -284,6 +284,7 @@ function GenrePageContent() {
                                     <ContentCard
                                         key={`${item.media_type || 'unknown'}-${item.id}`}
                                         content={item}
+                                        fluid
                                     />
                                 ))}
                             </ContentGrid>

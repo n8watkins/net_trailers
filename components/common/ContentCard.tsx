@@ -26,8 +26,13 @@ interface Props {
     content?: Content
     className?: string
     size?: 'compact' | 'small' | 'normal'
+    /**
+     * Below `sm`, fill the width of its grid column (poster stays 2:3) instead of a
+     * fixed width. Used by ContentGrid, whose phone layout is two equal columns.
+     */
+    fluid?: boolean
 }
-function ContentCard({ content, className = '', size = 'normal' }: Props) {
+function ContentCard({ content, className = '', size = 'normal', fluid = false }: Props) {
     const posterImage = content?.poster_path
     const backdropImage = content?.backdrop_path
     const { openModal, openListModal } = useModalStore()
@@ -229,7 +234,9 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                 return 'w-[120px] h-[180px] sm:w-[140px] sm:h-[210px] md:w-[160px] md:h-[240px] lg:w-[180px] lg:h-[270px]'
             case 'normal':
             default:
-                return 'w-[120px] h-[180px] xs:w-[140px] xs:h-[210px] sm:w-[160px] sm:h-[240px] md:w-[180px] md:h-[270px] lg:w-[200px] lg:h-[300px] xl:w-[220px] xl:h-[330px]'
+                return fluid
+                    ? 'w-full aspect-[2/3] sm:aspect-auto sm:w-[160px] sm:h-[240px] md:w-[180px] md:h-[270px] lg:w-[200px] lg:h-[300px] xl:w-[220px] xl:h-[330px]'
+                    : 'w-[120px] h-[180px] xs:w-[140px] xs:h-[210px] sm:w-[160px] sm:h-[240px] md:w-[180px] md:h-[270px] lg:w-[200px] lg:h-[300px] xl:w-[220px] xl:h-[330px]'
         }
     }
 
@@ -242,7 +249,9 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                 return 'w-[120px] sm:w-[140px] md:w-[160px] lg:w-[180px]'
             case 'normal':
             default:
-                return 'w-[120px] xs:w-[140px] sm:w-[160px] md:w-[180px] lg:w-[200px] xl:w-[220px]'
+                return fluid
+                    ? 'w-full sm:w-[160px] md:w-[180px] lg:w-[200px] xl:w-[220px]'
+                    : 'w-[120px] xs:w-[140px] sm:w-[160px] md:w-[180px] lg:w-[200px] xl:w-[220px]'
         }
     }
 
@@ -301,7 +310,11 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                             fill
                             style={{ objectFit: 'cover' }}
                             className="rounded-md transition-all duration-300 select-none"
-                            sizes="(max-width: 640px) 140px, (max-width: 768px) 160px, (max-width: 1024px) 180px, 240px"
+                            sizes={
+                                fluid
+                                    ? '(max-width: 640px) 50vw, (max-width: 768px) 160px, (max-width: 1024px) 180px, 240px'
+                                    : '(max-width: 640px) 140px, (max-width: 768px) 160px, (max-width: 1024px) 180px, 240px'
+                            }
                             priority={false}
                             onLoad={() => setImageLoaded(true)}
                             onError={handleImageError}
