@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState } from 'react'
 import {
     XMarkIcon,
     AcademicCapIcon,
@@ -14,7 +14,6 @@ import {
     FunnelIcon,
 } from '@heroicons/react/24/outline'
 import { HandThumbUpIcon, RectangleStackIcon } from '@heroicons/react/24/solid'
-import { useRouter, usePathname } from 'next/navigation'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import { useModalStore } from '../../stores/modalStore'
 import { useEscapeKey } from '../../hooks/useEscapeKey'
@@ -33,28 +32,14 @@ const TutorialModal: React.FC<TutorialModalProps> = ({
     onStartTour,
     onOpenWelcome,
 }) => {
-    const router = useRouter()
-    const pathname = usePathname()
     const { isGuest } = useAuthStatus()
     const { openAuthModal } = useModalStore()
     const [activeTab, setActiveTab] = useState<'basics' | 'advanced' | 'community'>('basics')
-    const waitingToStartTourRef = useRef<boolean>(false)
 
     const handleSignUp = () => {
         onClose()
         openAuthModal('signup')
     }
-
-    // Start tour when we reach home page (if waiting)
-    useEffect(() => {
-        if (waitingToStartTourRef.current && pathname === '/' && onStartTour) {
-            waitingToStartTourRef.current = false
-            // Small delay to ensure page is fully rendered
-            setTimeout(() => {
-                onStartTour()
-            }, 300)
-        }
-    }, [pathname, onStartTour])
 
     useEscapeKey(isOpen, onClose)
 
@@ -455,18 +440,9 @@ const TutorialModal: React.FC<TutorialModalProps> = ({
                                         </div>
                                         <button
                                             onClick={() => {
+                                                // ClientLayout goes home and starts the tour there
                                                 onClose()
-
-                                                // If already on home page, start tour immediately
-                                                if (pathname === '/') {
-                                                    setTimeout(() => {
-                                                        onStartTour()
-                                                    }, 300)
-                                                } else {
-                                                    // Navigate to home page, useEffect will start tour when we arrive
-                                                    waitingToStartTourRef.current = true
-                                                    router.push('/')
-                                                }
+                                                onStartTour()
                                             }}
                                             className="flex-shrink-0 px-6 py-3 bg-gradient-to-r from-orange-500 to-brand-500 text-white font-bold rounded-lg hover:from-orange-600 hover:to-brand-600 transition-all shadow-lg hover:shadow-orange-500/50 hover:scale-105"
                                         >
