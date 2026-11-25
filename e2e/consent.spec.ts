@@ -1,5 +1,6 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test'
 
+import { GA_IDLE_TIMEOUT_MS } from '../lib/consent'
 import { stubExternalMedia } from './stub-media'
 
 /**
@@ -44,15 +45,21 @@ async function countGoogle(context: BrowserContext) {
     return requests
 }
 
-/** Waits until the page has loaded and gone idle, when GA would load if allowed. */
+/**
+ * Waits until the page has loaded and gone idle (or GA_IDLE_TIMEOUT_MS has
+ * passed: the home page can animate without an idle moment), when GA would
+ * load if allowed.
+ */
 async function settle(page: Page) {
     await page.waitForLoadState('load')
     await page.evaluate(
-        () =>
+        (timeout) =>
             new Promise<void>((resolve) => {
-                const idle = window.requestIdleCallback ?? ((f: () => void) => setTimeout(f, 1))
-                idle(() => setTimeout(resolve, 300))
-            })
+                const done = () => setTimeout(resolve, 300)
+                if (window.requestIdleCallback) window.requestIdleCallback(done, { timeout })
+                else setTimeout(done, 1)
+            }),
+        GA_IDLE_TIMEOUT_MS
     )
 }
 

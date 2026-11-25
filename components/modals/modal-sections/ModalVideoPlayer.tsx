@@ -41,7 +41,8 @@ function ModalVideoPlayer({
     onReady,
     onPlayerRef,
 }: ModalVideoPlayerProps) {
-    const wantsPlayer = Boolean((trailer && !trailerEnded) || playing || fullScreen)
+    // Without a trailer there is nothing to play, so nothing loads from YouTube.
+    const wantsPlayer = Boolean(trailer) && (!trailerEnded || playing || fullScreen)
     // YouTube's player API comes from this site, so youtube.com sets no
     // cookies (lib/youtubeIframeApi.ts); the player waits for it, showing the
     // backdrop meanwhile.

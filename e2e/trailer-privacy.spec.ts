@@ -37,6 +37,21 @@ test('a trailer loads nothing from youtube.com and plays on the no-cookie host',
         return route.fulfill({ contentType: 'text/javascript', body: FAKE_YT_API })
     })
 
+    // The recorded TMDB fixtures do not cover every hero title's details, so
+    // the opened title gets a known trailer here.
+    await page.route('**/api/movies/details/**', async (route) => {
+        const response = await route.fetch()
+        const data = response.ok() ? await response.json() : { id: 1, title: 'Fixture' }
+        data.videos = {
+            results: [{ key: 'qKGgw7Ob5f4', site: 'YouTube', type: 'Trailer', name: 'Trailer' }],
+        }
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify(data),
+        })
+    })
+
     await page.goto('/')
     await page.waitForLoadState('networkidle')
     expect(youtube, 'nothing from YouTube before a title is opened').toEqual([])
@@ -53,24 +68,17 @@ test('a trailer loads nothing from youtube.com and plays on the no-cookie host',
     }).toPass({ timeout: 30_000 })
 
     await expect.poll(() => relayed).toBe(1)
-    const players = await page
-        .waitForFunction(
-            () => (window as unknown as { __ytPlayers?: unknown[] }).__ytPlayers?.length,
-            undefined,
-            { timeout: 10_000 }
+    // The player itself is a lazily loaded chunk, so give it time on a busy machine.
+    const players = () =>
+        page.evaluate(
+            () =>
+                (window as unknown as { __ytPlayers?: { host: string; videoId: string }[] })
+                    .__ytPlayers ?? []
         )
-        .then(() =>
-            page.evaluate(
-                () =>
-                    (
-                        window as unknown as {
-                            __ytPlayers: { host: string; videoId: string }[]
-                        }
-                    ).__ytPlayers
-            )
-        )
-    expect(players[0].host).toBe('https://www.youtube-nocookie.com')
-    expect(players[0].videoId).toMatch(/^[\w-]{11}$/)
+    await expect.poll(async () => (await players()).length, { timeout: 30_000 }).toBeGreaterThan(0)
+    const [player] = await players()
+    expect(player.host).toBe('https://www.youtube-nocookie.com')
+    expect(player.videoId).toBe('qKGgw7Ob5f4')
     expect(
         youtube.filter((url) => url.startsWith('https://www.youtube.com/')),
         'no request to www.youtube.com (its iframe_api response sets tracking cookies)'
