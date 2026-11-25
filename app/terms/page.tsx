@@ -8,6 +8,9 @@ export const metadata: Metadata = {
     keywords: ['terms', 'service', 'conditions', 'legal'],
 }
 
+/** A literal, never the render date: change it when the terms change. */
+const LAST_UPDATED = 'November 25, 2026'
+
 export default function TermsPage() {
     return (
         <div className="relative min-h-screen bg-gradient-to-b from-gray-900/10 to-[#0a0a0a]">
@@ -15,14 +18,7 @@ export default function TermsPage() {
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                     <div className="prose prose-lg prose-gray max-w-none">
                         <h1 className="text-4xl font-bold text-white mb-8">Terms of Service</h1>
-                        <p className="text-gray-300 text-lg mb-8">
-                            Last updated:{' '}
-                            {new Date().toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                            })}
-                        </p>
+                        <p className="text-gray-300 text-lg mb-8">Last updated: {LAST_UPDATED}</p>
 
                         <div className="space-y-8 text-gray-300">
                             <section>
@@ -47,10 +43,22 @@ export default function TermsPage() {
                                 </p>
                                 <ul className="list-disc pl-6 mb-4 space-y-2">
                                     <li>Browse and search for movies and TV shows</li>
-                                    <li>View trailers and detailed information</li>
-                                    <li>Create and manage personal favorites lists</li>
-                                    <li>Discover content through curated recommendations</li>
-                                    <li>Access genre-based browsing</li>
+                                    <li>Watch trailers and see details, cast and crew</li>
+                                    <li>
+                                        Search by mood or description with AI search (Google Gemini)
+                                    </li>
+                                    <li>
+                                        Keep a watchlist, likes, hidden titles and watch history,
+                                        and build collections, including AI-generated ones
+                                    </li>
+                                    <li>Get recommendations based on what you like</li>
+                                    <li>Browse by genre, actor and director</li>
+                                    <li>
+                                        Create and share rankings, comment on them, and take part in
+                                        the community forum and polls
+                                    </li>
+                                    <li>Share collections by link and keep a public profile</li>
+                                    <li>Turn on child safety mode, protected by a PIN</li>
                                 </ul>
                                 <p className="mb-4">
                                     <strong>Important:</strong> NetTrailers is a discovery platform
@@ -69,8 +77,8 @@ export default function TermsPage() {
                                 </h3>
                                 <ul className="list-disc pl-6 mb-4 space-y-2">
                                     <li>
-                                        You may create an account using email/password or social
-                                        login providers
+                                        You may create an account with an email sign-in link or with
+                                        GitHub; there are no passwords
                                     </li>
                                     <li>
                                         You are responsible for maintaining the confidentiality of
@@ -87,9 +95,11 @@ export default function TermsPage() {
                                     3.2 Guest Access
                                 </h3>
                                 <p className="mb-4">
-                                    You may use our service without creating an account (Guest Mode)
-                                    with limited functionality. Guest users cannot save favorites or
-                                    access personalized features.
+                                    You may use our service without creating an account (Guest
+                                    Mode). A guest&apos;s lists and settings are kept only in that
+                                    browser and are lost if its site data is cleared. Posting
+                                    rankings, comments and forum content, sharing collections and
+                                    syncing across devices need an account.
                                 </p>
                             </section>
 
@@ -128,18 +138,30 @@ export default function TermsPage() {
                                     5.2 User Content
                                 </h3>
                                 <p className="mb-4">
-                                    You retain ownership of any content you submit (such as favorite
-                                    lists). By using our service, you grant us a license to store
-                                    and display this content as necessary to provide our services.
+                                    You retain ownership of any content you submit (such as
+                                    collections, rankings, comments, forum posts and images). By
+                                    using our service, you grant us a license to store and display
+                                    this content as necessary to provide our services. Rankings,
+                                    comments, forum posts, polls and public profiles are visible to
+                                    other visitors.
                                 </p>
 
                                 <h3 className="text-xl font-semibold text-white mb-3">
                                     5.3 Platform Content
                                 </h3>
                                 <p className="mb-4">
-                                    The NetTrailers platform, including its design, code, and
-                                    original content, is protected by copyright and other
-                                    intellectual property laws.
+                                    The NetTrailers source code is open source under the MIT License
+                                    (see the LICENSE file in the{' '}
+                                    <a
+                                        href="https://github.com/n8watkins/net_trailers"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-brand-300 hover:text-brand-200 underline"
+                                    >
+                                        repository
+                                    </a>
+                                    ). The NetTrailers name and logo are not covered by that
+                                    license.
                                 </p>
                             </section>
 
@@ -208,14 +230,33 @@ export default function TermsPage() {
                                         images
                                     </li>
                                     <li>
-                                        <strong>Google Services:</strong> Authentication and
-                                        analytics
-                                    </li>
-                                    <li>
-                                        <strong>Discord & Twitter:</strong> Social authentication
-                                    </li>
-                                    <li>
                                         <strong>YouTube:</strong> Trailer playback
+                                    </li>
+                                    <li>
+                                        <strong>Cloudflare:</strong> Hosting, email, image storage,
+                                        bot protection (Turnstile) and cookieless page counts
+                                    </li>
+                                    <li>
+                                        <strong>Turso:</strong> The account database
+                                    </li>
+                                    <li>
+                                        <strong>Google Gemini:</strong> AI search and suggestions
+                                    </li>
+                                    <li>
+                                        <strong>GitHub:</strong> Optional sign-in
+                                    </li>
+                                    <li>
+                                        <strong>Google Analytics:</strong> Usage analytics, under
+                                        the consent rules in the{' '}
+                                        <Link
+                                            href="/privacy#cookies"
+                                            className="text-brand-300 hover:text-brand-200 underline"
+                                        >
+                                            Privacy Policy
+                                        </Link>
+                                    </li>
+                                    <li>
+                                        <strong>Sentry:</strong> Error monitoring
                                     </li>
                                 </ul>
                                 <p className="mb-4">
@@ -290,40 +331,21 @@ export default function TermsPage() {
                                     13. Contact Information
                                 </h2>
                                 <p className="mb-4">
-                                    If you have any questions about these Terms of Service, please
-                                    contact us:
+                                    If you have any questions about these Terms of Service,
+                                    including copyright notices (section 10), please open an issue
+                                    on{' '}
+                                    <a
+                                        href="https://github.com/n8watkins/net_trailers/issues"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-brand-300 hover:text-brand-200 underline"
+                                    >
+                                        GitHub
+                                    </a>
+                                    . Issues there are public, so do not include personal details in
+                                    one; say that you would like to be contacted and we will reply
+                                    there.
                                 </p>
-                                <ul className="list-disc pl-6 space-y-2">
-                                    <li>
-                                        Through our support page:{' '}
-                                        <a
-                                            href="/support"
-                                            className="text-brand-300 hover:text-brand-200 underline"
-                                        >
-                                            /support
-                                        </a>
-                                    </li>
-                                    <li>
-                                        Email:{' '}
-                                        <a
-                                            href="mailto:legal@nettrailer.app"
-                                            className="text-brand-300 hover:text-brand-200 underline"
-                                        >
-                                            legal@nettrailer.app
-                                        </a>
-                                    </li>
-                                    <li>
-                                        GitHub:{' '}
-                                        <a
-                                            href="https://github.com/n8watkins/net_trailers"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-brand-300 hover:text-brand-200 underline"
-                                        >
-                                            Project Repository
-                                        </a>
-                                    </li>
-                                </ul>
                             </section>
 
                             <section>

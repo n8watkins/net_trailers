@@ -61,7 +61,10 @@ function ModalVideoPlayer({
                             embedOptions: {},
                         },
                     }}
-                    url={`https://www.youtube.com/watch?v=${trailer}`}
+                    // YouTube's no-cookie host: react-player embeds from
+                    // www.youtube-nocookie.com for these URLs, so a trailer
+                    // sets no youtube.com cookies (lib/csp.ts frame-src).
+                    url={`https://www.youtube-nocookie.com/embed/${trailer}`}
                     width="100%"
                     height="100%"
                     className={`absolute inset-0 ${fullScreen ? '' : 'rounded-md'}`}

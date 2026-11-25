@@ -1,6 +1,7 @@
 import React from 'react'
 import Link from '@/components/common/Link'
 import Image from 'next/image'
+import CookieSettingsButton from '@/components/consent/CookieSettingsButton'
 
 interface FooterProps {
     showAboutModal: boolean
@@ -183,6 +184,11 @@ function Footer({
                                     Privacy
                                 </Link>
                             </li>
+                            {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
+                                <li>
+                                    <CookieSettingsButton className={linkClass} />
+                                </li>
+                            )}
                             <li>
                                 <Link href="/terms" className={linkClass}>
                                     Terms
