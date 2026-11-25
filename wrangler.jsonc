@@ -1,6 +1,6 @@
 {
     "$schema": "node_modules/wrangler/config-schema.json",
-    // NetTrailers as a Cloudflare Worker, built by OpenNext (see DEPLOY.md).
+    // NetTrailers as a Cloudflare Worker, built by OpenNext (see DEPLOYMENT.md).
     // worker/index.ts wraps the generated .open-next/worker.js.
     "name": "net-trailers",
     "account_id": "b2c564cf83cb9184dd6d7cc4ff8b38bf",
@@ -18,7 +18,9 @@
     // Workers Cache (worker/edgeCache.ts): Cloudflare's cache sits in front of the
     // CachedPages entrypoint, so the TMDB catalogue routes, optimized images and the
     // anonymous home page cost no CPU time once cached. The default entrypoint runs
-    // on every request and sends only those there.
+    // on every request and sends only those there, and serves only answers its own
+    // version rendered. Keep cross_version_cache off: the pages name their build's
+    // /_next/static files.
     "cache": { "enabled": false },
     "exports": {
         "default": { "type": "worker", "cache": { "enabled": false } },
@@ -62,7 +64,7 @@
         // The sender for every email (lib/email/cloudflare.ts).
         "EMAIL_FROM": "net-trailers@n8builds.dev",
     },
-    // Secrets (npx wrangler secret put <NAME>, see DEPLOY.md): TURSO_DATABASE_URL,
+    // Secrets (npx wrangler secret put <NAME>, see DEPLOYMENT.md): TURSO_DATABASE_URL,
     // TURSO_AUTH_TOKEN, AUTH_SECRET, TMDB_API_KEY, GEMINI_API_KEY, CRON_SECRET,
     // TURNSTILE_SECRET_KEY.
     // Workers custom domains: Cloudflare creates and manages their DNS records and
