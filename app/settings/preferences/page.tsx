@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react'
 import useUserData from '../../../hooks/useUserData'
-import { useAuthStatus } from '../../../hooks/useAuthStatus'
+import { useSettingsVisitor } from '../_components/settingsVisitor'
+import { useSettingsDataReady } from '../_components/useSettingsDataReady'
 import { useToast } from '../../../hooks/useToast'
 import { useAppStore } from '../../../stores/appStore'
 import { useAuthStore } from '../../../stores/authStore'
@@ -16,7 +17,8 @@ import { useLayoutContext } from '../../../contexts/LayoutContext'
 
 const PreferencesPage: React.FC = () => {
     const { onOpenWelcome } = useLayoutContext()
-    const { isGuest } = useAuthStatus()
+    const isGuest = !useSettingsVisitor().signedIn
+    const dataReady = useSettingsDataReady()
     const userData = useUserData()
     const { showSuccess, showError } = useToast()
     const { openAuthModal } = useAppStore()
@@ -233,7 +235,7 @@ const PreferencesPage: React.FC = () => {
         <>
             <PreferencesSection
                 isGuest={isGuest}
-                isInitializing={userData.isInitializing}
+                isInitializing={!dataReady}
                 childSafetyMode={childSafetyMode}
                 autoMute={autoMute}
                 defaultVolume={defaultVolume}

@@ -2,7 +2,9 @@
 
 import React, { useState } from 'react'
 import useUserData from '../../../hooks/useUserData'
-import { useAuthStatus } from '../../../hooks/useAuthStatus'
+import { useSettingsVisitor } from '../_components/settingsVisitor'
+import { useSettingsDataReady } from '../_components/useSettingsDataReady'
+import PendingValues from '../../../components/settings/PendingValues'
 import { useToast } from '../../../hooks/useToast'
 import { useAuthStore } from '../../../stores/authStore'
 import { useGuestStore } from '../../../stores/guestStore'
@@ -10,7 +12,8 @@ import NotificationsSection from '../../../components/settings/NotificationsSect
 import { DEFAULT_NOTIFICATION_PREFERENCES } from '../../../types/notifications'
 
 const NotificationsPage: React.FC = () => {
-    const { isGuest } = useAuthStatus()
+    const isGuest = !useSettingsVisitor().signedIn
+    const dataReady = useSettingsDataReady()
     const userData = useUserData()
     const { showSuccess, showError } = useToast()
 
@@ -102,12 +105,15 @@ const NotificationsPage: React.FC = () => {
     ])
 
     return (
-        <NotificationsSection
-            notifications={notifications}
-            notificationsChanged={notificationsChanged}
-            onNotificationsChange={handleNotificationsChange}
-            onSave={handleSaveNotifications}
-        />
+        // The real layout at once; the switches wait for the saved values
+        <PendingValues pending={!dataReady}>
+            <NotificationsSection
+                notifications={notifications}
+                notificationsChanged={notificationsChanged}
+                onNotificationsChange={handleNotificationsChange}
+                onSave={handleSaveNotifications}
+            />
+        </PendingValues>
     )
 }
 

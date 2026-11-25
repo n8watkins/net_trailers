@@ -4,10 +4,10 @@ import React from 'react'
 import Link from '@/components/common/Link'
 import { ChevronRightIcon } from '@heroicons/react/24/outline'
 import { UpgradeAccountBanner } from '../auth/UpgradeAccountBanner'
+import PendingValues from './PendingValues'
 import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
 import { useSessionStore } from '../../stores/sessionStore'
-import { SystemRecommendation } from '../../types/recommendations'
 
 // System Recommendations Display Names and Descriptions
 const SYSTEM_REC_INFO: Record<string, { name: string; description: string; defaultEmoji: string }> =
@@ -327,23 +327,8 @@ const RecommendationsSection: React.FC<RecommendationsSectionProps> = ({
                 </p>
             </div>
 
-            {/* Only render controls after data is loaded */}
-            {isInitializing ? (
-                <div className="space-y-8 animate-pulse">
-                    <div>
-                        <div className="h-6 bg-[#313131] rounded w-48 mb-4"></div>
-                        <div className="bg-[#0a0a0a] rounded-lg border border-[#313131] p-6">
-                            <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                    <div className="h-4 bg-[#313131] rounded w-40 mb-2"></div>
-                                    <div className="h-3 bg-[#313131] rounded w-64"></div>
-                                </div>
-                                <div className="w-11 h-6 bg-[#313131] rounded-full ml-4"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            ) : (
+            {/* The real layout at once; the switches wait for the saved values */}
+            <PendingValues pending={isInitializing}>
                 <div className="space-y-8">
                     {/* System Recommendation Rows */}
                     <SystemRecommendationsManager sessionType={sessionType} />
@@ -359,7 +344,7 @@ const RecommendationsSection: React.FC<RecommendationsSectionProps> = ({
                         onTrackWatchHistoryChange={onTrackWatchHistoryChange}
                     />
                 </div>
-            )}
+            </PendingValues>
         </div>
     )
 }

@@ -2,11 +2,10 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import useAuth from '../../../hooks/useAuth'
-import { useAuthStatus } from '../../../hooks/useAuthStatus'
+import useAuth, { type AuthUser } from '../../../hooks/useAuth'
+import { useSettingsVisitor } from '../_components/settingsVisitor'
 import { useToast } from '../../../hooks/useToast'
 import { useProfileStore } from '../../../stores/profileStore'
-import { useSessionStore } from '../../../stores/sessionStore'
 import ProfileSection from '../../../components/settings/ProfileSection'
 import { ProfileVisibility, DEFAULT_PROFILE_VISIBILITY } from '../../../types/profile'
 import { validateUsername } from '../../../utils/usernameValidation'
@@ -14,25 +13,43 @@ import { validateDisplayNameWithZod } from '../../../utils/profileValidationSche
 
 const ProfilePage: React.FC = () => {
     const router = useRouter()
-    const { user } = useAuth()
-    const { isGuest } = useAuthStatus()
+    const { user: authUser } = useAuth()
+    const { signedIn, account } = useSettingsVisitor()
+    const isGuest = !signedIn
+    // Until the client session is ready (the first paint), the account the
+    // server read, so the form shows the visitor's name and email at once
+    const user: AuthUser | null = React.useMemo(
+        () =>
+            authUser ??
+            (account
+                ? {
+                      uid: '',
+                      email: account.email,
+                      displayName: account.name,
+                      photoURL: account.image,
+                      image: account.image,
+                      name: account.name,
+                      emailVerified: true,
+                      isAdmin: false,
+                  }
+                : null),
+        [authUser, account]
+    )
     const { showSuccess, showError } = useToast()
 
     // Profile store for visibility and username
     const {
         profile,
-        getVisibility,
+        loadProfile,
         updateVisibility,
         createProfile,
         updateProfile,
         updateUsername: updateUsernameInStore,
         checkUsernameAvailability,
-        isLoading: profileLoading,
     } = useProfileStore()
-    const isInitialized = useSessionStore((state) => state.isInitialized)
 
     // Get userId from user object
-    const userId = user?.uid ?? null
+    const userId = authUser?.uid ?? null
 
     // Profile form state
     const [displayName, setDisplayName] = useState(user?.displayName || '')
@@ -56,33 +73,25 @@ const ProfilePage: React.FC = () => {
     const [isLoadingVisibility, setIsLoadingVisibility] = useState(true)
     const [isSavingVisibility, setIsSavingVisibility] = useState(false)
 
-    // Load visibility settings
+    // Load the profile once the user is known (at hydration: the layout seeds the
+    // session). One request brings both the username and the visibility, which
+    // the effects below copy into the form; until it answers they stay pending.
     useEffect(() => {
-        const loadVisibility = async () => {
-            if (!isInitialized || isGuest || !userId) {
-                setIsLoadingVisibility(false)
-                return
-            }
-
-            setIsLoadingVisibility(true)
-            try {
-                const currentVisibility = await getVisibility(userId)
-                setVisibility(currentVisibility)
-            } catch (error) {
-                console.error('Error loading visibility settings:', error)
-                setVisibility({ ...DEFAULT_PROFILE_VISIBILITY })
-            } finally {
-                setIsLoadingVisibility(false)
-            }
+        if (!userId) return
+        let cancelled = false
+        setIsLoadingVisibility(true)
+        loadProfile(userId).finally(() => {
+            if (!cancelled) setIsLoadingVisibility(false)
+        })
+        return () => {
+            cancelled = true
         }
-
-        loadVisibility()
-    }, [isInitialized, isGuest, userId, getVisibility])
+    }, [userId, loadProfile])
 
     // Sync visibility from profile store
     useEffect(() => {
         if (profile?.visibility) {
-            setVisibility(profile.visibility)
+            setVisibility({ ...DEFAULT_PROFILE_VISIBILITY, ...profile.visibility })
         }
     }, [profile?.visibility])
 
@@ -170,7 +179,7 @@ const ProfilePage: React.FC = () => {
                     if (!availability.available) {
                         setUsernameError(availability.error || 'Username is not available')
                     }
-                } catch (error) {
+                } catch {
                     setUsernameError('Failed to check availability')
                 } finally {
                     setIsCheckingUsername(false)
@@ -309,7 +318,7 @@ const ProfilePage: React.FC = () => {
     // Redirect guests to preferences
     React.useEffect(() => {
         if (isGuest) {
-            router.push('/settings/preferences')
+            router.replace('/settings/preferences')
         }
     }, [isGuest, router])
 
@@ -366,7 +375,7 @@ const ProfilePage: React.FC = () => {
             isSavingUsername={isSavingUsername}
             onSaveUsername={handleSaveUsername}
             visibility={visibility}
-            isLoadingVisibility={isLoadingVisibility || !isInitialized}
+            isLoadingVisibility={isLoadingVisibility}
             isSavingVisibility={isSavingVisibility}
             onVisibilityChange={handleVisibilityChange}
             profileUsername={profile?.displayName}

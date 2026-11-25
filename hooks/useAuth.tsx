@@ -1,7 +1,17 @@
 'use client'
 
-import React, { createContext, useContext, useMemo } from 'react'
-import { SessionProvider, signIn, signOut, useSession } from 'next-auth/react'
+import React, {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react'
+import type { Session } from 'next-auth'
+import { signIn, signOut } from 'next-auth/react'
 
 import { useToast } from './useToast'
 
@@ -53,12 +63,107 @@ const defaultValue: iAuth = {
 
 export const AuthContext = createContext<iAuth>(defaultValue)
 
+/** Auth.js's session endpoint (auth.ts mounts Auth.js at /api/auth). */
+const SESSION_URL = '/api/auth/session'
+/** The channel next-auth/react's signIn and signOut announce changes on, in every tab. */
+const AUTH_CHANNEL = 'next-auth'
+
+/** One read of the session: the session, or null when signed out or on any failure. */
+export async function fetchSession(): Promise<Session | null> {
+    try {
+        const res = await fetch(SESSION_URL, { headers: { 'Content-Type': 'application/json' } })
+        if (!res.ok) return null
+        const data = (await res.json()) as Session | null
+        // Auth.js answers null (or {}) when there is no session
+        return data && Object.keys(data).length > 0 ? data : null
+    } catch {
+        return null
+    }
+}
+
+/**
+ * Lets a server-rendered segment hand over the session it already read (see
+ * SeedSession below). Only the settings and profile segments do this today.
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+const SeedSessionContext = createContext<(session: Session | null) => void>(() => {})
+
+/**
+ * Hands the session a server component read (`await auth()`) to the auth
+ * context. It applies in the hydration commit, before the first paint and
+ * before the provider would ask for it, so the page neither waits for nor
+ * makes a request to GET /api/auth/session.
+ *
+ * Render it only with the session of the request being answered. A page that
+ * renders it may be kept in the Worker's edge cache only for visitors without
+ * a session cookie, for whom it is always null (worker/edgeCache.ts).
+ */
+export function SeedSession({ session }: { session: Session | null }) {
+    const seed = useContext(SeedSessionContext)
+    useLayoutEffect(() => {
+        seed(session)
+        // Only the first value matters: later changes come from the provider
+    }, [])
+    return null
+}
+
+/**
+ * The visitor's session, read once per page load, and again when another tab
+ * (or next-auth/react's signIn and signOut in this one) announces a change.
+ *
+ * This replaces next-auth/react's SessionProvider, which asked twice on every
+ * page load: its own read announces itself on the broadcast channel, and its
+ * listener answers that announcement with a second read (next-auth
+ * 5.0.0-beta.32, getSession posts on a new channel object, which the provider's
+ * own listener receives). Each signed-in read is a Worker request and a
+ * database query. It also could not take a session a server component had
+ * already read once it had mounted.
+ *
+ * Nothing re-reads the session when the tab regains focus, as before.
+ */
+function useSessionState(): {
+    session: Session | null | undefined
+    seed: (session: Session | null) => void
+} {
+    // undefined while unknown
+    const [session, setSession] = useState<Session | null | undefined>(undefined)
+    const known = useRef(false)
+
+    const seed = useCallback((value: Session | null) => {
+        if (known.current) return
+        known.current = true
+        setSession(value)
+    }, [])
+
+    const refresh = useCallback(async () => {
+        const value = await fetchSession()
+        known.current = true
+        setSession(value)
+    }, [])
+
+    // Child layout effects (SeedSession) run before this, so a seeded page skips the read
+    useEffect(() => {
+        if (!known.current) void refresh()
+    }, [refresh])
+
+    useEffect(() => {
+        if (typeof BroadcastChannel === 'undefined') return
+        const channel = new BroadcastChannel(AUTH_CHANNEL)
+        channel.onmessage = (event: MessageEvent<{ event?: string }>) => {
+            if (event.data?.event === 'session') void refresh()
+        }
+        return () => channel.close()
+    }, [refresh])
+
+    return { session, seed }
+}
+
 /** Reads the Auth.js session and exposes the legacy auth context shape. */
 function AuthStateProvider({ children }: AuthProviderProps) {
-    const { data: session, status } = useSession()
+    const { session, seed } = useSessionState()
     const { showSuccess } = useToast()
 
-    const loading = status === 'loading'
+    const loading = session === undefined
     const sUser = session?.user
 
     const user: AuthUser | null = sUser
@@ -114,18 +219,15 @@ function AuthStateProvider({ children }: AuthProviderProps) {
         [user?.uid, user?.isAdmin, loading]
     )
 
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+    return (
+        <SeedSessionContext.Provider value={seed}>
+            <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+        </SeedSessionContext.Provider>
+    )
 }
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-    return (
-        // No session read each time the tab regains focus: sign-in and sign-out
-        // still reach other tabs through next-auth's broadcast channel, and each
-        // read of a signed-in session is a Worker request with a database read.
-        <SessionProvider refetchOnWindowFocus={false}>
-            <AuthStateProvider>{children}</AuthStateProvider>
-        </SessionProvider>
-    )
+    return <AuthStateProvider>{children}</AuthStateProvider>
 }
 
 /**
