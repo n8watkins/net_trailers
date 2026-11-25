@@ -1,457 +1,393 @@
-import React, { useState } from 'react'
-import {
-    XMarkIcon,
-    AcademicCapIcon,
-    EyeSlashIcon,
-    ShieldCheckIcon,
-    MagnifyingGlassIcon,
-    SparklesIcon,
-    ChatBubbleLeftRightIcon,
-    BellIcon,
-    ShareIcon,
-    TrophyIcon,
-    MicrophoneIcon,
-    FunnelIcon,
-} from '@heroicons/react/24/outline'
-import { HandThumbUpIcon, RectangleStackIcon } from '@heroicons/react/24/solid'
+'use client'
+
+import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
+import Image from 'next/image'
+import { usePathname, useRouter } from 'next/navigation'
+import Link from '@/components/common/Link'
+import { ChevronRightIcon, LockClosedIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
-import { useModalStore } from '../../stores/modalStore'
+import { useChildSafety } from '../../hooks/useChildSafety'
 import { useEscapeKey } from '../../hooks/useEscapeKey'
+import { useFocusTrap } from '../../hooks/useFocusTrap'
+import { useToast } from '../../hooks/useToast'
+import { useLayoutContext } from '../../contexts/LayoutContext'
+import { useModalStore } from '../../stores/modalStore'
+import { useSessionStore } from '../../stores/sessionStore'
+import {
+    HELP_CATEGORIES,
+    HELP_TILES,
+    HELP_TOUR,
+    type HelpTarget,
+    type HelpTile,
+} from '../../constants/helpContent'
+import { HELP_ICONS } from './helpIcons'
+import { focusHeaderSearch, focusMoodBox, openRandomTitle, pointAtMoodMic } from './helpActions'
 
 interface TutorialModalProps {
     isOpen: boolean
     onClose: () => void
+    /** Starts the interactive tour (ClientLayout goes home first); the strip is hidden without it. */
     onStartTour?: () => void
     /** Reopen the short first-visit welcome */
     onOpenWelcome?: () => void
 }
 
-const TutorialModal: React.FC<TutorialModalProps> = ({
+/** How long the detail line takes to fade out, and then in, when the tile changes. */
+export const DETAIL_FADE_MS = 140
+
+const focusRing =
+    'focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0d0f]'
+
+const footerLink = `inline-flex min-h-11 items-center rounded text-gray-400 underline decoration-gray-600 underline-offset-[3px] transition-colors hover:text-white hover:decoration-gray-300 ${focusRing}`
+
+function prefersReducedMotion(): boolean {
+    return (
+        typeof window !== 'undefined' &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    )
+}
+
+/**
+ * Keyboard shortcuts only work with a keyboard on a wide screen
+ * (hooks/useKeyboardShortcuts.ts turns them off on touch and below 1024 px),
+ * so the Shortcuts link shows only there.
+ */
+function useHasShortcuts(): boolean {
+    const [has, setHas] = useState(false)
+    useEffect(() => {
+        const check = () =>
+            setHas(
+                !('ontouchstart' in window) &&
+                    navigator.maxTouchPoints === 0 &&
+                    window.innerWidth >= 1024
+            )
+        check()
+        window.addEventListener('resize', check)
+        return () => window.removeEventListener('resize', check)
+    }, [])
+    return has
+}
+
+/**
+ * "Help & tutorial": the tour on top, then every feature as a small tile under
+ * four headings (Search, Your library, Community, Profile). Tapping a tile
+ * shows one line about it and a link to it. Fits one phone screen; a centered
+ * dialog with four tiles a row on wide screens. Copy: constants/helpContent.ts.
+ */
+export default function TutorialModal({
     isOpen,
     onClose,
     onStartTour,
     onOpenWelcome,
-}) => {
+}: TutorialModalProps) {
+    const dialogRef = useRef<HTMLDivElement>(null)
+    const tilesRef = useRef<HTMLDivElement>(null)
+    const ids = useId()
+    const router = useRouter()
+    const pathname = usePathname()
     const { isGuest } = useAuthStatus()
-    const { openAuthModal } = useModalStore()
-    const [activeTab, setActiveTab] = useState<'basics' | 'advanced' | 'community'>('basics')
+    const userId = useSessionStore((state) => state.getUserId())
+    const openAuthModal = useModalStore((state) => state.openAuthModal)
+    const openModal = useModalStore((state) => state.openModal)
+    const { isEnabled: childSafetyMode } = useChildSafety()
+    const { showError } = useToast()
+    const { onOpenAboutModal, onOpenKeyboardShortcuts } = useLayoutContext()
+    const hasShortcuts = useHasShortcuts()
 
-    const handleSignUp = () => {
-        onClose()
-        openAuthModal('signup')
-    }
+    const [selectedId, setSelectedId] = useState(HELP_TILES[0].id)
+    // The tile whose line is on screen; it trails the selection by one fade-out
+    const [shownId, setShownId] = useState(HELP_TILES[0].id)
+    const [fading, setFading] = useState(false)
+    const fadeTimer = useRef<number | undefined>(undefined)
 
     useEscapeKey(isOpen, onClose)
+    useFocusTrap(dialogRef, isOpen)
+
+    useEffect(() => {
+        if (!isOpen) return
+        const previous = document.body.style.overflow
+        document.body.style.overflow = 'hidden'
+        return () => {
+            document.body.style.overflow = previous
+        }
+    }, [isOpen])
+
+    useEffect(() => () => window.clearTimeout(fadeTimer.current), [])
+
+    const select = useCallback(
+        (id: string) => {
+            if (id === selectedId) return
+            setSelectedId(id)
+            window.clearTimeout(fadeTimer.current)
+            if (prefersReducedMotion()) {
+                setShownId(id)
+                setFading(false)
+                return
+            }
+            // Fade the old line out, swap it, fade the new one in
+            setFading(true)
+            fadeTimer.current = window.setTimeout(() => {
+                setShownId(id)
+                setFading(false)
+            }, DETAIL_FADE_MS)
+        },
+        [selectedId]
+    )
+
+    /** Arrow keys, Home and End move between tiles; Enter and Space select (native buttons). */
+    const onTileKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+        const keys = ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End']
+        if (!keys.includes(event.key)) return
+        const tiles = Array.from(
+            tilesRef.current?.querySelectorAll<HTMLButtonElement>('[data-help-tile]') ?? []
+        )
+        const index = tiles.indexOf(event.currentTarget)
+        if (index < 0) return
+        event.preventDefault()
+        let next = index
+        if (event.key === 'ArrowRight' || event.key === 'ArrowDown') next = index + 1
+        if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') next = index - 1
+        if (event.key === 'Home') next = 0
+        if (event.key === 'End') next = tiles.length - 1
+        tiles[(next + tiles.length) % tiles.length]?.focus()
+    }
 
     if (!isOpen) return null
 
+    const titleId = `${ids}-title`
+    const detailId = `${ids}-detail`
+    const shown = HELP_TILES.find((tile) => tile.id === shownId) ?? HELP_TILES[0]
+    const isLocked = (tile: HelpTile) => isGuest && !!tile.needsAccount
+    const lineFor = (tile: HelpTile) => (isGuest && tile.guestLine) || tile.line
+
+    const startTour = () => {
+        onClose()
+        onStartTour?.()
+    }
+
+    const signIn = () => {
+        onClose()
+        openAuthModal('signin')
+    }
+
+    const runTarget = (target: HelpTarget) => {
+        onClose()
+        const navigate = (href: string) => router.push(href)
+        switch (target.kind) {
+            case 'header-search':
+                // After the window is gone, so focus does not return to the opener over it
+                window.setTimeout(focusHeaderSearch, 0)
+                break
+            case 'mood-box':
+                focusMoodBox(pathname, navigate)
+                break
+            case 'mood-voice':
+                pointAtMoodMic(pathname, navigate)
+                break
+            case 'surprise':
+                void openRandomTitle(childSafetyMode, openModal, () =>
+                    showError('No surprise this time', 'Please try again.')
+                )
+                break
+        }
+    }
+
+    const hrefFor = (target: HelpTarget): string | null => {
+        if (target.kind === 'page') return target.href
+        if (target.kind === 'public-profile') return userId ? `/users/${userId}` : '/profile'
+        return null
+    }
+
+    const detailAction = () => {
+        const linkClass = `-my-1 -mr-1 inline-flex min-h-11 shrink-0 items-center gap-0.5 whitespace-nowrap rounded-lg px-2 text-[0.84rem] font-bold text-brand-400 transition-colors hover:text-brand-300 ${focusRing}`
+        const label = (text: string) => (
+            <>
+                {text}
+                <ChevronRightIcon className="h-4 w-4" strokeWidth={2.25} aria-hidden="true" />
+                <span className="sr-only">: {shown.name}</span>
+            </>
+        )
+        if (isLocked(shown)) {
+            return (
+                <button type="button" onClick={signIn} className={linkClass}>
+                    {label('Sign in')}
+                </button>
+            )
+        }
+        const href = hrefFor(shown.target)
+        if (href) {
+            return (
+                <Link href={href} onClick={onClose} className={linkClass}>
+                    {label('Open')}
+                </Link>
+            )
+        }
+        return (
+            <button type="button" onClick={() => runTarget(shown.target)} className={linkClass}>
+                {label('Open')}
+            </button>
+        )
+    }
+
     return (
         <div className="fixed inset-0 z-modal flex items-center justify-center p-4">
-            {/* Enhanced Background overlay with atmospheric effect */}
-            <div className="fixed inset-0">
-                <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={onClose} />
-                <div className="absolute inset-0 bg-gradient-radial from-orange-900/20 via-transparent to-transparent opacity-50 pointer-events-none" />
-            </div>
-
-            {/* Modal panel with cinematic styling */}
-            <div className="relative w-full max-w-4xl px-8 pt-6 pb-6 overflow-hidden text-left transition-all transform bg-zinc-900/95 backdrop-blur-xl border border-orange-500/40 rounded-2xl shadow-2xl shadow-orange-500/20 max-h-[90vh] overflow-y-auto">
-                {/* Animated background gradients */}
-                <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900/80 to-black -z-10" />
-                <div
-                    className="absolute inset-0 bg-gradient-to-t from-orange-900/20 via-brand-800/10 to-black/50 animate-pulse -z-10"
-                    style={{ animationDuration: '4s' }}
-                />
-                <div className="absolute inset-0 bg-gradient-radial from-orange-500/5 via-orange-900/5 to-transparent -z-10" />
-
+            <div
+                className="absolute inset-0 bg-black/75 backdrop-blur-sm"
+                onClick={onClose}
+                aria-hidden="true"
+            />
+            <div
+                ref={dialogRef}
+                tabIndex={-1}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={titleId}
+                data-testid="help-dialog"
+                className="relative flex max-h-full w-full max-w-[420px] flex-col overflow-hidden rounded-2xl border border-zinc-700 bg-[#0d0d0f] shadow-2xl outline-none md:max-w-[760px]"
+            >
                 {/* Header */}
-                <div className="relative mb-6">
-                    <button
-                        onClick={onClose}
-                        className="absolute right-0 top-0 text-gray-400 hover:text-white transition-colors duration-200 p-2 rounded-full hover:bg-white/10"
-                        aria-label="Close tutorial"
+                <div className="flex shrink-0 items-center gap-2.5 border-b border-zinc-800 py-2.5 pl-4 pr-1.5 md:pl-5">
+                    <Image
+                        src="/nettrailers-mark.svg"
+                        width={26}
+                        height={26}
+                        alt=""
+                        unoptimized
+                        className="h-[26px] w-[26px] shrink-0"
+                    />
+                    <h2
+                        id={titleId}
+                        className="flex min-w-0 flex-1 items-baseline gap-1.5 text-[1.1rem] font-bold text-white"
                     >
-                        <XMarkIcon className="h-6 w-6" />
+                        NetTrailers
+                        <span className="text-[0.85rem] font-medium text-gray-400">Help</span>
+                    </h2>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        aria-label="Close help"
+                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-white/10 hover:text-white ${focusRing}`}
+                    >
+                        <XMarkIcon className="h-6 w-6" aria-hidden="true" />
                     </button>
-                    <div className="flex items-center justify-center gap-3 mb-2 px-10">
-                        {/* Glowing icon */}
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-orange-500/30 blur-xl scale-150" />
-                            <div className="relative w-12 h-12 bg-gradient-to-br from-orange-500 to-brand-500 rounded-full flex items-center justify-center shadow-lg">
-                                <AcademicCapIcon className="h-7 w-7 text-white" />
-                            </div>
-                        </div>
-                        <h3 className="font-black text-2xl text-white">
-                            <span className="bg-gradient-to-r from-orange-200 via-red-100 to-orange-200 bg-clip-text text-transparent drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
-                                How to Use NetTrailers
-                            </span>
-                        </h3>
-                    </div>
-                    <p className="text-center text-gray-400 text-sm">
-                        Your complete guide to discovering amazing content
-                        {onOpenWelcome && (
-                            <>
-                                {' · '}
-                                <button
-                                    type="button"
-                                    onClick={onOpenWelcome}
-                                    className="font-medium text-brand-400 underline-offset-2 hover:underline"
-                                >
-                                    Show the welcome
-                                </button>
-                            </>
-                        )}
-                    </p>
                 </div>
 
-                {!isGuest && (
-                    /* Tabs for authenticated users */
-                    <div className="flex gap-2 mb-6 justify-center">
-                        <button
-                            onClick={() => setActiveTab('basics')}
-                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                                activeTab === 'basics'
-                                    ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30'
-                                    : 'bg-zinc-800/60 text-gray-300 hover:bg-zinc-800'
-                            }`}
-                        >
-                            Basics
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('advanced')}
-                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                                activeTab === 'advanced'
-                                    ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30'
-                                    : 'bg-zinc-800/60 text-gray-300 hover:bg-zinc-800'
-                            }`}
-                        >
-                            Advanced
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('community')}
-                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                                activeTab === 'community'
-                                    ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30'
-                                    : 'bg-zinc-800/60 text-gray-300 hover:bg-zinc-800'
-                            }`}
-                        >
-                            Community
-                        </button>
+                <div className="min-h-0 overflow-y-auto overscroll-contain px-3.5 pb-3 md:px-5">
+                    {/* The tour, for guests and signed-in visitors alike */}
+                    {onStartTour && (
+                        <div className="mt-3 flex items-center gap-2.5 rounded-xl border border-brand-500/50 py-2.5 pl-3.5 pr-2.5">
+                            <div className="min-w-0 flex-1">
+                                <p className="text-[0.95rem] font-bold leading-snug text-white">
+                                    {HELP_TOUR.title}
+                                </p>
+                                <p className="text-[0.8rem] leading-snug text-gray-400">
+                                    {HELP_TOUR.subtitle}
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={startTour}
+                                className={`min-h-11 shrink-0 whitespace-nowrap rounded-lg bg-brand-500 px-3.5 text-[0.88rem] font-bold text-white transition-[background-color,box-shadow,scale] duration-150 hover:bg-[#f6121d] hover:shadow-[0_6px_18px_-6px_rgba(229,9,20,0.7)] active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100 ${focusRing}`}
+                            >
+                                Start tour
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Every feature, under four headings */}
+                    <div
+                        ref={tilesRef}
+                        className="mt-3 flex flex-col gap-2.5 md:grid md:grid-cols-2 md:gap-x-4 md:gap-y-3"
+                    >
+                        {HELP_CATEGORIES.map((category) => {
+                            const headingId = `${ids}-${category.id}`
+                            const wide = category.tiles.length > 2
+                            return (
+                                <section
+                                    key={category.id}
+                                    aria-labelledby={headingId}
+                                    className={`flex flex-col gap-1.5 ${wide ? 'md:col-span-2' : ''}`}
+                                >
+                                    <h3
+                                        id={headingId}
+                                        className="text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-gray-400"
+                                    >
+                                        {category.title}
+                                    </h3>
+                                    <div
+                                        role="group"
+                                        aria-labelledby={headingId}
+                                        className={`grid grid-cols-2 gap-1.5 ${wide ? 'md:grid-cols-4' : ''}`}
+                                    >
+                                        {category.tiles.map((tile) => (
+                                            <HelpTileButton
+                                                key={tile.id}
+                                                tile={tile}
+                                                selected={tile.id === selectedId}
+                                                locked={isLocked(tile)}
+                                                controls={detailId}
+                                                onSelect={() => select(tile.id)}
+                                                onKeyDown={onTileKeyDown}
+                                            />
+                                        ))}
+                                    </div>
+                                </section>
+                            )
+                        })}
                     </div>
-                )}
 
-                {/* Content */}
-                <div className="text-base space-y-5">
-                    {isGuest ? (
-                        /* Guest Mode Content */
-                        <>
-                            <div className="bg-gradient-to-r from-orange-500/10 to-brand-400/10 rounded-xl p-4 border border-orange-500/20">
-                                <p className="text-orange-400 font-bold text-lg mb-1">
-                                    🚀 Guest Mode Features
-                                </p>
-                                <p className="text-gray-400 text-sm">
-                                    Explore without signing up - try these features:
-                                </p>
-                            </div>
+                    {/* The selected feature: one line and a link to it */}
+                    <div
+                        id={detailId}
+                        data-testid="help-detail"
+                        className="mt-2.5 flex min-h-[58px] items-center gap-2.5 rounded-[10px] border border-zinc-800 bg-[#111114] py-2 pl-3 pr-2"
+                    >
+                        <div
+                            className={`flex min-w-0 flex-1 items-center gap-2.5 transition-[opacity,translate] duration-[140ms] ease-out motion-reduce:transition-none ${
+                                fading ? 'translate-y-1 opacity-0' : 'translate-y-0 opacity-100'
+                            }`}
+                        >
+                            <p
+                                aria-live="polite"
+                                className="min-w-0 flex-1 text-[0.84rem] leading-[1.35] text-zinc-300"
+                            >
+                                {lineFor(shown)}
+                            </p>
+                            {detailAction()}
+                        </div>
+                    </div>
+                </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <FeatureItem
-                                    icon={<HandThumbUpIcon className="w-5 h-5 text-white" />}
-                                    title="Like & Dislike Content"
-                                    description="Rate content to help build your personalized recommendations"
-                                />
-                                <FeatureItem
-                                    icon={<EyeSlashIcon className="w-5 h-5 text-gray-400" />}
-                                    title="Hide Unwanted Content"
-                                    description="Hide content you're not interested in - won't appear in recommendations"
-                                />
-                                <FeatureItem
-                                    icon={<RectangleStackIcon className="w-5 h-5 text-blue-400" />}
-                                    title="Build Your Watchlist"
-                                    description="Add movies and TV shows to watch later - saved locally on your device"
-                                />
-                                <FeatureItem
-                                    icon={<MagnifyingGlassIcon className="w-5 h-5 text-gray-400" />}
-                                    title="Search with Filters"
-                                    description="Use the search bar and apply genre, year, rating filters"
-                                />
-                                <FeatureItem
-                                    icon={<SparklesIcon className="w-5 h-5 text-purple-400" />}
-                                    title="Browse Personalized Content"
-                                    description="Explore trending, top-rated, and AI-recommended content"
-                                />
-                            </div>
-
-                            {/* Call to Action */}
-                            <div className="mt-5 text-center">
-                                <div className="mb-4 py-4 px-6 bg-gradient-to-r from-brand-400/20 via-orange-500/20 to-brand-500/20 rounded-xl border border-brand-400/30 backdrop-blur-sm">
-                                    <p className="text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-orange-400 to-brand-400 text-lg font-black mb-2">
-                                        ✨ Unlock the Full Experience
-                                    </p>
-                                    <p className="text-gray-300 text-sm">
-                                        Sign in to sync across devices, build collections and
-                                        rankings, and join the community
-                                    </p>
-                                </div>
-                                <div className="flex justify-center gap-3">
-                                    <button
-                                        onClick={() => openAuthModal('signin')}
-                                        className="px-6 py-3 bg-zinc-800/80 hover:bg-zinc-700 text-white text-sm font-medium rounded-lg transition-all duration-200 border border-zinc-700 hover:border-zinc-600 hover:scale-105"
-                                    >
-                                        Sign In
-                                    </button>
-                                    <button
-                                        onClick={handleSignUp}
-                                        className="px-6 py-3 bg-gradient-to-r from-brand-500 to-orange-600 hover:from-brand-600 hover:to-orange-700 text-white font-bold rounded-lg transition-all duration-200 shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:scale-105"
-                                    >
-                                        Create Account
-                                    </button>
-                                </div>
-                            </div>
-                        </>
-                    ) : (
-                        /* Authenticated User Content with Tabs */
-                        <>
-                            {activeTab === 'basics' && (
-                                <>
-                                    <div className="bg-gradient-to-r from-orange-500/10 to-brand-400/10 rounded-xl p-4 border border-orange-500/20">
-                                        <p className="text-orange-400 font-bold text-lg mb-1">
-                                            🎯 Essential Features
-                                        </p>
-                                        <p className="text-gray-400 text-sm">
-                                            Master these core features to get started:
-                                        </p>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <FeatureItem
-                                            icon={
-                                                <HandThumbUpIcon className="w-5 h-5 text-white" />
-                                            }
-                                            title="Like & Dislike Content"
-                                            description="Build your taste profile - liked content influences recommendations"
-                                        />
-                                        <FeatureItem
-                                            icon={
-                                                <EyeSlashIcon className="w-5 h-5 text-gray-400" />
-                                            }
-                                            title="Hide Content"
-                                            description="Hide unwanted content - filtered from all recommendations"
-                                        />
-                                        <FeatureItem
-                                            icon={
-                                                <RectangleStackIcon className="w-5 h-5 text-blue-400" />
-                                            }
-                                            title="Create Collections"
-                                            description="Organize content with custom collections - manual, AI-generated, or auto-updating"
-                                        />
-                                        <FeatureItem
-                                            icon={
-                                                <MagnifyingGlassIcon className="w-5 h-5 text-gray-400" />
-                                            }
-                                            title="Advanced Search"
-                                            description="Filter by genre, year, rating, cast, director, and more"
-                                        />
-                                        <FeatureItem
-                                            icon={
-                                                <SparklesIcon className="w-5 h-5 text-purple-400" />
-                                            }
-                                            title="Personalized Recommendations"
-                                            description="'For You' row updates based on your viewing habits and ratings"
-                                        />
-                                        <FeatureItem
-                                            icon={
-                                                <ShieldCheckIcon className="w-5 h-5 text-brand-400" />
-                                            }
-                                            title="Child Safety Mode"
-                                            description="Filter adult content with PIN protection for family-safe browsing"
-                                        />
-                                    </div>
-                                </>
-                            )}
-
-                            {activeTab === 'advanced' && (
-                                <>
-                                    <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-xl p-4 border border-purple-500/20">
-                                        <p className="text-purple-400 font-bold text-lg mb-1">
-                                            ⚡ Power User Features
-                                        </p>
-                                        <p className="text-gray-400 text-sm">
-                                            Advanced tools for content discovery:
-                                        </p>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <FeatureItem
-                                            icon={
-                                                <SparklesIcon className="w-5 h-5 text-blue-400" />
-                                            }
-                                            title="AI Smart Search"
-                                            description="Natural language queries - try 'rainy day movies' or 'mind-bending thrillers'"
-                                        />
-                                        <FeatureItem
-                                            icon={
-                                                <MicrophoneIcon className="w-5 h-5 text-green-400" />
-                                            }
-                                            title="Voice Search"
-                                            description="Use voice input for hands-free search and AI queries"
-                                        />
-                                        <FeatureItem
-                                            icon={<FunnelIcon className="w-5 h-5 text-cyan-400" />}
-                                            title="Advanced Filters"
-                                            description="Filter collections by year, rating, cast, director, and popularity"
-                                        />
-                                        <FeatureItem
-                                            icon={<ShareIcon className="w-5 h-5 text-brand-400" />}
-                                            title="Share Collections"
-                                            description="Generate shareable links to showcase your curated collections"
-                                        />
-                                        <FeatureItem
-                                            icon={<BellIcon className="w-5 h-5 text-brand-300" />}
-                                            title="Notifications"
-                                            description="Get notified when collections update or watchlist items release"
-                                        />
-                                        <FeatureItem
-                                            icon={
-                                                <svg
-                                                    className="w-5 h-5 text-gray-400"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="currentColor"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M13 10V3L4 14h7v7l9-11h-7z"
-                                                    />
-                                                </svg>
-                                            }
-                                            title="Keyboard Shortcuts"
-                                            description="Press '?' to view all shortcuts for faster navigation"
-                                        />
-                                    </div>
-                                </>
-                            )}
-
-                            {activeTab === 'community' && (
-                                <>
-                                    <div className="bg-gradient-to-r from-brand-500/10 to-brand-500/10 rounded-xl p-4 border border-brand-500/20">
-                                        <p className="text-brand-400 font-bold text-lg mb-1">
-                                            👥 Community Features
-                                        </p>
-                                        <p className="text-gray-400 text-sm">
-                                            Connect with other movie and TV enthusiasts:
-                                        </p>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <FeatureItem
-                                            icon={
-                                                <TrophyIcon className="w-5 h-5 text-yellow-400" />
-                                            }
-                                            title="Create Rankings"
-                                            description="Build and share top 10 lists - get likes and comments from the community"
-                                        />
-                                        <FeatureItem
-                                            icon={
-                                                <ChatBubbleLeftRightIcon className="w-5 h-5 text-blue-400" />
-                                            }
-                                            title="Discussion Forums"
-                                            description="Start threads, join conversations about movies and TV shows"
-                                        />
-                                        <FeatureItem
-                                            icon={
-                                                <svg
-                                                    className="w-5 h-5 text-purple-400"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="currentColor"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
-                                                    />
-                                                </svg>
-                                            }
-                                            title="Community Polls"
-                                            description="Create and vote on polls - single or multiple choice with results"
-                                        />
-                                        <FeatureItem
-                                            icon={
-                                                <svg
-                                                    className="w-5 h-5 text-green-400"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="currentColor"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                                    />
-                                                </svg>
-                                            }
-                                            title="Public Profiles"
-                                            description="View other users' rankings, collections, and forum activity"
-                                        />
-                                        <FeatureItem
-                                            icon={
-                                                <HandThumbUpIcon className="w-5 h-5 text-brand-300" />
-                                            }
-                                            title="Like & Comment"
-                                            description="Engage with rankings and forum posts - build community connections"
-                                        />
-                                        <FeatureItem
-                                            icon={
-                                                <MagnifyingGlassIcon className="w-5 h-5 text-cyan-400" />
-                                            }
-                                            title="Explore Rankings"
-                                            description="Create top 10 lists and discover what the community loves most"
-                                        />
-                                    </div>
-                                </>
-                            )}
-
-                            <div className="mt-5 p-4 bg-zinc-800/60 backdrop-blur-sm rounded-xl border border-orange-500/30">
-                                <p className="text-gray-300 text-sm">
-                                    <span className="font-semibold text-orange-400">
-                                        Portfolio project showcasing:
-                                    </span>{' '}
-                                    Next.js + TypeScript + Turso (libSQL) + Auth.js + AI Integration
-                                </p>
-                            </div>
-
-                            {/* Interactive Tour CTA */}
-                            {onStartTour && (
-                                <div className="mt-6 p-5 bg-gradient-to-r from-orange-500/10 to-brand-400/10 rounded-xl border-2 border-orange-500/40">
-                                    <div className="flex items-center justify-between gap-4">
-                                        <div className="flex-1">
-                                            <h4 className="text-white font-bold text-lg mb-1 flex items-center gap-2">
-                                                <span className="text-2xl">🚀</span>
-                                                New Here? Take a Quick Tour!
-                                            </h4>
-                                            <p className="text-gray-300 text-sm">
-                                                60-second interactive walkthrough highlighting key
-                                                features
-                                            </p>
-                                        </div>
-                                        <button
-                                            onClick={() => {
-                                                // ClientLayout goes home and starts the tour there
-                                                onClose()
-                                                onStartTour()
-                                            }}
-                                            className="flex-shrink-0 px-6 py-3 bg-gradient-to-r from-orange-500 to-brand-500 text-white font-bold rounded-lg hover:from-orange-600 hover:to-brand-600 transition-all shadow-lg hover:shadow-orange-500/50 hover:scale-105"
-                                        >
-                                            Start Tour
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </>
+                <div className="flex shrink-0 flex-wrap items-center gap-x-4 border-t border-zinc-800 px-4 pb-[max(0rem,env(safe-area-inset-bottom))] text-[0.8rem] md:px-5">
+                    {onOpenAboutModal && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                onClose()
+                                onOpenAboutModal()
+                            }}
+                            className={footerLink}
+                        >
+                            About this project
+                        </button>
+                    )}
+                    {onOpenWelcome && (
+                        <button type="button" onClick={onOpenWelcome} className={footerLink}>
+                            Show the welcome
+                        </button>
+                    )}
+                    {hasShortcuts && onOpenKeyboardShortcuts && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                onClose()
+                                onOpenKeyboardShortcuts()
+                            }}
+                            className={footerLink}
+                        >
+                            Shortcuts
+                        </button>
                     )}
                 </div>
             </div>
@@ -459,19 +395,52 @@ const TutorialModal: React.FC<TutorialModalProps> = ({
     )
 }
 
-// Helper component for feature items
-const FeatureItem: React.FC<{
-    icon: React.ReactNode
-    title: string
-    description: string
-}> = ({ icon, title, description }) => (
-    <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white/5 transition-colors">
-        <span className="flex-shrink-0 mt-0.5">{icon}</span>
-        <div>
-            <p className="font-semibold text-base text-white flex items-center gap-2">{title}</p>
-            <p className="text-sm text-gray-400 mt-1">{description}</p>
-        </div>
-    </div>
-)
-
-export default TutorialModal
+function HelpTileButton({
+    tile,
+    selected,
+    locked,
+    controls,
+    onSelect,
+    onKeyDown,
+}: {
+    tile: HelpTile
+    selected: boolean
+    locked: boolean
+    controls: string
+    onSelect: () => void
+    onKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => void
+}) {
+    const Icon = HELP_ICONS[tile.icon]
+    const state = selected
+        ? 'border-brand-500 bg-[#1d0d0f] shadow-[0_0_0_1px_rgba(229,9,20,0.35),0_6px_18px_-8px_rgba(229,9,20,0.6)] hover:border-brand-400 hover:bg-[#231013]'
+        : 'border-zinc-800 bg-[#16161a] hover:border-zinc-700 hover:bg-[#1c1c21]'
+    const iconColor = locked ? 'text-gray-500' : selected ? 'text-brand-300' : 'text-brand-400'
+    return (
+        <button
+            type="button"
+            data-help-tile={tile.id}
+            aria-pressed={selected}
+            aria-controls={controls}
+            onClick={onSelect}
+            onKeyDown={onKeyDown}
+            className={`group flex min-h-11 min-w-0 items-center gap-[9px] rounded-[10px] border px-2.5 py-1.5 text-left text-[0.84rem] font-semibold leading-tight transition-[border-color,background-color,box-shadow,translate,scale] duration-[180ms] ease-out hover:-translate-y-px active:scale-[0.97] motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100 ${state} ${locked ? 'text-zinc-300' : 'text-white'} ${focusRing}`}
+        >
+            <Icon
+                aria-hidden="true"
+                strokeWidth={1.7}
+                className={`h-5 w-5 shrink-0 transition-[scale,color] duration-[180ms] ease-out group-hover:scale-[1.12] motion-reduce:transition-none ${selected ? 'scale-[1.12]' : ''} ${iconColor}`}
+            />
+            <span className="min-w-0 flex-1">{tile.name}</span>
+            {locked && (
+                <>
+                    <LockClosedIcon
+                        aria-hidden="true"
+                        strokeWidth={1.7}
+                        className="h-3.5 w-3.5 shrink-0 text-gray-500"
+                    />
+                    <span className="sr-only">(needs an account)</span>
+                </>
+            )}
+        </button>
+    )
+}
