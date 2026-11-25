@@ -325,9 +325,9 @@ export default function PrivacyPage() {
                                     <li>
                                         <strong>Delete your account:</strong> in Settings, Account.
                                         This deletes your account and everything listed in section
-                                        2.2 from the database straight away. Images you uploaded are
-                                        not deleted by this; open an issue (section 8) to have them
-                                        removed.
+                                        2.2 straight away, including the images you uploaded. If the
+                                        images cannot be deleted, the account is kept, so you can
+                                        try again.
                                     </li>
                                     <li>
                                         <strong>Emails:</strong> sign-in emails are sent only when
