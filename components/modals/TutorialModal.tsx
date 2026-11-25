@@ -198,23 +198,26 @@ export default function TutorialModal({
         return null
     }
 
+    // The link always follows the selected tile, even while the old line is still
+    // fading out, so a quick tap after switching never opens the previous feature
     const detailAction = () => {
+        const target = HELP_TILES.find((tile) => tile.id === selectedId) ?? shown
         const linkClass = `-my-1 -mr-1 inline-flex min-h-11 shrink-0 items-center gap-0.5 whitespace-nowrap rounded-lg px-2 text-[0.84rem] font-bold text-brand-400 transition-colors hover:text-brand-300 ${focusRing}`
         const label = (text: string) => (
             <>
                 {text}
                 <ChevronRightIcon className="h-4 w-4" strokeWidth={2.25} aria-hidden="true" />
-                <span className="sr-only">: {shown.name}</span>
+                <span className="sr-only">: {target.name}</span>
             </>
         )
-        if (isLocked(shown)) {
+        if (isLocked(target)) {
             return (
                 <button type="button" onClick={signIn} className={linkClass}>
                     {label('Sign in')}
                 </button>
             )
         }
-        const href = hrefFor(shown.target)
+        const href = hrefFor(target.target)
         if (href) {
             return (
                 <Link href={href} onClick={onClose} className={linkClass}>
@@ -223,7 +226,7 @@ export default function TutorialModal({
             )
         }
         return (
-            <button type="button" onClick={() => runTarget(shown.target)} className={linkClass}>
+            <button type="button" onClick={() => runTarget(target.target)} className={linkClass}>
                 {label('Open')}
             </button>
         )

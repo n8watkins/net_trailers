@@ -113,8 +113,11 @@ describe('TutorialModal (Help)', () => {
             fireEvent.click(tile('Watch history'))
             expect(tile('Watch history').getAttribute('aria-pressed')).toBe('true')
             expect(tile('Search').getAttribute('aria-pressed')).toBe('false')
-            // The old line is still fading out
+            // The old line is still fading out, but the link already follows the new tile
             expect(detail().textContent).toMatch(/header|people/i)
+            expect(within(detail()).getByRole('link', { name: /Open/ }).getAttribute('href')).toBe(
+                '/history'
+            )
             act(() => {
                 jest.advanceTimersByTime(DETAIL_FADE_MS)
             })
