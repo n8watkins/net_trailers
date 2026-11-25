@@ -1,0 +1,39 @@
+# release-kit (reusable): the release train. On a schedule, and from "Run
+# workflow", it cuts a release when user-facing work (feat, fix, perf,
+# security, revert or a breaking change) has landed since the last tag, running .release.json train.checks on the release
+# commit before it moves main (with the RELEASE_TRAIN_KEY deploy key when main
+# is protected; see protect.mjs). The steps live in the release-kit repo, pinned
+# below; apply.mjs updates the pin and the schedule (.release.json).
+name: Release train
+
+on:
+  schedule:
+    - cron: "0 16 * * 1" # release-kit: schedule
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "auto: release only user-facing work, with the bump it calls for"
+        type: choice
+        options: [auto, patch, minor, major]
+        default: auto
+      dry-run:
+        description: "Plan and run the checks, but cut nothing"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  train:
+    # Only the upstream repo publishes: a fork's tags and runs release nothing.
+    if: github.repository == 'n8watkins/net_trailers' # release-kit: fork guard
+    permissions:
+      contents: write # push the release commit, the tag and the temporary check branch
+      actions: write # start train.checks and the Release workflow
+    uses: n8watkins/release-kit/.github/workflows/release-train.yml@v2.10.1
+    with:
+      bump: ${{ inputs.bump || 'auto' }}
+      dry-run: ${{ inputs.dry-run == true }}
+    secrets:
+      RELEASE_TRAIN_KEY: ${{ secrets.RELEASE_TRAIN_KEY }}

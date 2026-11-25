@@ -18,16 +18,16 @@
  * bcryptjs runs entirely server-side in this route (and in db/queries/childSafety.ts).
  * The hash is never returned in any response.
  *
- * Rate limiting: a naïve in-memory counter caps verify attempts at 5 per
- * 5-minute window per userId. For multi-instance deployments this should be
- * replaced with a Redis / Upstash counter; this implementation is correct for
- * single-server and Vercel edge-function usage where each cold start is isolated.
+ * Rate limiting: wrong PINs are counted per userId in the database
+ * (lib/durableLimit.ts), so the count holds across Worker isolates and deploys.
+ * After 5 wrong PINs, verify, change and remove are refused until the current
+ * 5-minute window ends; a correct PIN resets the count.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 
 import { withAuth } from '@/lib/auth-middleware'
-import { getPINStatus, hasPIN, setPIN, verifyPIN, clearPIN } from '@/db/queries/childSafety'
+import { getPINStatus, setPIN, verifyPIN, clearPIN } from '@/db/queries/childSafety'
 import { PIN_CONSTRAINTS } from '@/types/childSafety'
 import { countEvent, readCount, resetLimit, windowInfo } from '@/lib/durableLimit'
 
