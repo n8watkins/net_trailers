@@ -1,5 +1,6 @@
 'use client'
 
+import ErrorNote from '@/components/common/ErrorNote'
 import { useState, useEffect, useRef } from 'react'
 import { XMarkIcon, LockClosedIcon, CheckIcon } from '@heroicons/react/24/outline'
 import { useChildSafetyPINStore } from '../../stores/childSafetyStore'
@@ -296,11 +297,7 @@ export default function ChildSafetyPINModal({
                     )}
 
                     {/* Error Display */}
-                    {error && (
-                        <div className="rounded-md bg-red-500/20 px-4 py-3 text-sm text-red-400">
-                            {error}
-                        </div>
-                    )}
+                    {error && <ErrorNote>{error}</ErrorNote>}
 
                     {/* Buttons */}
                     <div className="flex gap-3 pt-4">

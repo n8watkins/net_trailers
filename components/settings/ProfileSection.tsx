@@ -1,5 +1,6 @@
 'use client'
 
+import ErrorNote from '@/components/common/ErrorNote'
 import React from 'react'
 import Image from 'next/image'
 import Link from '@/components/common/Link'
@@ -272,9 +273,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                                         </div>
                                     </div>
                                     {displayNameError && (
-                                        <p className="text-xs text-red-400 mt-1.5">
-                                            {displayNameError}
-                                        </p>
+                                        <ErrorNote className="mt-1.5">{displayNameError}</ErrorNote>
                                     )}
                                     <p className="text-xs text-[#888] mt-1.5">
                                         What others see in comments, rankings, and across the site.
@@ -414,9 +413,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                                         </div>
                                     </div>
                                     {usernameError && (
-                                        <p className="text-xs text-red-400 mt-1.5">
-                                            {usernameError}
-                                        </p>
+                                        <ErrorNote className="mt-1.5">{usernameError}</ErrorNote>
                                     )}
                                     {usernameAvailable &&
                                         !usernameError &&

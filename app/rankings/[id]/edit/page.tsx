@@ -70,7 +70,7 @@ export default function EditRankingPage() {
             <SubPageLayout
                 title="Loading Ranking..."
                 icon={<TrophyIcon className="w-8 h-8" />}
-                iconColor="text-brand-400"
+                iconColor="text-yellow-500"
             >
                 <PageLoader />
             </SubPageLayout>
@@ -83,7 +83,7 @@ export default function EditRankingPage() {
             <SubPageLayout
                 title="Ranking Not Found"
                 icon={<TrophyIcon className="w-8 h-8" />}
-                iconColor="text-brand-400"
+                iconColor="text-yellow-500"
             >
                 <div className="max-w-2xl mx-auto text-center py-16">
                     <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-zinc-800 flex items-center justify-center">
@@ -109,7 +109,7 @@ export default function EditRankingPage() {
         <SubPageLayout
             title="Edit Ranking"
             icon={<TrophyIcon className="w-8 h-8" />}
-            iconColor="text-brand-400"
+            iconColor="text-yellow-500"
             headerActions={
                 <button
                     onClick={handleBack}

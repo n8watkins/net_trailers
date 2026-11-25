@@ -1,4 +1,5 @@
 import { Inbox, LoaderCircle } from 'lucide-react'
+import { DANGER_BUTTON_CLASS } from '@/components/common/DangerButton'
 
 /** The shared pieces every admin page is built from (server- and client-safe). */
 
@@ -53,21 +54,12 @@ export function Empty({ children }: { children: React.ReactNode }) {
     )
 }
 
-export function ErrorNote({ children }: { children: React.ReactNode }) {
-    return (
-        <p
-            role="alert"
-            className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200"
-        >
-            {children}
-        </p>
-    )
-}
+export { default as ErrorNote } from '@/components/common/ErrorNote'
 
 export const BUTTON = {
     primary:
         'inline-flex min-h-9 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-brand-500 px-3.5 text-sm font-semibold text-white hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-300',
     secondary:
         'inline-flex min-h-9 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-white/15 bg-white/5 px-3.5 text-sm font-medium text-gray-100 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400',
-    danger: 'inline-flex min-h-9 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-red-600 px-3.5 text-sm font-semibold text-white hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300',
+    danger: `${DANGER_BUTTON_CLASS} min-h-9 whitespace-nowrap px-3.5 text-sm`,
 }

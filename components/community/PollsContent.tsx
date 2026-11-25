@@ -331,7 +331,7 @@ export default function PollsContent() {
                                             <MicrophoneIcon
                                                 className={`w-6 h-6 relative z-10 transition-all ${
                                                     isListening
-                                                        ? 'text-brand-400 scale-110 drop-shadow-[0_0_8px_rgba(255, 90, 97,0.8)]'
+                                                        ? 'text-brand-400 scale-110 drop-shadow-[0_0_8px_rgba(255,90,97,0.8)]'
                                                         : 'text-gray-400 hover:text-pink-400'
                                                 }`}
                                             />

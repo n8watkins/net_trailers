@@ -1,5 +1,6 @@
 'use client'
 
+import ErrorNote from '@/components/common/ErrorNote'
 import React, { useState } from 'react'
 import Image from 'next/image'
 import { XMarkIcon, SparklesIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline'
@@ -358,12 +359,7 @@ export function SimplifiedSmartBuilder({
                         surpriseQueryType="collection"
                     />
 
-                    {error && (
-                        <p className="mt-3 text-center text-sm text-red-400 flex items-center justify-center gap-1">
-                            <span>⚠️</span>
-                            {error}
-                        </p>
-                    )}
+                    {error && <ErrorNote className="mt-3">{error}</ErrorNote>}
                 </div>
 
                 {/* Preview */}

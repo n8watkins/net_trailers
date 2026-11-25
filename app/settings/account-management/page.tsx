@@ -56,7 +56,7 @@ const AccountManagementPage: React.FC = () => {
 
                 <button
                     onClick={() => logOut()}
-                    className="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-md font-medium transition-colors"
+                    className="bg-brand-500 hover:bg-brand-400 text-white px-5 py-2.5 rounded-md font-medium transition-colors"
                 >
                     Sign Out
                 </button>

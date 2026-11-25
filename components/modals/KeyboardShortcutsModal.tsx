@@ -138,7 +138,7 @@ const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ isOpen,
                         </p>
                         <button
                             onClick={onClose}
-                            className="px-4 py-2 text-sm font-medium text-white bg-brand-400/90 hover:bg-brand-500 rounded-lg transition-all duration-300 shadow-[0_0_10px_rgba(255, 90, 97,0.3)]"
+                            className="px-4 py-2 text-sm font-medium text-white bg-brand-400/90 hover:bg-brand-500 rounded-lg transition-all duration-300 shadow-[0_0_10px_rgba(255,90,97,0.3)]"
                         >
                             Got it!
                         </button>

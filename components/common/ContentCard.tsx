@@ -286,7 +286,7 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                                   rounded-md overflow-hidden
                                   ${
                                       isCardHovered
-                                          ? 'shadow-[0_0_15px_rgba(229, 9, 20,0.4),0_0_30px_rgba(229, 9, 20,0.2)] ring-1 ring-brand-400/50'
+                                          ? 'shadow-[0_0_15px_rgba(229,9,20,0.4),0_0_30px_rgba(229,9,20,0.2)] ring-1 ring-brand-400/50'
                                           : ''
                                   }
                                   ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
@@ -311,14 +311,14 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                         <div
                             className={`absolute inset-0 rounded-md
                                   transition-all duration-300 ease-out
-                                  ${isCardHovered ? 'shadow-[inset_0_0_10px_rgba(229, 9, 20,0.1)]' : ''}`}
+                                  ${isCardHovered ? 'shadow-[inset_0_0_10px_rgba(229,9,20,0.1)]' : ''}`}
                         ></div>
                     </div>
                 ) : (
                     <div
                         className={`relative w-full h-full transition-all duration-300 ease-out ${
                             isCardHovered
-                                ? 'shadow-[0_0_15px_rgba(229, 9, 20,0.4),0_0_30px_rgba(229, 9, 20,0.2)] ring-1 ring-brand-400/50'
+                                ? 'shadow-[0_0_15px_rgba(229,9,20,0.4),0_0_30px_rgba(229,9,20,0.2)] ring-1 ring-brand-400/50'
                                 : ''
                         }`}
                     >

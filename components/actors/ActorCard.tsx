@@ -69,7 +69,7 @@ export default function ActorCard({ actor, genreFilter, defaultRole = 'acting' }
             <div
                 className={`relative w-[120px] h-[120px] sm:w-[150px] sm:h-[150px] md:w-[180px] md:h-[180px] lg:w-[200px] lg:h-[200px] rounded-full overflow-hidden transition-all duration-300 ${
                     isHovered
-                        ? 'scale-105 shadow-[0_0_20px_rgba(229, 9, 20,0.5)] ring-2 ring-brand-400'
+                        ? 'scale-105 shadow-[0_0_20px_rgba(229,9,20,0.5)] ring-2 ring-brand-400'
                         : 'shadow-lg'
                 }`}
             >

@@ -291,8 +291,8 @@ export default function SharedCollectionViewPage() {
 
                     {/* Info banner if duplication disabled */}
                     {!canDuplicate && (
-                        <div className="mt-4 rounded-md bg-brand-600/10 border border-brand-600/20 px-4 py-3">
-                            <p className="text-sm text-brand-400">
+                        <div className="mt-4 rounded-md bg-amber-500/10 border border-amber-500/30 px-4 py-3">
+                            <p className="text-sm text-amber-200">
                                 <strong>Note:</strong> The owner has disabled saving this
                                 collection. You can only view the contents.
                             </p>

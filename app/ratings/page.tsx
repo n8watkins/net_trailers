@@ -185,6 +185,7 @@ function RatingsPageContent() {
             <PageHeader
                 title="My Ratings"
                 icon={<StarIcon />}
+                iconColor="text-yellow-400"
                 actions={
                     hasRatings && (
                         <>
@@ -261,6 +262,7 @@ function RatingsPageContent() {
             {!isLoadingRatings && !hasRatings && (
                 <PageEmptyState
                     icon={<StarIcon />}
+                    iconColor="text-yellow-400"
                     title="No ratings yet"
                     description="Like or dislike titles and they show up here. Your ratings also shape your recommendations."
                     action={

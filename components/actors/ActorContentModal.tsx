@@ -1,5 +1,6 @@
 'use client'
 
+import ErrorNote from '@/components/common/ErrorNote'
 import { useEffect, useState, useCallback } from 'react'
 import { XMarkIcon } from '@heroicons/react/24/solid'
 import Image from 'next/image'
@@ -143,7 +144,7 @@ export default function ActorContentModal() {
 
                     {error && (
                         <div className="flex items-center justify-center py-12">
-                            <p className="text-red-400">{error}</p>
+                            <ErrorNote>{error}</ErrorNote>
                         </div>
                     )}
 

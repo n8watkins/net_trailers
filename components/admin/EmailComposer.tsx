@@ -163,7 +163,7 @@ export default function EmailComposer({ onSent }: { onSent?: () => void }) {
                         )}
                     </ul>
                     {confirm.skippedOptedOut > 0 && (
-                        <p className="text-brand-400">
+                        <p className="text-amber-300">
                             {confirm.skippedOptedOut} selected{' '}
                             {confirm.skippedOptedOut === 1 ? 'user has' : 'users have'} email off
                             and will be skipped.
@@ -287,7 +287,7 @@ export default function EmailComposer({ onSent }: { onSent?: () => void }) {
                         <button
                             onClick={handleSendEmail}
                             disabled={selectedUserIds.length === 0 || sending}
-                            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-300 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             {sending ? (
                                 <>

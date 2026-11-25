@@ -1,7 +1,7 @@
 /**
  * Brand constants shared by every email: addresses, links, colours, fonts.
- * The palette is the site's: near-black page, a slightly lighter card, amber
- * accents. Dark is the default; a light variant applies only where the mail
+ * The palette is the site's: near-black page, a slightly lighter card, Netflix
+ * red accents. Dark is the default; a light variant applies only where the mail
  * client reports `prefers-color-scheme: light` (see layout.tsx).
  */
 

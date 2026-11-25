@@ -476,8 +476,8 @@ export default function SearchBar({
                             placeholder:text-ellipsis placeholder:overflow-hidden placeholder:whitespace-nowrap
                             text-sm sm:text-base select-none
 
-                            shadow-[0_0_20px_rgba(229, 9, 20,0.4)]
-                            ${isFocused ? 'bg-[#0a0a0a] shadow-[0_0_30px_rgba(229, 9, 20,0.6)] border-brand-400/50' : 'hover:shadow-[0_0_25px_rgba(229, 9, 20,0.5)] bg-[#0a0a0a]'}
+                            shadow-[0_0_20px_rgba(229,9,20,0.4)]
+                            ${isFocused ? 'bg-[#0a0a0a] shadow-[0_0_30px_rgba(229,9,20,0.6)] border-brand-400/50' : 'hover:shadow-[0_0_25px_rgba(229,9,20,0.5)] bg-[#0a0a0a]'}
                         `}
                     />
 
@@ -516,7 +516,7 @@ export default function SearchBar({
                                     <MicrophoneIcon
                                         className={`h-5 w-5 relative z-10 transition-all ${
                                             isListening
-                                                ? 'scale-110 drop-shadow-[0_0_8px_rgba(255, 90, 97,0.8)] !text-brand-400'
+                                                ? 'scale-110 drop-shadow-[0_0_8px_rgba(255,90,97,0.8)] !text-brand-400'
                                                 : ''
                                         }`}
                                         aria-hidden="true"

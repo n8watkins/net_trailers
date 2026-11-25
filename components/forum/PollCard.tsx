@@ -85,11 +85,11 @@ function PollCardComponent({ poll, userVote = [], onVote }: PollCardProps) {
             case 'tv-shows':
                 return 'shadow-[0_0_30px_rgba(168,85,247,0.15)]'
             case 'recommendations':
-                return 'shadow-[0_0_30px_rgba(229, 9, 20,0.15)]'
+                return 'shadow-[0_0_30px_rgba(229,9,20,0.15)]'
             case 'rankings':
                 return 'shadow-[0_0_30px_rgba(249,115,22,0.15)]'
             case 'announcements':
-                return 'shadow-[0_0_30px_rgba(255, 90, 97,0.15)]'
+                return 'shadow-[0_0_30px_rgba(255,90,97,0.15)]'
             default:
                 return 'shadow-[0_0_30px_rgba(156,163,175,0.15)]'
         }
@@ -244,7 +244,7 @@ function PollCardComponent({ poll, userVote = [], onVote }: PollCardProps) {
                 </div>
 
                 {isExpired ? (
-                    <span className="text-brand-300 font-semibold">Expired</span>
+                    <span className="text-amber-300 font-semibold">Expired</span>
                 ) : poll.expiresAt ? (
                     <span className="text-gray-500">
                         Expires {formatDistanceToNow(toDate(poll.expiresAt), { addSuffix: true })}

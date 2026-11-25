@@ -1,4 +1,5 @@
 'use client'
+import ErrorNote from '@/components/common/ErrorNote'
 import { uiLog } from '../../utils/debugLogger'
 
 import React, { useState, useEffect } from 'react'
@@ -350,9 +351,9 @@ export function WizardStep3NamePreview({
 
                 <div className="flex justify-between items-center mt-2">
                     <div>
-                        {nameError && <p className="text-sm text-red-500">{nameError}</p>}
+                        {nameError && <ErrorNote>{nameError}</ErrorNote>}
                         {!isNameValid && formData.name.length > 0 && (
-                            <p className="text-sm text-brand-400">
+                            <p className="text-sm text-amber-300">
                                 {formData.name.length < CUSTOM_ROW_CONSTRAINTS.MIN_NAME_LENGTH
                                     ? `At least ${CUSTOM_ROW_CONSTRAINTS.MIN_NAME_LENGTH} characters required`
                                     : 'Name too long'}

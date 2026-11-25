@@ -183,7 +183,7 @@ export default function UserPollsPage() {
                                                 {poll.category}
                                             </span>
                                             {expired ? (
-                                                <span className="px-2 py-0.5 rounded text-xs font-medium bg-brand-800/50 text-brand-300">
+                                                <span className="px-2 py-0.5 rounded text-xs font-medium bg-amber-800/50 text-amber-300">
                                                     Closed
                                                 </span>
                                             ) : (
@@ -245,7 +245,7 @@ export default function UserPollsPage() {
                                                 </span>
                                             )}
                                             {poll.expiresAt && !expired && (
-                                                <span className="flex items-center gap-1 text-brand-400">
+                                                <span className="flex items-center gap-1 text-amber-400">
                                                     <ClockIcon className="w-4 h-4" />
                                                     Ends {formatDate(poll.expiresAt)}
                                                 </span>

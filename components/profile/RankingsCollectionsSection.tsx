@@ -45,7 +45,7 @@ export function RankingsCollectionsSection({
                         <h2 className="text-2xl font-bold text-white">Rankings</h2>
                         <Link
                             href={rankingsUrl}
-                            className="text-base text-brand-400 hover:text-brand-300 underline"
+                            className="text-base text-yellow-400 hover:text-yellow-300 underline"
                         >
                             View all {rankings.length}
                         </Link>
@@ -56,9 +56,9 @@ export function RankingsCollectionsSection({
                                 <Link
                                     key={ranking.id}
                                     href={rankingDetailUrl(ranking.id)}
-                                    className="group bg-gradient-to-br from-brand-900/20 to-orange-900/10 border border-brand-800/30 hover:border-brand-700/50 rounded-xl p-4 transition-all cursor-pointer flex-1 min-w-0"
+                                    className="group bg-gradient-to-br from-yellow-900/20 to-orange-900/10 border border-yellow-800/30 hover:border-yellow-700/50 rounded-xl p-4 transition-all cursor-pointer flex-1 min-w-0"
                                 >
-                                    <h3 className="text-sm font-bold text-white group-hover:text-brand-300 transition-colors line-clamp-2 mb-3 h-10">
+                                    <h3 className="text-sm font-bold text-white group-hover:text-yellow-400 transition-colors line-clamp-2 mb-3 h-10">
                                         {ranking.title}
                                     </h3>
                                     <div className="flex gap-2 mb-3">
@@ -101,7 +101,7 @@ export function RankingsCollectionsSection({
                             ))}
                         </div>
                     ) : (
-                        <div className="text-center py-12 bg-gradient-to-br from-brand-900/20 to-orange-900/10 border border-brand-800/30 rounded-xl">
+                        <div className="text-center py-12 bg-gradient-to-br from-yellow-900/20 to-orange-900/10 border border-yellow-800/30 rounded-xl">
                             <TrophyIcon className="w-16 h-16 text-yellow-900 mx-auto mb-4" />
                             <p className="text-gray-400">No rankings yet</p>
                         </div>

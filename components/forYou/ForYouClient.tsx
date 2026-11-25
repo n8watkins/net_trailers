@@ -265,7 +265,7 @@ function TastePicker({
                                     <span
                                         className={`relative block aspect-[2/3] overflow-hidden rounded-lg border-2 transition-all ${
                                             picked
-                                                ? 'border-brand-400 shadow-[0_0_0_3px_rgba(229, 9, 20,0.25)]'
+                                                ? 'border-brand-400 shadow-[0_0_0_3px_rgba(229,9,20,0.25)]'
                                                 : 'border-transparent group-hover:border-zinc-500 group-focus-visible:border-brand-300'
                                         }`}
                                     >
