@@ -328,11 +328,11 @@ export default function AboutModal({ isOpen, onClose, onStartTour }: AboutModalP
                 </div>
 
                 <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-zinc-800 px-5 pb-[max(0.875rem,env(safe-area-inset-bottom))] pt-3.5 text-xs text-gray-500 sm:px-6">
-                    <p>
-                        NetTrailers is a portfolio project by{' '}
+                    <p className="flex flex-wrap items-center gap-x-1.5">
+                        NetTrailers is a portfolio project by
                         <N8buildsLink
                             iconSize={16}
-                            className={`text-gray-300 underline-offset-2 hover:text-white hover:underline`}
+                            className="text-gray-300 underline-offset-2 hover:text-white hover:underline"
                         />
                     </p>
                     <p>Trailer data from TMDB</p>
