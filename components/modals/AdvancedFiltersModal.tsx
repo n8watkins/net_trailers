@@ -7,6 +7,7 @@ import Image from 'next/image'
 import { AdvancedFilters } from '../../types/collections'
 import { YearPicker } from './YearPicker'
 import { useEscapeKey } from '../../hooks/useEscapeKey'
+import { useFocusTrap } from '../../hooks/useFocusTrap'
 
 interface Person {
     id: number
@@ -79,8 +80,10 @@ export function AdvancedFiltersModal({
     }, [isOpen, filters])
 
     const mouseDownTargetRef = React.useRef<EventTarget | null>(null)
+    const dialogRef = React.useRef<HTMLDivElement>(null)
 
     useEscapeKey(isOpen, onClose)
+    useFocusTrap(dialogRef, isOpen && mounted)
 
     if (!isOpen || !mounted || typeof window === 'undefined') return null
 
@@ -238,20 +241,32 @@ export function AdvancedFiltersModal({
                 }}
             >
                 <div
-                    className="relative bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-2xl shadow-2xl max-w-3xl w-full border border-gray-700"
+                    ref={dialogRef}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="advanced-filters-title"
+                    tabIndex={-1}
+                    className="relative bg-[#0d0d0f] rounded-2xl shadow-2xl max-w-3xl w-full border border-zinc-700 outline-none"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
-                    <div className="relative z-10 flex items-center justify-between p-6 border-b border-zinc-800/50">
+                    <div className="relative z-10 flex items-center justify-between p-6 border-b border-zinc-800">
                         <div>
-                            <h2 className="text-xl font-bold text-white">Advanced Filters</h2>
+                            <h2
+                                id="advanced-filters-title"
+                                className="text-xl font-bold text-white"
+                            >
+                                Cast, years and rating
+                            </h2>
                             <p className="text-sm text-gray-400 mt-1">
-                                Fine-tune your collection criteria
+                                Narrow down what the collection includes
                             </p>
                         </div>
                         <button
+                            type="button"
                             onClick={onClose}
-                            className="text-gray-400 hover:text-white transition-colors"
+                            aria-label="Close filters"
+                            className="-mr-2 flex h-11 w-11 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
                         >
                             <XMarkIcon className="w-6 h-6" />
                         </button>

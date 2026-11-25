@@ -17,7 +17,7 @@ const nextConfig = {
     typescript: {
         ignoreBuildErrors: false,
     },
-    // Markdown imports are their text, read at build time (app/api/changelog).
+    // Markdown imports are their text, read at build time (app/changelog/page.tsx).
     turbopack: {
         rules: {
             '*.md': { type: 'raw' },

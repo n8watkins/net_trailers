@@ -12,8 +12,7 @@ import ScrollToTopButton from '../common/ScrollToTopButton'
 import CustomScrollbar from '../common/CustomScrollbar'
 import { useModalStore } from '../../stores/modalStore'
 import { LayoutProvider } from '../../contexts/LayoutContext'
-import { useOnboardingStore } from '../../stores/onboardingStore'
-import { useOnboardingPersistence } from '../../hooks/useOnboardingPersistence'
+import { useTourLauncher } from '../onboarding/useTourLauncher'
 import { useToast } from '../../hooks/useToast'
 
 // Opened on request only, so they load on first open instead of with every page
@@ -44,7 +43,6 @@ function ClientLayout({ children }: ClientLayoutProps) {
     const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
     const [showAboutModal, setShowAboutModal] = useState(false)
     const [showTutorial, setShowTutorial] = useState(false)
-    const [isTourActive, setIsTourActive] = useState(false)
     const [showWelcome, setShowWelcome] = useState(false)
     const pathname = usePathname()
     const isAdminPath = pathname === '/admin' || pathname?.startsWith('/admin/') === true
@@ -52,11 +50,9 @@ function ClientLayout({ children }: ClientLayoutProps) {
     const { modal } = useModalStore()
     const isModalOpen = modal.isOpen
     const searchInputRef = useRef<HTMLInputElement>(null)
-    const { completeTour, skipTour, setCurrentTourStep } = useOnboardingStore()
     const { showSuccess } = useToast()
-
-    // Enable onboarding persistence
-    useOnboardingPersistence()
+    const navigate = useCallback((href: string) => router.push(href), [router])
+    const tour = useTourLauncher({ pathname, navigate })
 
     const handleOpenShortcuts = useCallback(() => {
         setShowKeyboardShortcuts(!showKeyboardShortcuts)
@@ -121,21 +117,20 @@ function ClientLayout({ children }: ClientLayoutProps) {
         setShowAboutModal(true)
     }, [handleCloseWelcome])
 
+    // The one "go home, then start the tour" entry point for Help & tutorial and About.
+    // It lives here, not in those windows, because they close (unmount) as it starts.
+    const { startTour, endTour } = tour
     const handleStartTour = useCallback(() => {
-        setCurrentTourStep(0) // Reset to first step
-        setIsTourActive(true)
-    }, [setCurrentTourStep])
+        setShowAboutModal(false)
+        setShowTutorial(false)
+        setShowWelcome(false)
+        startTour()
+    }, [startTour])
 
     const handleCompleteTour = useCallback(() => {
-        completeTour()
-        setIsTourActive(false)
+        endTour()
         showSuccess('Tour Complete!', "You're all set to explore NetTrailers!")
-    }, [completeTour, showSuccess])
-
-    const handleSkipTour = useCallback(() => {
-        skipTour()
-        setIsTourActive(false)
-    }, [skipTour])
+    }, [endTour, showSuccess])
 
     const handleFocusSearch = useCallback(() => {
         // Focus the search bar in the navbar (works on all pages)
@@ -235,11 +230,11 @@ function ClientLayout({ children }: ClientLayoutProps) {
                     onClose={() => setShowKeyboardShortcuts(false)}
                 />
             )}
-            {isTourActive && (
+            {tour.phase === 'active' && (
                 <InteractiveTour
-                    isActive={isTourActive}
+                    key={tour.runId}
                     onComplete={handleCompleteTour}
-                    onSkip={handleSkipTour}
+                    onSkip={endTour}
                 />
             )}
             <ScrollToTopButton />
