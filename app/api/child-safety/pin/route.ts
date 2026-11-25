@@ -27,7 +27,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 import { withAuth } from '@/lib/auth-middleware'
-import { getPINStatus, hasPIN, setPIN, verifyPIN, clearPIN } from '@/db/queries/childSafety'
+import { getPINStatus, setPIN, verifyPIN, clearPIN } from '@/db/queries/childSafety'
 import { PIN_CONSTRAINTS } from '@/types/childSafety'
 import { countEvent, readCount, resetLimit, windowInfo } from '@/lib/durableLimit'
 
