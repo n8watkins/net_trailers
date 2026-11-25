@@ -58,7 +58,7 @@ const HEADER_SEARCH_BUTTON = 'header button[aria-label="Search"]'
 
 const WELCOME_PANE: TourPaneDefinition = {
     id: 'welcome',
-    title: '👋 Welcome to NetTrailers!',
+    title: 'Welcome to NetTrailers',
     description:
         "Let's walk through the key features that make discovering movies and TV shows easy and fun.",
     targets: [],

@@ -17,6 +17,9 @@ describe('InteractiveTour', () => {
         const { card } = renderTour()
         expect(card().getAttribute('role')).toBe('dialog')
         expect(screen.getByRole('heading', { name: /Welcome to NetTrailers/ })).toBeTruthy()
+        expect(screen.getByTestId('tour-welcome-mark').getAttribute('src')).toContain(
+            'nettrailers-mark'
+        )
         expect(document.activeElement).toBe(screen.getByRole('button', { name: /Next/ }))
     })
 
