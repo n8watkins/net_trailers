@@ -55,5 +55,51 @@ jobs:
         run: echo "::notice::Built, but skipping the deploy until the CLOUDFLARE_API_TOKEN secret is added (DEPLOYMENT.md)."
 
       - name: Deploy
+        id: deploy
         if: env.CLOUDFLARE_API_TOKEN != ''
-        run: npx opennextjs-cloudflare deploy
+        shell: bash
+        run: |
+          npx opennextjs-cloudflare deploy 2>&1 | tee deploy.log
+          version=$(grep -oE 'Current Version ID: [0-9a-f-]+' deploy.log | tail -1 | cut -d' ' -f4)
+          if [ -z "$version" ]; then echo "::error::The deploy printed no Current Version ID."; exit 1; fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      # Every edge-cached public page, as a signed-out visitor, over about a
+      # minute: each must come from the version just deployed and load all of
+      # its /_next/static files (scripts/check-deploy.ts, DEPLOYMENT.md).
+      - name: Check the live site
+        id: check
+        if: steps.deploy.outcome == 'success'
+        continue-on-error: true
+        run: node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-deploy.ts --build "${{ steps.deploy.outputs.version }}"
+
+      # A failed check means visitors are getting broken pages now. Deploying
+      # the same build again starts a fresh cache (what cleared it on
+      # 2026-11-25), so do that once to repair the site, then fail the run
+      # either way: the cause still needs a look.
+      - name: Redeploy once after a failed check
+        id: redeploy
+        if: steps.check.outcome == 'failure'
+        shell: bash
+        run: |
+          npx opennextjs-cloudflare deploy 2>&1 | tee redeploy.log
+          version=$(grep -oE 'Current Version ID: [0-9a-f-]+' redeploy.log | tail -1 | cut -d' ' -f4)
+          if [ -z "$version" ]; then echo "::error::The redeploy printed no Current Version ID."; exit 1; fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Check the live site again
+        id: recheck
+        if: steps.redeploy.outcome == 'success'
+        continue-on-error: true
+        run: node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-deploy.ts --build "${{ steps.redeploy.outputs.version }}"
+
+      - name: Fail on a broken deploy
+        if: steps.check.outcome == 'failure'
+        shell: bash
+        run: |
+          if [ "${{ steps.recheck.outcome }}" = "success" ]; then
+            echo "::error::The live site served broken or outdated pages after the deploy; a second deploy repaired it. See 'Check the live site' for what visitors got."
+          else
+            echo "::error::The live site serves broken or outdated pages after the deploy, and a second deploy did not repair it. Roll back (DEPLOYMENT.md) and see 'Check the live site again'."
+          fi
+          exit 1
