@@ -166,7 +166,13 @@ for (const [label, options, inputId] of [
             expect(focused).toBe(true)
         }).toPass({ timeout: 10_000 })
 
-        // Surprise me: a random title opens
+        // Surprise me: a random title opens. The TMDB fixtures hold no random
+        // discover pages, so the endpoint answers with the first trending title
+        const trending = await (await page.request.get('/api/movies/trending')).json()
+        const pick = { ...trending.results[0], media_type: 'movie' }
+        await page.route('**/api/random-content**', (route) =>
+            route.fulfill({ json: { content: pick } })
+        )
         await openHelp(page)
         await (await selectTile(page, 'Surprise me')).getByRole('button', { name: /Open/ }).click()
         await expect(page.getByRole('button', { name: 'Close modal' })).toBeVisible({
