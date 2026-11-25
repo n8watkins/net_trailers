@@ -3,17 +3,21 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import useUserData from '../../../hooks/useUserData'
-import { useAuthStatus } from '../../../hooks/useAuthStatus'
 import { useToast } from '../../../hooks/useToast'
 import { useAppStore } from '../../../stores/appStore'
 import ShareSection from '../../../components/settings/ShareSection'
+import PendingValues from '../../../components/settings/PendingValues'
+import { useSettingsVisitor } from '../_components/settingsVisitor'
+import { useSettingsDataReady } from '../_components/useSettingsDataReady'
 import InfoModal from '../../../components/modals/InfoModal'
 import { exportUserDataToCSV } from '../../../utils/csvExport'
 import { useWatchHistory } from '../../../hooks/useWatchHistory'
 
 const SharePage: React.FC = () => {
     const router = useRouter()
-    const { isGuest } = useAuthStatus()
+    const isGuest = !useSettingsVisitor().signedIn
+    const dataReady = useSettingsDataReady()
+    const [summaryReady, setSummaryReady] = useState(false)
     const userData = useUserData()
     const { totalWatched } = useWatchHistory()
     const { showSuccess, showError } = useToast()
@@ -24,7 +28,7 @@ const SharePage: React.FC = () => {
     // Redirect guests to preferences
     React.useEffect(() => {
         if (isGuest) {
-            router.push('/settings/preferences')
+            router.replace('/settings/preferences')
         }
     }, [isGuest, router])
 
@@ -51,7 +55,7 @@ const SharePage: React.FC = () => {
     // Load data summary (handles both sync and async cases)
     React.useEffect(() => {
         const loadSummary = async () => {
-            if (userData.isInitializing) {
+            if (!dataReady) {
                 setDataSummary({
                     watchlistCount: 0,
                     likedCount: 0,
@@ -86,11 +90,13 @@ const SharePage: React.FC = () => {
                     totalItems,
                     isEmpty,
                 })
+                setSummaryReady(true)
             }
         }
         loadSummary()
+        // userData itself changes every render; the counts below are what matter
     }, [
-        userData.isInitializing,
+        dataReady,
         userData.defaultWatchlist.length,
         userData.likedMovies.length,
         userData.hiddenMovies.length,
@@ -134,11 +140,13 @@ const SharePage: React.FC = () => {
 
     return (
         <>
-            <ShareSection
-                isGuest={isGuest}
-                dataSummary={dataSummary}
-                onExportData={handleExportData}
-            />
+            <PendingValues pending={!summaryReady}>
+                <ShareSection
+                    isGuest={isGuest}
+                    dataSummary={dataSummary}
+                    onExportData={handleExportData}
+                />
+            </PendingValues>
 
             {/* Export Limited Modal for Guest Users */}
             <InfoModal

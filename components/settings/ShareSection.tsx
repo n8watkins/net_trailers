@@ -70,11 +70,25 @@ const ShareSection: React.FC<ShareSectionProps> = ({ isGuest, dataSummary, onExp
                         <div className="mb-4 p-4 bg-[#141414] rounded-lg border border-[#313131]">
                             <p className="text-[#e5e5e5] text-sm mb-2">Your data includes:</p>
                             <ul className="text-[#b3b3b3] text-sm space-y-1">
-                                <li>• {dataSummary.watchlistCount} Watch Later items</li>
-                                <li>• {dataSummary.likedCount} liked items</li>
-                                <li>• {dataSummary.hiddenCount} hidden items</li>
-                                <li>• {dataSummary.watchHistoryCount} watch history entries</li>
-                                {!isGuest && <li>• {dataSummary.listsCount} custom collections</li>}
+                                <li>
+                                    • <Count value={dataSummary.watchlistCount} /> Watch Later items
+                                </li>
+                                <li>
+                                    • <Count value={dataSummary.likedCount} /> liked items
+                                </li>
+                                <li>
+                                    • <Count value={dataSummary.hiddenCount} /> hidden items
+                                </li>
+                                <li>
+                                    • <Count value={dataSummary.watchHistoryCount} /> watch history
+                                    entries
+                                </li>
+                                {!isGuest && (
+                                    <li>
+                                        • <Count value={dataSummary.listsCount} /> custom
+                                        collections
+                                    </li>
+                                )}
                             </ul>
                         </div>
 
@@ -99,6 +113,15 @@ const ShareSection: React.FC<ShareSectionProps> = ({ isGuest, dataSummary, onExp
                 onClose={() => setIsManageSharesOpen(false)}
             />
         </div>
+    )
+}
+
+/** A number a pending panel greys out until it is known (PendingValues). */
+function Count({ value }: { value: number }) {
+    return (
+        <span data-pending-value className="inline-block text-center">
+            {value}
+        </span>
     )
 }
 

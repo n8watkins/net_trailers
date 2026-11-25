@@ -2,15 +2,19 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import useUserData from '../../../hooks/useUserData'
-import { useAuthStatus } from '../../../hooks/useAuthStatus'
 import { useToast } from '../../../hooks/useToast'
 import AccountSection from '../../../components/settings/AccountSection'
+import PendingValues from '../../../components/settings/PendingValues'
+import { useSettingsVisitor } from '../_components/settingsVisitor'
+import { useSettingsDataReady } from '../_components/useSettingsDataReady'
 import ConfirmationModal from '../../../components/modals/ConfirmationModal'
 import { exportUserDataToCSV } from '../../../utils/csvExport'
 import { useWatchHistory } from '../../../hooks/useWatchHistory'
 
 const AccountPage: React.FC = () => {
-    const { isGuest } = useAuthStatus()
+    const isGuest = !useSettingsVisitor().signedIn
+    const dataReady = useSettingsDataReady()
+    const [summaryReady, setSummaryReady] = useState(false)
     const userData = useUserData()
     const { totalWatched } = useWatchHistory()
     const { showSuccess, showError } = useToast()
@@ -46,7 +50,7 @@ const AccountPage: React.FC = () => {
     // Load data summary (handles both sync and async cases)
     React.useEffect(() => {
         const loadSummary = async () => {
-            if (userData.isInitializing) {
+            if (!dataReady) {
                 setDataSummary({
                     watchlistCount: 0,
                     likedCount: 0,
@@ -81,11 +85,13 @@ const AccountPage: React.FC = () => {
                     totalItems,
                     isEmpty,
                 })
+                setSummaryReady(true)
             }
         }
         loadSummary()
+        // userData itself changes every render; the counts below are what matter
     }, [
-        userData.isInitializing,
+        dataReady,
         userData.defaultWatchlist.length,
         userData.likedMovies.length,
         userData.hiddenMovies.length,
@@ -176,13 +182,15 @@ const AccountPage: React.FC = () => {
 
     return (
         <>
-            <AccountSection
-                isGuest={isGuest}
-                dataSummary={dataSummary}
-                onExportData={handleExportData}
-                onShowClearConfirm={() => setShowClearConfirm(true)}
-                onShowDeleteConfirm={() => setShowDeleteConfirm(true)}
-            />
+            <PendingValues pending={!summaryReady}>
+                <AccountSection
+                    isGuest={isGuest}
+                    dataSummary={dataSummary}
+                    onExportData={handleExportData}
+                    onShowClearConfirm={() => setShowClearConfirm(true)}
+                    onShowDeleteConfirm={() => setShowDeleteConfirm(true)}
+                />
+            </PendingValues>
 
             {/* Confirmation Modals */}
             <ConfirmationModal

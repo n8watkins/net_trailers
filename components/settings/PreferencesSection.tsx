@@ -3,6 +3,7 @@
 import React from 'react'
 import { LockClosedIcon, LockOpenIcon, KeyIcon } from '@heroicons/react/24/outline'
 import { UpgradeAccountBanner } from '../auth/UpgradeAccountBanner'
+import PendingValues from './PendingValues'
 
 // Memoized Preferences Controls Component - Only re-renders when props actually change
 interface PreferencesControlsProps {
@@ -32,7 +33,6 @@ const PreferencesControls = React.memo<PreferencesControlsProps>(
         onChildSafetyModeChange,
         onAutoMuteChange,
         onDefaultVolumeChange,
-        onShowChildSafetyModal,
         onSetupPIN,
         onChangePIN,
         onRemovePIN,
@@ -257,23 +257,8 @@ const PreferencesSection: React.FC<PreferencesSectionProps> = ({
                 </p>
             </div>
 
-            {/* Only render preferences controls after data is loaded */}
-            {isInitializing ? (
-                <div className="space-y-8 animate-pulse">
-                    <div>
-                        <div className="h-6 bg-[#313131] rounded w-48 mb-4"></div>
-                        <div className="bg-[#0a0a0a] rounded-lg border border-[#313131] p-6">
-                            <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                    <div className="h-4 bg-[#313131] rounded w-40 mb-2"></div>
-                                    <div className="h-3 bg-[#313131] rounded w-64"></div>
-                                </div>
-                                <div className="w-11 h-6 bg-[#313131] rounded-full ml-4"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            ) : (
+            {/* The real layout at once; the switches wait for the saved values */}
+            <PendingValues pending={isInitializing}>
                 <PreferencesControls
                     childSafetyMode={childSafetyMode}
                     autoMute={autoMute}
@@ -289,7 +274,7 @@ const PreferencesSection: React.FC<PreferencesSectionProps> = ({
                     onChangePIN={onChangePIN}
                     onRemovePIN={onRemovePIN}
                 />
-            )}
+            </PendingValues>
         </div>
     )
 }

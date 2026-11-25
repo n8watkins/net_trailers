@@ -1,7 +1,9 @@
-import { redirect } from 'next/navigation'
+import PreferencesPage from './preferences/page'
 
-// next.config.js redirects /settings before it reaches this page; this is a
-// fallback for in-app navigation to /settings.
-export default function SettingsPage() {
-    redirect('/settings/preferences')
+/**
+ * `/settings`: on phones the section menu alone (SettingsFrame hides the
+ * panel); on wide screens the menu beside the default section, Preferences.
+ */
+export default function SettingsIndexPage() {
+    return <PreferencesPage />
 }

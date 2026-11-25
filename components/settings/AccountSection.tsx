@@ -66,7 +66,7 @@ const AccountSection: React.FC<AccountSectionProps> = ({
                                 <BookmarkIcon className="w-5 h-5 text-brand-400" />
                                 <p className="text-[#b3b3b3] text-sm">Watch Later</p>
                             </div>
-                            <p className="text-white text-2xl font-bold">
+                            <p className="text-white text-2xl font-bold" data-pending-value>
                                 {dataSummary.watchlistCount}
                             </p>
                         </div>
@@ -75,7 +75,7 @@ const AccountSection: React.FC<AccountSectionProps> = ({
                                 <HeartIcon className="w-5 h-5 text-green-400" />
                                 <p className="text-[#b3b3b3] text-sm">Liked</p>
                             </div>
-                            <p className="text-white text-2xl font-bold">
+                            <p className="text-white text-2xl font-bold" data-pending-value>
                                 {dataSummary.likedCount}
                             </p>
                         </div>
@@ -84,7 +84,7 @@ const AccountSection: React.FC<AccountSectionProps> = ({
                                 <EyeSlashIcon className="w-5 h-5 text-red-400" />
                                 <p className="text-[#b3b3b3] text-sm">Hidden</p>
                             </div>
-                            <p className="text-white text-2xl font-bold">
+                            <p className="text-white text-2xl font-bold" data-pending-value>
                                 {dataSummary.hiddenCount}
                             </p>
                         </div>
@@ -93,7 +93,7 @@ const AccountSection: React.FC<AccountSectionProps> = ({
                                 <ClockIcon className="w-5 h-5 text-purple-400" />
                                 <p className="text-[#b3b3b3] text-sm">Watch History</p>
                             </div>
-                            <p className="text-white text-2xl font-bold">
+                            <p className="text-white text-2xl font-bold" data-pending-value>
                                 {dataSummary.watchHistoryCount}
                             </p>
                         </div>
@@ -103,7 +103,7 @@ const AccountSection: React.FC<AccountSectionProps> = ({
                                     <RectangleStackIcon className="w-5 h-5 text-blue-400" />
                                     <p className="text-[#b3b3b3] text-sm">Collections</p>
                                 </div>
-                                <p className="text-white text-2xl font-bold">
+                                <p className="text-white text-2xl font-bold" data-pending-value>
                                     {dataSummary.listsCount}
                                 </p>
                             </div>

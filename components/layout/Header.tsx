@@ -43,6 +43,7 @@ import NotificationPanel from '../notifications/NotificationPanel'
 import { useChildSafety } from '../../hooks/useChildSafety'
 import type { Content } from '../../typings'
 import { useEscapeKey } from '../../hooks/useEscapeKey'
+import { isSubNavItemActive } from './subNavActive'
 
 interface HeaderProps {
     onOpenAboutModal?: () => void
@@ -96,7 +97,8 @@ const subNavItems: NavItem[] = [
     },
     {
         label: 'Settings',
-        href: '/settings/preferences',
+        // The section menu on phones, Preferences beside the menu on wide screens
+        href: '/settings',
         icon: Cog6ToothIcon,
         iconSolid: Cog6ToothIconSolid,
     },
@@ -580,12 +582,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                         >
                             <div className="flex gap-2 sm:gap-8 justify-center">
                                 {subNavItems.map((item) => {
-                                    // Check if current path starts with the item's href (handles nested routes like /settings/preferences)
-                                    // Special case for Collections: match any /collections path
-                                    const isActive =
-                                        item.label === 'Collections'
-                                            ? pathname.startsWith('/collections')
-                                            : pathname.startsWith(item.href)
+                                    const isActive = isSubNavItemActive(item.href, pathname)
                                     const Icon = isActive ? item.iconSolid : item.icon
 
                                     // Add data-tour attributes for interactive tour
@@ -603,6 +600,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                             key={item.href}
                                             href={item.href}
                                             title={item.label}
+                                            aria-current={isActive ? 'page' : undefined}
                                             data-tour={dataTourAttr}
                                             className={`group relative flex items-center justify-center gap-2 whitespace-nowrap border-b-2 px-2 sm:px-1 py-2 sm:py-3 text-sm font-medium transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 ${
                                                 isActive

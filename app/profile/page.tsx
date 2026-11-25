@@ -13,8 +13,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import Link from '@/components/common/Link'
-import Image from 'next/image'
-import { UserIcon, EyeIcon, PencilIcon, SparklesIcon } from '@heroicons/react/24/outline'
+import { EyeIcon, PencilIcon } from '@heroicons/react/24/outline'
 import useAuth from '../../hooks/useAuth'
 import useUserData from '../../hooks/useUserData'
 import PageLoader from '../../components/common/PageLoader'
@@ -60,10 +59,6 @@ export default function ProfilePage() {
 
     // Show loading state while data is being fetched
     const isLoading = !isInitialized || authLoading
-
-    useEffect(() => {
-        document.title = 'Profile - NetTrailers'
-    }, [])
 
     // Load user rankings, threads, and polls
     useEffect(() => {

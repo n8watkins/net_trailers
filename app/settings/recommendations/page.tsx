@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react'
 import useUserData from '../../../hooks/useUserData'
-import { useAuthStatus } from '../../../hooks/useAuthStatus'
+import { useSettingsVisitor } from '../_components/settingsVisitor'
+import { useSettingsDataReady } from '../_components/useSettingsDataReady'
 import { useToast } from '../../../hooks/useToast'
 import { useAuthStore } from '../../../stores/authStore'
 import { useGuestStore } from '../../../stores/guestStore'
@@ -12,7 +13,8 @@ import RecommendationsSection from '../../../components/settings/Recommendations
 import InfoModal from '../../../components/modals/InfoModal'
 
 const RecommendationsPage: React.FC = () => {
-    const { isGuest } = useAuthStatus()
+    const isGuest = !useSettingsVisitor().signedIn
+    const dataReady = useSettingsDataReady()
     const userData = useUserData()
     const { showSuccess, showError } = useToast()
 
@@ -177,7 +179,7 @@ const RecommendationsPage: React.FC = () => {
         <>
             <RecommendationsSection
                 isGuest={isGuest}
-                isInitializing={userData.isInitializing}
+                isInitializing={!dataReady}
                 improveRecommendations={improveRecommendations}
                 showRecommendations={showRecommendations}
                 trackWatchHistory={trackWatchHistory}

@@ -46,15 +46,32 @@ describe('mayUseEdgeCache', () => {
         ).toBe(false)
     })
 
-    it('keeps personal pages away from it', () => {
+    it('serves the guest settings shells only to visitors without a session', () => {
         for (const path of [
+            '/settings',
             '/settings/preferences',
-            '/profile',
-            '/rankings',
-            '/admin',
-            '/person/x',
-            '/notifications',
+            '/settings/notifications',
+            '/settings/recommendations',
+            '/settings/collections',
+            '/settings/account',
         ]) {
+            expect(mayUseEdgeCache(at(path), host)).toBe(true)
+            expect(mayUseEdgeCache(at(path, signedIn), host)).toBe(false)
+            expect(mayUseEdgeCache(at(path, childSafe), host)).toBe(false)
+            expect(mayUseEdgeCache(at(path, { headers: { rsc: '1' } }), host)).toBe(false)
+        }
+        // Sections only for accounts: a guest is sent away from them
+        for (const path of [
+            '/settings/profile',
+            '/settings/account-management',
+            '/settings/share',
+        ]) {
+            expect(mayUseEdgeCache(at(path), host)).toBe(false)
+        }
+    })
+
+    it('keeps personal pages away from it', () => {
+        for (const path of ['/profile', '/rankings', '/admin', '/person/x', '/notifications']) {
             expect(mayUseEdgeCache(at(path), host)).toBe(false)
         }
     })
