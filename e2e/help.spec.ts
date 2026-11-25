@@ -191,8 +191,9 @@ test('desktop: Help is a centered dialog with Shortcuts, closed by Escape and th
     const dialog = await openHelp(page)
     const box = (await dialog.boundingBox())!
     expect(box.width).toBeLessThanOrEqual(760)
-    // Centred in the page area, which is narrower than the window by the scroll bar's gutter
-    const pageWidth = await page.evaluate(() => document.documentElement.clientWidth)
+    // Centred in the page area: the scroll bar's reserved gutter makes it narrower than the
+    // window, and clientWidth does not report that gutter, so measure the body instead
+    const pageWidth = await page.evaluate(() => document.body.getBoundingClientRect().width)
     expect(Math.abs(box.x + box.width / 2 - pageWidth / 2)).toBeLessThanOrEqual(1)
     await expect(dialog.getByRole('button', { name: 'Shortcuts' })).toBeVisible()
 
