@@ -208,6 +208,8 @@ test('records watch history', async () => {
 
 test('saves a setting', async () => {
     await page.goto('/settings/preferences')
+    // The switches show their saved values once the panel stops being pending
+    await expect(page.locator('[data-settings-pending]')).toHaveCount(0)
     const autoMute = page.locator('input[type="checkbox"]').nth(1)
     const before = await autoMute.isChecked()
     await autoMute.locator('xpath=..').click()
@@ -215,6 +217,7 @@ test('saves a setting', async () => {
     await page.waitForTimeout(1500)
 
     await page.reload()
+    await expect(page.locator('[data-settings-pending]')).toHaveCount(0)
     await expect(page.locator('input[type="checkbox"]').nth(1)).toBeChecked({ checked: !before })
 })
 

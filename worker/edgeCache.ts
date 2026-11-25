@@ -61,6 +61,16 @@ const PUBLIC_PAGES = new Set([
     '/security',
     '/changelog',
     '/sitemap.xml',
+    // The settings sections a guest can use. Without a session cookie the
+    // server renders the same guest frame for everyone (app/settings/layout.tsx
+    // reads the session and finds none); the guest's own settings live in the
+    // browser. A request with a session cookie never reaches this cache.
+    '/settings',
+    '/settings/preferences',
+    '/settings/notifications',
+    '/settings/recommendations',
+    '/settings/collections',
+    '/settings/account',
 ])
 
 /** Public detail pages, also client-rendered shells. */
