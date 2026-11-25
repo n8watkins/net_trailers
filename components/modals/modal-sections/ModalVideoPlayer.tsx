@@ -1,10 +1,11 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import type ReactPlayerType from 'react-player'
 import Image from 'next/image'
 import { Content } from '../../../typings'
+import { isYouTubeApiLoaded, loadYouTubeApi } from '../../../lib/youtubeIframeApi'
 
 // Dynamically import ReactPlayer to avoid SSR issues
 const ReactPlayer = dynamic(() => import('react-player'), { ssr: false })
@@ -40,6 +41,24 @@ function ModalVideoPlayer({
     onReady,
     onPlayerRef,
 }: ModalVideoPlayerProps) {
+    // Without a trailer there is nothing to play, so nothing loads from YouTube.
+    const wantsPlayer = Boolean(trailer) && (!trailerEnded || playing || fullScreen)
+    // YouTube's player API comes from this site, so youtube.com sets no
+    // cookies (lib/youtubeIframeApi.ts); the player waits for it, showing the
+    // backdrop meanwhile.
+    const [apiReady, setApiReady] = useState(isYouTubeApiLoaded)
+    useEffect(() => {
+        if (!wantsPlayer || apiReady) return
+        let cancelled = false
+        loadYouTubeApi().then(
+            () => !cancelled && setApiReady(true),
+            (error) => console.warn('[trailer]', error)
+        )
+        return () => {
+            cancelled = true
+        }
+    }, [wantsPlayer, apiReady])
+
     return (
         <div
             className="absolute inset-0 pointer-events-auto z-0"
@@ -47,7 +66,7 @@ function ModalVideoPlayer({
                 onSingleOrDoubleClick(e)
             }}
         >
-            {(trailer && !trailerEnded) || playing || fullScreen ? (
+            {wantsPlayer && apiReady ? (
                 <ReactPlayer
                     config={{
                         youtube: {
@@ -61,7 +80,10 @@ function ModalVideoPlayer({
                             embedOptions: {},
                         },
                     }}
-                    url={`https://www.youtube.com/watch?v=${trailer}`}
+                    // YouTube's no-cookie host: react-player embeds from
+                    // www.youtube-nocookie.com for these URLs, so a trailer
+                    // sets no youtube.com cookies (lib/csp.ts frame-src).
+                    url={`https://www.youtube-nocookie.com/embed/${trailer}`}
                     width="100%"
                     height="100%"
                     className={`absolute inset-0 ${fullScreen ? '' : 'rounded-md'}`}

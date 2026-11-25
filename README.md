@@ -848,14 +848,9 @@ npm run test:ci       # CI mode (used in GitHub Actions)
 
 ### Google Analytics 4
 
-- **Integration**: Via `@next/third-parties`
-- **Events tracked**:
-    - Page views
-    - User authentication events
-    - Content interactions (watchlist add/remove, likes, etc.)
-    - Search queries (standard and AI)
-    - Ranking engagement
-- **Privacy**: Anonymized IP, GDPR compliant
+- **Integration**: the n8builds.dev GA4 property, loaded by the consent bootstrap in `lib/consent.ts` (the same rules as n8builds.dev)
+- **Events tracked**: GA4's default page views and enhanced measurement; the app sends no custom events
+- **Consent**: visitors in European and Quebec time zones are asked first; Global Privacy Control counts as a decline; "Cookie settings" in the footer changes the choice, which is the shared `n8-consent` cookie on `.n8builds.dev`
 
 ### Vercel Analytics
 
@@ -955,7 +950,7 @@ NetTrailers implements comprehensive security measures. See the full [Security D
 - X-Content-Type-Options: nosniff
 - Referrer-Policy: strict-origin-when-cross-origin
 - X-XSS-Protection: 1; mode=block
-- Permissions-Policy (camera, microphone, geolocation, interest-cohort)
+- Permissions-Policy (camera, microphone, geolocation)
 - Content-Security-Policy (strict directives with base-uri, form-action)
 - Strict-Transport-Security (HSTS)
 

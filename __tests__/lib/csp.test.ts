@@ -22,10 +22,14 @@ describe('buildContentSecurityPolicy', () => {
         expect(scripts).not.toContain("'unsafe-eval'")
     })
 
-    it('allows YouTube trailers, Turnstile, analytics and Sentry', () => {
+    it('allows YouTube trailers (no-cookie host only), Turnstile, analytics and Sentry', () => {
         expect(directive(policy, 'frame-src')).toEqual(
-            expect.arrayContaining(['https://www.youtube.com', 'https://challenges.cloudflare.com'])
+            expect.arrayContaining([
+                'https://www.youtube-nocookie.com',
+                'https://challenges.cloudflare.com',
+            ])
         )
+        expect(directive(policy, 'frame-src')).not.toContain('https://www.youtube.com')
         expect(directive(policy, 'connect-src')).toEqual(
             expect.arrayContaining([
                 'https://*.sentry.io',

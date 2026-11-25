@@ -52,9 +52,10 @@ export function buildContentSecurityPolicy({ nonce, dev = false }: CspOptions): 
             'https://www.youtube.com',
             ...(dev ? ['ws:'] : []),
         ],
+        // Trailers embed from YouTube's no-cookie host only
+        // (components/modals/modal-sections/ModalVideoPlayer.tsx).
         'frame-src': [
             "'self'",
-            'https://www.youtube.com',
             'https://www.youtube-nocookie.com',
             'https://challenges.cloudflare.com',
         ],

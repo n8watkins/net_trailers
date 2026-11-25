@@ -21,9 +21,22 @@ export default defineConfig({
     use: {
         baseURL,
         // The first-visit welcome pop-up (lib/welcome.ts) is marked seen so it
-        // does not cover the pages under test
+        // does not cover the pages under test, and analytics is declined
+        // (lib/consent.ts) so no spec loads Google Analytics; e2e/consent.spec.ts
+        // starts from a clean state instead.
         storageState: {
-            cookies: [],
+            cookies: [
+                {
+                    name: 'n8-consent',
+                    value: 'denied',
+                    domain: 'localhost',
+                    path: '/',
+                    expires: -1,
+                    httpOnly: false,
+                    secure: false,
+                    sameSite: 'Lax',
+                },
+            ],
             origins: [
                 {
                     origin: baseURL,
@@ -33,6 +46,9 @@ export default defineConfig({
         },
         trace: 'retain-on-failure',
         screenshot: 'only-on-failure',
+        // A fixed time zone outside the ones asked about analytics consent, so
+        // the consent banner (lib/consent.ts) never shows unless a spec asks.
+        timezoneId: 'America/Los_Angeles',
     },
     projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
     webServer: {
@@ -59,7 +75,10 @@ export default defineConfig({
             TMDB_API_KEY: process.env.TMDB_API_KEY || 'fixture',
             E2E_TMDB_RECORD: process.env.E2E_TMDB_RECORD || '',
             NEXT_PUBLIC_SENTRY_DSN: '',
-            NEXT_PUBLIC_GA_MEASUREMENT_ID: '',
+            // NEXT_PUBLIC_GA_MEASUREMENT_ID is inlined at build time, so it is
+            // set on the build, not here: CI builds with the made-up
+            // G-E2ETEST000 (.github/workflows/ci.yml) so e2e/consent.spec.ts
+            // can test the consent banner and the GA loader.
         },
     },
 })

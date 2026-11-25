@@ -3,7 +3,7 @@ import type { Metadata, Viewport } from 'next'
 import { headers } from 'next/headers'
 import { Providers } from './providers'
 import ClientLayout from '../components/layout/ClientLayout'
-import Analytics from '../components/utility/Analytics'
+import Analytics, { AnalyticsBootstrap } from '../components/utility/Analytics'
 import WebAnalytics from '../components/utility/WebAnalytics'
 import { NONCE_HEADER } from '../lib/csp'
 
@@ -50,11 +50,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     const nonce = (await headers()).get(NONCE_HEADER) ?? undefined
     return (
         <html lang="en">
+            <head>
+                {/* Consent defaults before anything can load GA (lib/consent.ts). */}
+                <AnalyticsBootstrap nonce={nonce} />
+            </head>
             <body>
                 <Providers>
                     <ClientLayout>{children}</ClientLayout>
                 </Providers>
-                <Analytics nonce={nonce} />
+                <Analytics />
                 <WebAnalytics nonce={nonce} />
             </body>
         </html>

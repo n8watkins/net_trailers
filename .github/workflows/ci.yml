@@ -80,6 +80,13 @@ jobs:
 
             - name: Build
               run: npx next build
+              env:
+                  # A made-up GA ID (not the real property), so the consent
+                  # banner and the GA loader are built and tested
+                  # (e2e/consent.spec.ts). The other specs start with analytics
+                  # declined, and consent.spec.ts answers gtag.js itself, so
+                  # nothing reaches Google.
+                  NEXT_PUBLIC_GA_MEASUREMENT_ID: G-E2ETEST000
 
             - name: End-to-end tests
               run: npm run test:e2e

@@ -30,7 +30,8 @@ jobs:
       # Inlined into the pages at build time; all public (they ship in every page).
       # The app's canonical address: email links, sitemap, metadata (DEPLOYMENT.md).
       NEXT_PUBLIC_APP_URL: https://net-trailers.n8builds.dev
-      NEXT_PUBLIC_GA_MEASUREMENT_ID: G-ZJ89Z1VW2M
+      # The n8builds.dev GA4 property, shared with n8builds.dev and the portfolio.
+      NEXT_PUBLIC_GA_MEASUREMENT_ID: G-JZQGKY9Q37
       NEXT_PUBLIC_SENTRY_DSN: https://e8ff08283b0f2f9db0042fd4d186acfe@o4507767562371072.ingest.us.sentry.io/4510041561759744
       # Turnstile on the sign-in form (lib/turnstile.ts); its secret is a Worker secret.
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: 0x4AAAAAAF70opMyKqLHlESW
