@@ -42,14 +42,14 @@ const ICONS: Record<SettingsSectionId, React.ComponentType<React.SVGProps<SVGSVG
 const PRIORITY_BORDER: Record<SettingsSection['priority'], string> = {
     // A quiet gray, not red: red here reads as the active (brand) item
     danger: 'border-l-zinc-600',
-    high: 'border-l-orange-500',
+    high: 'border-l-brand-500',
     medium: 'border-l-gray-500',
     low: 'border-l-zinc-700',
 }
 
 const PRIORITY_ICON: Record<SettingsSection['priority'], string> = {
     danger: 'text-gray-500',
-    high: 'text-orange-500',
+    high: 'text-brand-400',
     medium: 'text-gray-500',
     low: 'text-gray-600',
 }
