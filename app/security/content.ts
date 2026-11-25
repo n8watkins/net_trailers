@@ -85,7 +85,7 @@ export const SECURITY_SECTIONS: SecuritySection[] = [
             {
                 text: 'Tag-shaped text is stripped from collection names and descriptions, and React escapes what it renders.',
                 evidence:
-                    'services/userListsService.ts (sanitizeText); no dangerouslySetInnerHTML in app, components, hooks, utils or services outside app/docs',
+                    'services/userListsService.ts (sanitizeText); the only dangerouslySetInnerHTML in app, components, hooks, utils or services is the fixed consent script in components/utility/Analytics.tsx',
             },
             {
                 text: 'Error reports sent to Sentry have the email address and IP address removed.',

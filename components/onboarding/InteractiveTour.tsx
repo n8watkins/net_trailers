@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import Image from 'next/image'
 import {
     XMarkIcon,
     ChevronLeftIcon,
@@ -276,9 +277,20 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ onComplete, onSkip })
                     <div className="min-w-0 flex-1">
                         <h2
                             id="tour-title"
-                            className={`font-bold text-white ${cardBox ? 'text-xl' : 'text-2xl sm:text-3xl'}`}
+                            className={`flex items-center gap-3 font-bold text-white ${cardBox ? 'text-xl' : 'text-2xl sm:text-3xl'}`}
                         >
-                            {step.title}
+                            {panePosition.isWelcome && (
+                                <Image
+                                    src="/nettrailers-mark.svg"
+                                    width={36}
+                                    height={36}
+                                    alt=""
+                                    unoptimized
+                                    data-testid="tour-welcome-mark"
+                                    className="h-9 w-9 shrink-0"
+                                />
+                            )}
+                            <span>{step.title}</span>
                         </h2>
                         {progressLabel && (
                             <p className="mt-1 text-sm text-gray-400">{progressLabel}</p>

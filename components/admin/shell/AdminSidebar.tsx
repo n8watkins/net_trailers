@@ -2,6 +2,7 @@
 
 import Link from '@/components/common/Link'
 import { usePathname } from 'next/navigation'
+import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { ArrowUpRight, ChevronsLeft, ChevronsRight, Home, Menu, X } from 'lucide-react'
 
@@ -87,10 +88,19 @@ function Footer({ email, collapsed }: { email: string | null; collapsed: boolean
                 target="_blank"
                 rel="noreferrer"
                 className={`${link} ${collapsed ? 'justify-center px-0' : ''}`}
-                title="All apps on admin.n8builds.dev (new tab)"
+                title="All n8builds apps on admin.n8builds.dev (new tab)"
             >
-                <ArrowUpRight aria-hidden className="size-4 shrink-0" />
+                <Image
+                    src="/brand/n8builds-mark-48.png"
+                    width={16}
+                    height={16}
+                    alt=""
+                    unoptimized
+                    style={{ width: 16, height: 16 }}
+                    className="shrink-0 rounded-[3px]"
+                />
                 <span className={collapsed ? 'sr-only' : ''}>All apps</span>
+                {!collapsed && <ArrowUpRight aria-hidden className="ml-auto size-3.5 shrink-0" />}
             </a>
             {email && !collapsed && (
                 <p className="truncate px-3 pt-1 text-xs text-gray-500" title={email}>

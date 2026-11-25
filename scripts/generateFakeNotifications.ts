@@ -8,7 +8,7 @@
  *   --clear    Clear existing notifications before creating new ones
  */
 
-import { createNotification, deleteAllNotifications } from '../utils/firestore/notifications'
+import { createNotification, deleteAllNotifications } from '../utils/notifications'
 
 // Sample trending content data
 const fakeTrendingItems = [
