@@ -93,11 +93,11 @@ test.describe('guest Profile', () => {
         await page.goto('/profile')
         const limitations = page.getByRole('button', { name: 'limitations', exact: true })
         await expect(limitations).toBeVisible({ timeout: 15_000 })
+        const help = page.getByRole('dialog', { name: /NetTrailers\s*Help/ })
         await expect(async () => {
-            await limitations.click({ timeout: 2_000 })
-            await expect(page.getByRole('heading', { name: 'How to Use NetTrailers' })).toBeVisible(
-                { timeout: 2_000 }
-            )
+            // Once Help is open it covers the link, so click only while it is closed
+            if (!(await help.isVisible())) await limitations.click({ timeout: 2_000 })
+            await expect(help).toBeVisible({ timeout: 2_000 })
         }).toPass({ timeout: 20_000 })
 
         expect(rankingRequests).toEqual([])

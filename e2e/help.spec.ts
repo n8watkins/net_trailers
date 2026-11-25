@@ -191,7 +191,9 @@ test('desktop: Help is a centered dialog with Shortcuts, closed by Escape and th
     const dialog = await openHelp(page)
     const box = (await dialog.boundingBox())!
     expect(box.width).toBeLessThanOrEqual(760)
-    expect(Math.abs(box.x + box.width / 2 - 720)).toBeLessThanOrEqual(1)
+    // Centred in the page area, which is narrower than the window by the scroll bar's gutter
+    const pageWidth = await page.evaluate(() => document.documentElement.clientWidth)
+    expect(Math.abs(box.x + box.width / 2 - pageWidth / 2)).toBeLessThanOrEqual(1)
     await expect(dialog.getByRole('button', { name: 'Shortcuts' })).toBeVisible()
 
     // Tiles work from the keyboard
