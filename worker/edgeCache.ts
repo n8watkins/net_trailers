@@ -206,7 +206,7 @@ export async function serveFromEdgeCache(
     if (got === build) return answer
 
     // Not awaited: cancelling one branch of a tee'd body waits for the other.
-    answer.body?.cancel().catch(() => {})
+    answer.body?.cancel().catch(() => undefined)
     route.warn({
         event: 'edge_cache_build_mismatch',
         reason: got ? 'other_build' : 'no_build',
