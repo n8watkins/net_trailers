@@ -144,7 +144,7 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ onComplete, onSkip })
             const el = findTourTarget(step.targets)
             if (el) {
                 setTarget({ stepId: step.id, el })
-                revealTourTarget(el)
+                revealTourTarget(el, step.spotlightPadding)
                 return
             }
             if (process.env.NODE_ENV === 'development' && tries === 0) {
@@ -154,7 +154,7 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ onComplete, onSkip })
         }
         attempt()
         return () => clearTimeout(timer)
-    }, [step.id, step.targets])
+    }, [step.id, step.targets, step.spotlightPadding])
 
     // Follow the element every frame (scrolling, layout shifts, resizes)
     useEffect(() => {
@@ -377,15 +377,16 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ onComplete, onSkip })
                 <div
                     data-testid="tour-spotlight"
                     aria-hidden="true"
-                    className="pointer-events-none fixed rounded-xl ring-2 ring-brand-500"
+                    className="pointer-events-none fixed rounded-xl"
                     style={{
                         top: spot.top,
                         left: spot.left,
                         width: spot.width,
                         height: spot.height,
                         zIndex: Z_INDEX_OVERLAY,
+                        // Inset brand ring, red glow, then the dim around the hole
                         boxShadow:
-                            '0 0 0 9999px rgba(0, 0, 0, 0.6), 0 0 24px 4px rgba(229, 9, 20, 0.55)',
+                            'inset 0 0 0 2px rgb(229, 9, 20), 0 0 24px 4px rgba(229, 9, 20, 0.55), 0 0 0 9999px rgba(0, 0, 0, 0.6)',
                     }}
                 />
             )}

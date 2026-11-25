@@ -166,12 +166,21 @@ export function sameLayout(a: TourLayout, b: TourLayout): boolean {
  * top on narrow ones (the card docks below it). Does nothing when it is already
  * fully visible.
  */
-export function revealTourTarget(el: HTMLElement): void {
+export function revealTourTarget(
+    el: HTMLElement,
+    spotlightPadding = DEFAULT_SPOTLIGHT_PADDING
+): void {
+    // Elements in the fixed header are always on screen
+    const header = document.querySelector('header')
+    if (header?.contains(el)) return
+
     const rect = el.getBoundingClientRect()
     const vh = window.innerHeight
     const narrow = window.innerWidth < TOUR_SHEET_BREAKPOINT
-    // Below the fixed header, and on phones in the upper half so the docked card fits
-    const visibleTop = 72
+    // Below the fixed header (spotlight included), and on phones in the upper
+    // half so the docked card fits under it
+    const headerBottom = Math.max(0, header?.getBoundingClientRect().bottom ?? 0)
+    const visibleTop = headerBottom + spotlightPadding + 8
     const visibleBottom = narrow ? vh * 0.55 : vh - TOUR_GUTTER
     if (rect.top >= visibleTop && rect.bottom <= visibleBottom) return
 
@@ -179,7 +188,7 @@ export function revealTourTarget(el: HTMLElement): void {
         typeof window.matchMedia === 'function' &&
         window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const previousMargin = el.style.scrollMarginTop
-    if (narrow) el.style.scrollMarginTop = `${visibleTop + TOUR_GUTTER}px`
+    if (narrow) el.style.scrollMarginTop = `${visibleTop}px`
     el.scrollIntoView({
         behavior: reduceMotion ? 'auto' : 'smooth',
         block: narrow ? 'start' : 'center',
