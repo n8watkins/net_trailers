@@ -10,10 +10,10 @@
 import openNext from '../.open-next/worker.js'
 import { WorkerEntrypoint } from 'cloudflare:workers'
 
-import { errorSummary, logError, pathOf } from '../lib/log'
+import { errorSummary, logError, logWarn, pathOf } from '../lib/log'
 import { isInternalPath, readAdminStats } from './adminStats'
 import { canonicalRedirect, visitorScheme } from './canonical'
-import { cheapAnswer, forEdge, mayUseEdgeCache } from './edgeCache'
+import { answerForEdge, cheapAnswer, mayUseEdgeCache, serveFromEdgeCache } from './edgeCache'
 import { runCron, type FetchHandler, type WorkerEnv } from './crons'
 import { withNotificationsCache } from './notificationsCache'
 import { assetsWithUploads, isUploadPath, serveUpload } from './uploads'
@@ -41,7 +41,7 @@ function forBrowsers(response: Response): Response {
 
 /** The cached entrypoint below, reached through ctx.exports. */
 type CachedPagesExports = {
-    exports: { CachedPages: { fetch(request: Request): Promise<Response> } }
+    exports: { CachedPages: { fetch(request: Request, init?: RequestInit): Promise<Response> } }
 }
 
 /** OpenNext with ASSETS answering /uploads too, for the image optimizer. */
@@ -77,10 +77,17 @@ export default {
                 (promise) => ctx.waitUntil(promise)
             )
             if (notifications) return notifications
-            // The catalogue, images and the anonymous home page (worker/edgeCache.ts).
-            if (env.PUBLIC_URL && mayUseEdgeCache(request, new URL(env.PUBLIC_URL).host)) {
+            // The catalogue, images and the anonymous public pages, only ever
+            // from this build (worker/edgeCache.ts). Without a version to tell
+            // builds apart, nothing is cached.
+            const build = env.CF_VERSION_METADATA?.id
+            if (build && env.PUBLIC_URL && mayUseEdgeCache(request, new URL(env.PUBLIC_URL).host)) {
                 const cached = (ctx as ExecutionContext & CachedPagesExports).exports.CachedPages
-                return await cached.fetch(request)
+                return await serveFromEdgeCache(request, build, {
+                    cached: (r, cacheKey) => cached.fetch(r, { cf: { cacheKey } }),
+                    render: async (r) => forBrowsers(await app.fetch(r, withUploads(env), ctx)),
+                    warn: logWarn,
+                })
             }
             return forBrowsers(await app.fetch(request, withUploads(env), ctx))
         } catch (err) {
@@ -107,13 +114,13 @@ export default {
 /**
  * What Cloudflare's cache sits in front of (wrangler.jsonc "exports"): a hit is
  * answered without running this code. The default entrypoint sends only
- * cacheable requests here (worker/edgeCache.ts).
+ * cacheable requests here, and this answers only those from its own build
+ * (worker/edgeCache.ts).
  */
 export class CachedPages extends WorkerEntrypoint<WorkerEnv> {
     async fetch(request: Request): Promise<Response> {
-        return forEdge(
-            request,
-            forBrowsers(await app.fetch(request, withUploads(this.env), this.ctx))
+        return answerForEdge(request, this.env.CF_VERSION_METADATA?.id ?? '', async (r) =>
+            forBrowsers(await app.fetch(r, withUploads(this.env), this.ctx))
         )
     }
 }
