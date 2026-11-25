@@ -15,6 +15,7 @@ import {
     saveUserPreferences,
 } from '@/db/queries/userPreferences'
 import { applyChildSafetyLock } from '@/lib/childSafetyLock'
+import { CHILD_SAFETY_KEPT_FIELD } from '@/lib/childSafetyKept'
 import type { UserPreferences } from '@/types/shared'
 
 export const GET = withAuth(async (_request: NextRequest, userId: string) => {
@@ -48,7 +49,7 @@ export const PUT = withAuth(async (request: NextRequest, userId: string) => {
     await saveUserPreferences(userId, locked.preferences)
     return NextResponse.json(
         locked.kept
-            ? { success: true, childSafetyMode: true, childSafetyKept: true }
+            ? { success: true, childSafetyMode: true, [CHILD_SAFETY_KEPT_FIELD]: true }
             : { success: true }
     )
 })
