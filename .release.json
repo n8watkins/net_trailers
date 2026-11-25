@@ -1,0 +1,14 @@
+{
+  "versionFiles": [],
+  "workflows": "package",
+  "train": {
+    "schedule": "0 16 * * 1",
+    "checks": [
+      "ci.yml",
+      "commits.yml"
+    ]
+  },
+  "timeZone": "America/Los_Angeles",
+  "repository": "n8watkins/net_trailers",
+  "visibility": "public"
+}
