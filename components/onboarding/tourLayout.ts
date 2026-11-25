@@ -71,7 +71,8 @@ function overlaps(aTop: number, aBottom: number, bTop: number, bBottom: number):
  * - Narrow screens: the card spans the width minus the gutters and docks to the
  *   bottom edge, or the top edge when the bottom would cover the target.
  * - Wide screens: the card sits above or below the target as the step asks,
- *   flips when there is no room, and is clamped inside the gutters.
+ *   flips when only the other side has room, goes beside a target too tall for
+ *   either, and is always clamped inside the gutters.
  */
 export function computeTourLayout(params: {
     target: Box | null
@@ -106,20 +107,41 @@ export function computeTourLayout(params: {
     }
 
     const width = Math.min(TOUR_CARD_MAX_WIDTH, viewport.width - TOUR_GUTTER * 2)
+    const clampTop = (value: number) => Math.min(Math.max(value, TOUR_GUTTER), maxTop)
+    const clampLeft = (value: number) =>
+        Math.min(
+            Math.max(value, TOUR_GUTTER),
+            Math.max(TOUR_GUTTER, viewport.width - TOUR_GUTTER - width)
+        )
     const roomAbove = spotTop - TOUR_GAP - TOUR_GUTTER
     const roomBelow = viewport.height - TOUR_GUTTER - (spotBottom + TOUR_GAP)
-    let side: 'top' | 'bottom' = position
-    if (side === 'top' && roomAbove < cardHeight && roomBelow > roomAbove) side = 'bottom'
-    else if (side === 'bottom' && roomBelow < cardHeight && roomAbove > roomBelow) side = 'top'
+    const preferred = position === 'top' ? roomAbove : roomBelow
+    const other = position === 'top' ? roomBelow : roomAbove
 
+    // Above or below, as the step asks, or flipped when only the other side has room
+    if (preferred >= cardHeight || other >= cardHeight) {
+        const side = preferred >= cardHeight ? position : position === 'top' ? 'bottom' : 'top'
+        const rawTop = side === 'top' ? spotTop - TOUR_GAP - cardHeight : spotBottom + TOUR_GAP
+        const rawLeft = target.left + target.width / 2 - width / 2
+        return { spotlight, card: { top: clampTop(rawTop), left: clampLeft(rawLeft), width } }
+    }
+
+    // A tall target: beside it, on whichever side has room, level with its middle
+    const spotRight = spotlight.left + spotlight.width
+    const roomRight = viewport.width - TOUR_GUTTER - (spotRight + TOUR_GAP)
+    const roomLeft = spotlight.left - TOUR_GAP - TOUR_GUTTER
+    if (roomRight >= width || roomLeft >= width) {
+        const rawLeft =
+            roomRight >= width ? spotRight + TOUR_GAP : spotlight.left - TOUR_GAP - width
+        const rawTop = spotTop + spotlight.height / 2 - cardHeight / 2
+        return { spotlight, card: { top: clampTop(rawTop), left: clampLeft(rawLeft), width } }
+    }
+
+    // No room anywhere: the side with more space, kept on screen
+    const side = roomBelow >= roomAbove ? 'bottom' : 'top'
     const rawTop = side === 'top' ? spotTop - TOUR_GAP - cardHeight : spotBottom + TOUR_GAP
-    const top = Math.min(Math.max(rawTop, TOUR_GUTTER), maxTop)
     const rawLeft = target.left + target.width / 2 - width / 2
-    const left = Math.min(
-        Math.max(rawLeft, TOUR_GUTTER),
-        Math.max(TOUR_GUTTER, viewport.width - TOUR_GUTTER - width)
-    )
-    return { spotlight, card: { top, left, width } }
+    return { spotlight, card: { top: clampTop(rawTop), left: clampLeft(rawLeft), width } }
 }
 
 /** True when two layouts would draw the same pixels (avoids a re-render per frame). */

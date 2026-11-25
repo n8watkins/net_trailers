@@ -211,28 +211,26 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ onComplete, onSkip })
     }, [stepIndex, mounted])
 
     // Escape skips; arrows move between steps. Enter is handled by the focused button.
+    // Captured on window so the tour, the top layer, gets these keys before page
+    // handlers (carousel arrows, other Escape listeners) can act on or swallow them.
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.defaultPrevented || isEditable(e.target)) return
-            switch (e.key) {
-                case 'Escape':
-                    e.preventDefault()
-                    onSkip()
-                    break
-                case 'ArrowRight':
-                case 'ArrowDown':
-                    e.preventDefault()
-                    handleNext()
-                    break
-                case 'ArrowLeft':
-                case 'ArrowUp':
-                    e.preventDefault()
-                    handlePrevious()
-                    break
-            }
+            if (isEditable(e.target)) return
+            const action =
+                e.key === 'Escape'
+                    ? onSkip
+                    : e.key === 'ArrowRight' || e.key === 'ArrowDown'
+                      ? handleNext
+                      : e.key === 'ArrowLeft' || e.key === 'ArrowUp'
+                        ? handlePrevious
+                        : null
+            if (!action) return
+            e.preventDefault()
+            e.stopPropagation()
+            action()
         }
-        document.addEventListener('keydown', handleKeyDown)
-        return () => document.removeEventListener('keydown', handleKeyDown)
+        window.addEventListener('keydown', handleKeyDown, true)
+        return () => window.removeEventListener('keydown', handleKeyDown, true)
     }, [handleNext, handlePrevious, onSkip])
 
     if (!mounted || !step) return null
@@ -289,7 +287,7 @@ const InteractiveTour: React.FC<InteractiveTourProps> = ({ onComplete, onSkip })
                     <button
                         type="button"
                         onClick={onSkip}
-                        aria-label="Skip tour"
+                        aria-label="Close tour"
                         className="-mr-2 -mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
                     >
                         <XMarkIcon className="h-6 w-6" aria-hidden="true" />
