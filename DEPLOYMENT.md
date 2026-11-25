@@ -19,6 +19,12 @@ https://net-trailers.vercel.app still serves an old Vercel deployment until the 
 - **Images:** `next/image` resizes through the Cloudflare Images binding (`IMAGES`); uploads reach the optimizer through the same handler.
 - **Caching:** the API routes' `export const revalidate` and the revalidated TMDB fetches live in the R2 bucket `net-trailers-opennext-cache`, with a regional Cache API layer and a Durable Object queue (`DOQueueHandler`) for background revalidation (`open-next.config.ts`).
   Nothing calls `revalidateTag` or `revalidatePath`, so there is no tag cache.
+- **Edge cache:** Workers Cache sits in front of the `CachedPages` entrypoint (`exports` in `wrangler.jsonc`), and the default entrypoint sends it only what is the same for everyone who may get it: the TMDB catalogue routes, optimized images, and the public pages for signed-out visitors (`worker/edgeCache.ts`).
+  Those pages name their build's `/_next/static` files, which the next deploy removes, so a page must never be served by a build other than the one that rendered it.
+  Cloudflare keys this cache by Worker version, but that did not prevent it on 2026-11-25: right after a deploy, a call from the new version's default entrypoint ran on the previous version's `CachedPages` (Workers Logs show both versions in one request), and that old home page was stored where the new version read it, so signed-out visitors got a page without its CSS and JS for about ten minutes.
+  Now the default entrypoint puts its version (`CF_VERSION_METADATA.id`) in the cache key and in the request, `CachedPages` renders only for its own version and stamps the answer with the `X-NetTrailers-Build` header, and the default entrypoint serves a cached answer only when that stamp is its own version.
+  Anything else is rendered directly, uncached, and logged as `edge_cache_build_mismatch`.
+  Never turn on `cache.cross_version_cache`.
 - **Calls to its own API:** the home page and shared-collection pages fetch the app's own API routes.
   `lib/selfFetch.ts` sends them through the service binding `WORKER_SELF_REFERENCE` instead of the public internet.
 - **URLs:** links and those calls use the request's own origin (`lib/requestOrigin.ts`), so nothing reads `VERCEL_URL` or `VERCEL_ENV` any more, and the CSRF check always allows same-origin requests.
@@ -96,6 +102,18 @@ Local runs and the end-to-end tests use Cloudflare's always-pass test keys.
 `.github/workflows/deploy.yml` builds and deploys on every push to `main`, and on demand from the Actions tab.
 It needs a `CLOUDFLARE_API_TOKEN` repository secret: a Cloudflare API token made from the "Edit Cloudflare Workers" template, limited to the owner's account.
 Until that secret exists, the workflow builds and then skips the deploy with a notice.
+
+## After each deploy
+
+The deploy workflow then checks the live site as a signed-out visitor (`scripts/check-deploy.ts`).
+It waits 15 seconds for the deploy to reach every location, then requests the home page and every edge-cached public page six times, ten seconds apart.
+Each answer must be a 200 stamped with the version the deploy printed (`X-NetTrailers-Build`), and every `/_next/static` file it names must load.
+If the check fails, the workflow deploys the same build once more, which starts a fresh cache, checks again, and then fails the run either way, saying whether the second deploy repaired the site.
+The second deploy is there so visitors stop getting broken pages at once; the failed run is there so the cause still gets a look.
+
+To run the check by hand, read the live version with `npx wrangler deployments status`, then run `node scripts/check-deploy.ts --build <version id>`.
+`--base`, `--settle`, `--rounds` and `--interval` change the address and timing.
+It only sends GET requests.
 
 ## Deploy by hand
 

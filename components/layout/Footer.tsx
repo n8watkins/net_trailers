@@ -2,6 +2,7 @@ import React from 'react'
 import Link from '@/components/common/Link'
 import Image from 'next/image'
 import CookieSettingsButton from '@/components/consent/CookieSettingsButton'
+import N8buildsLink from '@/components/common/N8buildsLink'
 
 interface FooterProps {
     showAboutModal: boolean
@@ -12,7 +13,11 @@ interface FooterProps {
     onOpenWelcome?: () => void
 }
 
-const linkClass = 'text-sm text-gray-300 transition-colors duration-200 hover:text-white'
+const focusRing =
+    'rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a]'
+// min-h-10 keeps every footer link a 40 px tap target; the lists add no gap of their own
+const linkClass = `inline-flex min-h-10 items-center text-sm text-gray-300 transition-colors duration-200 hover:text-white ${focusRing}`
+const socialClass = `inline-flex h-10 w-10 items-center justify-center text-gray-400 transition-colors hover:text-brand-300 ${focusRing}`
 const headingClass = 'mb-3 text-sm font-semibold uppercase tracking-wide text-brand-400'
 
 /**
@@ -31,7 +36,7 @@ function Footer({
                 <div className="grid grid-cols-2 gap-x-6 gap-y-8 md:grid-cols-[auto_auto_auto] md:justify-between md:gap-x-16">
                     <nav aria-label="Footer navigation">
                         <h3 className={headingClass}>Navigate</h3>
-                        <ul className="space-y-2">
+                        <ul>
                             <li>
                                 <Link href="/" className={linkClass}>
                                     Home
@@ -57,7 +62,7 @@ function Footer({
 
                     <div>
                         <h3 className={headingClass}>Project</h3>
-                        <ul className="space-y-2">
+                        <ul>
                             <li>
                                 <button
                                     type="button"
@@ -78,12 +83,12 @@ function Footer({
                                 </a>
                             </li>
                         </ul>
-                        <div className="mt-4 flex items-center gap-4">
+                        <div className="-ml-2.5 mt-2 flex items-center">
                             <a
                                 href="https://github.com/n8watkins"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-gray-400 transition-colors hover:text-brand-300"
+                                className={socialClass}
                                 aria-label="GitHub"
                             >
                                 <svg
@@ -100,7 +105,7 @@ function Footer({
                                 href="https://www.linkedin.com/in/n8watkins/"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-gray-400 transition-colors hover:text-brand-300"
+                                className={socialClass}
                                 aria-label="LinkedIn"
                             >
                                 <svg
@@ -117,7 +122,7 @@ function Footer({
                                 href="https://x.com/n8watkins"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-gray-400 transition-colors hover:text-brand-300"
+                                className={socialClass}
                                 aria-label="Twitter/X"
                             >
                                 <svg
@@ -135,7 +140,7 @@ function Footer({
 
                     <div className="col-span-2 md:col-span-1">
                         <h3 className={headingClass}>Help &amp; legal</h3>
-                        <ul className="grid grid-cols-2 gap-x-6 gap-y-2 md:grid-cols-1">
+                        <ul className="grid grid-cols-2 gap-x-6 md:grid-cols-1">
                             {onOpenWelcome && (
                                 <li>
                                     <button
@@ -208,8 +213,8 @@ function Footer({
                     </div>
                 </div>
 
-                <div className="mt-10 flex flex-col items-center gap-3 border-t border-gray-800 pt-6 sm:flex-row sm:justify-between">
-                    <div className="flex items-center gap-3">
+                <div className="mt-8 flex flex-col gap-2 border-t border-gray-800 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                         <Image
                             src="/nettrailers-logo.svg"
                             alt="NetTrailers"
@@ -218,20 +223,37 @@ function Footer({
                             unoptimized
                             className="h-5 w-auto"
                         />
-                        <span className="text-xs text-gray-500">
-                            © {new Date().getFullYear()} All rights reserved.
+                        <span className="text-xs text-gray-400">
+                            © {new Date().getFullYear()} Nathan Watkins
                         </span>
                     </div>
-                    <p className="text-xs text-gray-500">
-                        Powered by{' '}
-                        <a
-                            href="https://www.themoviedb.org/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-brand-400 transition-colors hover:text-brand-300"
-                        >
-                            TMDB
-                        </a>
+                    <N8buildsLink tapTarget className="text-sm text-gray-300 hover:text-white">
+                        Built by Nate at n8builds.dev
+                    </N8buildsLink>
+                </div>
+
+                <div
+                    data-testid="tmdb-credit"
+                    className="mt-2 flex flex-col gap-1 border-t border-gray-800/70 pt-2 sm:flex-row sm:items-center sm:gap-4"
+                >
+                    <a
+                        href="https://www.themoviedb.org/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="The Movie Database (TMDB)"
+                        className={`inline-flex min-h-10 shrink-0 items-center ${focusRing}`}
+                    >
+                        <Image
+                            src="/brand/tmdb-logo.svg"
+                            alt=""
+                            width={273}
+                            height={36}
+                            unoptimized
+                            className="h-3.5 w-auto"
+                        />
+                    </a>
+                    <p className="text-xs leading-snug text-gray-400">
+                        This product uses the TMDB API but is not endorsed or certified by TMDB.
                     </p>
                 </div>
             </div>

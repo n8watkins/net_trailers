@@ -3,6 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from '@/components/common/Link'
+import N8buildsLink from '@/components/common/N8buildsLink'
 import {
     XMarkIcon,
     ArrowTopRightOnSquareIcon,
@@ -85,8 +86,16 @@ export default function AboutModal({ isOpen, onClose, onStartTour }: AboutModalP
                     <div className="min-w-0 flex-1">
                         <h2
                             id={titleId}
-                            className="flex flex-wrap items-baseline gap-x-2 text-xl font-bold text-white"
+                            className="flex flex-wrap items-center gap-x-2 text-xl font-bold text-white"
                         >
+                            <Image
+                                src="/nettrailers-mark.svg"
+                                width={28}
+                                height={28}
+                                alt=""
+                                unoptimized
+                                className="h-7 w-7 shrink-0"
+                            />
                             <span>NetTrailers</span>
                             <span className="text-sm font-medium text-gray-400">
                                 built by Nathan Watkins
@@ -102,6 +111,15 @@ export default function AboutModal({ isOpen, onClose, onStartTour }: AboutModalP
                                 rel="noopener noreferrer"
                                 className={`${outboundBase} bg-brand-500 text-white hover:bg-brand-400`}
                             >
+                                <Image
+                                    src="/brand/n8builds-mark-48.png"
+                                    width={16}
+                                    height={16}
+                                    alt=""
+                                    unoptimized
+                                    style={{ width: 16, height: 16 }}
+                                    className="shrink-0 rounded-[3px]"
+                                />
                                 Portfolio
                                 <ArrowTopRightOnSquareIcon className="h-4 w-4" aria-hidden="true" />
                             </a>
@@ -310,16 +328,12 @@ export default function AboutModal({ isOpen, onClose, onStartTour }: AboutModalP
                 </div>
 
                 <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-zinc-800 px-5 pb-[max(0.875rem,env(safe-area-inset-bottom))] pt-3.5 text-xs text-gray-500 sm:px-6">
-                    <p>
-                        NetTrailers is a portfolio project by{' '}
-                        <a
-                            href={ABOUT_LINKS.n8builds}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={`rounded text-gray-300 underline-offset-2 hover:text-white hover:underline ${focusRing}`}
-                        >
-                            n8builds.dev
-                        </a>
+                    <p className="flex flex-wrap items-center gap-x-1.5">
+                        NetTrailers is a portfolio project by
+                        <N8buildsLink
+                            iconSize={16}
+                            className="text-gray-300 underline-offset-2 hover:text-white hover:underline"
+                        />
                     </p>
                     <p>Trailer data from TMDB</p>
                 </div>

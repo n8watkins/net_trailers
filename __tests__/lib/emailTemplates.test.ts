@@ -115,6 +115,9 @@ describe('email templates', () => {
                 'href="https://portfolio.n8builds.dev/projects/net-trailers"'
             )
             expect(email.html).toContain('/email/nettrailers-mark-96.png')
+            expect(email.html).toContain(
+                'https://net-trailers.n8builds.dev/email/n8builds-mark-48.png'
+            )
             expect(email.text).toContain('portfolio project by n8builds.dev')
             expect(`${email.subject}${email.html}${email.text}`).not.toContain(EM_DASH)
         }

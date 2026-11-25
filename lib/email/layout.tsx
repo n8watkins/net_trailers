@@ -17,6 +17,7 @@ import {
     PORTFOLIO_PROJECT_URL,
     SANS,
     logoUrl,
+    n8buildsMarkUrl,
     preferencesUrl,
     siteUrl,
 } from './brand'
@@ -452,6 +453,20 @@ export function EmailLayout({
                                                         href={N8BUILDS_URL}
                                                         style={FOOT_LINK}
                                                     >
+                                                        <Img
+                                                            src={n8buildsMarkUrl()}
+                                                            width={14}
+                                                            height={14}
+                                                            alt=""
+                                                            style={{
+                                                                display: 'inline-block',
+                                                                width: '14px',
+                                                                height: '14px',
+                                                                borderRadius: '3px',
+                                                                verticalAlign: 'middle',
+                                                                margin: '0 4px 2px 0',
+                                                            }}
+                                                        />
                                                         n8builds.dev
                                                     </Link>
                                                 </Small>
