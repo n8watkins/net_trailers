@@ -2,3 +2,10 @@
 cloudflare-env.d.ts
 worker/runtime.d.ts
 .open-next/
+# Written by release-kit (npm run release, npx release-kit apply); its release
+# commit runs the pre-commit hook, so keep Prettier from rewriting them.
+CHANGELOG.md
+releases.json
+releases.xml
+.release.json
+RELEASING.md

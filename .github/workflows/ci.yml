@@ -4,6 +4,9 @@ on:
     push:
         branches: [main]
     pull_request:
+    # The release train runs CI on its release commit before it moves main
+    # (.release.json train.checks); GitHub only lets it start a run this way.
+    workflow_dispatch:
 
 permissions:
     contents: read

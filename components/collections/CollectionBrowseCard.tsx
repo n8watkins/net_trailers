@@ -1,106 +1,110 @@
 import Link from '@/components/common/Link'
+import { PencilIcon } from '@heroicons/react/24/outline'
+import { SparklesIcon } from '@heroicons/react/24/solid'
 import { UserList } from '../../types/collections'
 import { getCollectionPath } from '../../utils/slugify'
-import { EyeIcon, SparklesIcon, FilmIcon } from '@heroicons/react/24/solid'
+import CollectionIcon from './CollectionIcon'
+import Switch from './Switch'
+import {
+    HOME_HIDDEN_LABEL,
+    HOME_SHOWN_LABEL,
+    contentsLabel,
+    hasHomeSetting,
+    hexToRgba,
+    isShownOnHome,
+} from './collectionMeta'
 
 interface CollectionBrowseCardProps {
     collection: UserList
+    /** Settings: adds the "Shown on home" switch and an Edit button. */
+    onToggleHome?: (collection: UserList, shown: boolean) => void
+    onEdit?: (collection: UserList) => void
 }
 
-export default function CollectionBrowseCard({ collection }: CollectionBrowseCardProps) {
-    const listColor = collection.color || '#6b7280'
+/**
+ * The one collection card, used by /collections and Settings > Collections.
+ * The whole card opens the collection; Settings adds its controls in the footer.
+ */
+export default function CollectionBrowseCard({
+    collection,
+    onToggleHome,
+    onEdit,
+}: CollectionBrowseCardProps) {
+    const listColor = collection.color || '#71717a'
     const href = getCollectionPath(collection)
-
-    // Helper to convert hex to rgba
-    const hexToRgba = (hex: string, opacity: number): string => {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-        if (result) {
-            const r = parseInt(result[1], 16)
-            const g = parseInt(result[2], 16)
-            const b = parseInt(result[3], 16)
-            return `rgba(${r}, ${g}, ${b}, ${opacity})`
-        }
-        return `rgba(107, 114, 128, ${opacity})`
-    }
-
-    // Get collection icon
-    const getIcon = () => {
-        if (collection.emoji) {
-            return <span className="text-2xl">{collection.emoji}</span>
-        }
-        return <EyeIcon className="w-6 h-6 text-white" />
-    }
-
-    // Get collection type badge
-    const getTypeBadge = () => {
-        if (collection.collectionType === 'ai-generated') {
-            return (
-                <div className="flex items-center gap-1 px-2 py-0.5 bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded-full text-xs font-medium">
-                    <SparklesIcon className="w-3 h-3" />
-                    <span>AI</span>
-                </div>
-            )
-        }
-        return null
-    }
+    const shown = isShownOnHome(collection)
+    const homeSetting = hasHomeSetting(collection)
+    const canEdit = !!onEdit && homeSetting && collection.canEdit !== false
 
     return (
-        <Link href={href} className="block group h-full">
-            <div
-                className="relative flex h-full flex-col bg-zinc-900/60 backdrop-blur-lg border rounded-xl p-5 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/10"
-                style={{
-                    // Thin, low-opacity border: the list colour is an accent, and a bold
-                    // red border (the default Watch Later colour) would read as an alert
-                    borderColor: hexToRgba(listColor, 0.3),
-                }}
-            >
-                {/* Colored glow on hover */}
-                <div
-                    className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-300 -z-10"
-                    style={{
-                        backgroundColor: listColor,
-                    }}
-                />
-
-                {/* Header with icon and badge */}
-                <div className="flex items-start justify-between mb-3">
-                    <div
-                        className="flex items-center justify-center w-12 h-12 rounded-lg"
-                        style={{
-                            backgroundColor: hexToRgba(listColor, 0.15),
-                            borderColor: hexToRgba(listColor, 0.4),
-                            borderWidth: '1px',
-                        }}
-                    >
-                        {getIcon()}
-                    </div>
-                    {getTypeBadge()}
-                </div>
-
-                {/* Collection name */}
-                <h3 className="text-lg font-bold text-white mb-2 line-clamp-2 group-hover:text-blue-400 transition-colors">
-                    {collection.name}
-                </h3>
-
-                {/* Description */}
-                {collection.description && (
-                    <p className="text-sm text-gray-400 mb-3 line-clamp-2">
-                        {collection.description}
-                    </p>
-                )}
-
-                {/* Footer with item count */}
-                <div className="flex items-center justify-between mt-auto pt-3 border-t border-zinc-800/50">
-                    <div className="flex items-center gap-1.5 text-gray-400 text-sm">
-                        <FilmIcon className="w-4 h-4" />
-                        <span>
-                            {collection.collectionType === 'tmdb-genre'
-                                ? 'Fills itself by genre'
-                                : `${collection.items.length} ${collection.items.length === 1 ? 'title' : 'titles'}`}
+        <article
+            data-testid="collection-card"
+            data-collection-id={collection.id}
+            className="group relative flex h-full flex-col rounded-xl border bg-zinc-900/60 p-4 transition-colors hover:bg-zinc-900"
+            style={{ borderColor: hexToRgba(listColor, 0.3) }}
+        >
+            <div className="mb-3 flex items-start justify-between gap-3">
+                <span className="flex items-center gap-2">
+                    <CollectionIcon collection={collection} />
+                    {collection.collectionType === 'ai-generated' && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-zinc-700 bg-zinc-800/80 px-2 py-0.5 text-xs font-medium text-gray-200">
+                            <SparklesIcon className="h-3 w-3 text-brand-400" aria-hidden="true" />
+                            AI
                         </span>
-                    </div>
-                </div>
+                    )}
+                </span>
+                {(onToggleHome || onEdit) && (
+                    <span className="relative z-10 -mr-1.5 flex items-center gap-1">
+                        {onToggleHome && homeSetting && (
+                            <Switch
+                                size="sm"
+                                checked={shown}
+                                label={`Show ${collection.name} on home`}
+                                onChange={(next) => onToggleHome(collection, next)}
+                            />
+                        )}
+                        {canEdit && (
+                            <button
+                                type="button"
+                                onClick={() => onEdit(collection)}
+                                aria-label={`Edit ${collection.name}`}
+                                className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-zinc-800 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
+                            >
+                                <PencilIcon className="h-4 w-4" aria-hidden="true" />
+                            </button>
+                        )}
+                    </span>
+                )}
             </div>
-        </Link>
+
+            <h3 className="mb-1 line-clamp-2 text-lg font-bold text-white">
+                <Link
+                    href={href}
+                    className="rounded outline-none after:absolute after:inset-0 after:rounded-xl focus-visible:after:ring-2 focus-visible:after:ring-brand-400 group-hover:text-brand-300"
+                >
+                    {collection.name}
+                </Link>
+            </h3>
+
+            {collection.description && (
+                <p className="mb-3 line-clamp-2 text-sm text-gray-400">{collection.description}</p>
+            )}
+
+            <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-zinc-800 pt-3 text-sm">
+                <span className="text-gray-300">{contentsLabel(collection)}</span>
+                {homeSetting && (
+                    <span
+                        data-testid="home-status"
+                        className={`inline-flex items-center gap-1.5 ${shown ? 'text-gray-300' : 'text-gray-500'}`}
+                    >
+                        <span
+                            aria-hidden="true"
+                            className={`h-1.5 w-1.5 rounded-full ${shown ? 'bg-brand-500' : 'bg-zinc-600'}`}
+                        />
+                        {shown ? HOME_SHOWN_LABEL : HOME_HIDDEN_LABEL}
+                    </span>
+                )}
+            </div>
+        </article>
     )
 }

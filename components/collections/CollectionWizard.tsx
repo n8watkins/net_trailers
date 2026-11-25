@@ -2,7 +2,8 @@
 import { uiLog } from '../../utils/debugLogger'
 
 import React, { useState } from 'react'
-import { XMarkIcon, CheckIcon, WrenchScrewdriverIcon } from '@heroicons/react/24/outline'
+import { CheckIcon } from '@heroicons/react/24/outline'
+import BuilderHeader from './BuilderHeader'
 import { CustomRowFormData } from '../../types/collections'
 import { Content } from '../../typings'
 import { WizardStep1Basic } from './WizardStep1Basic'
@@ -114,58 +115,16 @@ export function CollectionWizard({
     return (
         <>
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-700">
-                <div className="flex-1">
-                    <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                        <WrenchScrewdriverIcon className="w-6 h-6 text-blue-400" />
-                        Collection Builder
-                    </h2>
-                    <p className="text-gray-400 text-sm mt-1">Build your collection step by step</p>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    {/* Mode Toggle */}
-                    {onModeChange && (
-                        <div className="bg-gray-800 border border-gray-700 rounded-lg p-1 shadow-lg">
-                            <div className="flex gap-1">
-                                <button
-                                    onClick={() => onModeChange('smart')}
-                                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                                        mode === 'smart'
-                                            ? 'bg-brand-500 text-white'
-                                            : 'text-gray-400 hover:text-white hover:bg-gray-700'
-                                    }`}
-                                >
-                                    ✨ Smart
-                                </button>
-                                <button
-                                    onClick={() => onModeChange('traditional')}
-                                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                                        mode === 'traditional'
-                                            ? 'bg-brand-500 text-white'
-                                            : 'text-gray-400 hover:text-white hover:bg-gray-700'
-                                    }`}
-                                >
-                                    🔧 Traditional
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Close button */}
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="text-gray-400 hover:text-white transition-colors"
-                    >
-                        <XMarkIcon className="w-6 h-6" />
-                    </button>
-                </div>
-            </div>
+            <BuilderHeader
+                mode={mode}
+                onModeChange={onModeChange}
+                onClose={onClose}
+                subtitle="Pick genres and filters, then name it."
+            />
 
             {/* Progress bar */}
             {currentStep < 4 && (
-                <div className="px-6 pt-4 pb-2">
+                <div className="px-5 pt-4 pb-2 sm:px-6">
                     <div className="flex items-center gap-2">
                         {Array.from({ length: totalSteps }).map((_, index) => {
                             const stepNumber = index + 1
@@ -180,7 +139,7 @@ export function CollectionWizard({
                                                 ? 'bg-brand-500 text-white'
                                                 : isCurrent
                                                   ? 'bg-brand-500 text-white ring-4 ring-brand-500/30'
-                                                  : 'bg-gray-700 text-gray-400'
+                                                  : 'bg-zinc-800 text-gray-400'
                                         }`}
                                     >
                                         {isCompleted ? (
@@ -192,7 +151,7 @@ export function CollectionWizard({
                                     {index < totalSteps - 1 && (
                                         <div
                                             className={`flex-1 h-1 rounded transition-all ${
-                                                isCompleted ? 'bg-brand-500' : 'bg-gray-700'
+                                                isCompleted ? 'bg-brand-500' : 'bg-zinc-800'
                                             }`}
                                         />
                                     )}
@@ -209,7 +168,7 @@ export function CollectionWizard({
             )}
 
             {/* Step content */}
-            <div className="p-6 min-h-[600px]">
+            <div className="px-5 py-5 sm:px-6">
                 {currentStep === 1 && (
                     <WizardStep1Basic
                         formData={formData}

@@ -23,9 +23,16 @@ https://net-trailers.vercel.app still serves an old Vercel deployment until the 
   `lib/selfFetch.ts` sends them through the service binding `WORKER_SELF_REFERENCE` instead of the public internet.
 - **URLs:** links and those calls use the request's own origin (`lib/requestOrigin.ts`), so nothing reads `VERCEL_URL` or `VERCEL_ENV` any more, and the CSRF check always allows same-origin requests.
   `APP_ENV=production` (a `wrangler.jsonc` var) marks the Worker.
+  <<<<<<< HEAD
 - **Analytics:** Cloudflare Web Analytics (`components/utility/WebAnalytics.tsx`) replaces Vercel Analytics once `NEXT_PUBLIC_CF_WEB_ANALYTICS_TOKEN` is set at build time; Google Analytics goes to the n8builds.dev GA4 property (`G-JZQGKY9Q37`, set in `.github/workflows/deploy.yml`) behind the n8builds.dev consent rules (`lib/consent.ts`).
 - **Changelog:** `/api/changelog` imports `CHANGELOG.md` at build time (a raw module, `next.config.js`), because the Worker has no filesystem.
-  `/api/debug/next-logs` reads a local flag file only under `next dev` and answers 403 everywhere else.
+  \=======
+- **Analytics:** Cloudflare Web Analytics (`components/utility/WebAnalytics.tsx`) replaces Vercel Analytics once `NEXT_PUBLIC_CF_WEB_ANALYTICS_TOKEN` is set at build time; Google Analytics (`@next/third-parties`) is unchanged.
+- **Changelog:** the `/changelog` page imports `CHANGELOG.md` at build time (a raw module, `next.config.js`), because the Worker has no filesystem.
+  release-kit writes that file on each release (RELEASING.md), and the release commit's push to `main` deploys it.
+
+> > > > > > > origin/main
+> > > > > > > `/api/debug/next-logs` reads a local flag file only under `next dev` and answers 403 everywhere else.
 
 ## Cron Triggers
 
