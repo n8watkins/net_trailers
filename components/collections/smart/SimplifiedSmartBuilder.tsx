@@ -5,6 +5,9 @@ import React, { useState } from 'react'
 import Image from 'next/image'
 import { XMarkIcon, SparklesIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline'
 import { WizardStep4Confirmation } from '../WizardStep4Confirmation'
+import BuilderHeader from '../BuilderHeader'
+import Switch from '../Switch'
+import { AUTO_FILL_SWITCH_LABEL } from '../collectionMeta'
 import PageLoader from '../../common/PageLoader'
 import { SmartInput } from '../../common/SmartInput'
 import type { CustomRowFormData } from '@/types/collections'
@@ -281,68 +284,19 @@ export function SimplifiedSmartBuilder({
     return (
         <>
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-700">
-                <div className="flex-1">
-                    <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                        <SparklesIcon className="w-6 h-6 text-brand-400" />
-                        Collection Builder
-                    </h2>
-                    <p className="text-gray-400 text-sm mt-1">Build your collection step by step</p>
-                </div>
+            <BuilderHeader
+                mode={mode ?? 'smart'}
+                onModeChange={onModeChange}
+                onClose={onClose}
+                subtitle="Describe what you want to watch and we will find the titles."
+            />
 
-                <div className="flex items-center gap-3">
-                    {/* Mode Toggle */}
-                    {onModeChange && (
-                        <div className="bg-gray-800 border border-gray-700 rounded-lg p-1 shadow-lg">
-                            <div className="flex gap-1">
-                                <button
-                                    onClick={() => onModeChange('smart')}
-                                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                                        mode === 'smart'
-                                            ? 'bg-brand-500 text-white'
-                                            : 'text-gray-400 hover:text-white hover:bg-gray-700'
-                                    }`}
-                                >
-                                    ✨ Smart
-                                </button>
-                                <button
-                                    onClick={() => onModeChange('traditional')}
-                                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                                        mode === 'traditional'
-                                            ? 'bg-brand-500 text-white'
-                                            : 'text-gray-400 hover:text-white hover:bg-gray-700'
-                                    }`}
-                                >
-                                    🔧 Traditional
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Close button */}
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="text-gray-400 hover:text-white transition-colors"
-                    >
-                        <XMarkIcon className="w-6 h-6" />
-                    </button>
-                </div>
-            </div>
-
-            {/* Content */}
-            <div className="p-6 min-h-[600px] flex flex-col relative">
-                {/* Query Input - Centered and Hero-style */}
-                <div
-                    className={`mb-6 transition-all duration-700 ease-out ${!generatedRow && !isGenerating ? 'w-full mx-auto mt-32' : 'mt-0'}`}
-                    style={{
-                        opacity: 1,
-                        transform: 'translateY(0)',
-                    }}
-                >
-                    <label
-                        className={`block text-sm font-medium text-gray-300 mb-4 transition-all duration-500 ${!generatedRow && !isGenerating ? 'text-center' : ''}`}
-                    >
+            {/* Content: sized to what it shows, no blank stage */}
+            <div
+                className={`flex flex-col relative px-5 py-5 sm:px-6 ${isGenerating && !generatedRow ? 'min-h-[220px]' : ''}`}
+            >
+                <div className="mb-2">
+                    <label className="mb-3 block text-sm font-medium text-gray-300">
                         What do you want to watch?
                     </label>
                     <SmartInput
@@ -404,8 +358,7 @@ export function SimplifiedSmartBuilder({
                             {/* Infinite Content Toggle */}
                             <div className="flex items-center justify-between">
                                 <label className="text-sm font-medium text-white flex items-center gap-1.5">
-                                    <span>♾️</span>
-                                    Infinite Content
+                                    {AUTO_FILL_SWITCH_LABEL}
                                     <button
                                         type="button"
                                         onMouseEnter={() => setShowInfiniteTooltip(true)}
@@ -416,21 +369,12 @@ export function SimplifiedSmartBuilder({
                                         <QuestionMarkCircleIcon className="w-4 h-4" />
                                     </button>
                                 </label>
-                                <button
-                                    type="button"
-                                    onClick={() => setEnableInfiniteContent(!enableInfiniteContent)}
-                                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                        enableInfiniteContent ? 'bg-brand-500' : 'bg-gray-600'
-                                    }`}
-                                >
-                                    <span
-                                        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                                            enableInfiniteContent
-                                                ? 'translate-x-5'
-                                                : 'translate-x-0.5'
-                                        }`}
-                                    />
-                                </button>
+                                <Switch
+                                    size="sm"
+                                    label={AUTO_FILL_SWITCH_LABEL}
+                                    checked={enableInfiniteContent}
+                                    onChange={setEnableInfiniteContent}
+                                />
                             </div>
                             {/* Tooltip */}
                             {showInfiniteTooltip && (
@@ -444,23 +388,15 @@ export function SimplifiedSmartBuilder({
 
                             {/* Display as Row Toggle */}
                             <div className="flex items-center justify-between">
-                                <label className="text-sm font-medium text-white flex items-center gap-1.5">
-                                    <span>🏠</span>
-                                    Display as Row
+                                <label className="text-sm font-medium text-white">
+                                    Show on home
                                 </label>
-                                <button
-                                    type="button"
-                                    onClick={() => setDisplayAsRow(!displayAsRow)}
-                                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                        displayAsRow ? 'bg-blue-600' : 'bg-gray-600'
-                                    }`}
-                                >
-                                    <span
-                                        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                                            displayAsRow ? 'translate-x-5' : 'translate-x-0.5'
-                                        }`}
-                                    />
-                                </button>
+                                <Switch
+                                    size="sm"
+                                    label="Show on home"
+                                    checked={displayAsRow}
+                                    onChange={setDisplayAsRow}
+                                />
                             </div>
                         </div>
 

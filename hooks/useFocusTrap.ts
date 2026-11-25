@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from 'react'
+import { useEffect, useRef, type RefObject } from 'react'
 
 const FOCUSABLE = [
     'a[href]',
@@ -28,8 +28,21 @@ export function focusableWithin(root: HTMLElement): HTMLElement[] {
  *
  * The container itself should have tabIndex={-1} so it can take the first focus
  * without lighting up a ring on a button.
+ *
+ * `paused` lets a window that opens its own window on top (rendered elsewhere
+ * in the page) stop pulling Tab back while that one is open, without giving
+ * focus back to the page behind.
  */
-export function useFocusTrap(containerRef: RefObject<HTMLElement | null>, isOpen: boolean): void {
+export function useFocusTrap(
+    containerRef: RefObject<HTMLElement | null>,
+    isOpen: boolean,
+    options: { paused?: boolean } = {}
+): void {
+    const pausedRef = useRef(!!options.paused)
+    useEffect(() => {
+        pausedRef.current = !!options.paused
+    }, [options.paused])
+
     useEffect(() => {
         if (!isOpen) return
         const container = containerRef.current
@@ -40,7 +53,7 @@ export function useFocusTrap(containerRef: RefObject<HTMLElement | null>, isOpen
         container.focus({ preventScroll: true })
 
         const onKeyDown = (event: KeyboardEvent) => {
-            if (event.key !== 'Tab') return
+            if (event.key !== 'Tab' || pausedRef.current) return
             const items = focusableWithin(container)
             if (items.length === 0) {
                 event.preventDefault()

@@ -1,85 +1,22 @@
 'use client'
 
-import { useMemo, useState } from 'react'
 import useUserData from '../../hooks/useUserData'
 import SubPageLayout from '../../components/layout/SubPageLayout'
 import PageHeader from '../../components/layout/PageHeader'
 import PageEmptyState, { emptyStateActionClass } from '../../components/layout/PageEmptyState'
-import { FilterPills, ListSearchInput } from '../../components/layout/PageToolbar'
-import {
-    RectangleStackIcon,
-    SparklesIcon,
-    PencilSquareIcon,
-    Squares2X2Icon,
-    PlusIcon,
-    FilmIcon,
-} from '@heroicons/react/24/solid'
+import { RectangleStackIcon, PlusIcon } from '@heroicons/react/24/solid'
 import PageLoader from '../../components/common/PageLoader'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
-import CollectionBrowseCard from '../../components/collections/CollectionBrowseCard'
+import CollectionList from '../../components/collections/CollectionList'
 import { useModalStore } from '../../stores/modalStore'
 
-type FilterValue = 'all' | 'manual' | 'ai' | 'genre'
-
 const Collections = () => {
-    const userData = useUserData()
+    const { getAllLists } = useUserData()
     const { isLoading } = useAuthStatus()
-    const { getAllLists } = userData
     const openCollectionBuilderModal = useModalStore((state) => state.openCollectionBuilderModal)
 
-    // State
-    const [searchQuery, setSearchQuery] = useState('')
-    const [collectionFilter, setCollectionFilter] = useState<FilterValue>('all')
-
-    // Get all available lists
-    const allLists = useMemo(() => {
-        return getAllLists()
-    }, [getAllLists])
-
-    // Filter collections by type and search
-    const filteredCollections = useMemo(() => {
-        let filtered = allLists
-
-        // Apply type filter
-        if (collectionFilter === 'manual') {
-            filtered = filtered.filter((list) => list.collectionType === 'manual')
-        } else if (collectionFilter === 'ai') {
-            filtered = filtered.filter((list) => list.collectionType === 'ai-generated')
-        } else if (collectionFilter === 'genre') {
-            filtered = filtered.filter((list) => list.collectionType === 'tmdb-genre')
-        }
-
-        // Apply search filter
-        if (searchQuery.trim()) {
-            const query = searchQuery.toLowerCase()
-            filtered = filtered.filter(
-                (list) =>
-                    list.name.toLowerCase().includes(query) ||
-                    list.description?.toLowerCase().includes(query)
-            )
-        }
-
-        // Sort: Watch Later first, then by creation date
-        return filtered.sort((a, b) => {
-            if (a.name === 'Watch Later') return -1
-            if (b.name === 'Watch Later') return 1
-            return (b.createdAt || 0) - (a.createdAt || 0)
-        })
-    }, [allLists, collectionFilter, searchQuery])
-
-    // Collection stats
-    const collectionStats = useMemo(() => {
-        return {
-            total: allLists.length,
-            manual: allLists.filter((list) => list.collectionType === 'manual').length,
-            ai: allLists.filter((list) => list.collectionType === 'ai-generated').length,
-            // Genre rows (Action-Packed, Comedy...) fill themselves from TMDB; counting
-            // them makes All = Manual + AI + Genre
-            genre: allLists.filter((list) => list.collectionType === 'tmdb-genre').length,
-        }
-    }, [allLists])
-
-    const hasCollections = !isLoading && allLists.length > 0
+    // The same list Settings > Collections shows: Watch Later plus every collection
+    const allLists = getAllLists()
 
     return (
         <SubPageLayout hideHeader>
@@ -97,61 +34,7 @@ const Collections = () => {
                             New collection
                         </button>
                     }
-                >
-                    {hasCollections && (
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <FilterPills<FilterValue>
-                                label="Show"
-                                value={collectionFilter}
-                                onChange={setCollectionFilter}
-                                options={[
-                                    {
-                                        value: 'all',
-                                        label: (
-                                            <>
-                                                <Squares2X2Icon className="h-4 w-4" />
-                                                All ({collectionStats.total})
-                                            </>
-                                        ),
-                                    },
-                                    {
-                                        value: 'manual',
-                                        label: (
-                                            <>
-                                                <PencilSquareIcon className="h-4 w-4" />
-                                                Manual ({collectionStats.manual})
-                                            </>
-                                        ),
-                                    },
-                                    {
-                                        value: 'ai',
-                                        label: (
-                                            <>
-                                                <SparklesIcon className="h-4 w-4" />
-                                                AI-generated ({collectionStats.ai})
-                                            </>
-                                        ),
-                                    },
-                                    {
-                                        value: 'genre',
-                                        label: (
-                                            <>
-                                                <FilmIcon className="h-4 w-4" />
-                                                Genre ({collectionStats.genre})
-                                            </>
-                                        ),
-                                    },
-                                ]}
-                            />
-                            <ListSearchInput
-                                value={searchQuery}
-                                onChange={setSearchQuery}
-                                placeholder="Search collections..."
-                                voiceSourceId="collections-search"
-                            />
-                        </div>
-                    )}
-                </PageHeader>
+                />
 
                 {isLoading && (
                     <div className="py-16">
@@ -176,48 +59,9 @@ const Collections = () => {
                     />
                 )}
 
-                {hasCollections && filteredCollections.length === 0 && (
-                    <p className="py-12 text-center text-gray-400">
-                        {searchQuery
-                            ? 'No collections match your search.'
-                            : `No ${collectionFilter === 'ai' ? 'AI-generated' : collectionFilter === 'genre' ? 'genre' : 'manual'} collections yet.`}
-                    </p>
+                {!isLoading && allLists.length > 0 && (
+                    <CollectionList collections={allLists} voiceSourceId="collections-search" />
                 )}
-
-                {!isLoading && filteredCollections.length > 0 && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {filteredCollections.map((list, index) => (
-                            <div
-                                key={list.id}
-                                className="h-full animate-fadeInUp"
-                                style={{
-                                    animationDelay: `${Math.min(index * 50, 500)}ms`,
-                                    animationFillMode: 'both',
-                                }}
-                            >
-                                <CollectionBrowseCard collection={list} />
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                {/* Add keyframe animation for fade-in */}
-                <style jsx>{`
-                    @keyframes fadeInUp {
-                        from {
-                            opacity: 0;
-                            transform: translateY(20px);
-                        }
-                        to {
-                            opacity: 1;
-                            transform: translateY(0);
-                        }
-                    }
-
-                    :global(.animate-fadeInUp) {
-                        animation: fadeInUp 0.5s ease-out;
-                    }
-                `}</style>
             </div>
         </SubPageLayout>
     )

@@ -215,6 +215,10 @@ export class UserListsService {
             sanitizedUpdates.canGenerateMore = request.canGenerateMore
         }
 
+        if (request.showOnPublicProfile !== undefined) {
+            sanitizedUpdates.showOnPublicProfile = request.showOnPublicProfile
+        }
+
         const updatedList = {
             ...state.userCreatedWatchlists[listIndex],
             ...sanitizedUpdates,
