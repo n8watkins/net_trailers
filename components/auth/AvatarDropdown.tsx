@@ -37,8 +37,13 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
 }) => {
     const [isOpen, setIsOpen] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
-    const { user, logOut } = useAuth()
-    const { isAuthenticated, isLoading, hasOptimisticAuth } = useAuthStatus()
+    const { user, loading: authLoading, logOut } = useAuth()
+    const { hasOptimisticAuth } = useAuthStatus()
+    // Decide from the session itself, not the session store: a page that hands over
+    // the session it read on the server (SeedSession) knows it before the first
+    // paint, while the store only settles after its own effects have run.
+    const isLoading = authLoading && !hasOptimisticAuth
+    const isAuthenticated = Boolean(user) || (authLoading && hasOptimisticAuth)
     const userData = useUserData()
     const router = useRouter()
 
@@ -82,19 +87,16 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
         return email.charAt(0).toUpperCase()
     }
 
-    // Show loading state ONLY if we don't have cached data and auth is loading
-    // If we have cached data (hasOptimisticAuth), skip loading state entirely
-    if (isLoading && !hasOptimisticAuth) {
+    // Only while the session is still being read (a page the edge cache served the
+    // same to everyone): a quiet placeholder of the avatar's size, not a spinner
+    if (isLoading) {
         return (
             <div className={`relative ${className}`} ref={dropdownRef}>
-                {/* Avatar Button - Loading */}
-                <button
-                    disabled
-                    className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-full bg-gray-700 transition-all duration-200 focus:outline-none cursor-wait"
-                    aria-label="Loading user menu"
-                >
-                    <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                </button>
+                <div
+                    data-testid="account-placeholder"
+                    aria-hidden="true"
+                    className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/10"
+                />
             </div>
         )
     }
@@ -257,7 +259,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
         )
     }
 
-    // Use cached data for optimistic UI, fall back to Firebase user
+    // The session's user, or the cached one while a known session is confirmed
     const displayUser =
         user ||
         (cachedUser
@@ -267,23 +269,6 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                   photoURL: cachedUser.photoURL,
               }
             : null)
-
-    // Authenticated but no user data available at all (shouldn't happen with cache)
-    // Only show loading if we don't have optimistic auth
-    if (!displayUser && !hasOptimisticAuth) {
-        return (
-            <div className={`relative ${className}`} ref={dropdownRef}>
-                {/* Avatar Button - Loading user details */}
-                <button
-                    disabled
-                    className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-full bg-brand-500 transition-all duration-200 focus:outline-none cursor-wait"
-                    aria-label="Loading user details"
-                >
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                </button>
-            </div>
-        )
-    }
 
     // If we still don't have user data at this point, show guest UI
     if (!displayUser) {
