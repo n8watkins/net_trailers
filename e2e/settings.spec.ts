@@ -82,7 +82,10 @@ test.describe('on a phone', () => {
         await expect(page.getByText(MENU_ITEM)).toBeVisible()
         await expect(page.getByRole('heading', { name: 'Preferences', level: 2 })).toBeHidden()
 
-        await page.getByRole('link', { name: /^Notifications/ }).click()
+        await page
+            .getByRole('navigation', { name: 'Settings sections' })
+            .getByRole('link', { name: /^Notifications/ })
+            .click()
         await expect(page).toHaveURL(/\/settings\/notifications$/)
         await expect(page.getByRole('heading', { name: 'Notifications', level: 2 })).toBeVisible()
         await expect(page.getByText(MENU_ITEM)).toBeHidden()
