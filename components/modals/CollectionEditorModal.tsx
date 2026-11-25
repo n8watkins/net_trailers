@@ -248,6 +248,7 @@ export default function CollectionEditorModal({
         filters.ratingMin !== undefined || filters.ratingMax !== undefined
             ? `Rating ${filters.ratingMin ?? 0} to ${filters.ratingMax ?? 10}`
             : null,
+        filters.popularity || filters.voteCount ? 'Popularity or vote count set' : null,
     ].filter(Boolean) as string[]
 
     const editor = (
