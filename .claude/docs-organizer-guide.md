@@ -10,10 +10,9 @@ This guide provides comprehensive instructions for the **docs-organizer agent** 
 net_trailers/
 ├── README.md                    # Project overview and setup (root)
 ├── CLAUDE.md                    # Claude Code AI instructions (root)
-├── CHANGELOG.md                 # Version history (root) - DYNAMICALLY CONNECTED TO /changelog PAGE
+├── CHANGELOG.md                 # Written by release-kit (npm run release); never edit by hand
 ├── .claude/
-│   ├── docs-organizer-guide.md           # This file
-│   └── docs-agent-changelog-instructions.md  # CHANGELOG.md specific instructions
+│   └── docs-organizer-guide.md           # This file
 └── docs/
     ├── INDEX.md                 # Complete documentation navigation index
     ├── README.md                # Docs folder overview
@@ -48,9 +47,8 @@ net_trailers/
 
 1. **README.md** - Project overview, setup instructions, features
 2. **CLAUDE.md** - Instructions for Claude Code AI (development commands, architecture notes)
-3. **CHANGELOG.md** - Version history following Keep a Changelog format
-    - **CRITICAL**: Dynamically connected to `/changelog` page via API
-    - See `.claude/docs-agent-changelog-instructions.md` for CHANGELOG.md specific rules
+3. **CHANGELOG.md** - Version history, written by release-kit from the commits
+    - **CRITICAL**: Never edit it by hand; the `/changelog` page renders it (see RELEASING.md)
 
 **Rules**:
 
@@ -151,29 +149,12 @@ net_trailers/
 
 ## Special Documentation: CHANGELOG.md
 
-**CRITICAL**: CHANGELOG.md is **dynamically connected** to the `/changelog` page via API route.
+**CRITICAL**: CHANGELOG.md is written by release-kit, never by hand.
 
-**See**: `.claude/docs-agent-changelog-instructions.md` for comprehensive CHANGELOG.md rules
-
-**Key Points**:
-
-- Must follow Keep a Changelog format exactly
-- Updates appear on website at `/changelog` (5-minute cache)
-- Always use "Unreleased" section for ongoing work
-- Version header format: `## [Version] - Date - Title` (exact spacing required)
-
-**Header Content (Lines 1-6)**:
-
-```markdown
-# Changelog
-
-All notable changes to NetTrailers will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-```
-
-**Important**: This header content is **metadata** - it explains the format but does NOT appear as a "version" on the `/changelog` page. The API parser starts looking for versions at `## [Version]` headers.
+- Each release (`npm run release`, or the weekly release train) adds a section built from the `feat`, `fix`, `perf` and `security` commits since the last one.
+- The `/changelog` page renders the file at build time (`app/changelog/parseChangelog.ts`).
+- To change what a release says, write a better commit subject or a `Release-note:` line in the commit body (RELEASING.md), not the file.
+- The hand-written notes below the release-kit sections are historical; leave them as they are.
 
 ## Documentation Lifecycle Workflow
 
@@ -231,7 +212,7 @@ When documentation becomes historical (feature completed, plan executed, etc.):
 
 1. Update affected docs in `docs/current/`
 2. Update CLAUDE.md if architecture/commands change
-3. Update CHANGELOG.md with changes (use "Unreleased" section)
+3. Leave CHANGELOG.md alone: release-kit writes it from the commits
 4. Update README.md if setup/features change
 
 **Regular maintenance**:
@@ -359,7 +340,6 @@ Before finalizing documentation updates:
 - [ ] Code examples have syntax highlighting
 - [ ] All links are valid
 - [ ] INDEX.md updated if files added/moved
-- [ ] CHANGELOG.md updated if documenting changes
 - [ ] Statistics updated in INDEX.md
 - [ ] "Last Updated" date current
 - [ ] Spelling and grammar checked
@@ -369,11 +349,8 @@ Before finalizing documentation updates:
 
 ### CHANGELOG.md
 
-See `.claude/docs-agent-changelog-instructions.md` for complete rules.
-
-- Always use "Unreleased" section for ongoing work
-- Follow Keep a Changelog format exactly
-- Remember: Connected to `/changelog` page via API
+- Written by release-kit (`npm run release`); never edit it by hand
+- The `/changelog` page renders it, so it is directly visible to users
 
 ### CLAUDE.md
 
@@ -422,7 +399,7 @@ Update when:
 - Create duplicate documentation
 - Archive docs without adding archive notice
 - Modify archived docs (they're historical reference)
-- Update CHANGELOG.md without following Keep a Changelog format
+- Edit CHANGELOG.md (release-kit writes it)
 
 ✅ **Do**:
 
@@ -432,7 +409,6 @@ Update when:
 - Consolidate duplicate content
 - Add clear archive notices
 - Preserve archived docs as-is
-- Follow exact CHANGELOG.md format from instructions
 
 ## Summary
 
@@ -440,25 +416,23 @@ Update when:
 
 1. **Maintain structure** - Keep docs organized in current/archive categories
 2. **Update INDEX.md** - Reflect all documentation changes
-3. **Update CHANGELOG.md** - Document code changes following Keep a Changelog format
-4. **Archive old docs** - Move completed/historical docs to archive with notices
-5. **Keep current docs fresh** - Update active documentation when code changes
-6. **Follow conventions** - Use proper naming, formatting, and linking
-7. **Verify quality** - Check links, examples, and accuracy before finalizing
+3. **Archive old docs** - Move completed/historical docs to archive with notices
+4. **Keep current docs fresh** - Update active documentation when code changes
+5. **Follow conventions** - Use proper naming, formatting, and linking
+6. **Verify quality** - Check links, examples, and accuracy before finalizing
 
 **Priority order**:
 
-1. CHANGELOG.md (directly visible to users at `/changelog`)
-2. CLAUDE.md (used by AI for development)
-3. docs/current/ (active references)
-4. INDEX.md (navigation)
-5. README.md (project overview)
-6. Archive maintenance (lower priority - reference only)
+1. CLAUDE.md (used by AI for development)
+2. docs/current/ (active references)
+3. INDEX.md (navigation)
+4. README.md (project overview)
+5. Archive maintenance (lower priority - reference only)
 
 **When in doubt**:
 
 - Preserve existing structure
 - Add archive notices before moving files
 - Update INDEX.md for any changes
-- Follow Keep a Changelog format for CHANGELOG.md
+- Never edit CHANGELOG.md: release-kit writes it
 - Ask before making major reorganizations
