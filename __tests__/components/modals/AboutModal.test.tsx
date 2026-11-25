@@ -37,6 +37,14 @@ describe('AboutModal', () => {
         }
     })
 
+    it('shows the NetTrailers mark in the title and the n8builds icon on Portfolio', () => {
+        renderAbout()
+        const title = screen.getByRole('heading', { level: 2, name: /NetTrailers/ })
+        expect(title.querySelector('img')?.getAttribute('src')).toContain('nettrailers-mark')
+        const portfolio = screen.getByRole('link', { name: /^Portfolio/ })
+        expect(portfolio.querySelector('img')?.getAttribute('src')).toContain('n8builds-mark')
+    })
+
     it('closes on Escape and when an in-app link is followed', () => {
         const { onClose } = renderAbout()
         fireEvent.keyDown(document, { key: 'Escape' })
