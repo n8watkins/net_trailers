@@ -12,6 +12,7 @@ import {
     CONSENT_STORAGE_KEY,
     consentBootstrapScript,
     GA_GRACE_MS,
+    GA_IDLE_TIMEOUT_MS,
     isConsentTimeZone,
     type ConsentApi,
 } from '../../lib/consent'
@@ -60,6 +61,7 @@ function boot({
     const events: string[] = []
     const timers: { fn: () => void; ms: number }[] = []
     const listeners = new Map<string, () => void>()
+    const idleTimeouts: (number | undefined)[] = []
     const window: Record<string, unknown> = {
         location: { hostname, protocol },
         navigator: gpc === undefined ? {} : { globalPrivacyControl: gpc },
@@ -67,7 +69,10 @@ function boot({
             getItem: (k: string) => storage.get(k) ?? null,
             setItem: (k: string, v: string) => void storage.set(k, v),
         },
-        requestIdleCallback: (f: () => void) => f(),
+        requestIdleCallback: (f: () => void, options?: { timeout?: number }) => {
+            idleTimeouts.push(options?.timeout)
+            f()
+        },
         setTimeout: (fn: () => void, ms: number) => (holdTimers ? timers.push({ fn, ms }) : fn()),
         addEventListener: (type: string, fn: () => void) => void listeners.set(type, fn),
         removeEventListener: (type: string, fn: () => void) => {
@@ -98,6 +103,7 @@ function boot({
         events,
         timers,
         listeners,
+        idleTimeouts,
     }
 }
 
@@ -199,6 +205,12 @@ describe('consent bootstrap', () => {
         timers[0].fn()
         expect(scripts).toHaveLength(1)
         expect(listeners.size).toBe(0)
+    })
+
+    it(`waits for an idle moment for at most ${GA_IDLE_TIMEOUT_MS / 1000}s, so a busy page still loads GA`, () => {
+        const { scripts, idleTimeouts } = boot()
+        expect(idleTimeouts).toEqual([GA_IDLE_TIMEOUT_MS])
+        expect(scripts).toHaveLength(1)
     })
 
     it('an Accept loads GA at once, without waiting for the grace period', () => {

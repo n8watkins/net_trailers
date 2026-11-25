@@ -28,7 +28,7 @@ Setup and features: `README.md`; architecture and conventions for agents: `CLAUD
 - Two stray hosting integrations report failures on every push, and neither serves the app:
   GitHub Pages (`pages-build-deployment`, failing its build) and a Netlify site (`silly-palmier-862249`, "Deploy Preview failed").
   The owner should switch both off; agents must not change hosting settings.
-- Analytics go to a separate GA4 property (`NEXT_PUBLIC_GA_MEASUREMENT_ID`, loaded in `components/utility/Analytics.tsx`) plus Cloudflare Web Analytics (`components/utility/WebAnalytics.tsx`, once its token is set).
+- Analytics go to the n8builds.dev GA4 property (`NEXT_PUBLIC_GA_MEASUREMENT_ID`, `G-JZQGKY9Q37`, loaded behind the n8builds.dev consent rules by `lib/consent.ts` and `components/utility/Analytics.tsx`) plus Cloudflare Web Analytics (`components/utility/WebAnalytics.tsx`, once its token is set).
   The owner may later unify it with the other n8builds properties.
 
 ### Open problems, highest first

@@ -26,10 +26,21 @@
  * in place before gtag.js can load. gtag.js itself (about 180 KB, and half a
  * second of script on a phone) waits until the visitor first scrolls, taps,
  * clicks or types, or GA_GRACE_MS after the page has loaded, whichever comes
- * first, and then for the browser to be idle: on a phone it used to run right
- * after load, while the visitor was trying to use the page. Commands queued
- * before then (the page_view among them) are sent once it loads.
+ * first, and then for the browser to be idle (at most GA_IDLE_TIMEOUT_MS): on
+ * a phone it used to run right after load, while the visitor was trying to use
+ * the page. Commands queued before then (the page_view among them) are sent
+ * once it loads.
  */
+
+/**
+ * The longest gtag.js waits for an idle moment. NetTrailers' home page can
+ * animate without a break (the hero carousel, loading shimmers), and on a slow
+ * phone that left no idle time at all: without a cap, requestIdleCallback
+ * never ran and GA never loaded, even after an Accept (seen 2026-11-25 in
+ * software-rendered Chromium at phone size). This and the cookie pattern fix
+ * in consentBootstrapScript are the two changes from n8builds.dev's copy.
+ */
+export const GA_IDLE_TIMEOUT_MS = 2000
 
 /**
  * How long after the load event gtag.js waits for a first interaction before
@@ -181,7 +192,7 @@ gtag('js',new Date());
 gtag('config',id);
 var loaded=false,waiting=false,E=${j(GA_WAKE_EVENTS)};
 function load(){if(loaded)return;loaded=true;var s=d.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id='+encodeURIComponent(id);d.head.appendChild(s)}
-function later(){var idle=w.requestIdleCallback||function(f){return w.setTimeout(f,1)};idle(load)}
+function later(){if(w.requestIdleCallback)w.requestIdleCallback(load,{timeout:${GA_IDLE_TIMEOUT_MS}});else w.setTimeout(load,1)}
 function wake(){if(!waiting)return;waiting=false;E.forEach(function(e){w.removeEventListener(e,wake,true)});later()}
 function arm(){w.setTimeout(wake,${GA_GRACE_MS})}
 function start(){if(loaded||waiting)return;waiting=true;E.forEach(function(e){w.addEventListener(e,wake,{capture:true,passive:true})});if(d.readyState==='complete')arm();else w.addEventListener('load',arm,{once:true})}

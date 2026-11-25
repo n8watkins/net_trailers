@@ -227,10 +227,11 @@ export default function PrivacyPage() {
                                     </li>
                                 </ul>
                                 <p className="mb-4">
-                                    Trailers come from YouTube&apos;s no-cookie host, which sets no
-                                    cookies when a trailer plays. The player keeps some data in the
-                                    browser storage of its own frame, which is cleared with your
-                                    other site data.
+                                    Trailers play in YouTube&apos;s no-cookie player, and the code
+                                    that starts it is served from this site, so playing a trailer
+                                    sets no YouTube cookies. Inside its own frame the player keeps a
+                                    few items in browser storage (local storage and IndexedDB), such
+                                    as your caption setting.
                                 </p>
 
                                 <h3 className="text-xl font-semibold text-white mb-3">
