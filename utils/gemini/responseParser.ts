@@ -115,7 +115,7 @@ export function parseGeminiResponse(responseText: string): GeminiResponse {
                 error instanceof Error ? error.message : String(error)
             }; ends with: ${JSON.stringify(responseText.slice(-200))}`
         )
-        throw new Error('Failed to parse AI response')
+        throw new Error('Failed to parse AI response', { cause: error })
     }
 }
 

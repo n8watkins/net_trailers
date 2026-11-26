@@ -106,7 +106,7 @@ function calculateTimeRangedPreferences(
 
         // Apply time decay based on how old the interaction is
         const age = now - timestamp
-        let decayMultiplier = 1.0
+        let decayMultiplier: number
         if (age > TIME_RANGES.MEDIUM) {
             decayMultiplier = TIME_DECAY_WEIGHTS.LONG_TERM
         } else if (age > TIME_RANGES.RECENT) {

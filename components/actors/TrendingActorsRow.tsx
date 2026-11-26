@@ -89,7 +89,7 @@ export default function TrendingActorsRow({
 
         // Add genre filter (translate unified IDs to TMDB IDs)
         if (selectedGenres.length > 0) {
-            let tmdbGenreIds: number[] = []
+            let tmdbGenreIds: number[]
             if (effectiveMediaType === 'both') {
                 // For 'both', combine movie and TV genre IDs
                 const { movieIds, tvIds } = translateToTMDBGenresForBoth(selectedGenres)

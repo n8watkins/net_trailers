@@ -13,8 +13,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // Fetch share data for metadata
     let collectionName = 'Shared Collection'
     let description = 'View this shared collection on NetTrailers'
-    let itemCount = 0
-    let ownerName = ''
 
     try {
         const response = await selfFetch(`/api/shares/${encodeURIComponent(shareId)}`, {
@@ -26,8 +24,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             if (data.success && data.data) {
                 const shareData = data.data
                 collectionName = shareData.share.collectionName
-                itemCount = shareData.share.itemCount
-                ownerName = shareData.ownerName || ''
+                const itemCount = shareData.share.itemCount
+                const ownerName = shareData.ownerName || ''
 
                 description = ownerName
                     ? `${ownerName} shared "${collectionName}" with ${itemCount} ${itemCount === 1 ? 'item' : 'items'}`
