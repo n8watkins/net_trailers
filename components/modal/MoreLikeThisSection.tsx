@@ -49,8 +49,12 @@ export default function MoreLikeThisSection({ content }: MoreLikeThisSectionProp
                     `/api/recommendations/similar/${content.id}?mediaType=${mediaType}&limit=12`
                 )
 
+                // "More like this" is optional: when it cannot load, the section is simply
+                // left out. No console error beyond the browser's own network line.
                 if (!response.ok) {
-                    throw new Error('Failed to fetch similar content')
+                    setRecommendations([])
+                    setError('Unable to load recommendations')
+                    return
                 }
 
                 const data = await response.json()
@@ -60,8 +64,8 @@ export default function MoreLikeThisSection({ content }: MoreLikeThisSectionProp
                 } else {
                     setError(data.error || 'Failed to load recommendations')
                 }
-            } catch (err) {
-                console.error('Error fetching similar content:', err)
+            } catch {
+                setRecommendations([])
                 setError('Unable to load recommendations')
             } finally {
                 setIsLoading(false)
