@@ -51,6 +51,11 @@ jobs:
             - name: Build
               run: npm run build:worker
 
+            # Serves the built Worker and sends it requests with a cookie, which
+            # the edge cache never answers (scripts/check-worker.ts).
+            - name: Built Worker answers requests with a cookie
+              run: npm run check:worker
+
             - name: Deploy dry run
               run: npm run check:deploy
 

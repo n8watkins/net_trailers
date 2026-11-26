@@ -50,6 +50,11 @@ jobs:
       - name: Build
         run: npm run build:worker
 
+      # A build whose server throws on a cookie header never reaches the live
+      # site (scripts/check-worker.ts).
+      - name: Built Worker answers requests with a cookie
+        run: npm run check:worker
+
       - name: Waiting for setup
         if: env.CLOUDFLARE_API_TOKEN == ''
         run: echo "::notice::Built, but skipping the deploy until the CLOUDFLARE_API_TOKEN secret is added (DEPLOYMENT.md)."
