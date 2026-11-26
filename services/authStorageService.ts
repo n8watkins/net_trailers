@@ -2,6 +2,8 @@ import { Content } from '../typings'
 import { UserPreferences, defaultAuthSession } from '../types/shared'
 import { authenticatedFetch } from '../lib/authenticatedFetch'
 import { authLog, authError, authWarn } from '../utils/debugLogger'
+import { CHILD_SAFETY_KEPT_FIELD } from '../lib/childSafetyKept'
+import type { SaveResult } from './storageAdapter'
 
 // Type alias for backward compatibility
 export type AuthPreferences = UserPreferences
@@ -68,7 +70,7 @@ export class AuthStorageService {
     }
 
     // Save user data for authenticated users
-    static async saveUserData(userId: string, preferences: AuthPreferences): Promise<void> {
+    static async saveUserData(userId: string, preferences: AuthPreferences): Promise<SaveResult> {
         if (!userId || userId === 'undefined') {
             throw new Error('Invalid userId for preferences save')
         }
@@ -81,11 +83,18 @@ export class AuthStorageService {
             if (!res.ok) {
                 throw new Error(`Failed to save preferences (${res.status})`)
             }
+            const body = (await res.json().catch(() => null)) as Record<string, unknown> | null
+            const childSafetyKept = body?.[CHILD_SAFETY_KEPT_FIELD] === true
             userDataCache.set(userId, {
-                data: { ...preferences, lastActive: Date.now() },
+                data: {
+                    ...preferences,
+                    ...(childSafetyKept && { childSafetyMode: true }),
+                    lastActive: Date.now(),
+                },
                 timestamp: Date.now(),
             })
             authLog('✅ [AuthStorageService] Saved preferences for:', userId)
+            return { childSafetyKept }
         } catch (error) {
             authError('Failed to save user preferences:', error)
             throw error
@@ -124,7 +133,7 @@ export class AuthStorageService {
     }
 
     // Check if user has stored data
-    static async userExists(userId: string): Promise<boolean> {
+    static async userExists(_userId: string): Promise<boolean> {
         try {
             const res = await authenticatedFetch('/api/user/preferences')
             return res.ok

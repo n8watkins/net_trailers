@@ -1,4 +1,4 @@
-import { StorageAdapter, StorageLogger } from './storageAdapter'
+import { SaveResult, StorageAdapter, StorageLogger } from './storageAdapter'
 import { UserPreferences } from '../types/shared'
 import { AuthStorageService } from './authStorageService'
 
@@ -20,9 +20,9 @@ export class ApiStorageAdapter implements StorageAdapter {
         return await AuthStorageService.loadUserData(userId)
     }
 
-    async save(userId: string, data: UserPreferences): Promise<void> {
+    async save(userId: string, data: UserPreferences): Promise<SaveResult> {
         this.logger.log(`[${this.name}Adapter] Saving data for user:`, userId)
-        await AuthStorageService.saveUserData(userId, data)
+        return await AuthStorageService.saveUserData(userId, data)
     }
 
     async clear(userId: string): Promise<UserPreferences> {

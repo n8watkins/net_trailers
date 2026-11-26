@@ -4,11 +4,13 @@
 
 import {
     allowedAvatarUrl,
+    deleteUserUploads,
     isUploadUrl,
     newUploadKey,
     ownedUploadKey,
     ownUploads,
     UPLOAD_TYPES,
+    userUploadPrefix,
 } from '../../lib/uploads'
 import { isUploadPath } from '../../worker/uploads'
 
@@ -79,5 +81,37 @@ describe('post images and avatars', () => {
         expect(allowedAvatarUrl('http://avatars.githubusercontent.com/u/1', 'u1')).toBeNull()
         expect(allowedAvatarUrl('javascript:alert(1)', 'u1')).toBeNull()
         expect(allowedAvatarUrl('data:image/png;base64,AAAA', 'u1')).toBeNull()
+    })
+})
+
+describe('deleteUserUploads', () => {
+    it("lists only the user's own folder, and refuses an id that could leave it", () => {
+        expect(userUploadPrefix('user-1')).toBe('uploads/user-1/')
+        for (const bad of ['', '../x', 'a/b', 'a b', '*']) {
+            expect(() => userUploadPrefix(bad)).toThrow()
+        }
+    })
+
+    it('never deletes a key outside the prefix, even if a listing returned one', async () => {
+        const deleted: string[] = []
+        const bucket = {
+            list: async () => ({
+                objects: [{ key: 'uploads/u1/a.png' }, { key: 'uploads/u10/b.png' }],
+                truncated: false,
+            }),
+            delete: async (keys: string | string[]) => {
+                deleted.push(...([] as string[]).concat(keys))
+            },
+        }
+        expect(await deleteUserUploads(bucket, 'u1')).toBe(1)
+        expect(deleted).toEqual(['uploads/u1/a.png'])
+    })
+
+    it('fails loudly instead of stopping early on a listing with no cursor', async () => {
+        const bucket = {
+            list: async () => ({ objects: [], truncated: true }),
+            delete: async () => undefined,
+        }
+        await expect(deleteUserUploads(bucket, 'u1')).rejects.toThrow()
     })
 })

@@ -103,7 +103,7 @@ export const SECURITY_SECTIONS: SecuritySection[] = [
                 evidence: 'lib/aiQuota.ts, app/api/gemini/analyze/route.ts',
             },
             {
-                text: 'API requests that declare a body over 1 MB, or over 500 KB for JSON, are refused.',
+                text: 'API requests with a body over 1 MB, or over 500 KB for JSON (5 MB for an image upload), are refused, whether or not they declare their size.',
                 evidence: 'proxy.ts',
             },
             {

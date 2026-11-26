@@ -1,5 +1,4 @@
 import { useSessionData } from './useSessionData'
-import { authError } from '../utils/debugLogger'
 import { Content } from '../typings'
 import { UserList, CreateListRequest, UpdateListRequest } from '../types/collections'
 import { useInteractionTracking } from './useInteractionTracking'
@@ -36,6 +35,7 @@ const createListManagementOps = (sessionData: ReturnType<typeof useSessionData>)
     deleteList: (listId: string) => {
         return sessionData.deleteList(listId)
     },
+    resetBuiltInCollections: () => sessionData.resetBuiltInCollections(),
     addToList: sessionData.addToList,
     removeFromList: sessionData.removeFromList,
     getList: (listId: string) =>
@@ -539,6 +539,9 @@ export default function useUserData() {
                 throw new Error('Cannot modify data while session is initializing')
             },
             deleteList: () => {
+                throw new Error('Cannot modify data while session is initializing')
+            },
+            resetBuiltInCollections: () => {
                 throw new Error('Cannot modify data while session is initializing')
             },
             addToList: () => {

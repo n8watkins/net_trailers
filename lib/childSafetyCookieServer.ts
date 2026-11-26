@@ -5,17 +5,30 @@
 
 import { cookies } from 'next/headers'
 
+import { auth } from '@/auth'
+import { loadUserPreferences } from '@/db/queries/userPreferences'
+
 const COOKIE_NAME = 'nettrailer_child_safety'
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365 // 1 year
 
 /**
- * Get child safety mode from cookies (server-side only)
- * @returns true if child safety mode is enabled, false otherwise
+ * Whether Child Safety Mode is on for this request (server-side only).
+ *
+ * For a signed-in visitor the account's stored setting decides; the cookie is
+ * ignored, since anyone can edit a cookie and the setting may be locked by a
+ * PIN (lib/childSafetyLock.ts). For a guest, who has no stored setting, the
+ * cookie is all there is. Errors are not caught: the home page then shows its
+ * error state rather than unfiltered titles.
  */
 export async function getChildSafetyMode(): Promise<boolean> {
+    const session = await auth()
+    const userId = session?.user?.id
+    if (userId) {
+        const preferences = await loadUserPreferences(userId)
+        return preferences.childSafetyMode === true
+    }
     const cookieStore = await cookies()
-    const value = cookieStore.get(COOKIE_NAME)?.value
-    return value === 'true'
+    return cookieStore.get(COOKIE_NAME)?.value === 'true'
 }
 
 /**

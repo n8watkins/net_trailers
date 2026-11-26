@@ -49,6 +49,49 @@ export function ownedUploadKey(url: string, userId: string): string | null {
     return pathname.slice(1)
 }
 
+/** The part of the R2 bucket binding that removing a user's uploads needs. */
+export interface UploadBucket {
+    list(options: { prefix: string; cursor?: string; limit?: number }): Promise<{
+        objects: { key: string }[]
+        truncated: boolean
+        cursor?: string
+    }>
+    delete(keys: string | string[]): Promise<void>
+}
+
+/**
+ * The R2 prefix holding every upload of this user. The trailing slash keeps
+ * user "ab" from matching user "abc"; an id that could escape its folder is
+ * refused rather than turned into a prefix.
+ */
+export function userUploadPrefix(userId: string): string {
+    if (!/^[A-Za-z0-9_-]+$/.test(userId)) throw new Error('Unexpected user id for uploads')
+    return `uploads/${userId}/`
+}
+
+/**
+ * Delete every upload of this user, a page of at most 1,000 keys at a time
+ * (R2's limit for both list and delete), and return how many were deleted.
+ * Any failure is thrown, never skipped, so the caller can stop and retry.
+ */
+export async function deleteUserUploads(bucket: UploadBucket, userId: string): Promise<number> {
+    const prefix = userUploadPrefix(userId)
+    let deleted = 0
+    let cursor: string | undefined
+    do {
+        const page = await bucket.list({ prefix, cursor, limit: 1000 })
+        // R2 only returns keys under the prefix; checked again so no other key is ever deleted.
+        const keys = page.objects.map((o) => o.key).filter((key) => key.startsWith(prefix))
+        if (keys.length > 0) {
+            await bucket.delete(keys)
+            deleted += keys.length
+        }
+        if (page.truncated && !page.cursor) throw new Error('R2 listing was cut short')
+        cursor = page.truncated ? page.cursor : undefined
+    } while (cursor)
+    return deleted
+}
+
 /** Whether a stored image URL is an upload of ours (and so deletable). */
 export function isUploadUrl(url: string): boolean {
     return url.startsWith(UPLOAD_PREFIX)

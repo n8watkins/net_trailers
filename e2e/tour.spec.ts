@@ -109,7 +109,7 @@ async function walkTour(page: Page, { touch }: { touch: boolean }) {
     await expect(page.getByText('Tour Complete!').first()).toBeVisible()
 }
 
-/** Open a footer window and click its tour button (Help: "Start Tour", About: "Show me around"). */
+/** Open a footer window and click its tour button (Help: "Start tour", About: "Show me around"). */
 async function startTourFromFooter(page: Page, item: RegExp, tourButton: string) {
     const button = page.getByRole('button', { name: tourButton })
     // A click before hydration does nothing: retry until the window opens
@@ -218,7 +218,7 @@ test.describe('signed in', () => {
         ['desktop', DESKTOP, false],
         ['phone', PHONE, true],
     ] as const) {
-        test(`Help "Start Tour" on /profile goes home and starts the tour (${label})`, async ({
+        test(`Help "Start tour" on /profile goes home and starts the tour (${label})`, async ({
             browser,
             baseURL,
         }) => {
@@ -227,7 +227,7 @@ test.describe('signed in', () => {
             await stubExternalMedia(page)
 
             await page.goto('/profile')
-            await startTourFromFooter(page, /Help & tutorial/, 'Start Tour')
+            await startTourFromFooter(page, /Help & tutorial/, 'Start tour')
 
             await expect(page).toHaveURL(/\/$/)
             await expect(page.getByTestId('tour-card')).toBeVisible({ timeout: 15_000 })

@@ -277,6 +277,74 @@ describe('proxy', () => {
             const response = await proxy(request)
             expect(response.headers.get('x-middleware-next')).toBe('1')
         })
+
+        /** A request whose body arrives in chunks with no Content-Length, as a chunked upload does. */
+        function streamedRequest(
+            pathname: string,
+            bytes: number,
+            contentType: string,
+            chunk = 64 * 1024
+        ): NextRequest {
+            let sent = 0
+            const body = new ReadableStream<Uint8Array>({
+                pull(controller) {
+                    if (sent >= bytes) return controller.close()
+                    const size = Math.min(chunk, bytes - sent)
+                    sent += size
+                    controller.enqueue(new Uint8Array(size).fill(97))
+                },
+            })
+            const request = new NextRequest(new URL(`http://localhost:3000${pathname}`), {
+                method: 'PUT',
+                headers: { Origin: 'http://localhost:3000', 'content-type': contentType },
+                body,
+                duplex: 'half',
+            } as RequestInit & { duplex: 'half' })
+            expect(request.headers.get('content-length')).toBeNull()
+            return request
+        }
+
+        it('counts the bytes of a JSON body sent without Content-Length', async () => {
+            const response = await proxy(
+                streamedRequest('/api/test', 600 * 1024, 'application/json')
+            )
+            expect(response.status).toBe(413)
+            expect((await response.json()).maxSize).toBe('500KB')
+        })
+
+        it('counts the bytes of any other body sent without Content-Length', async () => {
+            const response = await proxy(
+                streamedRequest('/api/test', 1.5 * 1024 * 1024, 'application/x-www-form-urlencoded')
+            )
+            expect(response.status).toBe(413)
+            expect((await response.json()).maxSize).toBe('1MB')
+        })
+
+        it('lets a streamed body under the limit through, still readable by the route', async () => {
+            const request = streamedRequest('/api/test', 400 * 1024, 'application/json')
+            const response = await proxy(request)
+            expect(response.headers.get('x-middleware-next')).toBe('1')
+            expect((await request.arrayBuffer()).byteLength).toBe(400 * 1024)
+        })
+
+        it('holds a body that declares a small length to the bytes actually sent', async () => {
+            const request = streamedRequest('/api/test', 600 * 1024, 'application/json')
+            request.headers.set('content-length', '100')
+            const response = await proxy(request)
+            expect(response.status).toBe(413)
+        })
+
+        it('gives image uploads the room of their own 5MB limit', async () => {
+            const ok = await proxy(
+                streamedRequest('/api/upload', 3 * 1024 * 1024, 'multipart/form-data; boundary=x')
+            )
+            expect(ok.headers.get('x-middleware-next')).toBe('1')
+            const big = await proxy(
+                streamedRequest('/api/upload', 6 * 1024 * 1024, 'multipart/form-data; boundary=x')
+            )
+            expect(big.status).toBe(413)
+            expect((await big.json()).maxSize).toBe('5MB')
+        })
     })
 
     describe('Content-Type validation', () => {
