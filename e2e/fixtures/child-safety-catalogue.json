@@ -1,0 +1,255 @@
+{
+    "about": "Made-up TMDB titles for Child Safety Mode tests, modelled on titles whose list and single-title answers disagreed on the live site (2026-11-26). Used by __tests__/utils/childSafetyRule.test.ts, __tests__/integration/childSafety.api.test.ts and, through e2e/fixtures/child-safety-tmdb.mjs, the e2e suite. `releaseDates` is TMDB's /movie/{id}/release_dates `results`, `contentRatings` is /tv/{id}/content_ratings `results`; the string \"fail\" means TMDB answers that lookup with HTTP 429. `shown` is what the rule (utils/childSafetyRule.ts) must decide.",
+    "movies": [
+        {
+            "id": 990101,
+            "title": "Fixture Explicit Unrated Film",
+            "like": "9 Songs: only NR releases in the US",
+            "genre_ids": [18, 10402, 10749],
+            "vote_count": 616,
+            "releaseDates": [
+                {
+                    "iso_3166_1": "US",
+                    "release_dates": [
+                        { "certification": "NR", "type": 5, "note": "DVD Release" },
+                        { "certification": "NR", "type": 5, "note": "Blu-Ray Release" }
+                    ]
+                },
+                { "iso_3166_1": "GB", "release_dates": [{ "certification": "18", "type": 3 }] }
+            ],
+            "shown": false
+        },
+        {
+            "id": 990102,
+            "title": "Fixture Premiere Then PG Film",
+            "like": "Toy Story 5: a premiere with no certification, then PG",
+            "genre_ids": [16, 10751, 35, 12],
+            "vote_count": 2925,
+            "releaseDates": [
+                {
+                    "iso_3166_1": "US",
+                    "release_dates": [
+                        { "certification": "", "type": 1, "note": "Los Angeles, California" },
+                        { "certification": "PG", "type": 3, "note": "" },
+                        { "certification": "PG", "type": 4, "note": "Disney+" }
+                    ]
+                }
+            ],
+            "shown": true
+        },
+        {
+            "id": 990103,
+            "title": "Fixture Premiere Then PG-13 Film",
+            "like": "The Hunger Games: Sunrise on the Reaping, Ebenezer, Heart of the Beast",
+            "genre_ids": [878, 28, 12],
+            "vote_count": 364,
+            "releaseDates": [
+                {
+                    "iso_3166_1": "US",
+                    "release_dates": [
+                        { "certification": "", "type": 1, "note": "Lincoln Center, New York" },
+                        { "certification": "PG-13", "type": 3, "note": "" }
+                    ]
+                }
+            ],
+            "shown": true
+        },
+        {
+            "id": 990104,
+            "title": "Fixture Unreleased Family Film",
+            "like": "an unreleased animated family film with no US certification yet",
+            "genre_ids": [16, 10751],
+            "vote_count": 0,
+            "releaseDates": [
+                { "iso_3166_1": "AU", "release_dates": [{ "certification": "G", "type": 3 }] }
+            ],
+            "shown": false
+        },
+        {
+            "id": 990105,
+            "title": "Fixture Restricted Film",
+            "like": "any R-rated film",
+            "genre_ids": [80, 53],
+            "vote_count": 900,
+            "releaseDates": [
+                {
+                    "iso_3166_1": "US",
+                    "release_dates": [{ "certification": "R", "type": 3, "note": "" }]
+                }
+            ],
+            "shown": false
+        },
+        {
+            "id": 990106,
+            "title": "Fixture Streaming PG-13 Film",
+            "like": "Way of the Warrior Kid, Clashing Through the Snow: one PG-13 digital release, few votes",
+            "genre_ids": [18],
+            "vote_count": 13,
+            "releaseDates": [
+                {
+                    "iso_3166_1": "US",
+                    "release_dates": [{ "certification": "PG-13", "type": 4, "note": "Apple TV" }]
+                }
+            ],
+            "shown": true
+        },
+        {
+            "id": 990107,
+            "title": "Fixture Lookup Fails Film",
+            "like": "any film whose rating lookup is rate limited",
+            "genre_ids": [16, 10751],
+            "vote_count": 700,
+            "releaseDates": "fail",
+            "shown": false
+        },
+        {
+            "id": 990108,
+            "title": "Fixture PG-13 With Unrated Cut",
+            "like": "a PG-13 comedy whose disc release is the unrated cut",
+            "genre_ids": [35],
+            "vote_count": 800,
+            "releaseDates": [
+                {
+                    "iso_3166_1": "US",
+                    "release_dates": [
+                        { "certification": "PG-13", "type": 3, "note": "" },
+                        { "certification": "NR", "type": 5, "note": "Unrated edition" }
+                    ]
+                }
+            ],
+            "shown": false
+        },
+        {
+            "id": 990109,
+            "title": "Fixture Unreleased Rated Film",
+            "like": "Dune: Part Three: not out yet, already rated PG-13, no votes",
+            "genre_ids": [878, 12],
+            "vote_count": 0,
+            "releaseDates": [
+                {
+                    "iso_3166_1": "US",
+                    "release_dates": [{ "certification": "PG-13", "type": 3, "note": "" }]
+                }
+            ],
+            "shown": true
+        },
+        {
+            "id": 990110,
+            "title": "Fixture Adult Flag Film",
+            "like": "a title TMDB flags adult",
+            "adult": true,
+            "genre_ids": [18],
+            "vote_count": 500,
+            "releaseDates": [
+                {
+                    "iso_3166_1": "US",
+                    "release_dates": [{ "certification": "PG", "type": 3, "note": "" }]
+                }
+            ],
+            "shown": false
+        },
+        {
+            "id": 990111,
+            "title": "Fixture TV-14 Streaming Film",
+            "like": "a streaming film rated on the TV scale",
+            "genre_ids": [35, 10749],
+            "vote_count": 300,
+            "releaseDates": [
+                {
+                    "iso_3166_1": "US",
+                    "release_dates": [{ "certification": "TV-14", "type": 4, "note": "Netflix" }]
+                }
+            ],
+            "shown": true
+        },
+        {
+            "id": 990112,
+            "title": "Fixture PG-13 Horror Film",
+            "like": "Insidious: Out of the Further: horror, rated PG-13 after a blank premiere",
+            "genre_ids": [27, 53],
+            "vote_count": 1110,
+            "releaseDates": [
+                {
+                    "iso_3166_1": "US",
+                    "release_dates": [
+                        { "certification": "", "type": 1, "note": "" },
+                        { "certification": "PG-13", "type": 3, "note": "" }
+                    ]
+                }
+            ],
+            "shown": true
+        }
+    ],
+    "shows": [
+        {
+            "id": 990201,
+            "name": "Fixture Preschool Show",
+            "genre_ids": [16, 10762],
+            "vote_count": 400,
+            "contentRatings": [{ "iso_3166_1": "US", "rating": "TV-Y" }],
+            "shown": true
+        },
+        {
+            "id": 990202,
+            "name": "Fixture Mature Comedy Show",
+            "genre_ids": [16, 35],
+            "vote_count": 400,
+            "contentRatings": [{ "iso_3166_1": "US", "rating": "TV-MA" }],
+            "shown": false
+        },
+        {
+            "id": 990203,
+            "name": "Fixture Unrated Show",
+            "genre_ids": [35],
+            "vote_count": 400,
+            "contentRatings": [],
+            "shown": false
+        },
+        {
+            "id": 990204,
+            "name": "Fixture Foreign Kids Show",
+            "genre_ids": [16, 10762],
+            "vote_count": 400,
+            "contentRatings": [
+                { "iso_3166_1": "GB", "rating": "U" },
+                { "iso_3166_1": "DE", "rating": "0" }
+            ],
+            "shown": true
+        },
+        {
+            "id": 990205,
+            "name": "Fixture Teen Show Mature Abroad",
+            "genre_ids": [18],
+            "vote_count": 400,
+            "contentRatings": [
+                { "iso_3166_1": "US", "rating": "TV-14" },
+                { "iso_3166_1": "AU", "rating": "MA15+" }
+            ],
+            "shown": false
+        },
+        {
+            "id": 990206,
+            "name": "Fixture Lookup Fails Show",
+            "genre_ids": [16, 10762],
+            "vote_count": 400,
+            "contentRatings": "fail",
+            "shown": false
+        },
+        {
+            "id": 990207,
+            "name": "Fixture Not Rated Show",
+            "genre_ids": [35],
+            "vote_count": 400,
+            "contentRatings": [{ "iso_3166_1": "US", "rating": "NR" }],
+            "shown": false
+        },
+        {
+            "id": 990208,
+            "name": "Fixture Teen Show",
+            "genre_ids": [35, 18],
+            "vote_count": 400,
+            "contentRatings": [{ "iso_3166_1": "US", "rating": "TV-14" }],
+            "shown": true
+        }
+    ]
+}

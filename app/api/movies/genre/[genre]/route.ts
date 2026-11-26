@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { childSafetyForRequest } from '@/lib/childSafetyServer'
 import { filterChildSafe } from '@/utils/childSafetyFilter'
+import { CHILD_SAFE_DISCOVER_PARAMS } from '@/utils/childSafetyRule'
 import { apiError } from '@/utils/debugLogger'
 
 const API_KEY = process.env.TMDB_API_KEY
@@ -53,10 +54,11 @@ export async function GET(
         url.searchParams.append('with_genres', genreId.toString())
         url.searchParams.append('page', page)
 
-        // Server-side filtering: Use TMDB's certification.lte for US ratings
+        // Child Safety Mode: a prefilter only; every title still passes the rule below.
         if (childSafeMode) {
-            url.searchParams.append('certification_country', 'US')
-            url.searchParams.append('certification.lte', 'PG-13')
+            for (const [key, value] of Object.entries(CHILD_SAFE_DISCOVER_PARAMS)) {
+                url.searchParams.set(key, value)
+            }
         }
 
         const response = await fetch(url.toString())
@@ -74,13 +76,10 @@ export async function GET(
             media_type: 'movie',
         }))
 
-        // Apply additional client-side filtering for adult flag
-        // (Server-side certification.lte already filtered by rating)
+        // Child Safety Mode: the shared rule (utils/childSafetyRule.ts) for every title.
         if (childSafeMode) {
             const beforeCount = enrichedResults.length
-            enrichedResults = await filterChildSafe(enrichedResults, API_KEY, {
-                moviesRatedAtSource: true,
-            })
+            enrichedResults = await filterChildSafe(enrichedResults, API_KEY)
             const hiddenCount = beforeCount - enrichedResults.length
 
             return NextResponse.json(

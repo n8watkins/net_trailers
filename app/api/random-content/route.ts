@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { apiError } from '../../../utils/debugLogger'
 import { childSafetyForRequest } from '@/lib/childSafetyServer'
 import { filterWhenChildSafe } from '@/utils/childSafetyFilter'
+import { CHILD_SAFE_DISCOVER_PARAMS } from '@/utils/childSafetyRule'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -48,9 +49,10 @@ async function fetchCandidates(mediaType: MediaType, page: number, childSafetyMo
             urlObj.pathname = '/3/discover/movie'
             urlObj.searchParams.set('page', page.toString())
             urlObj.searchParams.set('sort_by', 'popularity.desc')
-            urlObj.searchParams.set('certification_country', 'US')
-            urlObj.searchParams.set('certification.lte', 'PG-13')
-            urlObj.searchParams.set('include_adult', 'false')
+            // A prefilter only: every movie still passes the rule below.
+            for (const [key, value] of Object.entries(CHILD_SAFE_DISCOVER_PARAMS)) {
+                urlObj.searchParams.set(key, value)
+            }
             urlObj.searchParams.set('vote_count.gte', '100')
         } else {
             urlObj.pathname = '/3/trending/movie/week'
@@ -85,10 +87,8 @@ async function fetchCandidates(mediaType: MediaType, page: number, childSafetyMo
         media_type: mediaType,
     }))
 
-    // Movies were rated by the discover query above (certification.lte).
-    results = await filterWhenChildSafe(childSafetyMode, results, apiKey, {
-        moviesRatedAtSource: mediaType === 'movie',
-    })
+    // Child Safety Mode: the shared rule (utils/childSafetyRule.ts) for every title.
+    results = await filterWhenChildSafe(childSafetyMode, results, apiKey)
 
     // Prefer content that has either a backdrop or poster so modal looks good
     return results.filter((item) => item.backdrop_path || item.poster_path)

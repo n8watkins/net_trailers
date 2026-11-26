@@ -18,6 +18,8 @@
  * 8. 1 genre only (if infinite enabled)
  */
 
+import { CHILD_SAFE_DISCOVER_PARAMS } from './childSafetyRule'
+
 const BASE_URL = 'https://api.themoviedb.org/3'
 
 type GenreLogic = 'AND' | 'OR'
@@ -52,7 +54,9 @@ interface FilterTier {
  * Cache for tier metadata (total_pages for each filter combination)
  * Key format: "actorIds:directorId:genres:mediaType:childSafe:genreLogic:infinite"
  */
-const tierCache = new Map<string, FilterTier[]>()
+// Entries carry their expiry time: a timer per entry kept the process (and a
+// Jest run) alive for the whole TTL.
+const tierCache = new Map<string, { tiers: FilterTier[]; expiresAt: number }>()
 const CACHE_TTL = 6 * 60 * 60 * 1000 // 6 hours in milliseconds
 
 /**
@@ -112,11 +116,9 @@ async function buildTMDBParams(
             config.genreLogic === 'AND' ? tmdbGenreIds.join(',') : tmdbGenreIds.join('|')
     }
 
-    // Child safety filters
+    // Child Safety Mode prefilter (the routes still apply the rule)
     if (config.childSafeMode && config.mediaType === 'movie') {
-        params.certification_country = 'US'
-        params['certification.lte'] = 'PG-13'
-        params.include_adult = 'false'
+        Object.assign(params, CHILD_SAFE_DISCOVER_PARAMS)
     } else if (config.childSafeMode) {
         params.include_adult = 'false'
     }
@@ -232,18 +234,14 @@ async function getTiers(config: CascadingConfig, apiKey: string): Promise<Filter
 
     // Check cache
     const cached = tierCache.get(cacheKey)
-    if (cached) {
-        return cached
+    if (cached && cached.expiresAt > Date.now()) {
+        return cached.tiers
     }
+    tierCache.delete(cacheKey)
 
     // Calculate and cache (parallel fetches)
     const tiers = await calculateAllTiers(config, apiKey)
-    tierCache.set(cacheKey, tiers)
-
-    // Auto-clear cache after TTL
-    setTimeout(() => {
-        tierCache.delete(cacheKey)
-    }, CACHE_TTL)
+    tierCache.set(cacheKey, { tiers, expiresAt: Date.now() + CACHE_TTL })
 
     return tiers
 }
@@ -358,9 +356,7 @@ async function fetchWithoutFilters(
     }
 
     if (config.childSafeMode && config.mediaType === 'movie') {
-        params.certification_country = 'US'
-        params['certification.lte'] = 'PG-13'
-        params.include_adult = 'false'
+        Object.assign(params, CHILD_SAFE_DISCOVER_PARAMS)
     } else if (config.childSafeMode) {
         params.include_adult = 'false'
     }

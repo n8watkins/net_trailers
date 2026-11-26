@@ -26,7 +26,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         const tmdbClient = TMDBApiClient.getInstance()
         const data = await tmdbClient.getMovieDetails(id, 'tv')
 
-        // Child Safety Mode: the shared rule, from the appended content_ratings
+        // Child Safety Mode: the shared rule (utils/childSafetyRule.ts), on the
+        // same ratings lookup the lists use
         if (
             childSafeMode &&
             !(await isChildSafe(

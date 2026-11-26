@@ -470,11 +470,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         // ----------------------------------------------------------------
         if (childSafeMode) {
             const beforeCount = enrichedResults.length
-            // Movies came from discover queries with certification.lte=PG-13,
-            // except the cascading fetch for 'both', which does not add it.
-            enrichedResults = await filterChildSafe(enrichedResults, API_KEY, {
-                moviesRatedAtSource: !(mediaType === 'both' && shouldUseUnifiedCascading),
-            })
+            // The shared rule (utils/childSafetyRule.ts) for every title; the
+            // discover queries' certification prefilter does not decide.
+            enrichedResults = await filterChildSafe(enrichedResults, API_KEY)
 
             const childSafetyHiddenCount = beforeCount - enrichedResults.length
 

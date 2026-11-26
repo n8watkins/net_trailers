@@ -1,7 +1,14 @@
 /**
  * Certification Cache
- * In-memory cache for TMDB certification/rating data to reduce API calls
+ * In-memory cache for TMDB certification/rating data to reduce API calls.
+ *
+ * Keyed by TMDB id, with movies and shows in separate maps (TMDB numbers them
+ * independently). It holds only answers TMDB gave: a failed lookup is never
+ * stored, so it cannot hide a title for longer than the request that failed.
+ * The data is the same for every visitor, so sharing it across requests is safe.
  */
+
+import type { CountryRating } from './childSafetyRule'
 
 interface CacheEntry<T> {
     data: T
@@ -20,9 +27,8 @@ interface CacheStats {
  * Generic in-memory cache with TTL (time-to-live)
  */
 class CertificationCache {
-    private movieCache = new Map<number, CacheEntry<string | null>>()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private tvCache = new Map<number, CacheEntry<any[] | null>>()
+    private movieCache = new Map<number, CacheEntry<string[]>>()
+    private tvCache = new Map<number, CacheEntry<CountryRating[]>>()
     private readonly TTL: number = 1000 * 60 * 60 // 1 hour in milliseconds
     private stats = {
         movieHits: 0,
@@ -32,11 +38,11 @@ class CertificationCache {
     }
 
     /**
-     * Get cached movie certification
+     * Get a movie's cached US certifications
      * @param movieId - TMDB movie ID
-     * @returns Certification string or null, or undefined if not in cache
+     * @returns The certifications ([] when TMDB has none), or undefined if not in cache
      */
-    getMovie(movieId: number): string | null | undefined {
+    getMovie(movieId: number): string[] | undefined {
         const entry = this.movieCache.get(movieId)
         if (!entry) {
             this.stats.movieMisses++
@@ -55,13 +61,13 @@ class CertificationCache {
     }
 
     /**
-     * Set movie certification in cache
+     * Cache a movie's US certifications (a successful lookup only)
      * @param movieId - TMDB movie ID
-     * @param certification - Certification string or null
+     * @param certifications - The non-blank US certifications ([] when TMDB has none)
      */
-    setMovie(movieId: number, certification: string | null): void {
+    setMovie(movieId: number, certifications: string[]): void {
         this.movieCache.set(movieId, {
-            data: certification,
+            data: certifications,
             timestamp: Date.now(),
             expiresAt: Date.now() + this.TTL,
         })
@@ -70,10 +76,9 @@ class CertificationCache {
     /**
      * Get cached TV show ratings
      * @param tvId - TMDB TV show ID
-     * @returns Array of ratings or null, or undefined if not in cache
+     * @returns Array of ratings, or undefined if not in cache
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    getTV(tvId: number): any[] | null | undefined {
+    getTV(tvId: number): CountryRating[] | undefined {
         const entry = this.tvCache.get(tvId)
         if (!entry) {
             this.stats.tvMisses++
@@ -94,10 +99,9 @@ class CertificationCache {
     /**
      * Set TV show ratings in cache
      * @param tvId - TMDB TV show ID
-     * @param ratings - Array of ratings or null
+     * @param ratings - Array of ratings (a successful lookup only)
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    setTV(tvId: number, ratings: any[] | null): void {
+    setTV(tvId: number, ratings: CountryRating[]): void {
         this.tvCache.set(tvId, {
             data: ratings,
             timestamp: Date.now(),

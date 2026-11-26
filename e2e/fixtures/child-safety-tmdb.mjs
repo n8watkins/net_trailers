@@ -3,16 +3,18 @@
  * e2e/fixtures/tmdb, in the format lib/e2eTmdbFixtures.ts reads (keyed by the
  * URL without the api_key, sorted query). They are hand-made, not recorded:
  * titles Child Safety Mode must hide (adult, R, TV-MA) next to ones it must
- * keep (PG, TV-Y), under ids TMDB does not use (99000x).
+ * keep (PG, TV-Y), under ids TMDB does not use (99000x); the catalogue in
+ * child-safety-catalogue.json (9901xx, 9902xx); and, for recorded titles whose
+ * details carry their real ratings, those ratings under the lookup URLs.
  *
  *   node e2e/fixtures/child-safety-tmdb.mjs
  */
 
 import { createHash } from 'node:crypto'
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { gzipSync } from 'node:zlib'
+import { gunzipSync, gzipSync } from 'node:zlib'
 
 const here = dirname(fileURLToPath(import.meta.url))
 
@@ -78,6 +80,114 @@ const answers = {
     '/3/tv/990003/content_ratings?': rating('TV-Y'),
     '/3/tv/990004/content_ratings?': rating('TV-MA'),
     '/3/movie/990002?language=en-US': { ...rFilmDetails, runtime: 100, genres: [] },
+}
+
+// The details URL the single-title routes ask for (utils/tmdbApi.ts).
+const DETAILS_APPEND =
+    'append_to_response=videos%2Ccredits%2Cexternal_ids%2Crelease_dates%2Ccontent_ratings'
+
+// The five titles above as the single-title routes fetch them.
+for (const [item, appended] of [
+    [familyFilm, { release_dates: certification('PG') }],
+    [rFilm, { release_dates: certification('R') }],
+    [adultFilm, { release_dates: { results: [] } }],
+    [kidsShow, { content_ratings: rating('TV-Y') }],
+    [matureShow, { content_ratings: rating('TV-MA') }],
+]) {
+    const { media_type: kind, ...details } = item
+    const full = {
+        ...details,
+        genres: [],
+        videos: { results: [] },
+        credits: { cast: [], crew: [] },
+    }
+    answers[`/3/${kind}/${item.id}?${DETAILS_APPEND}&language=en-US`] = { ...full, ...appended }
+    answers[`/3/${kind}/${item.id}?language=en-US`] ??= full
+}
+
+// The catalogue modelled on live titles whose list and single-title answers
+// disagreed (e2e/fixtures/child-safety-catalogue.json): searchable under
+// CATALOGUE_QUERY, with their ratings and details. A lookup marked "fail" gets
+// no fixture, so the app sees TMDB answer 404, a failed lookup.
+export const CATALOGUE_QUERY = 'childsafetycatalogue'
+const catalogue = JSON.parse(readFileSync(join(here, 'child-safety-catalogue.json'), 'utf8'))
+const catalogueMovie = (m) => ({
+    ...movie(m.id, m.title, m.adult ?? false),
+    genre_ids: m.genre_ids,
+    vote_count: m.vote_count,
+})
+const catalogueShow = (s) => ({
+    ...show(s.id, s.name),
+    genre_ids: s.genre_ids,
+    vote_count: s.vote_count,
+})
+const searchResults = [
+    ...catalogue.movies.map(catalogueMovie),
+    ...catalogue.shows.map(catalogueShow),
+]
+answers[`/3/search/multi?include_adult=false&page=1&query=${CATALOGUE_QUERY}`] = {
+    page: 1,
+    results: searchResults,
+    total_pages: 1,
+    total_results: searchResults.length,
+}
+for (const m of catalogue.movies) {
+    const { media_type: _t, ...details } = catalogueMovie(m)
+    const releaseDates = m.releaseDates === 'fail' ? [] : m.releaseDates
+    if (m.releaseDates !== 'fail')
+        answers[`/3/movie/${m.id}/release_dates?`] = { id: m.id, results: releaseDates }
+    const full = {
+        ...details,
+        runtime: 100,
+        genres: [],
+        videos: { results: [] },
+        credits: { cast: [], crew: [] },
+    }
+    answers[`/3/movie/${m.id}?${DETAILS_APPEND}&language=en-US`] = {
+        ...full,
+        release_dates: { results: releaseDates },
+    }
+    answers[`/3/movie/${m.id}?language=en-US`] = full
+}
+for (const s of catalogue.shows) {
+    const { media_type: _t, ...details } = catalogueShow(s)
+    const ratings = s.contentRatings === 'fail' ? [] : s.contentRatings
+    if (s.contentRatings !== 'fail')
+        answers[`/3/tv/${s.id}/content_ratings?`] = { id: s.id, results: ratings }
+    const full = {
+        ...details,
+        genres: [],
+        videos: { results: [] },
+        credits: { cast: [], crew: [] },
+    }
+    answers[`/3/tv/${s.id}?${DETAILS_APPEND}&language=en-US`] = {
+        ...full,
+        content_ratings: { results: ratings },
+    }
+    answers[`/3/tv/${s.id}?language=en-US`] = full
+}
+
+// Recorded titles (trending rows) whose details were recorded with their real
+// ratings appended: the same ratings under the lookup Child Safety Mode reads,
+// so the e2e home rows with the mode on show real titles.
+const tmdbDir = join(here, 'tmdb')
+for (const file of readdirSync(tmdbDir)) {
+    const saved = JSON.parse(gunzipSync(readFileSync(join(tmdbDir, file))).toString('utf8'))
+    const match = saved.key.match(/^\/3\/(movie|tv)\/(\d+)\?append_to_response=[^&]*release_dates/)
+    if (!match || saved.status !== 200 || Number(match[2]) >= 990000) continue
+    const body = JSON.parse(saved.body)
+    if (match[1] === 'movie' && body.release_dates) {
+        answers[`/3/movie/${match[2]}/release_dates?`] ??= {
+            id: body.id,
+            results: body.release_dates.results,
+        }
+    }
+    if (match[1] === 'tv' && body.content_ratings) {
+        answers[`/3/tv/${match[2]}/content_ratings?`] ??= {
+            id: body.id,
+            results: body.content_ratings.results,
+        }
+    }
 }
 
 for (const [key, body] of Object.entries(answers)) {
