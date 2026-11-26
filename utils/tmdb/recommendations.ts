@@ -34,12 +34,44 @@ interface TMDBResponse {
 }
 
 /**
+ * Fetch one TMDB list (similar or recommendations) for a title.
+ *
+ * Throws when TMDB itself fails (network, rate limit, 5xx), so callers can tell
+ * that apart from "nothing found". A 404 from TMDB means the title has no such
+ * list (an obscure title, or the wrong media type), which is an empty list.
+ */
+async function fetchTitleList(
+    contentId: number,
+    mediaType: 'movie' | 'tv',
+    kind: 'similar' | 'recommendations',
+    page: number
+): Promise<Content[]> {
+    try {
+        const response = await tmdb.fetch<TMDBResponse>(`/${mediaType}/${contentId}/${kind}`, {
+            page,
+            include_adult: 'false',
+        })
+
+        return (response.results ?? []).filter(isRecommendable).map(
+            (item) =>
+                ({
+                    ...item,
+                    media_type: mediaType,
+                }) as Content
+        )
+    } catch (error) {
+        if (error instanceof Error && (error as { status?: number }).status === 404) return []
+        throw error
+    }
+}
+
+/**
  * Get similar movies/shows from TMDB
  *
  * @param contentId - TMDB content ID
  * @param mediaType - movie or tv
  * @param page - Page number
- * @returns Array of similar content
+ * @returns Array of similar content (empty when TMDB has none or fails)
  */
 export async function getSimilarContent(
     contentId: number,
@@ -47,18 +79,7 @@ export async function getSimilarContent(
     page: number = 1
 ): Promise<Content[]> {
     try {
-        const response = await tmdb.fetch<TMDBResponse>(`/${mediaType}/${contentId}/similar`, {
-            page,
-            include_adult: 'false',
-        })
-
-        return response.results.filter(isRecommendable).map(
-            (item) =>
-                ({
-                    ...item,
-                    media_type: mediaType,
-                }) as Content
-        )
+        return await fetchTitleList(contentId, mediaType, 'similar', page)
     } catch (error) {
         console.error(`Error fetching similar content for ${contentId}:`, error)
         return []
@@ -73,7 +94,7 @@ export async function getSimilarContent(
  * @param contentId - TMDB content ID
  * @param mediaType - movie or tv
  * @param page - Page number
- * @returns Array of recommended content
+ * @returns Array of recommended content (empty when TMDB has none or fails)
  */
 export async function getTMDBRecommendations(
     contentId: number,
@@ -81,18 +102,7 @@ export async function getTMDBRecommendations(
     page: number = 1
 ): Promise<Content[]> {
     try {
-        const response = await tmdb.fetch<TMDBResponse>(
-            `/${mediaType}/${contentId}/recommendations`,
-            { page, include_adult: 'false' }
-        )
-
-        return response.results.filter(isRecommendable).map(
-            (item) =>
-                ({
-                    ...item,
-                    media_type: mediaType,
-                }) as Content
-        )
+        return await fetchTitleList(contentId, mediaType, 'recommendations', page)
     } catch (error) {
         console.error(`Error fetching TMDB recommendations for ${contentId}:`, error)
         return []
@@ -262,12 +272,62 @@ export async function getBatchSimilarContent(
 }
 
 /**
+ * Mix, deduplicate and cap the two lists (50% similar, 50% recommended), topping
+ * up from whichever has more left, since filtering can leave one list short.
+ */
+function mixLists(similar: Content[], recommended: Content[], limit: number): Content[] {
+    const halfLimit = Math.floor(limit / 2)
+    const mixed = [
+        ...similar.slice(0, halfLimit),
+        ...recommended.slice(0, halfLimit),
+        ...similar.slice(halfLimit),
+        ...recommended.slice(halfLimit),
+    ]
+
+    const seen = new Set<number>()
+    const deduplicated: Content[] = []
+    for (const item of mixed) {
+        if (!seen.has(item.id)) {
+            seen.add(item.id)
+            deduplicated.push(item)
+        }
+    }
+    return deduplicated.slice(0, limit)
+}
+
+/**
+ * Hybrid recommendations that report a TMDB failure instead of hiding it.
+ *
+ * "Nothing found" resolves to an empty list. If one of the two TMDB calls fails
+ * the other one still answers; only when both fail does this throw (with the
+ * error carrying TMDB's status), so an API route can answer honestly.
+ */
+export async function getHybridRecommendationsOrThrow(
+    contentId: number,
+    mediaType: 'movie' | 'tv' = 'movie',
+    limit: number = 20
+): Promise<Content[]> {
+    const [similar, recommended] = await Promise.allSettled([
+        fetchTitleList(contentId, mediaType, 'similar', 1),
+        fetchTitleList(contentId, mediaType, 'recommendations', 1),
+    ])
+    if (similar.status === 'rejected' && recommended.status === 'rejected') {
+        throw similar.reason
+    }
+    return mixLists(
+        similar.status === 'fulfilled' ? similar.value : [],
+        recommended.status === 'fulfilled' ? recommended.value : [],
+        limit
+    )
+}
+
+/**
  * Get hybrid recommendations combining similar and recommended
  *
  * @param contentId - TMDB content ID
  * @param mediaType - movie or tv
  * @param limit - Total results to return
- * @returns Mixed array of similar and recommended content
+ * @returns Mixed array of similar and recommended content (empty on failure)
  */
 export async function getHybridRecommendations(
     contentId: number,
@@ -275,34 +335,7 @@ export async function getHybridRecommendations(
     limit: number = 20
 ): Promise<Content[]> {
     try {
-        // Fetch both similar and recommendations in parallel
-        const [similar, recommended] = await Promise.all([
-            getSimilarContent(contentId, mediaType, 1),
-            getTMDBRecommendations(contentId, mediaType, 1),
-        ])
-
-        // Mix results (50% similar, 50% recommended), then top up from whichever
-        // list has more left, since filtering can leave one list short
-        const halfLimit = Math.floor(limit / 2)
-        const mixed = [
-            ...similar.slice(0, halfLimit),
-            ...recommended.slice(0, halfLimit),
-            ...similar.slice(halfLimit),
-            ...recommended.slice(halfLimit),
-        ]
-
-        // Deduplicate
-        const seen = new Set<number>()
-        const deduplicated: Content[] = []
-
-        for (const item of mixed) {
-            if (!seen.has(item.id)) {
-                seen.add(item.id)
-                deduplicated.push(item)
-            }
-        }
-
-        return deduplicated.slice(0, limit)
+        return await getHybridRecommendationsOrThrow(contentId, mediaType, limit)
     } catch (error) {
         console.error(`Error fetching hybrid recommendations for ${contentId}:`, error)
         return []

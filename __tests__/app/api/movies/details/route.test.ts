@@ -307,6 +307,41 @@ describe('/api/movies/details/[id] - App Router API Tests', () => {
             expect(data.message).toContain('Failed to fetch')
         })
 
+        const tmdbError = (status?: number, code?: string) =>
+            Object.assign(new Error('TMDB'), { status, code })
+
+        it('should return 404 when TMDB has no such title', async () => {
+            mockGetMovieDetails.mockRejectedValueOnce(tmdbError(404))
+            const response = await GET(createRequest('1205851', { media_type: 'tv' }), {
+                params: createParams('1205851'),
+            })
+            expect(response.status).toBe(404)
+            expect(response.headers.get('Cache-Control')).toBe('no-store')
+        })
+
+        it('should return 429 with Retry-After when TMDB rate limits', async () => {
+            mockGetMovieDetails.mockRejectedValueOnce(tmdbError(429))
+            const response = await GET(createRequest('123', { media_type: 'movie' }), {
+                params: createParams('123'),
+            })
+            expect(response.status).toBe(429)
+            expect(response.headers.get('Retry-After')).toBe('30')
+        })
+
+        it('should return 502 when TMDB or the network fails', async () => {
+            mockGetMovieDetails.mockRejectedValueOnce(tmdbError(503))
+            const upstream = await GET(createRequest('123', { media_type: 'movie' }), {
+                params: createParams('123'),
+            })
+            expect(upstream.status).toBe(502)
+
+            mockGetMovieDetails.mockRejectedValueOnce(tmdbError(undefined, 'NETWORK_ERROR'))
+            const network = await GET(createRequest('123', { media_type: 'movie' }), {
+                params: createParams('123'),
+            })
+            expect(network.status).toBe(502)
+        })
+
         it('should handle missing API key gracefully', async () => {
             // This would require mocking process.env, which is set in jest.setup.js
             // Skipping this test as the API key is always available in tests
