@@ -52,7 +52,7 @@
         "@opennextjs/cloudflare": "1.20.15",
         "@react-email/components": "^1.0.1",
         "@react-email/render": "^2.0.6",
-        "@sentry/nextjs": "^10.78.0",
+        "@sentry/nextjs": "^11.16.0",
         "@tiptap/extension-link": "^3.32.2",
         "@tiptap/extension-text-align": "^3.32.2",
         "@tiptap/extension-underline": "^3.32.2",
