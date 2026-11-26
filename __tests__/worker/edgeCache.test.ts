@@ -20,11 +20,29 @@ const signedIn = { headers: { cookie: 'theme=dark; __Secure-authjs.session-token
 const childSafe = { headers: { cookie: 'nettrailer_child_safety=true' } }
 
 describe('mayUseEdgeCache', () => {
-    it('lets the catalogue and images use the cache, whoever asks', () => {
+    it('lets the catalogue and images use the cache', () => {
         expect(mayUseEdgeCache(at('/api/movies/trending?childSafetyMode=true'), host)).toBe(true)
-        expect(mayUseEdgeCache(at('/api/tv/details/1399', signedIn), host)).toBe(true)
         expect(mayUseEdgeCache(at('/api/discover?page=2'), host)).toBe(true)
         expect(mayUseEdgeCache(at('/_next/image?url=x&w=640&q=75', signedIn), host)).toBe(true)
+    })
+
+    it('never answers a catalogue request whose Child Safety Mode it cannot know from the URL', () => {
+        // The server reads the mode from the session or the child-safety cookie
+        // (lib/childSafetyServer.ts); the key holds only the URL. A cached
+        // mode-off answer must never reach a visitor with the mode on.
+        for (const who of [signedIn, childSafe]) {
+            expect(mayUseEdgeCache(at('/api/tv/details/1399', who), host)).toBe(false)
+            expect(mayUseEdgeCache(at('/api/movies/trending', who), host)).toBe(false)
+            expect(
+                mayUseEdgeCache(at('/api/movies/trending?childSafetyMode=false', who), host)
+            ).toBe(false)
+            // Asking for the filtered answer outright: the same for everyone.
+            expect(
+                mayUseEdgeCache(at('/api/movies/trending?childSafetyMode=true', who), host)
+            ).toBe(true)
+        }
+        // No session, no cookie: the mode is off, and so is every cached answer.
+        expect(mayUseEdgeCache(at('/api/movies/trending'), host)).toBe(true)
     })
 
     it('serves the cached home page only to visitors without a session or child safety', () => {
