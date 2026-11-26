@@ -89,7 +89,7 @@
         "@types/sanitize-html": "^2.16.1",
         "autoprefixer": "^10.4.12",
         "baseline-browser-mapping": "^2.11.35",
-        "dotenv": "^17.4.2",
+        "dotenv": "^18.0.10",
         "drizzle-kit": "^0.31.10",
         "eslint": "^9.38.0",
         "eslint-config-next": "^16.4.3",
