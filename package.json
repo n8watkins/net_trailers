@@ -70,7 +70,7 @@
         "react-dom": "^19.2.0",
         "react-player": "^2.11.2",
         "sanitize-html": "^2.18.1",
-        "web-vitals": "^5.3.0",
+        "web-vitals": "^6.2.3",
         "zod": "^4.6.7",
         "zustand": "^5.0.8"
     },
