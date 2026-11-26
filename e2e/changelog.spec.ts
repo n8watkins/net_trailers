@@ -18,9 +18,27 @@ test('the changelog shows the file, its numbers and the site windows', async ({ 
     await expect(stats.filter({ hasText: /^Latest$/ })).toBeVisible()
     await expect(stats.filter({ hasText: /^Releases$/ })).toBeVisible()
 
-    // The first earlier entry is open, with its nested bullets as a nested list
-    const entry = main.locator('details[open]').first()
-    await expect(entry.locator('ul ul').first()).toBeVisible()
+    // With a release, its entry leads: version, badge and date sit together
+    // inside the card (not pinned to the top of the window), above its list.
+    const releases = main.getByRole('article')
+    if ((await releases.count()) > 0) {
+        const newest = releases.first()
+        const version = newest.getByRole('heading', { level: 2 })
+        await expect(version).toHaveText(/^v\d+\.\d+\.\d+$/)
+        await expect(newest.getByText('Latest', { exact: true })).toBeVisible()
+        await expect(newest.getByRole('list').first()).toBeVisible()
+        const card = await newest.boundingBox()
+        const heading = await version.boundingBox()
+        expect(card && heading && heading.y >= card.y && heading.x >= card.x).toBe(true)
+    }
+
+    // Earlier notes: the first one is open when there is no release yet, and
+    // opens on a click otherwise. Its nested bullets are a nested list.
+    const earlier = main.locator('details').first()
+    if (!(await earlier.evaluate((el) => (el as HTMLDetailsElement).open))) {
+        await earlier.locator('summary').click()
+    }
+    await expect(earlier.locator('ul ul').first()).toBeVisible()
 
     await main.getByRole('button', { name: 'About this project' }).click()
     const about = page.getByRole('dialog')
