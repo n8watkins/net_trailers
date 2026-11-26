@@ -6,6 +6,7 @@ import {
 } from '../../../../../utils/tmdbApi'
 import { fetchTVContentRatings, hasMatureRating } from '../../../../../utils/tvContentRatings'
 import { apiError } from '@/utils/debugLogger'
+import { tmdbErrorResponse } from '@/utils/tmdbErrorResponse'
 
 // Cache this route for 6 hours
 export const revalidate = 21600
@@ -51,6 +52,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         })
     } catch (error) {
         apiError('Failed to fetch TV show details:', error)
-        return NextResponse.json({ message: 'Failed to fetch TV show details' }, { status: 500 })
+        return tmdbErrorResponse(error, 'Failed to fetch TV show details')
     }
 }
