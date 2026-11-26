@@ -1,7 +1,8 @@
 // The post-deploy check (DEPLOYMENT.md, "After each deploy"): requests every
 // edge-cached public page as a signed-out visitor, several times over about a
 // minute, and fails if any answer is not a 200 from the build just deployed or
-// names a /_next/static file that does not load.
+// names a /_next/static file that does not load. Each round also sends two
+// uncached requests with a cookie, as nearly every real visitor does.
 //
 //   node scripts/check-deploy.ts --build <worker version id> [--base URL]
 //       [--settle 15] [--rounds 6] [--interval 10]
@@ -9,7 +10,15 @@
 // The deploy workflow passes the version `wrangler deploy` printed. By hand,
 // `npx wrangler deployments status` shows the live one. Read-only: only GETs.
 
-import { BUILD_HEADER, CHECKED_PAGES, problemsWith, staticAssetPaths } from './deploy-check.ts'
+import {
+    BUILD_HEADER,
+    CHECKED_PAGES,
+    COOKIE_PROBES,
+    PROBE_COOKIE,
+    probeProblem,
+    problemsWith,
+    staticAssetPaths,
+} from './deploy-check.ts'
 import type { PageAnswer } from './deploy-check.ts'
 
 function option(name: string, fallback?: string): string {
@@ -68,6 +77,25 @@ async function fetchAssets(paths: string[]): Promise<void> {
     )
 }
 
+/** The uncached requests a visitor with a cookie makes (COOKIE_PROBES). */
+async function checkCookieProbes(): Promise<string[]> {
+    const problems = await Promise.all(
+        COOKIE_PROBES.map(async (probe) => {
+            try {
+                const response = await fetch(`${base}${probe.path}`, {
+                    headers: { 'user-agent': headers['user-agent'], cookie: PROBE_COOKIE },
+                    redirect: 'manual',
+                })
+                await response.body?.cancel()
+                return probeProblem(probe, response.status)
+            } catch (error) {
+                return [`${probe.path} sent with a cookie could not be fetched: ${String(error)}`]
+            }
+        })
+    )
+    return problems.flat()
+}
+
 async function main(): Promise<number> {
     console.log(
         `Checking ${CHECKED_PAGES.length} cached pages on ${base} for build ${build}: ` +
@@ -86,6 +114,7 @@ async function main(): Promise<number> {
         })
         await fetchAssets([...new Set(pages.flatMap((page) => page.assets))])
         const found = pages.flatMap((page) => problemsWith(page, build, assetStatus))
+        found.push(...(await checkCookieProbes()))
         found.forEach((problem) => problems.add(problem))
         const hits = pages.filter((page) => page.cacheStatus === 'HIT').length
         console.log(
@@ -99,7 +128,7 @@ async function main(): Promise<number> {
         return 0
     }
     console.error(
-        `FAILED: signed-out visitors are getting broken or outdated pages (${problems.size} problems):`
+        `FAILED: visitors are getting broken or outdated answers (${problems.size} problems):`
     )
     for (const problem of problems) console.error(`- ${problem}`)
     return 1

@@ -5,6 +5,8 @@
 import {
     BUILD_HEADER,
     CHECKED_PAGES,
+    COOKIE_PROBES,
+    probeProblem,
     problemsWith,
     staticAssetPaths,
     type PageAnswer,
@@ -84,6 +86,23 @@ describe('problemsWith', () => {
         ])
         expect(problemsWith(answer({ status: 307 }), BUILD, loaded)).toEqual([
             '/ (cf-cache-status HIT) answered 307',
+        ])
+    })
+})
+
+describe('cookie probes', () => {
+    it('only uses requests the edge cache never answers', () => {
+        for (const probe of COOKIE_PROBES) {
+            const request = new Request(`https://${host}${probe.path}`)
+            expect(mayUseEdgeCache(request, host)).toBe(false)
+        }
+    })
+
+    it('passes the expected status and flags a server error', () => {
+        const probe = { path: '/api/health/ai', status: 200 }
+        expect(probeProblem(probe, 200)).toEqual([])
+        expect(probeProblem(probe, 500)).toEqual([
+            '/api/health/ai sent with a cookie answered 500, expected 200',
         ])
     })
 })
