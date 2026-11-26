@@ -381,15 +381,17 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
 
     return (
         <>
+            {/* px-0: the global `header` rule (styles/globals.css) adds side padding of its own; the
+                nav row below carries the page gutter instead, so it matches the page content */}
             <header
-                className={`fixed top-0 left-0 right-0 z-[200] flex flex-col transition-all duration-300 ${
+                className={`fixed top-0 left-0 right-0 z-[200] flex flex-col px-0 transition-all duration-300 ${
                     isScrolled
                         ? 'bg-[#141414]/80 backdrop-blur-md'
                         : 'bg-gradient-to-b from-black/50 via-black/30 to-transparent'
                 }`}
             >
                 {/* Main Navigation Bar */}
-                <div className="flex w-full items-center justify-between gap-2 md:gap-6 px-4 py-4 lg:px-6">
+                <div className="flex w-full items-center justify-between gap-2 md:gap-6 px-4 py-4 sm:px-6 md:px-8 lg:px-16">
                     <button
                         type="button"
                         aria-label="NetTrailers home"
@@ -588,7 +590,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
 
                 {/* Sub-Navigation - Conditionally rendered on user pages */}
                 {showSubNav && (
-                    <div className="w-full border-t border-gray-800/30">
+                    <div className="mx-4 border-t border-gray-800/30 sm:mx-6 md:mx-8 lg:mx-16">
                         <nav
                             className="mx-auto max-w-7xl px-2 sm:px-4 py-2 sm:py-4"
                             aria-label="User navigation"

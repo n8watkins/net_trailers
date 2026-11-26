@@ -32,8 +32,9 @@ function Footer({
 }: FooterProps) {
     return (
         <footer className="border-t border-gray-800 bg-[#0a0a0a]">
-            <div className="mx-auto max-w-7xl px-4 pb-24 pt-10 sm:px-6 lg:px-8">
-                <div className="grid grid-cols-2 gap-x-6 gap-y-8 md:grid-cols-[auto_auto_auto] md:justify-between md:gap-x-16">
+            {/* Same width and side padding as the page content (SubPageLayout, genre pages) */}
+            <div className="mx-auto max-w-[1800px] px-4 pb-24 pt-10 sm:px-6 md:px-8 lg:px-16">
+                <div className="grid grid-cols-2 gap-x-6 gap-y-8 md:grid-cols-4">
                     <nav aria-label="Footer navigation">
                         <h3 className={headingClass}>Navigate</h3>
                         <ul>
@@ -138,9 +139,9 @@ function Footer({
                         </div>
                     </div>
 
-                    <div className="col-span-2 md:col-span-1">
+                    <div className="col-span-2">
                         <h3 className={headingClass}>Help &amp; legal</h3>
-                        <ul className="grid grid-cols-2 gap-x-6 md:grid-cols-1">
+                        <ul className="grid grid-cols-2 gap-x-6 md:block md:columns-2 md:gap-x-6 [&>li]:break-inside-avoid">
                             {onOpenWelcome && (
                                 <li>
                                     <button
