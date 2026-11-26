@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Header from '../../components/layout/Header'
 import SearchResults from '../../components/search/SearchResults'
 import SearchFilters from '../../components/search/SearchFilters'
+import SearchBar from '../../components/search/SearchBar'
 import { useSearch } from '../../hooks/useSearch'
 import { useAppStore } from '../../stores/appStore'
 import { useToast } from '../../hooks/useToast'
@@ -143,11 +144,16 @@ function SearchPageContent() {
     const showFancyLoading =
         (isLoading || isLoadingAll) && (!hasSearched || currentResults.length === 0)
 
-    if (showFancyLoading) {
-        return (
-            <div className="relative min-h-screen bg-gradient-to-b from-gray-900/10 to-[#010511]">
-                <Header />
-                <main className="relative">
+    // One tree for both states: the phone search box below must stay mounted (and keep
+    // focus) while a search runs, so the loading view is an overlay, not a second page.
+    return (
+        <div
+            className={`relative min-h-screen overflow-x-clip ${showModal && `overflow-y-hidden`} bg-gradient-to-b from-gray-900/10 to-[#010511]`}
+        >
+            <Header />
+
+            <main className="relative px-4 pb-32 sm:px-6 md:px-8 lg:px-16">
+                {showFancyLoading && (
                     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
                         <div className="text-center max-w-md px-6">
                             <div className="flex space-x-3 justify-center mb-6">
@@ -172,28 +178,31 @@ function SearchPageContent() {
                             </p>
                         </div>
                     </div>
-                </main>
-            </div>
-        )
-    }
+                )}
 
-    return (
-        <div
-            className={`relative min-h-screen overflow-x-clip ${showModal && `overflow-y-hidden`} bg-gradient-to-b from-gray-900/10 to-[#010511]`}
-        >
-            <Header />
-
-            <main className="relative px-4 pb-32 sm:px-6 md:px-8 lg:px-16">
                 <div className="mx-auto max-w-7xl pt-24 sm:pt-28 lg:pt-32">
-                    {/* Search Filters */}
-                    <section className="mb-6">
-                        <SearchFilters />
+                    {/* Search box: phones have no search bar in the header (only an icon that
+                        opens one), so the page carries its own. From lg up the header has it.
+                        It sits above the loading overlay so typing is never interrupted. */}
+                    <section className="relative z-[60] mb-4 lg:hidden">
+                        <SearchBar
+                            placeholder="Search movies and TV shows..."
+                            className="w-full"
+                            inputId="search-page-input"
+                            voiceSourceId="search-page"
+                        />
                     </section>
 
-                    {/* Search Results */}
-                    <section>
-                        <SearchResults />
-                    </section>
+                    {/* Search Filters and Results (hidden, not unmounted, while the overlay shows) */}
+                    <div className={showFancyLoading ? 'hidden' : undefined}>
+                        <section className="mb-6">
+                            <SearchFilters />
+                        </section>
+
+                        <section>
+                            <SearchResults />
+                        </section>
+                    </div>
                 </div>
             </main>
         </div>

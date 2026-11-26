@@ -25,9 +25,11 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
         /\/community\/polls\/[^/]+$/.test(pathname || '')
 
     // Determine initial tab from pathname
+    // /community/forums is the older address of the discussion tab, so it opens Threads.
     const getTabFromPath = (): TabType => {
-        if (pathname?.includes('/thread') || pathname?.includes('/threads')) return 'threads'
-        if (pathname?.includes('/polls')) return 'polls'
+        const section = pathname?.split('/')[2]
+        if (section === 'threads' || section === 'thread' || section === 'forums') return 'threads'
+        if (section === 'polls') return 'polls'
         return 'rankings'
     }
 
