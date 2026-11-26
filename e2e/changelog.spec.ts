@@ -12,8 +12,11 @@ test('the changelog shows the file, its numbers and the site windows', async ({ 
 
     const main = page.getByRole('main')
     await expect(main).not.toContainText(/Unreleased|Upcoming|933\+|4 mos/)
-    await expect(main.getByText('Latest', { exact: true })).toBeVisible()
-    await expect(main.getByText('Releases', { exact: true })).toBeVisible()
+    // The numbers at the top. Once a release exists, the newest entry also
+    // carries a "Latest" badge, so the labels are found by their role.
+    const stats = main.getByRole('term')
+    await expect(stats.filter({ hasText: /^Latest$/ })).toBeVisible()
+    await expect(stats.filter({ hasText: /^Releases$/ })).toBeVisible()
 
     // The first earlier entry is open, with its nested bullets as a nested list
     const entry = main.locator('details[open]').first()
