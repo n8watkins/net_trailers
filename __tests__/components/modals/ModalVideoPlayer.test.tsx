@@ -11,8 +11,17 @@ import { YOUTUBE_API_PATH, resetYouTubeApiForTests } from '../../../lib/youtubeI
 
 // The real player loads YouTube's script; record the URL it would be given.
 jest.mock('next/dynamic', () => () => {
-    const Player = (props: { src: string; ref?: React.Ref<HTMLDivElement> }) => (
-        <div ref={props.ref} data-testid="player" data-src={props.src} />
+    const Player = (props: {
+        src: string
+        playsInline?: boolean
+        ref?: React.Ref<HTMLDivElement>
+    }) => (
+        <div
+            ref={props.ref}
+            data-testid="player"
+            data-src={props.src}
+            data-plays-inline={String(Boolean(props.playsInline))}
+        />
     )
     return Player
 })
@@ -51,6 +60,12 @@ describe('ModalVideoPlayer', () => {
         expect(getByTestId('player').getAttribute('data-src')).toBe(
             'https://www.youtube-nocookie.com/embed/qKGgw7Ob5f4'
         )
+    })
+
+    it('plays inline, so an iPhone keeps the trailer in the window', () => {
+        window.YT = { loaded: 1 }
+        const { getByTestId } = renderPlayer()
+        expect(getByTestId('player').getAttribute('data-plays-inline')).toBe('true')
     })
 
     it('hands the mounted player element to onReady, so a resumed trailer can seek', () => {

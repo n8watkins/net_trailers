@@ -99,6 +99,10 @@ function ModalVideoPlayer({
                     width="100%"
                     height="100%"
                     className={`absolute inset-0 ${fullScreen ? '' : 'rounded-md'}`}
+                    // Play inside the window on iPhone instead of jumping to
+                    // the system player. react-player 2 sent playsinline=1 by
+                    // default; 3 leaves it off unless asked.
+                    playsInline
                     playing={playing}
                     volume={volume}
                     muted={muted}
