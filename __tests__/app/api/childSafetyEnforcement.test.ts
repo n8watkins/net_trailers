@@ -234,9 +234,10 @@ afterAll(() => {
 })
 
 beforeEach(() => {
-    jest.spyOn(console, 'log').mockImplementation(() => {})
-    jest.spyOn(console, 'warn').mockImplementation(() => {})
-    jest.spyOn(console, 'error').mockImplementation(() => {})
+    // The routes log what they filter; keep the test output quiet.
+    for (const method of ['log', 'warn', 'error'] as const) {
+        jest.spyOn(console, method).mockImplementation(() => undefined)
+    }
 })
 afterEach(() => jest.restoreAllMocks())
 

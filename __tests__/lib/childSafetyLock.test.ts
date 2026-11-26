@@ -87,7 +87,9 @@ beforeAll(async () => {
         await db.insert(users).values({ id, email: `${id}@test.dev` })
     }
     await setPIN('parent', '4321')
-})
+    // Every migration on a file database, plus a PIN hash: well past Jest's 5 s
+    // default when the full suite runs in parallel on a busy machine.
+}, 60_000)
 
 beforeEach(async () => {
     cookieValue = undefined

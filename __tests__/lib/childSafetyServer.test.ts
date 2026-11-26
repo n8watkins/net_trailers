@@ -51,7 +51,7 @@ beforeEach(() => {
     setCookie.mockReset()
     mockLoad.mockReset()
     mockAuth.mockClear()
-    jest.spyOn(console, 'warn').mockImplementation(() => {})
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined)
 })
 afterEach(() => jest.restoreAllMocks())
 
