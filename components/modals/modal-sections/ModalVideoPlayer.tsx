@@ -1,8 +1,7 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
-import type ReactPlayerType from 'react-player'
 import Image from 'next/image'
 import { Content } from '../../../typings'
 import { isYouTubeApiLoaded, loadYouTubeApi } from '../../../lib/youtubeIframeApi'
@@ -22,8 +21,9 @@ interface ModalVideoPlayerProps {
     onEnded: () => void
     onPause: () => void
     onPlay: () => void
-    onReady: (player: ReactPlayerType) => void
-    onPlayerRef: (ref: ReactPlayerType | null) => void
+    /** The player element (an HTMLMediaElement-like YouTube element), once it mounts. */
+    onReady: (player: HTMLVideoElement) => void
+    onPlayerRef: (ref: HTMLVideoElement | null) => void
 }
 
 function ModalVideoPlayer({
@@ -59,6 +59,22 @@ function ModalVideoPlayer({
         }
     }, [wantsPlayer, apiReady])
 
+    // react-player 3 hands out the player element through its ref, and its
+    // onReady (no arguments) fires on the element's loadstart, which can pass
+    // before React attaches listeners. The element is usable as soon as it
+    // mounts: its methods and currentTime wait for YouTube's player to load.
+    const onReadyRef = useRef(onReady)
+    useEffect(() => {
+        onReadyRef.current = onReady
+    }, [onReady])
+    const handleRef = useCallback(
+        (node: HTMLVideoElement | null) => {
+            onPlayerRef(node)
+            if (node) onReadyRef.current(node)
+        },
+        [onPlayerRef]
+    )
+
     return (
         <div
             className="absolute inset-0 pointer-events-auto z-0"
@@ -68,22 +84,22 @@ function ModalVideoPlayer({
         >
             {wantsPlayer && apiReady ? (
                 <ReactPlayer
+                    // YouTube player parameters. Without the controls or
+                    // autoplay props the embed has no YouTube controls and
+                    // does not autoplay (playing starts it), as before.
                     config={{
                         youtube: {
-                            playerVars: {
-                                cc_load_policy: 1,
-                                autoplay: 0,
-                                controls: 0,
-                                iv_load_policy: 3,
-                                modestbranding: 1,
-                            },
-                            embedOptions: {},
+                            cc_load_policy: 1,
+                            iv_load_policy: 3,
+                            // The page origin, as react-player 2 sent it, so the
+                            // player's postMessage API only talks to this site.
+                            origin: window.location.origin,
                         },
                     }}
                     // YouTube's no-cookie host: react-player embeds from
                     // www.youtube-nocookie.com for these URLs, so a trailer
                     // sets no youtube.com cookies (lib/csp.ts frame-src).
-                    url={`https://www.youtube-nocookie.com/embed/${trailer}`}
+                    src={`https://www.youtube-nocookie.com/embed/${trailer}`}
                     width="100%"
                     height="100%"
                     className={`absolute inset-0 ${fullScreen ? '' : 'rounded-md'}`}
@@ -93,8 +109,7 @@ function ModalVideoPlayer({
                     onEnded={onEnded}
                     onPause={onPause}
                     onPlay={onPlay}
-                    onReady={onReady}
-                    ref={onPlayerRef}
+                    ref={handleRef}
                 />
             ) : (
                 <Image
