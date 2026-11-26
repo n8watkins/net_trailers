@@ -58,7 +58,6 @@
         "@tiptap/extension-underline": "^3.32.2",
         "@tiptap/react": "^3.32.2",
         "@tiptap/starter-kit": "^3.32.2",
-        "@types/bcryptjs": "^2.4.6",
         "bcryptjs": "^3.0.3",
         "browser-image-compression": "^2.0.2",
         "date-fns": "^4.1.0",
