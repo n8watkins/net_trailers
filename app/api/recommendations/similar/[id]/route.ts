@@ -6,9 +6,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getHybridRecommendations } from '@/utils/tmdb/recommendations'
+import { getHybridRecommendationsOrThrow } from '@/utils/tmdb/recommendations'
 import { Recommendation, RECOMMENDATION_CONSTRAINTS } from '@/types/recommendations'
 import { apiError } from '@/utils/debugLogger'
+import { tmdbFailureStatus } from '@/utils/tmdbErrorResponse'
 
 // Cache this route for 30 minutes
 export const revalidate = 1800
@@ -34,14 +35,21 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
         // Get query parameters
         const searchParams = request.nextUrl.searchParams
-        const mediaType = (searchParams.get('mediaType') as 'movie' | 'tv') || 'movie'
+        const mediaType = searchParams.get('mediaType') || 'movie'
+        if (mediaType !== 'movie' && mediaType !== 'tv') {
+            return NextResponse.json(
+                { success: false, error: 'mediaType must be either "movie" or "tv"' },
+                { status: 400 }
+            )
+        }
+        const requestedLimit = parseInt(searchParams.get('limit') || '20', 10)
         const limit = Math.min(
-            parseInt(searchParams.get('limit') || '20', 10),
+            Number.isFinite(requestedLimit) && requestedLimit > 0 ? requestedLimit : 20,
             RECOMMENDATION_CONSTRAINTS.MAX_LIMIT
         )
 
         // Get hybrid recommendations (TMDB similar + recommended)
-        const similarContent = await getHybridRecommendations(contentId, mediaType, limit)
+        const similarContent = await getHybridRecommendationsOrThrow(contentId, mediaType, limit)
 
         // Convert to Recommendation objects
         const recommendations: Recommendation[] = similarContent.map((content, index) => ({
@@ -70,12 +78,24 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         )
     } catch (error) {
         apiError('Error fetching similar content recommendations:', error)
+        // A title with nothing similar is an empty 200 above. This is a real failure:
+        // TMDB down or rate limiting (502/429), or our own fault (500). Never cached.
+        const status = tmdbFailureStatus(error)
         return NextResponse.json(
             {
                 success: false,
-                error: error instanceof Error ? error.message : 'Failed to fetch similar content',
+                error:
+                    status === 429
+                        ? 'Too many requests. Please try again later.'
+                        : 'Failed to fetch similar content',
             },
-            { status: 500 }
+            {
+                status,
+                headers: {
+                    'Cache-Control': 'no-store',
+                    ...(status === 429 ? { 'Retry-After': '30' } : {}),
+                },
+            }
         )
     }
 }
