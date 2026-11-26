@@ -1,30 +1,20 @@
 /**
- * The one rule for what Child Safety Mode lets through (server-side).
+ * Child Safety Mode applied to TMDB titles and people (server-side).
  *
- * Every content route passes its titles through these two functions when the
- * mode is on for the request (lib/childSafetyServer.ts), so lists, single
- * titles and people follow the same rule. It is the rule the routes already
- * used, gathered in one place:
- * - anything TMDB flags `adult` is blocked (movies, shows and people);
- * - a movie needs a US certification of G, PG or PG-13
- *   (utils/movieCertifications.ts);
- * - a show is blocked by a mature rating such as TV-MA
- *   (utils/tvContentRatings.ts);
- * - a title whose rating cannot be found is blocked (fail closed).
- *
- * Ratings come from the item itself when TMDB appended them (details answers
- * carry `release_dates` and `content_ratings`), otherwise from TMDB, through
- * the in-memory certification cache.
+ * The rule itself, in plain words, is in utils/childSafetyRule.ts. Every
+ * content route passes its titles through the functions here when the mode is
+ * on for the request (lib/childSafetyServer.ts): lists, single titles, people,
+ * search, rows and recommendations alike. There is no shortcut for titles a
+ * route believes were rated at the source; every title is judged on the same
+ * ratings lookup (utils/movieCertifications.ts, utils/tvContentRatings.ts),
+ * so a list and the title's own page always agree.
  */
 
 import { NextResponse } from 'next/server'
 
-import {
-    fetchMovieCertification,
-    hasMatureCertification,
-    usCertificationFrom,
-} from './movieCertifications'
-import { fetchTVContentRatings, hasMatureRating, type ContentRating } from './tvContentRatings'
+import { movieRatingsAllowed, showRatingsAllowed } from './childSafetyRule'
+import { fetchMovieCertifications } from './movieCertifications'
+import { fetchTVContentRatings } from './tvContentRatings'
 
 type Kind = 'movie' | 'tv' | 'person'
 
@@ -34,19 +24,11 @@ export interface ChildSafetyItem {
     media_type?: string
     adult?: boolean
     title?: string
-    first_air_date?: string
-    release_dates?: { results?: Parameters<typeof usCertificationFrom>[0] }
-    content_ratings?: { results?: ContentRating[] }
 }
 
 export interface ChildSafetyFilterOptions {
     /** The kind of every item, for lists whose items carry no media_type. */
     mediaType?: Kind
-    /**
-     * The movies came from a TMDB discover query with
-     * `certification.lte=PG-13`, which already checked their certification.
-     */
-    moviesRatedAtSource?: boolean
 }
 
 function kindOf(item: ChildSafetyItem, hint?: Kind): Kind {
@@ -55,25 +37,6 @@ function kindOf(item: ChildSafetyItem, hint?: Kind): Kind {
     if (hint) return hint
     // TMDB names a movie's field `title` and a show's `name`.
     return item.title !== undefined ? 'movie' : 'tv'
-}
-
-async function movieAllowed(
-    item: ChildSafetyItem,
-    apiKey: string,
-    options: ChildSafetyFilterOptions
-): Promise<boolean> {
-    if (options.moviesRatedAtSource) return true
-    const embedded = item.release_dates?.results
-    const certification = embedded
-        ? usCertificationFrom(embedded)
-        : await fetchMovieCertification(item.id, apiKey)
-    return !hasMatureCertification(certification)
-}
-
-async function showAllowed(item: ChildSafetyItem, apiKey: string): Promise<boolean> {
-    const ratings = item.content_ratings?.results ?? (await fetchTVContentRatings(item.id, apiKey))
-    // No ratings at all: hasMatureRating blocks it (fail closed).
-    return !hasMatureRating(ratings ?? [])
 }
 
 /** Whether one title (or person) may be shown with Child Safety Mode on. */
@@ -85,13 +48,16 @@ export async function isChildSafe(
     if (!value || typeof value !== 'object') return false
     const item = value as ChildSafetyItem
     if (item.adult === true) return false
+    const id = Number(item.id)
     switch (kindOf(item, options.mediaType)) {
         case 'person':
             return true
         case 'movie':
-            return movieAllowed(item, apiKey, options)
+            if (!Number.isInteger(id) || id <= 0) return false
+            return movieRatingsAllowed(await fetchMovieCertifications(id, apiKey))
         case 'tv':
-            return showAllowed(item, apiKey)
+            if (!Number.isInteger(id) || id <= 0) return false
+            return showRatingsAllowed(await fetchTVContentRatings(id, apiKey))
     }
 }
 

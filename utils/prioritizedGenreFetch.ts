@@ -10,6 +10,8 @@
  * For "trending" with genres, we use /discover with sort_by=popularity.desc
  */
 
+import { CHILD_SAFE_DISCOVER_QUERY } from './childSafetyRule'
+
 const BASE_URL = 'https://api.themoviedb.org/3'
 
 type GenreLogic = 'AND' | 'OR'
@@ -31,7 +33,9 @@ interface GenreTierInfo {
  * Key format: "endpoint:genres:mediaType:childSafe:genreLogic"
  * Value: Array of tier info [{ genreCount: 3, totalPages: 5 }, { genreCount: 2, totalPages: 8 }, ...]
  */
-const tierCache = new Map<string, GenreTierInfo[]>()
+// Entries carry their expiry time: a timer per entry kept the process (and a
+// Jest run) alive for the whole TTL.
+const tierCache = new Map<string, { tiers: GenreTierInfo[]; expiresAt: number }>()
 const CACHE_TTL = 6 * 60 * 60 * 1000 // 6 hours in milliseconds
 
 /**
@@ -79,9 +83,9 @@ async function calculateGenreTiers(
                     url = `${BASE_URL}/discover/${mediaType}?api_key=${apiKey}&language=en-US&page=1&sort_by=popularity.desc&with_genres=${genreParam}`
                 }
 
-                // Add child safety filters
+                // Child Safety Mode prefilter (the routes still apply the rule)
                 if (childSafeMode && mediaType === 'movie') {
-                    url += '&certification_country=US&certification.lte=PG-13&include_adult=false'
+                    url += CHILD_SAFE_DISCOVER_QUERY
                 } else if (childSafeMode) {
                     url += '&include_adult=false'
                 }
@@ -125,9 +129,10 @@ async function getGenreTiers(
 
     // Check cache
     const cached = tierCache.get(cacheKey)
-    if (cached) {
-        return cached
+    if (cached && cached.expiresAt > Date.now()) {
+        return cached.tiers
     }
+    tierCache.delete(cacheKey)
 
     // Calculate and cache (parallel fetches)
     const tiers = await calculateGenreTiers(
@@ -138,12 +143,7 @@ async function getGenreTiers(
         childSafeMode,
         genreLogic
     )
-    tierCache.set(cacheKey, tiers)
-
-    // Auto-clear cache after TTL
-    setTimeout(() => {
-        tierCache.delete(cacheKey)
-    }, CACHE_TTL)
+    tierCache.set(cacheKey, { tiers, expiresAt: Date.now() + CACHE_TTL })
 
     return tiers
 }
@@ -266,7 +266,7 @@ async function fetchWithoutGenres(
     }
 
     if (childSafeMode && mediaType === 'movie') {
-        url += '&certification_country=US&certification.lte=PG-13&include_adult=false'
+        url += CHILD_SAFE_DISCOVER_QUERY
     } else if (childSafeMode) {
         url += '&include_adult=false'
     }
@@ -324,7 +324,7 @@ async function fetchWithGenres(
     }
 
     if (childSafeMode && mediaType === 'movie') {
-        url += '&certification_country=US&certification.lte=PG-13&include_adult=false'
+        url += CHILD_SAFE_DISCOVER_QUERY
     } else if (childSafeMode) {
         url += '&include_adult=false'
     }

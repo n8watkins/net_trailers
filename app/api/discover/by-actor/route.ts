@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { apiError } from '../../../../utils/debugLogger'
 import { childSafetyForRequest } from '@/lib/childSafetyServer'
 import { filterWhenChildSafe } from '@/utils/childSafetyFilter'
+import { CHILD_SAFE_DISCOVER_QUERY } from '@/utils/childSafetyRule'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -36,14 +37,12 @@ export async function GET(request: NextRequest) {
         const results: Array<{ media_type: string; [key: string]: unknown }> = []
         let totalResults = 0
 
-        // Build certification filter for child safety mode
-        const movieCertFilter = childSafetyMode
-            ? '&certification_country=US&certification.lte=PG-13'
-            : ''
+        // Child Safety Mode: a prefilter only; every title still passes the rule below.
+        const movieFilter = childSafetyMode ? CHILD_SAFE_DISCOVER_QUERY : '&include_adult=false'
 
         // Fetch movies with this actor
         if (mediaType === 'movie' || mediaType === 'both') {
-            const movieUrl = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&page=${pageNumber}&with_people=${actorId}&sort_by=${sortBy}${movieCertFilter}&include_adult=false`
+            const movieUrl = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&page=${pageNumber}&with_people=${actorId}&sort_by=${sortBy}${movieFilter}`
 
             const movieResponse = await fetch(movieUrl)
             if (movieResponse.ok) {
@@ -81,11 +80,9 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(
             {
                 page: pageNumber,
-                // Limit to 40 results (2 pages worth). Child Safety Mode: movies were
-                // rated by the discover query; shows were not filtered before at all.
-                results: await filterWhenChildSafe(childSafetyMode, results.slice(0, 40), API_KEY, {
-                    moviesRatedAtSource: true,
-                }),
+                // Limit to 40 results (2 pages worth). Child Safety Mode: the
+                // shared rule (utils/childSafetyRule.ts) for every title.
+                results: await filterWhenChildSafe(childSafetyMode, results.slice(0, 40), API_KEY),
                 total_results: totalResults,
                 actor_id: actorId,
             },

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { childSafetyForRequest } from '@/lib/childSafetyServer'
 import { filterWhenChildSafe } from '@/utils/childSafetyFilter'
+import { CHILD_SAFE_DISCOVER_PARAMS } from '@/utils/childSafetyRule'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -65,9 +66,10 @@ export async function GET(request: NextRequest) {
                     url.searchParams.append('vote_count.gte', '1000') // Well-known movies
                     url.searchParams.append('page', '1')
                     if (childSafeMode) {
-                        url.searchParams.append('certification_country', 'US')
-                        url.searchParams.append('certification.lte', 'PG-13')
-                        url.searchParams.append('include_adult', 'false')
+                        // A prefilter only: every movie still passes the rule below.
+                        for (const [key, value] of Object.entries(CHILD_SAFE_DISCOVER_PARAMS)) {
+                            url.searchParams.append(key, value)
+                        }
                     }
 
                     const response = await fetch(url.toString())
@@ -79,7 +81,7 @@ export async function GET(request: NextRequest) {
                         childSafeMode,
                         data.results ?? [],
                         API_KEY,
-                        { mediaType: 'movie', moviesRatedAtSource: true }
+                        { mediaType: 'movie' }
                     )
 
                     // Get top N movies with posters

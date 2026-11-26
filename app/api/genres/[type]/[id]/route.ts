@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { childSafetyForRequest } from '@/lib/childSafetyServer'
 import { filterChildSafe } from '@/utils/childSafetyFilter'
+import { CHILD_SAFE_DISCOVER_PARAMS } from '@/utils/childSafetyRule'
 import { csDebugTMDB, csDebugResponse, csDebugFilter } from '../../../../../utils/childSafetyDebug'
 import { apiError } from '../../../../../utils/debugLogger'
 
@@ -118,9 +119,10 @@ export async function GET(
                 with_genres: genreIds.join(','),
             })
             if (childSafeMode) {
-                movieParams.append('include_adult', 'false')
-                movieParams.append('certification_country', 'US')
-                movieParams.append('certification.lte', 'PG-13')
+                // A prefilter only: every movie still passes the rule below.
+                for (const [key, value] of Object.entries(CHILD_SAFE_DISCOVER_PARAMS)) {
+                    movieParams.append(key, value)
+                }
                 movieParams.append('vote_count.gte', '100')
             }
             if (primary_release_year)
@@ -171,11 +173,9 @@ export async function GET(
                 media_type: 'tv',
             }))
 
-            // Apply child safety filtering (movies were rated by the discover query)
+            // Child Safety Mode: the shared rule (utils/childSafetyRule.ts)
             if (childSafeMode) {
-                movieResults = await filterChildSafe(movieResults, API_KEY, {
-                    moviesRatedAtSource: true,
-                })
+                movieResults = await filterChildSafe(movieResults, API_KEY)
                 tvResults = await filterChildSafe(tvResults, API_KEY)
             }
 
@@ -258,11 +258,13 @@ export async function GET(
                     )
                 }
 
-                // CRITICAL: Filter by MPAA certification (US ratings)
-                // certification.lte=PG-13 means: include G, PG, and PG-13 rated movies
-                // This excludes R, NC-17, and unrated content
-                queryParams.append('certification_country', 'US')
-                queryParams.append('certification.lte', 'PG-13')
+                // Prefilter by US certification (G, PG, PG-13); every movie
+                // still passes the shared rule after the fetch.
+                queryParams.append(
+                    'certification_country',
+                    CHILD_SAFE_DISCOVER_PARAMS.certification_country
+                )
+                queryParams.append('certification', CHILD_SAFE_DISCOVER_PARAMS.certification)
 
                 // Use requested genres as-is (now safe because of rating filter)
                 queryParams.append('with_genres', genreIds.join(','))
@@ -298,7 +300,7 @@ export async function GET(
                     )
                 }
 
-                // TV: use requested genres, filtering happens post-fetch via filterMatureTVShows
+                // TV: use requested genres, every show passes the shared rule after the fetch
                 queryParams.append('with_genres', genreIds.join(','))
             }
         } else {
@@ -361,18 +363,9 @@ export async function GET(
         if (childSafeMode) {
             const beforeCount = enrichedResults.length
 
-            // ✅ RATING-BASED FILTERING STRATEGY APPLIED
-            // Movies: Filtered at query time with certification.lte=PG-13 (G, PG, PG-13 only)
-            // TV Shows: Filtered post-fetch by content ratings (excludes TV-MA)
-
-            // Movies: the discover query's certification.lte=PG-13 already rated
-            // them, so only the adult flag is checked again (no per-title calls).
-            // TV shows: ALWAYS filtered by content ratings, since TV has no
-            // certification.lte parameter and even "family" genres like Comedy
-            // and Animation can have TV-MA content (Shameless, Hazbin Hotel...).
-            enrichedResults = await filterChildSafe(enrichedResults, API_KEY, {
-                moviesRatedAtSource: type === 'movie',
-            })
+            // The shared rule (utils/childSafetyRule.ts) for every title: the
+            // discover prefilter narrows what TMDB sends, it does not decide.
+            enrichedResults = await filterChildSafe(enrichedResults, API_KEY)
             csDebugFilter(beforeCount, enrichedResults.length, 'Child Safety Filter')
 
             const hiddenCount = beforeCount - enrichedResults.length

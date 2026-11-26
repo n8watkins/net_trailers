@@ -12,7 +12,8 @@
 
 import { NextRequest } from 'next/server'
 import { GET } from '../../../../../app/api/movies/details/[id]/route'
-import { fetchTVContentRatings, hasMatureRating } from '../../../../../utils/tvContentRatings'
+import { fetchMovieCertifications } from '../../../../../utils/movieCertifications'
+import { fetchTVContentRatings } from '../../../../../utils/tvContentRatings'
 
 // Mock the TMDB API client
 const mockGetMovieDetails = jest.fn()
@@ -26,10 +27,12 @@ jest.mock('../../../../../utils/tmdbApi', () => ({
     handleApiError: jest.fn(),
 }))
 
-// Mock TV content ratings utilities
+// Mock the ratings lookups the shared rule reads (utils/childSafetyRule.ts)
 jest.mock('../../../../../utils/tvContentRatings', () => ({
     fetchTVContentRatings: jest.fn(),
-    hasMatureRating: jest.fn(),
+}))
+jest.mock('../../../../../utils/movieCertifications', () => ({
+    fetchMovieCertifications: jest.fn(),
 }))
 
 // A guest's Child Safety cookie (lib/childSafetyServer.ts); none by default.
@@ -46,7 +49,9 @@ jest.mock('next/headers', () => ({
 const mockFetchTVContentRatings = fetchTVContentRatings as jest.MockedFunction<
     typeof fetchTVContentRatings
 >
-const mockHasMatureRating = hasMatureRating as jest.MockedFunction<typeof hasMatureRating>
+const mockFetchMovieCertifications = fetchMovieCertifications as jest.MockedFunction<
+    typeof fetchMovieCertifications
+>
 
 /**
  * Helper to create a NextRequest with query params
@@ -201,6 +206,7 @@ describe('/api/movies/details/[id] - App Router API Tests', () => {
 
             for (const query of [{}, { childSafetyMode: 'false' }]) {
                 mockGetMovieDetails.mockResolvedValueOnce(rated('R'))
+                mockFetchMovieCertifications.mockResolvedValueOnce(['R'])
                 const response = await GET(
                     createRequest('321', { media_type: 'movie', ...query }),
                     { params: createParams('321') }
@@ -210,6 +216,7 @@ describe('/api/movies/details/[id] - App Router API Tests', () => {
             }
 
             mockGetMovieDetails.mockResolvedValueOnce(rated('PG'))
+            mockFetchMovieCertifications.mockResolvedValueOnce(['PG'])
             const allowed = await GET(createRequest('321', { media_type: 'movie' }), {
                 params: createParams('321'),
             })
@@ -228,6 +235,7 @@ describe('/api/movies/details/[id] - App Router API Tests', () => {
             }
 
             mockGetMovieDetails.mockResolvedValueOnce(safeMovie)
+            mockFetchMovieCertifications.mockResolvedValueOnce(['PG'])
 
             const request = createRequest('123', {
                 media_type: 'movie',
@@ -274,7 +282,6 @@ describe('/api/movies/details/[id] - App Router API Tests', () => {
 
             mockGetMovieDetails.mockResolvedValueOnce(tvShow)
             mockFetchTVContentRatings.mockResolvedValueOnce([{ iso_3166_1: 'US', rating: 'TV-MA' }])
-            mockHasMatureRating.mockReturnValueOnce(true)
 
             const request = createRequest('789', {
                 media_type: 'tv',
@@ -299,7 +306,6 @@ describe('/api/movies/details/[id] - App Router API Tests', () => {
 
             mockGetMovieDetails.mockResolvedValueOnce(tvShow)
             mockFetchTVContentRatings.mockResolvedValueOnce([{ iso_3166_1: 'US', rating: 'TV-G' }])
-            mockHasMatureRating.mockReturnValueOnce(false)
 
             const request = createRequest('456', {
                 media_type: 'tv',

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { childSafetyForRequest } from '@/lib/childSafetyServer'
 import { filterChildSafe } from '@/utils/childSafetyFilter'
+import { CHILD_SAFE_DISCOVER_PARAMS } from '@/utils/childSafetyRule'
 import { apiError } from '@/utils/debugLogger'
 
 const API_KEY = process.env.TMDB_API_KEY
@@ -77,10 +78,11 @@ export async function GET(request: NextRequest) {
             url.searchParams.append('vote_count.gte', voteCountGte)
         }
 
-        // Child safety mode filtering
+        // Child Safety Mode: a prefilter only; every title still passes the rule below.
         if (childSafeMode && mediaType === 'movie') {
-            url.searchParams.append('certification_country', 'US')
-            url.searchParams.append('certification.lte', 'PG-13')
+            for (const [key, value] of Object.entries(CHILD_SAFE_DISCOVER_PARAMS)) {
+                url.searchParams.set(key, value)
+            }
         }
 
         const response = await fetch(url.toString())
@@ -101,10 +103,8 @@ export async function GET(request: NextRequest) {
         if (childSafeMode) {
             const beforeCount = enrichedResults.length
 
-            // Movies were rated by the discover query (certification.lte above).
-            enrichedResults = await filterChildSafe(enrichedResults, API_KEY, {
-                moviesRatedAtSource: mediaType === 'movie',
-            })
+            // The shared rule (utils/childSafetyRule.ts) for every title.
+            enrichedResults = await filterChildSafe(enrichedResults, API_KEY)
 
             const hiddenCount = beforeCount - enrichedResults.length
 

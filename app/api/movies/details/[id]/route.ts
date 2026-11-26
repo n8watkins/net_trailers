@@ -35,8 +35,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         const tmdbClient = TMDBApiClient.getInstance()
         const data = await tmdbClient.getMovieDetails(id, media_type as 'movie' | 'tv')
 
-        // Child Safety Mode: the shared rule, from the ratings appended to the
-        // details (release_dates for movies, content_ratings for shows)
+        // Child Safety Mode: the shared rule (utils/childSafetyRule.ts), on the
+        // same ratings lookup the lists use (not the ratings appended here, so
+        // a list and this page always judge a title on the same data)
         if (
             childSafeMode &&
             !(await isChildSafe(

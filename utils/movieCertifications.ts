@@ -1,157 +1,71 @@
 /**
- * Movie Certification Utilities for Child Safety Mode
- * Handles server-side fetching and filtering of movie certifications from TMDB
- * Uses in-memory cache to reduce API calls
+ * The US certifications of a movie, as Child Safety Mode reads them
+ * (utils/childSafetyRule.ts decides what they mean).
+ *
+ * One lookup per movie: TMDB's /movie/{id}/release_dates. Answers are kept in
+ * Next's data cache (shared by every Worker isolate, keyed by the URL) and in
+ * this isolate's memory (utils/certificationCache.ts, keyed by movie id);
+ * concurrent lookups of the same movie share one request. A failed lookup is
+ * never cached, so a rate limit hides the title for one request only.
  */
 
 import { certificationCache } from './certificationCache'
 
-export interface MovieCertification {
+interface UsReleaseDate {
+    certification?: string
+}
+
+interface CountryReleaseDates {
     iso_3166_1: string
-    certification: string
-    release_date?: string
+    release_dates?: UsReleaseDate[]
 }
 
-interface MovieReleaseDatesResponse {
-    results: {
-        iso_3166_1: string
-        release_dates: MovieCertification[]
-    }[]
-    id: number
-}
-
-// Child-safe US MPAA ratings (G, PG, PG-13)
-// Block: R, NC-17, and unrated content
-export const CHILD_SAFE_CERTIFICATIONS = new Set([
-    'G', // General Audiences
-    'PG', // Parental Guidance Suggested
-    'PG-13', // Parents Strongly Cautioned
-])
-
-// Mature ratings that should be blocked in child safety mode
-export const MATURE_CERTIFICATIONS = new Set([
-    'R', // Restricted (under 17 requires parent)
-    'NC-17', // No one 17 and under admitted
-    'NR', // Not Rated
-    'UR', // Unrated
-    '', // Empty string (unrated)
-])
+/** How long TMDB's release_dates answer is reused across isolates (seconds). */
+const LOOKUP_REVALIDATE_SECONDS = 6 * 60 * 60
 
 /**
- * The US certification in a movie's release dates (TMDB `release_dates.results`,
- * also appended to a details answer), or null when there is none.
+ * Every non-blank US certification in a movie's release dates, in TMDB's
+ * order (a premiere usually has none and is skipped).
  */
-export function usCertificationFrom(
-    results: MovieReleaseDatesResponse['results'] | undefined
-): string | null {
-    // Find US certification (most reliable and standardized)
-    const usRelease = results?.find((r) => r.iso_3166_1 === 'US')
-    if (!usRelease || usRelease.release_dates.length === 0) return null
-    // Get the first certification (usually theatrical release)
-    return usRelease.release_dates[0].certification || null
+export function usCertificationsFrom(
+    results: readonly CountryReleaseDates[] | undefined
+): string[] {
+    const us = (results ?? []).filter((r) => r && r.iso_3166_1 === 'US')
+    const certifications = us.flatMap((r) =>
+        (r.release_dates ?? []).map((d) => (d?.certification ?? '').trim())
+    )
+    return certifications.filter((c) => c !== '')
 }
 
-/**
- * Fetch certification data for a movie from TMDB (with caching)
- * @param movieId - The TMDB ID of the movie
- * @param apiKey - TMDB API key
- * @returns Promise with certifications or null if failed
- */
-export async function fetchMovieCertification(
-    movieId: number,
-    apiKey: string
-): Promise<string | null> {
-    // Check cache first
-    const cached = certificationCache.getMovie(movieId)
-    if (cached !== undefined) {
-        return cached
-    }
+const inFlight = new Map<number, Promise<string[] | null>>()
 
-    // Cache miss - fetch from API
+async function lookUp(movieId: number, apiKey: string): Promise<string[] | null> {
     try {
         const url = `https://api.themoviedb.org/3/movie/${movieId}/release_dates?api_key=${apiKey}`
-        const response = await fetch(url)
-
-        if (!response.ok) {
-            certificationCache.setMovie(movieId, null)
-            return null
-        }
-
-        const data: MovieReleaseDatesResponse = await response.json()
-        const certification = usCertificationFrom(data.results)
-
-        // Cache the result (even if null)
-        certificationCache.setMovie(movieId, certification)
-        return certification
-    } catch (error) {
-        console.error(`Failed to fetch certification for movie ${movieId}:`, error)
-        certificationCache.setMovie(movieId, null)
+        const response = await fetch(url, { next: { revalidate: LOOKUP_REVALIDATE_SECONDS } })
+        if (!response.ok) return null
+        const data = (await response.json()) as { results?: CountryReleaseDates[] }
+        const certifications = usCertificationsFrom(data.results)
+        certificationCache.setMovie(movieId, certifications)
+        return certifications
+    } catch {
         return null
     }
 }
 
 /**
- * Check if a movie certification is child-safe
- * @param certification - Movie certification string (e.g., "PG-13", "R")
- * @returns true if the certification is NOT child-safe (R, NC-17, or unrated)
+ * A movie's US certifications ([] when TMDB has none), or null when they could
+ * not be looked up.
  */
-export function hasMatureCertification(certification: string | null): boolean {
-    if (!certification || certification.trim() === '') {
-        // SECURITY: No certification available - exclude from child safety mode (fail closed)
-        // We cannot verify content is appropriate without rating data
-        return true
-    }
-
-    // Check if it's explicitly mature
-    if (MATURE_CERTIFICATIONS.has(certification)) {
-        return true
-    }
-
-    // Check if it's NOT in the child-safe list
-    return !CHILD_SAFE_CERTIFICATIONS.has(certification)
-}
-
-/**
- * Filter movies based on certifications (server-side)
- * Makes individual API calls to verify each movie's rating
- * @param movies - Array of movie objects
- * @param apiKey - TMDB API key
- * @returns Promise with filtered movies (mature content removed)
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function filterMatureMovies(movies: any[], apiKey: string): Promise<any[]> {
-    if (!movies || movies.length === 0) {
-        return []
-    }
-
-    // Batch fetch all movie certifications in parallel
-    const certificationPromises = movies.map((movie) => fetchMovieCertification(movie.id, apiKey))
-
-    const certificationResults = await Promise.all(certificationPromises)
-
-    // Filter out movies with mature certifications OR missing certification data
-    return movies.filter((movie, index) => {
-        const certification = certificationResults[index]
-        if (!certification) {
-            // SECURITY: If we couldn't fetch certification, exclude the movie (fail closed)
-            // Cannot verify content is appropriate without rating data
-            return false
-        }
-        return !hasMatureCertification(certification)
-    })
-}
-
-/**
- * Get statistics about movie content filtering
- * @param movies - Original array of movies
- * @param filteredMovies - Filtered array of movies
- * @returns Object with filtering statistics
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function getMovieFilterStats(movies: any[], filteredMovies: any[]) {
-    return {
-        total: movies.length,
-        shown: filteredMovies.length,
-        hidden: movies.length - filteredMovies.length,
-    }
+export async function fetchMovieCertifications(
+    movieId: number,
+    apiKey: string
+): Promise<string[] | null> {
+    const cached = certificationCache.getMovie(movieId)
+    if (cached !== undefined) return cached
+    const pending = inFlight.get(movieId)
+    if (pending) return pending
+    const lookup = lookUp(movieId, apiKey).finally(() => inFlight.delete(movieId))
+    inFlight.set(movieId, lookup)
+    return lookup
 }

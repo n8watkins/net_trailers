@@ -95,8 +95,8 @@ GitHub private vulnerability reporting is not turned on for this repository.
 - For a guest the `nettrailer_child_safety` cookie decides.
   Only the server writes it (httpOnly), always from a signed-in account's stored setting, so an account that turned the mode on leaves it on in that browser after signing out.
   A guest has no identity of its own, so this is only as strong as the browser's cookie store: clearing site data or a private window starts without it.
-- Every content route passes its titles through one rule (`utils/childSafetyFilter.ts`): nothing TMDB marks adult, movies rated G, PG or PG-13 in the US, no show with a mature rating such as TV-MA, and a title whose rating cannot be found is left out.
-  A single title that fails it answers 403.
+- Every content route passes every title through one rule, written down in `utils/childSafetyRule.ts` and applied by `utils/childSafetyFilter.ts`: nothing TMDB marks adult; a movie only when TMDB has a US certification for it and every one of them is G, PG or PG-13 (or TV-14 or below), so an unrated or not-yet-rated film is left out; no show with a mature rating such as TV-MA in any country; and a title whose rating cannot be looked up is left out.
+  Lists and single titles read the same ratings lookup, so a list never shows a title whose own page is blocked; a single title that fails the rule answers 403.
 - If the setting cannot be read, the answer is filtered titles.
 - The Worker's edge cache never answers a catalogue request that carries a session or child-safety cookie, unless it asks for the filtered version (`worker/edgeCache.ts`).
 
