@@ -15,14 +15,15 @@ test('the home page stops re-rendering once it has loaded', async ({ page }) => 
     await stubExternalMedia(page)
     await page.addInitScript(() => {
         const counter = { commits: 0 }
+        const ignore = () => undefined
         ;(window as unknown as { __commitCounter: typeof counter }).__commitCounter = counter
         ;(window as unknown as Record<string, unknown>).__REACT_DEVTOOLS_GLOBAL_HOOK__ = {
             supportsFiber: true,
             renderers: new Map(),
             inject: () => 1,
-            checkDCE: () => {},
-            onCommitFiberUnmount: () => {},
-            onPostCommitFiberRoot: () => {},
+            checkDCE: ignore,
+            onCommitFiberUnmount: ignore,
+            onPostCommitFiberRoot: ignore,
             onCommitFiberRoot: () => {
                 counter.commits++
             },
