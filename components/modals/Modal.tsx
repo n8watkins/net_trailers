@@ -17,7 +17,6 @@ import {
 } from '@heroicons/react/24/solid'
 import { SparklesIcon } from '@heroicons/react/24/outline'
 
-import type ReactPlayerType from 'react-player'
 import ContentMetadata from '../common/ContentMetadata'
 import { Element, Genre } from '../../typings'
 import ToolTipMod from '../common/ToolTipMod'
@@ -77,7 +76,7 @@ function Modal() {
     const [playing, setPlaying] = useState(true)
     const [trailerEnded, setTrailerEnded] = useState(true)
     const [fullScreen, setFullScreen] = useState(false)
-    const [player, setPlayer] = useState<ReactPlayerType | null>(null)
+    const [player, setPlayer] = useState<HTMLVideoElement | null>(null)
     const [secondsPlayed, setSecondsPlayed] = useState(0)
     const divRef = useRef<HTMLDivElement>(null)
     // The window panel mounts in a portal a pass after the modal opens, so it is
@@ -89,15 +88,15 @@ function Modal() {
         setPanelMounted(node !== null)
     }, [])
 
-    const handlePlayerRef = useCallback((ref: ReactPlayerType | null) => {
+    const handlePlayerRef = useCallback((ref: HTMLVideoElement | null) => {
         setPlayer(ref)
     }, [])
 
     const handlePlayerReady = useCallback(
-        (player: ReactPlayerType) => {
+        (player: HTMLVideoElement) => {
             setTimeout(() => {
-                if (player && typeof player.seekTo === 'function' && secondsPlayed > 0) {
-                    player.seekTo(secondsPlayed, 'seconds')
+                if (secondsPlayed > 0) {
+                    player.currentTime = secondsPlayed
                 }
             }, 50)
         },
@@ -165,8 +164,8 @@ function Modal() {
     }
 
     function handleSingleOrDoubleClick(_event: MouseEvent) {
-        if (player && typeof player.getCurrentTime === 'function') {
-            setSecondsPlayed(player.getCurrentTime())
+        if (player) {
+            setSecondsPlayed(player.currentTime)
         }
         // If starting to play, also unmute
         if (!playing) {

@@ -1,4 +1,4 @@
-const { withSentryConfig } = require('@sentry/nextjs')
+const { withSentryConfig } = require('@sentry/nextjs/config')
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
     enabled: process.env.ANALYZE === 'true',
 })
@@ -120,8 +120,6 @@ const sentryWebpackPluginOptions = {
     project: process.env.SENTRY_PROJECT,
     silent: true,
     widenClientFileUpload: true,
-    hideSourceMaps: true,
-    disableLogger: true,
 }
 
 module.exports = withSentryConfig(withBundleAnalyzer(nextConfig), sentryWebpackPluginOptions)

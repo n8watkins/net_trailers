@@ -22,27 +22,27 @@ function ToolTipMod({ children, title, placement = 'top' }: ToolTipModProps) {
             enterDelay={200}
             leaveDelay={0}
             disableInteractive={false}
-            PopperProps={{
-                sx: {
-                    zIndex: 60000, // Higher than modal's 50000
-                },
-                container: typeof document !== 'undefined' ? document.body : undefined,
-                modifiers: [
-                    {
-                        name: 'offset',
-                        options: {
-                            offset: [0, 10],
-                        },
-                    },
-                    {
-                        name: 'preventOverflow',
-                        options: {
-                            boundary: 'viewport',
-                        },
-                    },
-                ],
-            }}
             slotProps={{
+                popper: {
+                    sx: {
+                        zIndex: 60000, // Higher than modal's 50000
+                    },
+                    container: typeof document !== 'undefined' ? document.body : undefined,
+                    modifiers: [
+                        {
+                            name: 'offset',
+                            options: {
+                                offset: [0, 10],
+                            },
+                        },
+                        {
+                            name: 'preventOverflow',
+                            options: {
+                                boundary: 'viewport',
+                            },
+                        },
+                    ],
+                },
                 arrow: {
                     sx: {
                         color: 'white',

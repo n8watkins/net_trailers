@@ -632,7 +632,9 @@ export const useForumStore = create<ForumState>((set, get) => ({
             })
             return (json as { pollId: string }).pollId
         } catch (error) {
-            throw new Error(error instanceof Error ? error.message : 'Failed to create poll')
+            throw new Error(error instanceof Error ? error.message : 'Failed to create poll', {
+                cause: error,
+            })
         }
     },
 
@@ -647,7 +649,9 @@ export const useForumStore = create<ForumState>((set, get) => ({
                 knownVotes: { ...state.knownVotes, [pollId]: optionIds },
             }))
         } catch (error) {
-            throw new Error(error instanceof Error ? error.message : 'Failed to vote on poll')
+            throw new Error(error instanceof Error ? error.message : 'Failed to vote on poll', {
+                cause: error,
+            })
         }
     },
 
@@ -659,7 +663,9 @@ export const useForumStore = create<ForumState>((set, get) => ({
                 currentPoll: state.currentPoll?.id === pollId ? null : state.currentPoll,
             }))
         } catch (error) {
-            throw new Error(error instanceof Error ? error.message : 'Failed to delete poll')
+            throw new Error(error instanceof Error ? error.message : 'Failed to delete poll', {
+                cause: error,
+            })
         }
     },
 
@@ -713,7 +719,9 @@ export const useForumStore = create<ForumState>((set, get) => ({
                     : state.knownVotes,
             }))
         } catch (error) {
-            throw new Error(error instanceof Error ? error.message : 'Failed to update poll')
+            throw new Error(error instanceof Error ? error.message : 'Failed to update poll', {
+                cause: error,
+            })
         }
     },
 
@@ -728,7 +736,9 @@ export const useForumStore = create<ForumState>((set, get) => ({
                 polls: state.polls.map((p) => (p.id === pollId ? updatedPoll : p)),
             }))
         } catch (error) {
-            throw new Error(error instanceof Error ? error.message : 'Failed to hide poll')
+            throw new Error(error instanceof Error ? error.message : 'Failed to hide poll', {
+                cause: error,
+            })
         }
     },
 
@@ -743,7 +753,9 @@ export const useForumStore = create<ForumState>((set, get) => ({
                 polls: state.polls.map((p) => (p.id === pollId ? updatedPoll : p)),
             }))
         } catch (error) {
-            throw new Error(error instanceof Error ? error.message : 'Failed to unhide poll')
+            throw new Error(error instanceof Error ? error.message : 'Failed to unhide poll', {
+                cause: error,
+            })
         }
     },
 

@@ -11,11 +11,22 @@ import { YOUTUBE_API_PATH, resetYouTubeApiForTests } from '../../../lib/youtubeI
 
 // The real player loads YouTube's script; record the URL it would be given.
 jest.mock('next/dynamic', () => () => {
-    const Player = (props: { url: string }) => <div data-testid="player" data-url={props.url} />
+    const Player = (props: {
+        src: string
+        playsInline?: boolean
+        ref?: React.Ref<HTMLDivElement>
+    }) => (
+        <div
+            ref={props.ref}
+            data-testid="player"
+            data-src={props.src}
+            data-plays-inline={String(Boolean(props.playsInline))}
+        />
+    )
     return Player
 })
 
-function renderPlayer() {
+function renderPlayer(onReady = jest.fn()) {
     return render(
         <ModalVideoPlayer
             trailer="qKGgw7Ob5f4"
@@ -29,7 +40,7 @@ function renderPlayer() {
             onEnded={jest.fn()}
             onPause={jest.fn()}
             onPlay={jest.fn()}
-            onReady={jest.fn()}
+            onReady={onReady}
             onPlayerRef={jest.fn()}
         />
     )
@@ -46,9 +57,23 @@ describe('ModalVideoPlayer', () => {
     it('plays trailers from youtube-nocookie.com', () => {
         window.YT = { loaded: 1 }
         const { getByTestId } = renderPlayer()
-        expect(getByTestId('player').getAttribute('data-url')).toBe(
+        expect(getByTestId('player').getAttribute('data-src')).toBe(
             'https://www.youtube-nocookie.com/embed/qKGgw7Ob5f4'
         )
+    })
+
+    it('plays inline, so an iPhone keeps the trailer in the window', () => {
+        window.YT = { loaded: 1 }
+        const { getByTestId } = renderPlayer()
+        expect(getByTestId('player').getAttribute('data-plays-inline')).toBe('true')
+    })
+
+    it('hands the mounted player element to onReady, so a resumed trailer can seek', () => {
+        window.YT = { loaded: 1 }
+        const onReady = jest.fn()
+        const { getByTestId } = renderPlayer(onReady)
+        expect(onReady).toHaveBeenCalledTimes(1)
+        expect(onReady).toHaveBeenCalledWith(getByTestId('player'))
     })
 
     it("loads YouTube's player API from this site, then mounts the player", async () => {

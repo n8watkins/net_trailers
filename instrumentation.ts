@@ -1,5 +1,6 @@
 import type { Instrumentation } from 'next'
 import { errorSummary, logError, pathOf, safeCode } from './lib/log'
+import { SENTRY_DATA_COLLECTION } from './lib/sentryDataCollection'
 
 export async function register() {
     // End-to-end tests only (APP_ENV=test): answer TMDB from recorded fixtures.
@@ -31,6 +32,8 @@ export async function register() {
             // Server-specific configurations
             debug: false,
 
+            dataCollection: SENTRY_DATA_COLLECTION,
+
             // Filter out sensitive data
             beforeSend(event) {
                 // Remove sensitive user data
@@ -58,6 +61,8 @@ export async function register() {
 
             // Edge runtime specific configurations
             debug: false,
+
+            dataCollection: SENTRY_DATA_COLLECTION,
         })
     }
 }
