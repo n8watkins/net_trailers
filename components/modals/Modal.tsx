@@ -35,6 +35,7 @@ import JsonDebugModal from './modal-sections/JsonDebugModal'
 import MoreLikeThisSection from '../modal/MoreLikeThisSection'
 import { useChildSafety } from '../../hooks/useChildSafety'
 import { Z_INDEX } from '../../constants/zIndex'
+import { useFocusTrap } from '../../hooks/useFocusTrap'
 
 /**
  * Round icon action with a small visible caption underneath, so the actions
@@ -79,6 +80,14 @@ function Modal() {
     const [player, setPlayer] = useState<ReactPlayerType | null>(null)
     const [secondsPlayed, setSecondsPlayed] = useState(0)
     const divRef = useRef<HTMLDivElement>(null)
+    // The window panel mounts in a portal a pass after the modal opens, so it is
+    // tracked in state: the focus trap starts once the panel really exists.
+    const panelRef = useRef<HTMLDivElement | null>(null)
+    const [panelMounted, setPanelMounted] = useState(false)
+    const setPanel = useCallback((node: HTMLDivElement | null) => {
+        panelRef.current = node
+        setPanelMounted(node !== null)
+    }, [])
 
     const handlePlayerRef = useCallback((ref: ReactPlayerType | null) => {
         setPlayer(ref)
@@ -620,6 +629,12 @@ function Modal() {
         }
     }, [showVolumeSlider])
 
+    // Focus moves into the window on open and back to the opener on close; Tab stays
+    // inside. Paused while the list picker or JSON viewer sits on top of this window.
+    useFocusTrap(panelRef, showModal && panelMounted, {
+        paused: listModal.isOpen || showJsonDebug,
+    })
+
     return (
         <MuiModal
             open={showModal}
@@ -640,7 +655,12 @@ function Modal() {
                 onClick={handleClose}
             >
                 <div
-                    className={`relative w-full z-10 bg-[#141414] flex flex-col ${
+                    ref={setPanel}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={currentMovie ? getTitle(currentMovie) : 'Title details'}
+                    tabIndex={-1}
+                    className={`relative w-full z-10 bg-[#141414] flex flex-col outline-none ${
                         fullScreen
                             ? 'h-screen max-h-screen'
                             : 'rounded-md w-[95vw] max-w-sm sm:max-w-2xl md:max-w-3xl lg:max-w-5xl max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-2rem)] md:max-h-[calc(100dvh-5rem)] overflow-y-auto overscroll-contain modal-scrollbar'
