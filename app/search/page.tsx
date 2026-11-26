@@ -189,6 +189,7 @@ function SearchPageContent() {
                             placeholder="Search movies and TV shows..."
                             className="w-full"
                             inputId="search-page-input"
+                            alwaysExpanded
                             voiceSourceId="search-page"
                         />
                     </section>

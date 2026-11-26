@@ -146,6 +146,8 @@ test.describe('search page on a phone', () => {
 
         const box = page.getByRole('main').getByRole('searchbox', { name: /search/i })
         await expect(box).toBeVisible()
+        // Open on arrival: a full-width field, not the collapsed search icon
+        expect((await box.boundingBox())?.width ?? 0).toBeGreaterThan(250)
         await box.fill('matrix')
         await expect(page).toHaveURL(/\/search\?q=matrix/)
         await expect(page.getByRole('main').getByText('Matrix Test Film').first()).toBeVisible()

@@ -25,6 +25,8 @@ interface SearchBarProps {
     voiceSourceId?: string
     /** Show the microphone button (off in the desktop header, where space is tight) */
     showVoice?: boolean
+    /** Keep the field open on phones instead of collapsing to a search icon (the search page) */
+    alwaysExpanded?: boolean
 }
 
 export default function SearchBar({
@@ -35,6 +37,7 @@ export default function SearchBar({
     inputId,
     voiceSourceId,
     showVoice = true,
+    alwaysExpanded = false,
 }: SearchBarProps) {
     // Search mode (titles or people) drives the placeholder
     const searchMode = useSearchStore((state) => state.searchMode)
@@ -82,7 +85,7 @@ export default function SearchBar({
     const [selectedIndex, setSelectedIndex] = useState(-1)
     const [selectedResultIndex, setSelectedResultIndex] = useState(-1)
     const [isSeeAllButtonSelected, setIsSeeAllButtonSelected] = useState(false)
-    const [isMobileExpanded, setIsMobileExpanded] = useState(false)
+    const [isMobileExpanded, setIsMobileExpanded] = useState(alwaysExpanded)
     const [showFilters, setShowFilters] = useState(false)
     const [isTyping, setIsTyping] = useState(false)
     const inputRef = useRef<HTMLInputElement>(null)
@@ -212,7 +215,7 @@ export default function SearchBar({
         // Delay hiding suggestions to allow clicking on them
         setTimeout(() => {
             setShowSuggestions(false)
-            if (!query) {
+            if (!query && !alwaysExpanded) {
                 setIsMobileExpanded(false)
             }
         }, 150)
@@ -564,7 +567,7 @@ export default function SearchBar({
 
                     {/* Mobile Close Button */}
                     <div className="md:hidden">
-                        {isMobileExpanded && (
+                        {isMobileExpanded && !alwaysExpanded && (
                             <button
                                 onClick={() => {
                                     setIsMobileExpanded(false)
