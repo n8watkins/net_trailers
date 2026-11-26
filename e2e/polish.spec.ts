@@ -101,6 +101,50 @@ test.describe('header alignment', () => {
     }
 })
 
+test.describe('header sub-navigation', () => {
+    // Seven labelled tabs are wider than the page between 640 and 1023 px: they must not spill
+    for (const width of [390, 640, 768, 900, 1024, 1440]) {
+        test(`the profile tabs stay inside the page at ${width} px`, async ({
+            browser,
+            baseURL,
+        }) => {
+            const { context, page } = await open(browser, baseURL, 'desktop')
+            await page.setViewportSize({ width, height: 900 })
+            await page.goto('/collections')
+            await waitForGuestHeader(page)
+            const edges = await page.evaluate(() => {
+                const links = [
+                    ...document.querySelectorAll('nav[aria-label="User navigation"] a'),
+                ].map((a) => a.getBoundingClientRect())
+                return {
+                    left: Math.min(...links.map((r) => r.left)),
+                    right: Math.max(...links.map((r) => r.right)),
+                    smallest: Math.min(...links.map((r) => Math.min(r.width, r.height))),
+                    page: document.body.getBoundingClientRect().width,
+                }
+            })
+            expect(edges.left).toBeGreaterThanOrEqual(0)
+            expect(edges.right).toBeLessThanOrEqual(edges.page)
+            if (width < 1024) expect(edges.smallest).toBeGreaterThanOrEqual(40)
+            await context.close()
+        })
+    }
+
+    test('header controls are at least 40 px to tap on a phone', async ({ browser, baseURL }) => {
+        const { context, page } = await open(browser, baseURL, 'phone')
+        await page.goto('/collections')
+        await waitForGuestHeader(page)
+        const sizes = await page.evaluate(() =>
+            [...document.querySelectorAll('header > div > *')]
+                .map((el) => el.getBoundingClientRect())
+                .filter((r) => r.width > 0 && r.height > 0)
+                .map((r) => Math.min(r.width, r.height))
+        )
+        expect(Math.min(...sizes)).toBeGreaterThanOrEqual(40)
+        await context.close()
+    })
+})
+
 test.describe('footer alignment', () => {
     for (const size of ['phone', 'tablet', 'desktop'] as const) {
         test(`the footer lines up with the header at ${size}`, async ({ browser, baseURL }) => {

@@ -395,7 +395,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                     <button
                         type="button"
                         aria-label="NetTrailers home"
-                        className="shrink-0 select-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
+                        className="shrink-0 select-none rounded py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
                         onClick={() => {
                             if (pathname === '/') {
                                 // Already on home page - smooth scroll to top
@@ -617,7 +617,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                             title={item.label}
                                             aria-current={isActive ? 'page' : undefined}
                                             data-tour={dataTourAttr}
-                                            className={`group relative flex items-center justify-center gap-2 whitespace-nowrap border-b-2 px-2 sm:px-1 py-2 sm:py-3 text-sm font-medium transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 ${
+                                            className={`group relative flex items-center justify-center gap-2 whitespace-nowrap border-b-2 px-2 sm:px-1 py-2 sm:py-3 text-sm font-medium transition-colors min-w-[44px] min-h-[44px] lg:min-w-0 lg:min-h-0 ${
                                                 isActive
                                                     ? 'border-brand-500 text-brand-400'
                                                     : 'border-transparent text-gray-400 hover:text-gray-200'
@@ -627,7 +627,18 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                                 className="h-5 w-5 sm:h-5 sm:w-5"
                                                 aria-hidden="true"
                                             />
-                                            <span className="hidden sm:inline">{item.label}</span>
+                                            {/* Seven labels do not fit between a phone and a laptop (640 to 1023 px): there only
+                                        the current page keeps its label; the others stay as icons, named for
+                                        screen readers and by the tooltip */}
+                                            <span
+                                                className={
+                                                    isActive
+                                                        ? 'hidden sm:inline'
+                                                        : 'sr-only lg:not-sr-only'
+                                                }
+                                            >
+                                                {item.label}
+                                            </span>
                                         </Link>
                                     )
                                 })}
