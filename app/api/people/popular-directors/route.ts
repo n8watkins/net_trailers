@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { apiError, apiLog } from '../../../../utils/debugLogger'
+import { childSafetyForRequest } from '@/lib/childSafetyServer'
+import { filterChildSafe } from '@/utils/childSafetyFilter'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -52,9 +54,16 @@ export async function GET(request: NextRequest) {
 
         // Genre filter (comma-separated TMDB genre IDs)
         const genresParam = searchParams.get('genres')
-        const genreIds = genresParam ? genresParam.split(',').map(id => parseInt(id, 10)).filter(id => !isNaN(id)) : []
+        const genreIds = genresParam
+            ? genresParam
+                  .split(',')
+                  .map((id) => parseInt(id, 10))
+                  .filter((id) => !isNaN(id))
+            : []
 
-        apiLog(`[Popular Directors] Fetching page ${pageNumber} with time_window=${validTimeWindow}, media_type=${mediaType || 'both'}, genres=${genreIds.length > 0 ? genreIds.join(',') : 'all'}`)
+        apiLog(
+            `[Popular Directors] Fetching page ${pageNumber} with time_window=${validTimeWindow}, media_type=${mediaType || 'both'}, genres=${genreIds.length > 0 ? genreIds.join(',') : 'all'}`
+        )
 
         // Strategy: Get trending movies/TV and extract their directors
         // This gives us directors who are actually relevant right now
@@ -69,7 +78,9 @@ export async function GET(request: NextRequest) {
                 // Trending movies (if not filtered to TV only)
                 if (!mediaType || mediaType === 'movie') {
                     fetchPromises.push(
-                        fetch(`${BASE_URL}/trending/movie/${validTimeWindow}?api_key=${API_KEY}&language=en-US&page=${page}`)
+                        fetch(
+                            `${BASE_URL}/trending/movie/${validTimeWindow}?api_key=${API_KEY}&language=en-US&page=${page}`
+                        )
                             .then((res) => res.json())
                             .then((data) => ({ type: 'movie', data }))
                     )
@@ -77,7 +88,9 @@ export async function GET(request: NextRequest) {
                 // Trending TV (if not filtered to movie only)
                 if (!mediaType || mediaType === 'tv') {
                     fetchPromises.push(
-                        fetch(`${BASE_URL}/trending/tv/${validTimeWindow}?api_key=${API_KEY}&language=en-US&page=${page}`)
+                        fetch(
+                            `${BASE_URL}/trending/tv/${validTimeWindow}?api_key=${API_KEY}&language=en-US&page=${page}`
+                        )
                             .then((res) => res.json())
                             .then((data) => ({ type: 'tv', data }))
                     )
@@ -88,7 +101,14 @@ export async function GET(request: NextRequest) {
         const trendingResponses = await Promise.all(fetchPromises)
 
         // Collect all content IDs
-        const contentToFetch: Array<{ id: number; type: string; title: string; poster_path: string | null; popularity: number; genre_ids: number[] }> = []
+        const contentToFetch: Array<{
+            id: number
+            type: string
+            title: string
+            poster_path: string | null
+            popularity: number
+            genre_ids: number[]
+        }> = []
 
         for (const response of trendingResponses) {
             if (response.data.results) {
@@ -97,7 +117,7 @@ export async function GET(request: NextRequest) {
 
                     // If genre filter is specified, only include content that matches
                     if (genreIds.length > 0) {
-                        const hasMatchingGenre = itemGenreIds.some(gid => genreIds.includes(gid))
+                        const hasMatchingGenre = itemGenreIds.some((gid) => genreIds.includes(gid))
                         if (!hasMatchingGenre) continue
                     }
 
@@ -115,7 +135,15 @@ export async function GET(request: NextRequest) {
 
         // Sort by popularity and take top items to reduce API calls
         contentToFetch.sort((a, b) => b.popularity - a.popularity)
-        const topContent = contentToFetch.slice(0, 40)
+        // Child Safety Mode (lib/childSafetyServer.ts): directors are found
+        // through, and shown with, only titles that pass the shared rule.
+        const childSafeMode = await childSafetyForRequest(request)
+        const topContent = childSafeMode
+            ? await filterChildSafe(
+                  contentToFetch.slice(0, 40).map((item) => ({ ...item, media_type: item.type })),
+                  API_KEY
+              )
+            : contentToFetch.slice(0, 40)
 
         apiLog(`[Popular Directors] Fetching credits for ${topContent.length} trending items`)
 

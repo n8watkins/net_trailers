@@ -8,7 +8,7 @@ import { useToast } from '../../../hooks/useToast'
 import { useAppStore } from '../../../stores/appStore'
 import { useAuthStore } from '../../../stores/authStore'
 import { useGuestStore } from '../../../stores/guestStore'
-import { toggleChildSafetyAction } from '../../../lib/actions/childSafety'
+import { syncChildSafetyAction } from '../../../lib/actions/childSafety'
 import { ChildSafetyKeptError } from '../../../lib/childSafetyKept'
 import PreferencesSection from '../../../components/settings/PreferencesSection'
 import ChildSafetyPINModal from '../../../components/settings/ChildSafetyPINModal'
@@ -111,9 +111,10 @@ const PreferencesPage: React.FC = () => {
                 } else {
                     await authStoreUpdatePrefs(update)
 
-                    // Sync child safety mode to cookie for server-side rendering
+                    // The server copies the stored mode into this browser's
+                    // cookie, which filters content after signing out.
                     if (key === 'childSafetyMode') {
-                        await toggleChildSafetyAction(value as boolean)
+                        await syncChildSafetyAction()
                     }
                 }
 

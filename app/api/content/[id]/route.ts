@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { fetchTVContentRatings, hasMatureRating } from '../../../../utils/tvContentRatings'
 import { tmdbContentCache } from '../../../../utils/apiCache'
+import { childSafetyForRequest } from '@/lib/childSafetyServer'
+import { childSafetyBlocked, isChildSafe } from '@/utils/childSafetyFilter'
 import { apiError } from '../../../../utils/debugLogger'
 
 // Cache this route for 1 hour
@@ -9,8 +10,8 @@ export const revalidate = 3600
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
     const searchParams = request.nextUrl.searchParams
-    const childSafetyMode = searchParams.get('childSafetyMode')
-    const childSafeMode = childSafetyMode === 'true'
+    // The server decides (lib/childSafetyServer.ts); the parameter can only add filtering.
+    const childSafeMode = await childSafetyForRequest(request)
 
     if (!id) {
         return NextResponse.json({ error: 'Content ID is required' }, { status: 400 })
@@ -45,15 +46,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         if (movieResponse.ok) {
             const movieData = await movieResponse.json()
 
-            // Check child safety for movies (adult flag)
-            if (childSafeMode && movieData.adult === true) {
-                return NextResponse.json(
-                    {
-                        error: 'Content blocked by child safety mode',
-                        reason: 'adult_content',
-                    },
-                    { status: 403 }
-                )
+            // Child Safety Mode: the shared rule (adult flag and US certification)
+            if (
+                childSafeMode &&
+                !(await isChildSafe({ ...movieData, media_type: 'movie' }, API_KEY))
+            ) {
+                return childSafetyBlocked()
             }
 
             // Add media_type to distinguish from TV shows
@@ -81,18 +79,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         if (tvResponse.ok) {
             const tvData = await tvResponse.json()
 
-            // Check child safety for TV shows (content ratings)
-            if (childSafeMode) {
-                const ratings = await fetchTVContentRatings(contentId, API_KEY)
-                if (ratings && hasMatureRating(ratings)) {
-                    return NextResponse.json(
-                        {
-                            error: 'Content blocked by child safety mode',
-                            reason: 'mature_rating',
-                        },
-                        { status: 403 }
-                    )
-                }
+            // Child Safety Mode: the shared rule (content ratings; none found blocks it)
+            if (childSafeMode && !(await isChildSafe({ ...tvData, media_type: 'tv' }, API_KEY))) {
+                return childSafetyBlocked()
             }
 
             // Add media_type and transform TV show data to match movie structure

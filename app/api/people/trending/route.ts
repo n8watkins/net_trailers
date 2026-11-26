@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { apiError, apiLog } from '../../../../utils/debugLogger'
+import { childSafetyForRequest } from '@/lib/childSafetyServer'
+import { filterChildSafePeople } from '@/utils/childSafetyFilter'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -127,20 +129,26 @@ export async function GET(request: NextRequest) {
         // Sort by popularity
         allPeople.sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
 
+        // Child Safety Mode (lib/childSafetyServer.ts): no adult performers, and
+        // their known-for titles pass the shared rule.
+        const people = (await childSafetyForRequest(request))
+            ? await filterChildSafePeople(allPeople, API_KEY)
+            : allPeople
+
         // Calculate virtual pagination for the client
         // Each "client page" = pagesToFetch TMDB pages worth of filtered results
         const hasMore = startPage + pagesToFetch <= totalPages
         const virtualTotalPages = Math.ceil(totalPages / pagesToFetch)
 
         apiLog(
-            `[Trending People] Found ${allPeople.length} ${department || 'people'}, hasMore: ${hasMore}`
+            `[Trending People] Found ${people.length} ${department || 'people'}, hasMore: ${hasMore}`
         )
 
         return NextResponse.json(
             {
                 page: pageNumber,
-                results: allPeople,
-                total_results: allPeople.length,
+                results: people,
+                total_results: people.length,
                 total_pages: virtualTotalPages,
                 has_more: hasMore,
             },

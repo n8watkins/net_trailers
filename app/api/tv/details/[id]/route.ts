@@ -4,7 +4,8 @@ import {
     setCacheHeaders as _setCacheHeaders,
     handleApiError as _handleApiError,
 } from '../../../../../utils/tmdbApi'
-import { fetchTVContentRatings, hasMatureRating } from '../../../../../utils/tvContentRatings'
+import { childSafetyForRequest } from '@/lib/childSafetyServer'
+import { childSafetyBlocked, isChildSafe } from '@/utils/childSafetyFilter'
 import { apiError } from '@/utils/debugLogger'
 import { tmdbErrorResponse } from '@/utils/tmdbErrorResponse'
 
@@ -14,8 +15,8 @@ export const revalidate = 21600
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
     const searchParams = request.nextUrl.searchParams
-    const childSafetyMode = searchParams.get('childSafetyMode')
-    const childSafeMode = childSafetyMode === 'true'
+    // The server decides (lib/childSafetyServer.ts); the parameter can only add filtering.
+    const childSafeMode = await childSafetyForRequest(request)
 
     if (!id) {
         return NextResponse.json({ message: 'TV show ID is required' }, { status: 400 })
@@ -25,22 +26,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         const tmdbClient = TMDBApiClient.getInstance()
         const data = await tmdbClient.getMovieDetails(id, 'tv')
 
-        // Apply child safety filtering for TV shows
-        if (childSafeMode) {
-            const API_KEY = process.env.TMDB_API_KEY
-            if (API_KEY) {
-                const contentId = parseInt(id)
-                const ratings = await fetchTVContentRatings(contentId, API_KEY)
-                if (ratings && hasMatureRating(ratings)) {
-                    return NextResponse.json(
-                        {
-                            message: 'Content blocked by child safety mode',
-                            reason: 'mature_rating',
-                        },
-                        { status: 403 }
-                    )
-                }
-            }
+        // Child Safety Mode: the shared rule, from the appended content_ratings
+        if (
+            childSafeMode &&
+            !(await isChildSafe(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                { ...(data as any), media_type: 'tv' },
+                process.env.TMDB_API_KEY ?? ''
+            ))
+        ) {
+            return childSafetyBlocked()
         }
 
         // Cache for 6 hours (TV details don't change often)

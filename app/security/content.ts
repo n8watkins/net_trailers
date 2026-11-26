@@ -152,6 +152,14 @@ export const SECURITY_SECTIONS: SecuritySection[] = [
                 text: 'A correct PIN is remembered only in the open page, so you enter it again after reloading.',
                 evidence: 'stores/childSafetyStore.ts (no persistence)',
             },
+            {
+                text: 'An existing PIN can only be replaced with the current PIN, and while it is set the mode stays on unless the PIN was just entered.',
+                evidence: 'app/api/child-safety/pin/route.ts, lib/childSafetyLock.ts',
+            },
+            {
+                text: 'With Child Safety Mode on, the server filters every list and title it sends, whatever the page asks for. For a guest, the mode lives in a cookie only the server writes, so clearing site data removes it.',
+                evidence: 'lib/childSafetyServer.ts, utils/childSafetyFilter.ts',
+            },
         ],
     },
 ]

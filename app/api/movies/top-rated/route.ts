@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { apiError } from '../../../../utils/debugLogger'
 import { fetchWithPrioritizedGenres } from '../../../../utils/prioritizedGenreFetch'
+import { childSafetyForRequest } from '@/lib/childSafetyServer'
+import { filterChildSafe, filterWhenChildSafe } from '@/utils/childSafetyFilter'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -17,8 +19,8 @@ export async function GET(request: NextRequest) {
         const searchParams = request.nextUrl.searchParams
         const page = searchParams.get('page') || '1'
         const pageNumber = parseInt(page, 10)
-        const childSafetyMode = searchParams.get('childSafetyMode')
-        const childSafeMode = childSafetyMode === 'true'
+        // The server decides (lib/childSafetyServer.ts); the parameter can only add filtering.
+        const childSafeMode = await childSafetyForRequest(request)
         const genresParam = searchParams.get('genres') // Unified genre IDs (e.g., "action,comedy")
 
         // If genres are specified, use prioritized genre cascading
@@ -46,7 +48,9 @@ export async function GET(request: NextRequest) {
             return NextResponse.json(
                 {
                     ...data,
-                    results: enrichedResults,
+                    results: await filterWhenChildSafe(childSafeMode, enrichedResults, API_KEY, {
+                        moviesRatedAtSource: true,
+                    }),
                     child_safety_enabled: childSafeMode || undefined,
                 },
                 {
@@ -141,7 +145,9 @@ export async function GET(request: NextRequest) {
             return NextResponse.json(
                 {
                     ...data,
-                    results: enrichedResults,
+                    results: await filterChildSafe(enrichedResults, API_KEY, {
+                        moviesRatedAtSource: true,
+                    }),
                     child_safety_enabled: true,
                     filtered_at_source: true, // Filtered by TMDB discover endpoint
                 },

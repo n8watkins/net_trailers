@@ -8,20 +8,23 @@
  */
 
 import { headers } from 'next/headers'
-import { setChildSafetyModeCookie } from '../childSafetyCookieServer'
+import { syncChildSafetyCookie } from '../childSafetyServer'
 import { validateServerActionOrigin } from '../csrfProtection'
 
 /**
- * Toggle child safety mode
- * @param enabled - Whether to enable child safety mode
+ * Bring this browser's Child Safety cookie (what the server filters by once
+ * the visitor signs out) in line with the signed-in account's stored setting.
+ * It takes no value: the setting is read from the database, so nobody can call
+ * it to switch filtering off (lib/childSafetyServer.ts). Before, it took the
+ * value from the caller, so any visitor could clear a guest's mode with it.
  * @throws Error if CSRF validation fails
  */
-export async function toggleChildSafetyAction(enabled: boolean): Promise<void> {
+export async function syncChildSafetyAction(): Promise<boolean> {
     // CSRF protection - server actions don't go through proxy.ts
     const headersList = await headers()
     if (!validateServerActionOrigin(headersList)) {
         throw new Error('CSRF validation failed')
     }
 
-    await setChildSafetyModeCookie(enabled)
+    return syncChildSafetyCookie()
 }

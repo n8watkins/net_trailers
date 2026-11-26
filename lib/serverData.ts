@@ -5,7 +5,7 @@
 
 import { Content } from '../typings'
 import { selfFetch } from './selfFetch'
-import { getChildSafetyMode } from './childSafetyCookieServer'
+import { resolveChildSafety } from './childSafetyServer'
 import { dedupeAndRandomize } from '../utils/contentDeduplication'
 
 export interface HomeData {
@@ -20,7 +20,9 @@ export interface HomeData {
  * larger and the first byte slower.
  */
 export async function fetchHomeData(): Promise<HomeData> {
-    const childSafetyEnabled = await getChildSafetyMode()
+    // The same answer the content routes give this visitor (lib/childSafetyServer.ts).
+    // The self-fetch carries no cookies, so it asks for the filtered rows outright.
+    const childSafetyEnabled = await resolveChildSafety()
     const childSafetyParam = childSafetyEnabled ? 'childSafetyMode=true' : ''
 
     const responses = await Promise.all([

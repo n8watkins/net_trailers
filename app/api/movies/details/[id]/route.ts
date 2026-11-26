@@ -4,7 +4,8 @@ import {
     setCacheHeaders as _setCacheHeaders,
     handleApiError as _handleApiError,
 } from '../../../../../utils/tmdbApi'
-import { fetchTVContentRatings, hasMatureRating } from '../../../../../utils/tvContentRatings'
+import { childSafetyForRequest } from '@/lib/childSafetyServer'
+import { childSafetyBlocked, isChildSafe } from '@/utils/childSafetyFilter'
 import { apiError } from '@/utils/debugLogger'
 import { tmdbErrorResponse } from '@/utils/tmdbErrorResponse'
 
@@ -15,8 +16,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { id } = await params
     const searchParams = request.nextUrl.searchParams
     const media_type = searchParams.get('media_type') || 'movie'
-    const childSafetyMode = searchParams.get('childSafetyMode')
-    const childSafeMode = childSafetyMode === 'true'
+    // The server decides (lib/childSafetyServer.ts); the parameter can only add filtering.
+    const childSafeMode = await childSafetyForRequest(request)
 
     if (!id) {
         return NextResponse.json({ message: 'Movie/TV show ID is required' }, { status: 400 })
@@ -34,37 +35,17 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         const tmdbClient = TMDBApiClient.getInstance()
         const data = await tmdbClient.getMovieDetails(id, media_type as 'movie' | 'tv')
 
-        // Apply child safety filtering
-        if (childSafeMode) {
-            if (media_type === 'movie') {
-                // Check adult flag for movies
+        // Child Safety Mode: the shared rule, from the ratings appended to the
+        // details (release_dates for movies, content_ratings for shows)
+        if (
+            childSafeMode &&
+            !(await isChildSafe(
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                if ((data as any).adult === true) {
-                    return NextResponse.json(
-                        {
-                            message: 'Content blocked by child safety mode',
-                            reason: 'adult_content',
-                        },
-                        { status: 403 }
-                    )
-                }
-            } else if (media_type === 'tv') {
-                // Check content ratings for TV shows
-                const API_KEY = process.env.TMDB_API_KEY
-                if (API_KEY) {
-                    const contentId = parseInt(id)
-                    const ratings = await fetchTVContentRatings(contentId, API_KEY)
-                    if (ratings && hasMatureRating(ratings)) {
-                        return NextResponse.json(
-                            {
-                                message: 'Content blocked by child safety mode',
-                                reason: 'mature_rating',
-                            },
-                            { status: 403 }
-                        )
-                    }
-                }
-            }
+                { ...(data as any), media_type },
+                process.env.TMDB_API_KEY ?? ''
+            ))
+        ) {
+            return childSafetyBlocked()
         }
 
         // Cache for 6 hours (movie/TV details don't change often)

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { filterContentByAdultFlag } from '../../../../../utils/contentFilter'
+import { childSafetyForRequest } from '@/lib/childSafetyServer'
+import { filterChildSafe } from '@/utils/childSafetyFilter'
 import { apiError } from '@/utils/debugLogger'
 
 const API_KEY = process.env.TMDB_API_KEY
@@ -28,8 +29,8 @@ export async function GET(
     const { genre } = await params
     const searchParams = request.nextUrl.searchParams
     const page = searchParams.get('page') || '1'
-    const childSafetyMode = searchParams.get('childSafetyMode')
-    const childSafeMode = childSafetyMode === 'true'
+    // The server decides (lib/childSafetyServer.ts); the parameter can only add filtering.
+    const childSafeMode = await childSafetyForRequest(request)
 
     if (!genreMap[genre.toLowerCase()]) {
         return NextResponse.json(
@@ -77,7 +78,9 @@ export async function GET(
         // (Server-side certification.lte already filtered by rating)
         if (childSafeMode) {
             const beforeCount = enrichedResults.length
-            enrichedResults = filterContentByAdultFlag(enrichedResults, true)
+            enrichedResults = await filterChildSafe(enrichedResults, API_KEY, {
+                moviesRatedAtSource: true,
+            })
             const hiddenCount = beforeCount - enrichedResults.length
 
             return NextResponse.json(

@@ -36,8 +36,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 
-import { filterContentByAdultFlag } from '@/utils/contentFilter'
-import { filterMatureTVShows } from '@/utils/tvContentRatings'
+import { filterChildSafe } from '@/utils/childSafetyFilter'
+import { childSafetyForRequest } from '@/lib/childSafetyServer'
 import { apiError, apiWarn } from '@/utils/debugLogger'
 import { fetchWithPrioritizedGenres } from '@/utils/prioritizedGenreFetch'
 import { fetchWithUnifiedCascading } from '@/utils/unifiedCascadingFetch'
@@ -112,8 +112,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         const parsedPage = parseInt(page, 10)
         const pageNumber = Number.isNaN(parsedPage) ? 1 : parsedPage
 
-        const childSafetyMode = searchParams.get('childSafetyMode')
-        const childSafeMode = childSafetyMode === 'true'
+        // The server decides (lib/childSafetyServer.ts); the parameter can only add filtering.
+        const childSafeMode = await childSafetyForRequest(request)
 
         const genresParam = searchParams.get('genres')
         const contentIdsParam = searchParams.get('contentIds') // Gemini-curated content list
@@ -179,19 +179,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
             if (childSafeMode) {
                 const beforeCount = cachedResults.length
-                const filteredByAdultFlag = filterContentByAdultFlag(cachedResults, true)
-
-                const tvItems = filteredByAdultFlag.filter((item: any) => item.media_type === 'tv')
-                let safeTvIds: Set<number> | null = null
-                if (tvItems.length > 0) {
-                    const safeTv = await filterMatureTVShows(tvItems, API_KEY)
-                    safeTvIds = new Set(safeTv.map((item: any) => item.id))
-                }
-
-                cachedResults = filteredByAdultFlag.filter((item: any) => {
-                    if (item.media_type === 'tv') return safeTvIds?.has(item.id)
-                    return true
-                })
+                // Titles fetched by id: nothing rated them yet, movies included.
+                cachedResults = await filterChildSafe(cachedResults, API_KEY)
 
                 const hiddenCount = beforeCount - cachedResults.length
 
@@ -308,19 +297,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
             if (childSafeMode) {
                 const beforeCount = enrichedResults.length
-                const filteredByAdultFlag = filterContentByAdultFlag(enrichedResults, true)
-
-                const tvItems = filteredByAdultFlag.filter((item: any) => item.media_type === 'tv')
-                let safeTvIds: Set<number> | null = null
-                if (tvItems.length > 0) {
-                    const safeTv = await filterMatureTVShows(tvItems, API_KEY)
-                    safeTvIds = new Set(safeTv.map((item: any) => item.id))
-                }
-
-                enrichedResults = filteredByAdultFlag.filter((item: any) => {
-                    if (item.media_type === 'tv') return safeTvIds?.has(item.id)
-                    return true
-                })
+                // Titles fetched by id: nothing rated them yet, movies included.
+                enrichedResults = await filterChildSafe(enrichedResults, API_KEY)
 
                 return NextResponse.json(
                     {
@@ -492,18 +470,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         // ----------------------------------------------------------------
         if (childSafeMode) {
             const beforeCount = enrichedResults.length
-            const filteredByAdultFlag = filterContentByAdultFlag(enrichedResults, true)
-
-            const tvItems = filteredByAdultFlag.filter((item: any) => item.media_type === 'tv')
-            let safeTvIds: Set<number> | null = null
-            if (tvItems.length > 0) {
-                const safeTv = await filterMatureTVShows(tvItems, API_KEY)
-                safeTvIds = new Set(safeTv.map((item: any) => item.id))
-            }
-
-            enrichedResults = filteredByAdultFlag.filter((item: any) => {
-                if (item.media_type === 'tv') return safeTvIds?.has(item.id)
-                return true
+            // Movies came from discover queries with certification.lte=PG-13,
+            // except the cascading fetch for 'both', which does not add it.
+            enrichedResults = await filterChildSafe(enrichedResults, API_KEY, {
+                moviesRatedAtSource: !(mediaType === 'both' && shouldUseUnifiedCascading),
             })
 
             const childSafetyHiddenCount = beforeCount - enrichedResults.length

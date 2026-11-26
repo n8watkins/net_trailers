@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { apiError } from '../../../../utils/debugLogger'
+import { childSafetyForRequest } from '@/lib/childSafetyServer'
+import { childSafetyBlocked, isChildSafe } from '@/utils/childSafetyFilter'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -7,7 +9,7 @@ const BASE_URL = 'https://api.themoviedb.org/3'
 // Cache this route for 24 hours (person details don't change often)
 export const revalidate = 86400
 
-export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     if (!API_KEY) {
         return NextResponse.json({ message: 'TMDB API key not configured' }, { status: 500 })
     }
@@ -30,6 +32,14 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
         }
 
         const data = await response.json()
+
+        // Child Safety Mode (lib/childSafetyServer.ts): no adult performers.
+        if (
+            (await childSafetyForRequest(request)) &&
+            !(await isChildSafe({ ...data, media_type: 'person' }, API_KEY))
+        ) {
+            return childSafetyBlocked()
+        }
 
         return NextResponse.json(data, {
             status: 200,

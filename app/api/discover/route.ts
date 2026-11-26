@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { filterContentByAdultFlag } from '../../../utils/contentFilter'
-import { filterMatureTVShows } from '../../../utils/tvContentRatings'
+import { childSafetyForRequest } from '@/lib/childSafetyServer'
+import { filterChildSafe } from '@/utils/childSafetyFilter'
 import { apiError } from '@/utils/debugLogger'
 
 const API_KEY = process.env.TMDB_API_KEY
@@ -17,8 +17,8 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const mediaType = searchParams.get('media_type') || 'movie' // 'movie' or 'tv'
     const page = searchParams.get('page') || '1'
-    const childSafetyMode = searchParams.get('childSafetyMode')
-    const childSafeMode = childSafetyMode === 'true'
+    // The server decides (lib/childSafetyServer.ts); the parameter can only add filtering.
+    const childSafeMode = await childSafetyForRequest(request)
 
     // Genre filters
     const withGenres = searchParams.get('with_genres') // Comma-separated genre IDs
@@ -101,13 +101,10 @@ export async function GET(request: NextRequest) {
         if (childSafeMode) {
             const beforeCount = enrichedResults.length
 
-            if (mediaType === 'movie') {
-                // Filter movies by adult flag
-                enrichedResults = filterContentByAdultFlag(enrichedResults, true)
-            } else {
-                // Filter TV shows by content rating
-                enrichedResults = await filterMatureTVShows(enrichedResults, API_KEY)
-            }
+            // Movies were rated by the discover query (certification.lte above).
+            enrichedResults = await filterChildSafe(enrichedResults, API_KEY, {
+                moviesRatedAtSource: mediaType === 'movie',
+            })
 
             const hiddenCount = beforeCount - enrichedResults.length
 

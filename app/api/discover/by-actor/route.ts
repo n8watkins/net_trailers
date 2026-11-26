@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { apiError } from '../../../../utils/debugLogger'
+import { childSafetyForRequest } from '@/lib/childSafetyServer'
+import { filterWhenChildSafe } from '@/utils/childSafetyFilter'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -16,7 +18,8 @@ export async function GET(request: NextRequest) {
         const searchParams = request.nextUrl.searchParams
         const actorId = searchParams.get('actorId')
         const mediaType = searchParams.get('mediaType') || 'both' // 'movie', 'tv', or 'both'
-        const childSafetyMode = searchParams.get('childSafetyMode') === 'true'
+        // The server decides (lib/childSafetyServer.ts); the parameter can only add filtering.
+        const childSafetyMode = await childSafetyForRequest(request)
 
         if (!actorId) {
             return NextResponse.json({ message: 'actorId is required' }, { status: 400 })
@@ -78,7 +81,11 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(
             {
                 page: pageNumber,
-                results: results.slice(0, 40), // Limit to 40 results (2 pages worth)
+                // Limit to 40 results (2 pages worth). Child Safety Mode: movies were
+                // rated by the discover query; shows were not filtered before at all.
+                results: await filterWhenChildSafe(childSafetyMode, results.slice(0, 40), API_KEY, {
+                    moviesRatedAtSource: true,
+                }),
                 total_results: totalResults,
                 actor_id: actorId,
             },

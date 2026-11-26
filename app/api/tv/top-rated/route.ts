@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { filterMatureTVShows } from '../../../../utils/tvContentRatings'
+import { childSafetyForRequest } from '@/lib/childSafetyServer'
+import { filterChildSafe } from '@/utils/childSafetyFilter'
 import { apiError } from '../../../../utils/debugLogger'
 import { fetchWithPrioritizedGenres } from '../../../../utils/prioritizedGenreFetch'
 
@@ -18,8 +19,8 @@ export async function GET(request: NextRequest) {
         const searchParams = request.nextUrl.searchParams
         const page = searchParams.get('page') || '1'
         const pageNumber = parseInt(page, 10)
-        const childSafetyMode = searchParams.get('childSafetyMode')
-        const childSafeMode = childSafetyMode === 'true'
+        // The server decides (lib/childSafetyServer.ts); the parameter can only add filtering.
+        const childSafeMode = await childSafetyForRequest(request)
         const genresParam = searchParams.get('genres') // Unified genre IDs (e.g., "action,comedy")
 
         // If genres are specified, use prioritized genre cascading
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
             // Apply child safety filtering if enabled (TV shows need content rating checks)
             if (childSafeMode) {
                 const beforeCount = enrichedResults.length
-                enrichedResults = await filterMatureTVShows(enrichedResults, API_KEY!)
+                enrichedResults = await filterChildSafe(enrichedResults, API_KEY!)
                 const hiddenCount = beforeCount - enrichedResults.length
 
                 return NextResponse.json(
@@ -160,7 +161,7 @@ export async function GET(request: NextRequest) {
 
             // CRITICAL: Even with genre filtering, we MUST filter TV-MA content
             // Genres like Comedy, Sci-Fi, Animation can have TV-MA shows
-            enrichedResults = await filterMatureTVShows(enrichedResults, API_KEY!)
+            enrichedResults = await filterChildSafe(enrichedResults, API_KEY!)
 
             const hiddenCount = beforeCount - enrichedResults.length
 

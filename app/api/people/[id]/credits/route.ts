@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { apiError } from '../../../../../utils/debugLogger'
+import { childSafetyForRequest } from '@/lib/childSafetyServer'
+import { filterWhenChildSafe } from '@/utils/childSafetyFilter'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -20,7 +22,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     try {
         const searchParams = request.nextUrl.searchParams
-        const childSafetyMode = searchParams.get('childSafetyMode') === 'true'
+        // The server decides (lib/childSafetyServer.ts); the parameter can only add filtering.
+        const childSafetyMode = await childSafetyForRequest(request)
 
         // Fetch combined credits (movies + TV shows) for this person
         const url = `${BASE_URL}/person/${personId}/combined_credits?api_key=${API_KEY}&language=en-US`
@@ -79,25 +82,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
         const uniqueCredits = Array.from(creditsMap.values())
 
-        // Apply child safety filtering if enabled
-        let filteredCredits = uniqueCredits
-        if (childSafetyMode) {
-            filteredCredits = uniqueCredits.filter((item) => {
-                // For movies, check certification
-                if (item.media_type === 'movie' && item.adult) {
-                    return false
-                }
-                // For TV shows, we can't filter by rating here (would need separate API calls)
-                // So we just filter out adult content
-                if (item.media_type === 'tv' && item.adult) {
-                    return false
-                }
-                return true
-            })
-        }
-
         // Filter out very obscure content (likely unimportant appearances)
-        filteredCredits = filteredCredits.filter((item) => {
+        let filteredCredits = uniqueCredits.filter((item) => {
             const voteCount = item.vote_count || 0
             // Keep if it has at least 10 votes, or if it's very recent (within 1 year)
             if (voteCount >= 10) return true
@@ -110,6 +96,17 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                 (Date.now() - new Date(releaseDate).getTime()) / (365 * 24 * 60 * 60 * 1000)
             return yearsSinceRelease < 1 // Keep recent content even if low votes
         })
+
+        // Child Safety Mode: the shared rule, after the cut above so fewer
+        // titles need their rating looked up. Before, only the adult flag was
+        // checked, and the raw cast and crew lists below went out unfiltered.
+        filteredCredits = await filterWhenChildSafe(childSafetyMode, filteredCredits, API_KEY)
+        const allowedKeys = new Set(filteredCredits.map((item) => `${item.id}-${item.media_type}`))
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const allowed = (list: any[] | undefined) =>
+            childSafetyMode
+                ? (list || []).filter((item) => allowedKeys.has(`${item.id}-${item.media_type}`))
+                : list || []
 
         // Calculate priority scores for intelligent sorting
         const creditsWithScores = filteredCredits.map((item) => {
@@ -190,8 +187,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         return NextResponse.json(
             {
                 id: Number(personId),
-                cast: data.cast || [],
-                crew: data.crew || [],
+                cast: allowed(data.cast),
+                crew: allowed(data.crew),
                 combined: creditsWithScores,
                 total_results: creditsWithScores.length,
             },

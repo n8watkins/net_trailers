@@ -19,7 +19,7 @@ import { db } from '@/db'
 import { users } from '@/db/schema'
 import { setPIN } from '@/db/queries/childSafety'
 import { loadUserPreferences, saveUserPreferences } from '@/db/queries/userPreferences'
-import { getChildSafetyMode } from '@/lib/childSafetyCookieServer'
+import { getChildSafetyMode } from '@/lib/childSafetyServer'
 
 import { POST as pinPOST } from '@/app/api/child-safety/pin/route'
 import { DELETE as prefsDELETE, PUT as prefsPUT } from '@/app/api/user/preferences/route'

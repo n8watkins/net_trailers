@@ -5,7 +5,7 @@
  * user id. This mirrors the previous single-document model.
  */
 
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { userPreferences } from '@/db/schema'
@@ -38,6 +38,23 @@ export async function loadUserPreferences(userId: string): Promise<UserPreferenc
         .values({ userId, data, updatedAt: Date.now() })
         .onConflictDoNothing()
     return data
+}
+
+/**
+ * Whether the account's stored Child Safety Mode is on. Reads just that field
+ * of the preferences blob (no default row is created: no row means off), since
+ * every content request asks it (lib/childSafetyServer.ts).
+ */
+export async function loadChildSafetyMode(userId: string): Promise<boolean> {
+    const rows = await db
+        .select({
+            on: sql<number | null>`json_extract(${userPreferences.data}, '$.childSafetyMode')`,
+        })
+        .from(userPreferences)
+        .where(eq(userPreferences.userId, userId))
+        .limit(1)
+    // SQLite's json_extract turns JSON true into 1.
+    return Number(rows[0]?.on) === 1
 }
 
 /** Upsert a user's preferences (stamps lastActive/updatedAt). */

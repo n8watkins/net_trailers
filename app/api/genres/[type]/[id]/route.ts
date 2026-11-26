@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { filterMatureTVShows } from '../../../../../utils/tvContentRatings'
-import { filterMatureMovies as _filterMatureMovies } from '../../../../../utils/movieCertifications'
+import { childSafetyForRequest } from '@/lib/childSafetyServer'
+import { filterChildSafe } from '@/utils/childSafetyFilter'
 import { csDebugTMDB, csDebugResponse, csDebugFilter } from '../../../../../utils/childSafetyDebug'
 import { apiError } from '../../../../../utils/debugLogger'
 
@@ -27,8 +27,8 @@ export async function GET(
     const first_air_date_lte = searchParams.get('first_air_date_lte')
     const with_runtime_gte = searchParams.get('with_runtime_gte')
     const with_runtime_lte = searchParams.get('with_runtime_lte')
-    const childSafetyMode = searchParams.get('childSafetyMode')
-    const childSafeMode = childSafetyMode === 'true'
+    // The server decides (lib/childSafetyServer.ts); the parameter can only add filtering.
+    const childSafeMode = await childSafetyForRequest(request)
 
     if (!id || !type) {
         return NextResponse.json({ error: 'Genre ID and type are required' }, { status: 400 })
@@ -161,7 +161,7 @@ export async function GET(
 
             // Add media_type to each item
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const movieResults = movieData.results.map((item: any) => ({
+            let movieResults = movieData.results.map((item: any) => ({
                 ...item,
                 media_type: 'movie',
             }))
@@ -171,9 +171,12 @@ export async function GET(
                 media_type: 'tv',
             }))
 
-            // Apply child safety filtering for TV if enabled
+            // Apply child safety filtering (movies were rated by the discover query)
             if (childSafeMode) {
-                tvResults = await filterMatureTVShows(tvResults, API_KEY)
+                movieResults = await filterChildSafe(movieResults, API_KEY, {
+                    moviesRatedAtSource: true,
+                })
+                tvResults = await filterChildSafe(tvResults, API_KEY)
             }
 
             // Interleave results (alternating movie, tv, movie, tv...)
@@ -362,24 +365,15 @@ export async function GET(
             // Movies: Filtered at query time with certification.lte=PG-13 (G, PG, PG-13 only)
             // TV Shows: Filtered post-fetch by content ratings (excludes TV-MA)
 
-            if (type === 'movie') {
-                // OPTIMIZATION: Skip redundant post-processing for movies
-                // The discover endpoint with certification.lte=PG-13 already filters by rating
-                // TMDB's certification filter is authoritative - no need to double-check
-                // This eliminates 20+ individual certification API calls per page
-                csDebugFilter(
-                    beforeCount,
-                    enrichedResults.length,
-                    'Movie Certification Filter (skipped - filtered at source)'
-                )
-            } else if (type === 'tv') {
-                // TV shows: ALWAYS filter by content ratings in child safety mode
-                // Unlike movies, TV has no certification.lte parameter, so post-fetch filtering is required
-                // Even "family" genres like Comedy and Animation can have TV-MA content
-                // (e.g., Shameless, Hazbin Hotel, The Witcher, etc.)
-                enrichedResults = await filterMatureTVShows(enrichedResults, API_KEY)
-                csDebugFilter(beforeCount, enrichedResults.length, 'TV Content Ratings Filter')
-            }
+            // Movies: the discover query's certification.lte=PG-13 already rated
+            // them, so only the adult flag is checked again (no per-title calls).
+            // TV shows: ALWAYS filtered by content ratings, since TV has no
+            // certification.lte parameter and even "family" genres like Comedy
+            // and Animation can have TV-MA content (Shameless, Hazbin Hotel...).
+            enrichedResults = await filterChildSafe(enrichedResults, API_KEY, {
+                moviesRatedAtSource: type === 'movie',
+            })
+            csDebugFilter(beforeCount, enrichedResults.length, 'Child Safety Filter')
 
             const hiddenCount = beforeCount - enrichedResults.length
 
