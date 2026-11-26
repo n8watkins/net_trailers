@@ -11,17 +11,8 @@ import { YOUTUBE_API_PATH, resetYouTubeApiForTests } from '../../../lib/youtubeI
 
 // The real player loads YouTube's script; record the URL it would be given.
 jest.mock('next/dynamic', () => () => {
-    const Player = (props: {
-        src: string
-        config?: { youtube?: Record<string, unknown> }
-        ref?: React.Ref<HTMLDivElement>
-    }) => (
-        <div
-            ref={props.ref}
-            data-testid="player"
-            data-src={props.src}
-            data-origin={String(props.config?.youtube?.origin)}
-        />
+    const Player = (props: { src: string; ref?: React.Ref<HTMLDivElement> }) => (
+        <div ref={props.ref} data-testid="player" data-src={props.src} />
     )
     return Player
 })
@@ -60,8 +51,6 @@ describe('ModalVideoPlayer', () => {
         expect(getByTestId('player').getAttribute('data-src')).toBe(
             'https://www.youtube-nocookie.com/embed/qKGgw7Ob5f4'
         )
-        // The player's postMessage API is tied to this site's origin.
-        expect(getByTestId('player').getAttribute('data-origin')).toBe(window.location.origin)
     })
 
     it('hands the mounted player element to onReady, so a resumed trailer can seek', () => {

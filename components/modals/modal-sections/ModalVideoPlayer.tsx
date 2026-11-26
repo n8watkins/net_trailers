@@ -84,18 +84,14 @@ function ModalVideoPlayer({
         >
             {wantsPlayer && apiReady ? (
                 <ReactPlayer
-                    // YouTube player parameters. Without the controls or
-                    // autoplay props the embed has no YouTube controls and
-                    // does not autoplay (playing starts it), as before.
-                    config={{
-                        youtube: {
-                            cc_load_policy: 1,
-                            iv_load_policy: 3,
-                            // The page origin, as react-player 2 sent it, so the
-                            // player's postMessage API only talks to this site.
-                            origin: window.location.origin,
-                        },
-                    }}
+                    // No config prop: youtube-video-element's defaults are the
+                    // player parameters this window used with react-player 2
+                    // (no YouTube controls, captions on, no annotations,
+                    // modest branding), and without the autoplay prop the
+                    // video starts only through `playing`. The element reads
+                    // config when it builds the iframe, which can happen
+                    // before React has set the property, so it is not a
+                    // reliable way to change them anyway.
                     // YouTube's no-cookie host: react-player embeds from
                     // www.youtube-nocookie.com for these URLs, so a trailer
                     // sets no youtube.com cookies (lib/csp.ts frame-src).
