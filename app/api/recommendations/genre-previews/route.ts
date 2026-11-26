@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+import { childSafetyForRequest } from '@/lib/childSafetyServer'
+import { filterWhenChildSafe } from '@/utils/childSafetyFilter'
+
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
 
@@ -41,6 +44,9 @@ export async function GET(request: NextRequest) {
     // If specific genres requested, only fetch those
     const genresToFetch = genresParam ? genresParam.split(',') : Object.keys(GENRE_IDS)
 
+    // Child Safety Mode (lib/childSafetyServer.ts): the server decides.
+    const childSafeMode = await childSafetyForRequest(request)
+
     try {
         const results: Record<string, PreviewContent[]> = {}
 
@@ -58,14 +64,26 @@ export async function GET(request: NextRequest) {
                     url.searchParams.append('sort_by', 'popularity.desc')
                     url.searchParams.append('vote_count.gte', '1000') // Well-known movies
                     url.searchParams.append('page', '1')
+                    if (childSafeMode) {
+                        url.searchParams.append('certification_country', 'US')
+                        url.searchParams.append('certification.lte', 'PG-13')
+                        url.searchParams.append('include_adult', 'false')
+                    }
 
                     const response = await fetch(url.toString())
                     if (!response.ok) return
 
                     const data = await response.json()
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const movies: any[] = await filterWhenChildSafe(
+                        childSafeMode,
+                        data.results ?? [],
+                        API_KEY,
+                        { mediaType: 'movie', moviesRatedAtSource: true }
+                    )
 
                     // Get top N movies with posters
-                    const previews: PreviewContent[] = data.results
+                    const previews: PreviewContent[] = movies
                         .filter((m: { poster_path: string | null }) => m.poster_path)
                         .slice(0, limit)
                         .map((m: { id: number; poster_path: string | null; title?: string }) => ({

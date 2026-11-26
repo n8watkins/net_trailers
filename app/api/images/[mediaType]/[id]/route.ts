@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+import { childSafetyForRequest } from '@/lib/childSafetyServer'
+import { isChildSafe } from '@/utils/childSafetyFilter'
+
 /**
  * Server-side API route to fetch alternate images from TMDB
  * This keeps the API key secure on the server side
@@ -35,6 +38,18 @@ export async function GET(
         if (!apiKey) {
             console.error('TMDB_API_KEY not configured')
             return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+        }
+
+        // Child Safety Mode (lib/childSafetyServer.ts): no image of a title the
+        // mode blocks; the card keeps its placeholder, as with no image at all.
+        if (
+            (await childSafetyForRequest(request)) &&
+            !(await isChildSafe({ id: contentId, media_type: mediaType }, apiKey))
+        ) {
+            return NextResponse.json(
+                { imageUrl: null, source: null },
+                { headers: { 'Cache-Control': 'private, no-store' } }
+            )
         }
 
         // Fetch images from TMDB

@@ -197,8 +197,9 @@ export default function PrivacyPage() {
                             </li>
                             <li>
                                 <Code>nettrailer_child_safety</Code>: remembers whether child safety
-                                mode is on, for 1 year. Set only if you change that setting.
-                                Strictly necessary.
+                                mode is on, for 1 year, so titles stay filtered in this browser
+                                after you sign out. Set by the server only when a signed-in account
+                                changes that setting. Strictly necessary.
                             </li>
                             <li>
                                 <Code>_ga</Code> and <Code>_ga_&lt;id&gt;</Code>: Google Analytics,

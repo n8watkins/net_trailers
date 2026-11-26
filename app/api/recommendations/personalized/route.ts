@@ -44,6 +44,8 @@ import {
 import { getInteractionSummary } from '@/db/queries/interactions'
 import { loadUserPreferences } from '@/db/queries/userPreferences'
 import { selfFetch } from '@/lib/selfFetch'
+import { CHILD_SAFETY_PARAM, resolveChildSafetyForUser } from '@/lib/childSafetyServer'
+import { filterWhenChildSafe } from '@/utils/childSafetyFilter'
 
 /* -------------------------------------------------------------------------- */
 /*  Helper: load Phase 2 feedback signals from Drizzle                        */
@@ -295,6 +297,13 @@ async function handlePersonalizedRecommendations(
             })
         }
 
+        // Child Safety Mode (lib/childSafetyServer.ts): the account's setting decides.
+        mergedContent = await filterWhenChildSafe(
+            await resolveChildSafetyForUser(userId, body[CHILD_SAFETY_PARAM]),
+            mergedContent,
+            process.env.TMDB_API_KEY ?? ''
+        )
+
         const recommendations: Recommendation[] = mergedContent.map((content, index) => {
             const isFromGenre = genreBased.some((c) => c.id === content.id)
             const source = isFromGenre ? 'genre_based' : 'tmdb_similar'
@@ -501,6 +510,13 @@ async function handlePersonalizedRecommendationsGet(
                 `[Phase 2 GET] Applied feedback: ${genreBased.length} recommendations after filtering/boosting`
             )
         }
+
+        // Child Safety Mode (lib/childSafetyServer.ts): the account's setting decides.
+        genreBased = await filterWhenChildSafe(
+            await resolveChildSafetyForUser(userId, searchParams.get(CHILD_SAFETY_PARAM)),
+            genreBased,
+            process.env.TMDB_API_KEY ?? ''
+        )
 
         return NextResponse.json({
             page,

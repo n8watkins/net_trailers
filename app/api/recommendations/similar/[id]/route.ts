@@ -10,6 +10,8 @@ import { getHybridRecommendationsOrThrow } from '@/utils/tmdb/recommendations'
 import { Recommendation, RECOMMENDATION_CONSTRAINTS } from '@/types/recommendations'
 import { apiError } from '@/utils/debugLogger'
 import { tmdbFailureStatus } from '@/utils/tmdbErrorResponse'
+import { childSafetyForRequest } from '@/lib/childSafetyServer'
+import { filterWhenChildSafe } from '@/utils/childSafetyFilter'
 
 // Cache this route for 30 minutes
 export const revalidate = 1800
@@ -50,9 +52,16 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
         // Get hybrid recommendations (TMDB similar + recommended)
         const similarContent = await getHybridRecommendationsOrThrow(contentId, mediaType, limit)
+        // Child Safety Mode (lib/childSafetyServer.ts): the server decides.
+        const shown = await filterWhenChildSafe(
+            await childSafetyForRequest(request),
+            similarContent,
+            process.env.TMDB_API_KEY ?? '',
+            { mediaType }
+        )
 
         // Convert to Recommendation objects
-        const recommendations: Recommendation[] = similarContent.map((content, index) => ({
+        const recommendations: Recommendation[] = shown.map((content, index) => ({
             content,
             source: 'tmdb_similar',
             score: 100 - index * 2,

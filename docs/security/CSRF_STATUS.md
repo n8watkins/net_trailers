@@ -55,12 +55,12 @@ Server actions bypass `proxy.ts`, so they must call `validateServerActionOrigin(
 
 ```typescript
 // lib/actions/childSafety.ts
-export async function toggleChildSafetyAction(enabled: boolean): Promise<void> {
+export async function syncChildSafetyAction(): Promise<boolean> {
     const headersList = await headers()
     if (!validateServerActionOrigin(headersList)) {
         throw new Error('CSRF validation failed')
     }
-    await setChildSafetyModeCookie(enabled)
+    return syncChildSafetyCookie()
 }
 ```
 

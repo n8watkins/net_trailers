@@ -101,8 +101,23 @@ export async function filterChildSafe<T extends object>(
     apiKey: string,
     options: ChildSafetyFilterOptions = {}
 ): Promise<T[]> {
+    return filterChildSafeBy(items, (item) => item, apiKey, options)
+}
+
+/**
+ * filterChildSafe for lists whose items hold the title inside them (a
+ * recommendation's `content`, a candidate's `content`), in their order.
+ */
+export async function filterChildSafeBy<T>(
+    items: readonly T[],
+    titleOf: (item: T) => object | null | undefined,
+    apiKey: string,
+    options: ChildSafetyFilterOptions = {}
+): Promise<T[]> {
     if (!items || items.length === 0) return []
-    const allowed = await Promise.all(items.map((item) => isChildSafe(item, apiKey, options)))
+    const allowed = await Promise.all(
+        items.map((item) => isChildSafe(titleOf(item), apiKey, options))
+    )
     return items.filter((_, index) => allowed[index])
 }
 

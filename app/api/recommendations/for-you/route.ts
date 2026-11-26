@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAiVisitor } from '@/lib/aiVisitor'
 import { getForYou, parseExclude, parseSeeds } from '@/lib/forYou'
 import { apiError } from '@/utils/debugLogger'
+import { resolveChildSafety } from '@/lib/childSafetyServer'
 
 export async function POST(request: NextRequest) {
     let body: unknown
@@ -25,6 +26,10 @@ export async function POST(request: NextRequest) {
             seeds,
             exclude: parseExclude((body as { exclude?: unknown }).exclude),
             visitorKey: visitor.key,
+            // Child Safety Mode (lib/childSafetyServer.ts): the server decides.
+            childSafe: await resolveChildSafety(
+                (body as { childSafetyMode?: unknown }).childSafetyMode
+            ),
         })
         return NextResponse.json(result, { headers: { 'Cache-Control': 'no-store' } })
     } catch (error) {

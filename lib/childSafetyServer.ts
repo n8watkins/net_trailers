@@ -55,10 +55,22 @@ export function asksForChildSafety(value: unknown): boolean {
  * requester, or the client asked for filtering. Never throws; when the mode
  * cannot be read, the answer is "filter".
  */
-export async function resolveChildSafety(asked?: unknown): Promise<boolean> {
+export function resolveChildSafety(asked?: unknown): Promise<boolean> {
+    return orFilter(asked, getChildSafetyMode)
+}
+
+/**
+ * resolveChildSafety for a route that already knows the signed-in account
+ * (withAuth), so the session is not looked up a second time.
+ */
+export function resolveChildSafetyForUser(userId: string, asked?: unknown): Promise<boolean> {
+    return orFilter(asked, () => loadChildSafetyMode(userId))
+}
+
+async function orFilter(asked: unknown, readMode: () => Promise<boolean>): Promise<boolean> {
     if (asksForChildSafety(asked)) return true
     try {
-        return await getChildSafetyMode()
+        return await readMode()
     } catch (error) {
         logWarn({
             event: 'child_safety_unreadable',
