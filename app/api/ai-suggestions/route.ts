@@ -7,6 +7,8 @@ import { consumeAiQuota, quotaExhaustedMessage, refundAiQuota } from '@/lib/aiQu
 import { sanitizeInput } from '@/utils/inputSanitization'
 import { apiLog, apiError } from '@/utils/debugLogger'
 import { routeGeminiRequest, extractGeminiText } from '@/lib/geminiRouter'
+import { resolveChildSafety } from '@/lib/childSafetyServer'
+import { filterWhenChildSafe } from '@/utils/childSafetyFilter'
 
 export async function POST(request: NextRequest) {
     // Set once a unit of the visitor's daily AI quota is spent, so any failure
@@ -109,7 +111,12 @@ export async function POST(request: NextRequest) {
             userId,
         })
 
-        const enrichedResults = await enrichWithTMDB(parsed.movies, parsed.mediaType)
+        // Child Safety Mode (lib/childSafetyServer.ts): the server decides.
+        const enrichedResults = await filterWhenChildSafe(
+            await resolveChildSafety((body as { childSafetyMode?: unknown }).childSafetyMode),
+            await enrichWithTMDB(parsed.movies, parsed.mediaType),
+            process.env.TMDB_API_KEY ?? ''
+        )
 
         apiLog('[AI Suggestions] Enriched with TMDB:', {
             foundCount: enrichedResults.length,

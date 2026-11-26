@@ -53,6 +53,11 @@ test.afterAll(async () => {
 
 async function cardNames(): Promise<string[]> {
     await expect(page.getByTestId('collection-card').first()).toBeVisible()
+    // Watch Later shows before the account's rows have loaded; wait for one of
+    // them (a default row the later tests edit), or the list is read half-built.
+    await expect(
+        page.getByTestId('collection-card').locator('h3', { hasText: 'Action-Packed' })
+    ).toBeVisible()
     return page.getByTestId('collection-card').locator('h3').allTextContents()
 }
 

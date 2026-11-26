@@ -9,6 +9,9 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 
+import { resolveChildSafety } from '@/lib/childSafetyServer'
+import { filterWhenChildSafe } from '@/utils/childSafetyFilter'
+
 const TMDB_API_KEY = process.env.TMDB_API_KEY
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
 
@@ -231,7 +234,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         }
 
         // Combine: priority first, then top-rated
-        const content = [...priorityResults, ...topRatedContent]
+        // Child Safety Mode (lib/childSafetyServer.ts): the server decides.
+        const content = await filterWhenChildSafe(
+            await resolveChildSafety(
+                (body as RequestBody & { childSafetyMode?: unknown }).childSafetyMode
+            ),
+            [...priorityResults, ...topRatedContent],
+            TMDB_API_KEY ?? ''
+        )
 
         return NextResponse.json({
             success: true,

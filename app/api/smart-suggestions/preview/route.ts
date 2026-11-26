@@ -3,6 +3,8 @@ import { TMDBApiClient } from '@/utils/tmdbApi'
 import { readLimit } from '@/lib/durableLimit'
 import { rateLimitRequest } from '@/lib/requestIdentity'
 import { apiWarn, apiError } from '@/utils/debugLogger'
+import { resolveChildSafety } from '@/lib/childSafetyServer'
+import { filterWhenChildSafe } from '@/utils/childSafetyFilter'
 
 /**
  * Preview endpoint - fetch sample content based on selected suggestions
@@ -17,11 +19,15 @@ export async function POST(request: NextRequest) {
         )
         if (limited) return limited
 
-        const { suggestions, mediaType } = await request.json()
+        const { suggestions, mediaType, childSafetyMode } = await request.json()
 
         if (!suggestions || !Array.isArray(suggestions) || suggestions.length === 0) {
             return NextResponse.json({ content: [] })
         }
+
+        // Child Safety Mode (lib/childSafetyServer.ts): the server decides.
+        const childSafeMode = await resolveChildSafety(childSafetyMode)
+        const apiKey = process.env.TMDB_API_KEY ?? ''
 
         const tmdb = TMDBApiClient.getInstance()
 
@@ -51,7 +57,12 @@ export async function POST(request: NextRequest) {
             })
 
             const results = await Promise.all(fetchPromises)
-            const content = results.filter((item) => item !== null)
+            const content = await filterWhenChildSafe(
+                childSafeMode,
+                results.filter((item) => item !== null),
+                apiKey,
+                { mediaType: mediaType === 'movie' ? 'movie' : 'tv' }
+            )
 
             return NextResponse.json({
                 content: content.slice(0, 10),
@@ -200,6 +211,8 @@ export async function POST(request: NextRequest) {
             // No filtering needed, just limit to 10 items
             content = content.slice(0, 10)
         }
+
+        content = await filterWhenChildSafe(childSafeMode, content, apiKey)
 
         return NextResponse.json({ content, totalResults })
     } catch (error) {

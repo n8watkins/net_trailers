@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { apiError } from '../../../../utils/debugLogger'
 import { fetchWithPrioritizedGenres } from '../../../../utils/prioritizedGenreFetch'
+import { childSafetyForRequest } from '@/lib/childSafetyServer'
+import { filterChildSafe, filterWhenChildSafe } from '@/utils/childSafetyFilter'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -15,8 +17,8 @@ export async function GET(request: NextRequest) {
 
     try {
         const searchParams = request.nextUrl.searchParams
-        const childSafetyMode = searchParams.get('childSafetyMode')
-        const childSafeMode = childSafetyMode === 'true'
+        // The server decides (lib/childSafetyServer.ts); the parameter can only add filtering.
+        const childSafeMode = await childSafetyForRequest(request)
         const genresParam = searchParams.get('genres') // Unified genre IDs (e.g., "action,comedy")
 
         // Validate and sanitize page parameter (1-500 as per TMDB limits)
@@ -40,11 +42,17 @@ export async function GET(request: NextRequest) {
             )
 
             // Add media_type to results if not present
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const enrichedResults = data.results.map((item: any) => ({
-                ...item,
-                media_type: item.media_type || 'movie',
-            }))
+
+            const enrichedResults = await filterWhenChildSafe(
+                childSafeMode,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                data.results.map((item: any) => ({
+                    ...item,
+                    media_type: item.media_type || 'movie',
+                })),
+                API_KEY,
+                { moviesRatedAtSource: true }
+            )
 
             return NextResponse.json(
                 {
@@ -139,7 +147,9 @@ export async function GET(request: NextRequest) {
             return NextResponse.json(
                 {
                     ...data,
-                    results: enrichedResults,
+                    results: await filterChildSafe(enrichedResults, API_KEY, {
+                        moviesRatedAtSource: true,
+                    }),
                     child_safety_enabled: true,
                     filtered_at_source: true, // Filtered by TMDB discover endpoint
                 },

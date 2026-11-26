@@ -32,6 +32,17 @@ jest.mock('../../../../../utils/tvContentRatings', () => ({
     hasMatureRating: jest.fn(),
 }))
 
+// A guest's Child Safety cookie (lib/childSafetyServer.ts); none by default.
+let childSafetyCookie: string | undefined
+jest.mock('next/headers', () => ({
+    cookies: async () => ({
+        get: (name: string) =>
+            name === 'nettrailer_child_safety' && childSafetyCookie !== undefined
+                ? { name, value: childSafetyCookie }
+                : undefined,
+    }),
+}))
+
 const mockFetchTVContentRatings = fetchTVContentRatings as jest.MockedFunction<
     typeof fetchTVContentRatings
 >
@@ -60,6 +71,7 @@ function createParams(id: string): Promise<{ id: string }> {
 describe('/api/movies/details/[id] - App Router API Tests', () => {
     beforeEach(() => {
         jest.clearAllMocks()
+        childSafetyCookie = undefined
     })
 
     describe('Basic Functionality', () => {
@@ -172,7 +184,36 @@ describe('/api/movies/details/[id] - App Router API Tests', () => {
 
             expect(response.status).toBe(403)
             expect(data.message).toContain('blocked by child safety')
-            expect(data.reason).toBe('adult_content')
+            expect(data.reason).toBe('child_safety')
+            expect(response.headers.get('Cache-Control')).toBe('private, no-store')
+        })
+
+        it('blocks an R-rated movie for a guest whose cookie has the mode on, whatever the parameter says', async () => {
+            childSafetyCookie = 'true'
+            const rated = (certification: string) => ({
+                id: 321,
+                title: 'Rated Movie',
+                adult: false,
+                release_dates: {
+                    results: [{ iso_3166_1: 'US', release_dates: [{ certification }] }],
+                },
+            })
+
+            for (const query of [{}, { childSafetyMode: 'false' }]) {
+                mockGetMovieDetails.mockResolvedValueOnce(rated('R'))
+                const response = await GET(
+                    createRequest('321', { media_type: 'movie', ...query }),
+                    { params: createParams('321') }
+                )
+                expect(response.status).toBe(403)
+                expect((await response.json()).reason).toBe('child_safety')
+            }
+
+            mockGetMovieDetails.mockResolvedValueOnce(rated('PG'))
+            const allowed = await GET(createRequest('321', { media_type: 'movie' }), {
+                params: createParams('321'),
+            })
+            expect(allowed.status).toBe(200)
         })
 
         it('should allow safe movies when child safety is enabled', async () => {
@@ -180,6 +221,10 @@ describe('/api/movies/details/[id] - App Router API Tests', () => {
                 id: 123,
                 title: 'Family Movie',
                 adult: false,
+                // A details answer carries its release dates (append_to_response).
+                release_dates: {
+                    results: [{ iso_3166_1: 'US', release_dates: [{ certification: 'PG' }] }],
+                },
             }
 
             mockGetMovieDetails.mockResolvedValueOnce(safeMovie)
@@ -242,7 +287,7 @@ describe('/api/movies/details/[id] - App Router API Tests', () => {
 
             expect(response.status).toBe(403)
             expect(data.message).toContain('blocked by child safety')
-            expect(data.reason).toBe('mature_rating')
+            expect(data.reason).toBe('child_safety')
             expect(mockFetchTVContentRatings).toHaveBeenCalledWith(789, expect.any(String))
         })
 

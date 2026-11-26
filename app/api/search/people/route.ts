@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { searchCache } from '../../../../utils/apiCache'
 import { apiError } from '../../../../utils/debugLogger'
+import { childSafetyForRequest } from '@/lib/childSafetyServer'
+import { filterChildSafePeople } from '@/utils/childSafetyFilter'
 
 // Cache this route for 10 minutes
 export const revalidate = 600
@@ -50,8 +52,11 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ message: 'API key not configured' }, { status: 500 })
         }
 
+        // The server decides (lib/childSafetyServer.ts); the parameter can only add filtering.
+        const childSafeMode = await childSafetyForRequest(request)
+
         // Create cache key including all relevant parameters
-        const cacheKey = `search-people-${query.trim()}-page-${page}-dept-${department || 'all'}`
+        const cacheKey = `search-people-${query.trim()}-page-${page}-dept-${department || 'all'}-childSafe-${childSafeMode}`
 
         // Check cache first
         const cachedData = searchCache.get(cacheKey)
@@ -94,7 +99,7 @@ export async function GET(request: NextRequest) {
         filteredResults = filteredResults.sort((a, b) => b.popularity - a.popularity)
 
         // Transform known_for to include media_type properly
-        const transformedResults = filteredResults.map((person) => ({
+        const transformed = filteredResults.map((person) => ({
             ...person,
             known_for:
                 person.known_for?.map((item) => ({
@@ -102,6 +107,10 @@ export async function GET(request: NextRequest) {
                     media_type: item.media_type,
                 })) || [],
         }))
+        // Child Safety Mode: known-for titles pass the shared rule too.
+        const transformedResults = childSafeMode
+            ? await filterChildSafePeople(transformed, apiKey)
+            : transformed
 
         const responseData = {
             results: transformedResults,

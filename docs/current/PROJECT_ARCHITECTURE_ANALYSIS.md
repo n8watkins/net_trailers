@@ -371,9 +371,8 @@ Suggestions Dropdown
 
 - `utils/movieCertifications.ts` - Movie ratings
 - `utils/tvContentRatings.ts` - TV ratings
-- `utils/contentFilter.ts` - Filtering logic
-- `lib/childSafetyCookieServer.ts` - Server-side tracking
-- `lib/childSafetyCookieClient.ts` - Client-side tracking
+- `utils/childSafetyFilter.ts` - The one filtering rule every content route applies
+- `lib/childSafetyServer.ts` - Whether the mode is on for a request (stored setting or server-set cookie)
 
 ### 3.2 Custom Rows (Advanced Feature)
 

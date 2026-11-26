@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { filterContentByAdultFlag } from '../../../utils/contentFilter'
-import { filterMatureTVShows } from '../../../utils/tvContentRatings'
-import { Content } from '../../../typings'
 import { apiError } from '../../../utils/debugLogger'
+import { childSafetyForRequest } from '@/lib/childSafetyServer'
+import { filterWhenChildSafe } from '@/utils/childSafetyFilter'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -86,18 +85,10 @@ async function fetchCandidates(mediaType: MediaType, page: number, childSafetyMo
         media_type: mediaType,
     }))
 
-    if (childSafetyMode) {
-        if (mediaType === 'movie') {
-            const safeMovies = filterContentByAdultFlag(
-                results as unknown as Content[],
-                true
-            ) as unknown as RawContent[]
-            results = safeMovies
-        } else {
-            const safeShows = (await filterMatureTVShows(results, apiKey)) as RawContent[]
-            results = safeShows
-        }
-    }
+    // Movies were rated by the discover query above (certification.lte).
+    results = await filterWhenChildSafe(childSafetyMode, results, apiKey, {
+        moviesRatedAtSource: mediaType === 'movie',
+    })
 
     // Prefer content that has either a backdrop or poster so modal looks good
     return results.filter((item) => item.backdrop_path || item.poster_path)
@@ -110,7 +101,8 @@ export async function GET(request: NextRequest) {
 
     try {
         const searchParams = request.nextUrl.searchParams
-        const childSafetyMode = searchParams.get('childSafetyMode') === 'true'
+        // The server decides (lib/childSafetyServer.ts); the parameter can only add filtering.
+        const childSafetyMode = await childSafetyForRequest(request)
         const forcedMediaType = normalizeMediaType(searchParams.get('media_type'))
         const count = parseInt(searchParams.get('count') || '1', 10)
         const requestedCount = Math.min(Math.max(count, 1), 20) // Clamp between 1-20
@@ -146,6 +138,8 @@ export async function GET(request: NextRequest) {
                     status: 200,
                     headers: {
                         'Cache-Control': 'private, max-age=600', // Cache for 10 minutes
+                        // The answer depends on the Child Safety cookie or session.
+                        Vary: 'Cookie',
                     },
                 }
             )

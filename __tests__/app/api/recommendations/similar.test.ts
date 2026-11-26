@@ -15,6 +15,12 @@ jest.mock('../../../../utils/tmdbApi', () => ({
     },
 }))
 
+// A guest without the Child Safety cookie (lib/childSafetyServer.ts): mode off.
+// The filtered answer is covered in __tests__/app/api/childSafetyEnforcement.test.ts.
+jest.mock('next/headers', () => ({
+    cookies: async () => ({ get: () => undefined }),
+}))
+
 function tmdbError(status?: number, code?: string): Error {
     const error = new Error(status ? `TMDB API error: ${status}` : 'Network error') as Error & {
         status?: number

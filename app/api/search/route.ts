@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { filterContentByAdultFlag } from '../../../utils/contentFilter'
-import { filterMatureTVShows } from '../../../utils/tvContentRatings'
 import { searchCache } from '../../../utils/apiCache'
-import type { Content } from '../../../typings'
+import { childSafetyForRequest } from '@/lib/childSafetyServer'
+import { filterChildSafe } from '@/utils/childSafetyFilter'
 import { apiError } from '../../../utils/debugLogger'
 
 // Cache this route for 10 minutes
@@ -30,8 +29,8 @@ export async function GET(request: NextRequest) {
         const searchParams = request.nextUrl.searchParams
         const query = searchParams.get('query')
         const page = searchParams.get('page') || '1'
-        const childSafetyMode = searchParams.get('childSafetyMode')
-        const childSafeMode = childSafetyMode === 'true'
+        // The server decides (lib/childSafetyServer.ts); the parameter can only add filtering.
+        const childSafeMode = await childSafetyForRequest(request)
 
         if (!query || query.trim().length === 0) {
             return NextResponse.json({ message: 'Query parameter is required' }, { status: 400 })
@@ -75,24 +74,9 @@ export async function GET(request: NextRequest) {
         if (childSafeMode) {
             const beforeCount = filteredResults.length
 
-            // First filter movies by adult flag (cast to Content[] for filter function)
-            filteredResults = filterContentByAdultFlag(
-                filteredResults as unknown as Content[],
-                true
-            ) as unknown as TMDBSearchResult[]
-
-            // Separate TV shows and movies
-            const tvShows = filteredResults.filter((item) => item.media_type === 'tv')
-            const movies = filteredResults.filter((item) => item.media_type === 'movie')
-
-            // Filter TV shows by content rating (server-side)
-            const filteredTVShows =
-                tvShows.length > 0
-                    ? await filterMatureTVShows(tvShows as unknown as Content[], apiKey!)
-                    : []
-
-            // Combine filtered movies and TV shows
-            filteredResults = [...movies, ...filteredTVShows]
+            // Search answers are not pre-rated, so movies get their
+            // certification checked too (before, only the adult flag was).
+            filteredResults = await filterChildSafe(filteredResults, apiKey)
 
             const hiddenCount = beforeCount - filteredResults.length
 

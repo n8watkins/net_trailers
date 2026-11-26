@@ -195,13 +195,16 @@ class CertificationCache {
 export const certificationCache = new CertificationCache()
 
 // Periodic cleanup of expired entries (every 10 minutes)
+// unref: the cleanup never keeps a process alive on its own (a Jest run of one
+// route file that imports the child-safety filter hung on this timer).
 if (typeof setInterval !== 'undefined') {
-    setInterval(
+    const cleanup = setInterval(
         () => {
             certificationCache.clearExpired()
         },
         1000 * 60 * 10
-    ) // 10 minutes
+    ) as unknown as { unref?: () => void } // 10 minutes
+    cleanup.unref?.()
 }
 
 // Attach to window for debugging (development only)

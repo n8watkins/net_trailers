@@ -6,7 +6,8 @@
  *
  * Supported:
  *   GET    /api/child-safety/pin           - hasPIN status (never returns the hash).
- *   POST   /api/child-safety/pin           - Set / replace PIN.
+ *   POST   /api/child-safety/pin           - Set a PIN when the account has none
+ *                                           (409 otherwise; use action=change).
  *                                           Body: { pin: string }
  *   POST   /api/child-safety/pin?action=verify - Verify a PIN.
  *                                           Body: { pin: string }
@@ -31,7 +32,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 import { withAuth } from '@/lib/auth-middleware'
-import { getPINStatus, setPIN, verifyPIN, clearPIN } from '@/db/queries/childSafety'
+import { getPINStatus, hasPIN, setPIN, verifyPIN, clearPIN } from '@/db/queries/childSafety'
 import { PIN_CONSTRAINTS } from '@/types/childSafety'
 import { countEvent, readCount, resetLimit, windowInfo } from '@/lib/durableLimit'
 import { recordPinUnlock } from '@/lib/childSafetyLock'
@@ -213,6 +214,19 @@ export const POST = withAuth(async (request: NextRequest, userId: string) => {
     const { pin } = bodyObj
     if (typeof pin !== 'string' || !pin) {
         return NextResponse.json({ success: false, error: 'pin is required' }, { status: 400 })
+    }
+
+    // Setting a PIN over an existing one would let anyone signed in replace the
+    // parent's PIN, verify the new one and switch the mode off. Replacing it
+    // goes through action=change, which checks the current PIN.
+    if (await hasPIN(userId)) {
+        return NextResponse.json(
+            {
+                success: false,
+                error: 'A PIN is already set. Enter the current PIN to change it.',
+            },
+            { status: 409 }
+        )
     }
 
     try {

@@ -394,6 +394,21 @@ function Modal() {
                     `/api/movies/details/${currentMovie.id}?media_type=${mediaType}`
                 )
 
+                if (response.status === 403) {
+                    const body = await response.json().catch(() => null)
+                    // The server's Child Safety Mode blocked this title
+                    // (utils/childSafetyFilter.ts childSafetyBlocked): close the
+                    // window instead of showing it, and say why.
+                    if (body?.reason === 'child_safety') {
+                        closeModal()
+                        showError(
+                            'Not available in Child Safety Mode',
+                            'This title is hidden while Child Safety Mode is on.'
+                        )
+                        return
+                    }
+                }
+
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`)
                 }

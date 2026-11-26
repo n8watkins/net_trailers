@@ -84,8 +84,21 @@ GitHub private vulnerability reporting is not turned on for this repository.
 - After 5 wrong PINs, verify, change and remove are refused until the current 5-minute window ends.
   The count is kept in the database and a correct PIN resets it (`app/api/child-safety/pin/route.ts`).
 - A correct PIN is remembered only in the open page, so it is asked for again after a reload (`stores/childSafetyStore.ts`).
-- Child safety mode itself is a plain cookie (`lib/childSafetyCookieServer.ts`).
-  The PIN guards the settings in the app; it does not make the mode tamper-proof against someone who edits their own cookies.
+- Setting a PIN when the account already has one is refused; changing it needs the current PIN (`app/api/child-safety/pin/route.ts`).
+- While the account has a PIN and the mode is on, no save turns the mode off unless the PIN was entered just before (`lib/childSafetyLock.ts`).
+
+## Child safety filtering
+
+- The server decides whether a request gets filtered titles, not the browser (`lib/childSafetyServer.ts`).
+  A request can ask for more filtering with `childSafetyMode=true`, never for less.
+- For a signed-in visitor the account's stored setting decides; cookies are ignored.
+- For a guest the `nettrailer_child_safety` cookie decides.
+  Only the server writes it (httpOnly), always from a signed-in account's stored setting, so an account that turned the mode on leaves it on in that browser after signing out.
+  A guest has no identity of its own, so this is only as strong as the browser's cookie store: clearing site data or a private window starts without it.
+- Every content route passes its titles through one rule (`utils/childSafetyFilter.ts`): nothing TMDB marks adult, movies rated G, PG or PG-13 in the US, no show with a mature rating such as TV-MA, and a title whose rating cannot be found is left out.
+  A single title that fails it answers 403.
+- If the setting cannot be read, the answer is filtered titles.
+- The Worker's edge cache never answers a catalogue request that carries a session or child-safety cookie, unless it asks for the filtered version (`worker/edgeCache.ts`).
 
 ## Logging
 

@@ -5,6 +5,8 @@ import { sanitizeInput } from '@/utils/inputSanitization'
 import { apiLog, apiError, apiWarn } from '@/utils/debugLogger'
 import { loadUserPreferences } from '@/db/queries/userPreferences'
 import { routeGeminiRequest, extractGeminiText } from '@/lib/geminiRouter'
+import { resolveChildSafetyForUser } from '@/lib/childSafetyServer'
+import { filterChildSafeBy } from '@/utils/childSafetyFilter'
 
 /**
  * Simplified Smart Row Generator - Single API call does everything
@@ -18,7 +20,7 @@ import { routeGeminiRequest, extractGeminiText } from '@/lib/geminiRouter'
  */
 async function handleGenerateRow(request: NextRequest, userId: string): Promise<NextResponse> {
     try {
-        const { query, excludedIds } = await request.json()
+        const { query, excludedIds, childSafetyMode } = await request.json()
 
         // Validate input
         if (!query || query.trim().length < 1) {
@@ -103,7 +105,15 @@ async function handleGenerateRow(request: NextRequest, userId: string): Promise<
 
         // Filter out any excluded IDs and hidden movies (double-check in case Gemini ignored the instruction)
         const excludedIdsSet = new Set([...(excludedIds || []), ...hiddenMovieIds])
-        const filteredMovies = enrichedMovies.filter((m) => !excludedIdsSet.has(m.tmdbId))
+        const kind = geminiResult.mediaType === 'tv' ? 'tv' : 'movie'
+        // Child Safety Mode (lib/childSafetyServer.ts): the account's setting decides.
+        const filteredMovies = (await resolveChildSafetyForUser(userId, childSafetyMode))
+            ? await filterChildSafeBy(
+                  enrichedMovies.filter((m) => !excludedIdsSet.has(m.tmdbId)),
+                  (m) => ({ id: m.tmdbId, media_type: kind }),
+                  process.env.TMDB_API_KEY ?? ''
+              )
+            : enrichedMovies.filter((m) => !excludedIdsSet.has(m.tmdbId))
 
         const finalResult = {
             movies: filteredMovies,

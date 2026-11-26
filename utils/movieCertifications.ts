@@ -38,6 +38,20 @@ export const MATURE_CERTIFICATIONS = new Set([
 ])
 
 /**
+ * The US certification in a movie's release dates (TMDB `release_dates.results`,
+ * also appended to a details answer), or null when there is none.
+ */
+export function usCertificationFrom(
+    results: MovieReleaseDatesResponse['results'] | undefined
+): string | null {
+    // Find US certification (most reliable and standardized)
+    const usRelease = results?.find((r) => r.iso_3166_1 === 'US')
+    if (!usRelease || usRelease.release_dates.length === 0) return null
+    // Get the first certification (usually theatrical release)
+    return usRelease.release_dates[0].certification || null
+}
+
+/**
  * Fetch certification data for a movie from TMDB (with caching)
  * @param movieId - The TMDB ID of the movie
  * @param apiKey - TMDB API key
@@ -64,15 +78,7 @@ export async function fetchMovieCertification(
         }
 
         const data: MovieReleaseDatesResponse = await response.json()
-
-        // Find US certification (most reliable and standardized)
-        const usRelease = data.results.find((r) => r.iso_3166_1 === 'US')
-        let certification: string | null = null
-
-        if (usRelease && usRelease.release_dates.length > 0) {
-            // Get the first certification (usually theatrical release)
-            certification = usRelease.release_dates[0].certification || null
-        }
+        const certification = usCertificationFrom(data.results)
 
         // Cache the result (even if null)
         certificationCache.setMovie(movieId, certification)

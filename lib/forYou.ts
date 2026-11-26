@@ -20,6 +20,7 @@ import { getHybridRecommendations } from '@/utils/tmdb/recommendations'
 import { consumeAiQuota, quotaExhaustedMessage, refundAiQuota, type AiQuota } from '@/lib/aiQuota'
 import { routeGeminiRequest, extractGeminiText } from '@/lib/geminiRouter'
 import { apiError } from '@/utils/debugLogger'
+import { filterChildSafeBy } from '@/utils/childSafetyFilter'
 
 export const MAX_SEEDS = 8
 export const PICK_COUNT = 12
@@ -278,15 +279,23 @@ export async function getForYou({
     seeds,
     exclude,
     visitorKey,
+    childSafe = false,
 }: {
     seeds: ForYouSeed[]
     exclude: ReadonlySet<string>
     visitorKey: string
+    /** Child Safety Mode is on for the visitor (lib/childSafetyServer.ts). */
+    childSafe?: boolean
 }): Promise<ForYouResult> {
     const lists = await Promise.all(
         seeds.map((seed) => getHybridRecommendations(seed.id, seed.media_type, 20))
     )
-    const candidates = rankCandidates(seeds, lists, exclude)
+    const ranked = rankCandidates(seeds, lists, exclude)
+    // Before the AI sees them, so it ranks (and the cache keys) only titles
+    // the visitor may be shown.
+    const candidates = childSafe
+        ? await filterChildSafeBy(ranked, (c) => c.content, process.env.TMDB_API_KEY ?? '')
+        : ranked
     if (candidates.length === 0) {
         return { picks: [], ai: 'unavailable', notice: null, quota: null }
     }

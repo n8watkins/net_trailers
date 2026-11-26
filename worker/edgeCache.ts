@@ -10,7 +10,10 @@
  *
  * Only what is the same for everyone who may get it is cached:
  * - the TMDB catalogue routes (/api/movies, /api/tv, /api/genres,
- *   /api/discover), which depend only on their URL and refresh hourly anyway;
+ *   /api/discover), which refresh hourly anyway. They depend on their URL and
+ *   on Child Safety Mode, which the server reads from the session or the
+ *   child-safety cookie, so a request with either cookie is cached only when
+ *   its URL asks for the filtered version (`childSafetyMode=true`);
  * - the image optimizer's answers (uploads and avatars; TMDB images load from
  *   TMDB), which never change for a given URL;
  * - the public pages, for visitors with neither a session nor the
@@ -56,6 +59,11 @@ interface Rule {
     ttl: number
     /** Only for visitors with no session or child-safety cookie. */
     anonymousOnly?: boolean
+    /**
+     * Filtered when Child Safety Mode is on for the requester: only for
+     * visitors with neither cookie, or for a URL that asks for filtering.
+     */
+    childSafetyAware?: boolean
     /** The browser's Cache-Control when Next.js sent none. */
     browser?: string
 }
@@ -106,7 +114,7 @@ function ruleFor(pathname: string): Rule | null {
     if (pathname === '/') return { ttl: HOUR, anonymousOnly: true }
     if (PUBLIC_PAGE_SET.has(pathname) || PUBLIC_PAGE_PATTERNS.some((p) => p.test(pathname)))
         return { ttl: DAY, anonymousOnly: true }
-    if (CATALOGUE_ROUTE.test(pathname)) return { ttl: HOUR }
+    if (CATALOGUE_ROUTE.test(pathname)) return { ttl: HOUR, childSafetyAware: true }
     if (pathname === '/_next/image') return { ttl: DAY, browser: `public, max-age=${DAY}` }
     return null
 }
@@ -131,9 +139,20 @@ export function mayUseEdgeCache(request: Request, host: string): boolean {
         url.searchParams.has('_rsc')
     )
         return false
-    if (rule.anonymousOnly && PERSONAL_COOKIE.test(request.headers.get('cookie') ?? ''))
-        return false
+    const personal = PERSONAL_COOKIE.test(request.headers.get('cookie') ?? '')
+    if (rule.anonymousOnly && personal) return false
+    // The catalogue answers depend on Child Safety Mode, which the server reads
+    // from the session or the child-safety cookie (lib/childSafetyServer.ts).
+    // The key holds only the URL, so a request carrying either is answered by
+    // Next, unless it asks for the filtered version outright: that answer is
+    // the same for everyone, whatever their mode.
+    if (rule.childSafetyAware && personal && !asksForChildSafety(url)) return false
     return true
+}
+
+/** The query parameter a page adds to ask a catalogue route for filtered titles. */
+function asksForChildSafety(url: URL): boolean {
+    return url.searchParams.get('childSafetyMode') === 'true'
 }
 
 /**
