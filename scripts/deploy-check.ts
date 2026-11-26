@@ -18,6 +18,27 @@ export const CHECKED_PAGES: readonly string[] = [
     '/genres/movie/28',
 ]
 
+/**
+ * Requests the edge cache never answers, sent with a cookie, and the status
+ * each must give. Nearly every real visitor carries a cookie (consent,
+ * analytics or a session), and these reach the server's own request handling,
+ * which the cached pages above skip. A deploy whose server throws on a cookie
+ * header answered 500 here while every cached page still looked fine.
+ */
+export const COOKIE_PROBES: readonly { path: string; status: number }[] = [
+    { path: '/api/health/ai', status: 200 },
+    { path: '/deploy-check-no-such-page', status: 404 },
+]
+
+/** A cookie no part of the app reads. */
+export const PROBE_COOKIE = 'nettrailers-deploy-check=1'
+
+/** What is wrong with one cookie probe's answer, or nothing. */
+export function probeProblem(probe: { path: string; status: number }, answered: number): string[] {
+    if (answered === probe.status) return []
+    return [`${probe.path} sent with a cookie answered ${answered}, expected ${probe.status}`]
+}
+
 const STATIC_ASSET = /\/_next\/static\/[^"'\s<>\\)]+/g
 
 /** Every /_next/static path a page names, in its tags and in its inline payload, once each. */
