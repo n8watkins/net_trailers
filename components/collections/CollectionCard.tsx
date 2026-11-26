@@ -3,6 +3,7 @@
 import React, { memo } from 'react'
 import { PencilIcon, Bars3Icon, BellIcon } from '@heroicons/react/24/outline'
 import { DisplayRow } from '../../types/collections'
+import { isWatchLater } from './collectionMeta'
 import { getUnifiedGenresByMediaType } from '../../constants/unifiedGenres'
 
 /**
@@ -92,7 +93,9 @@ export const CollectionCard = memo(function CollectionCard({
                     {/* Row Info */}
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 flex-wrap">
-                            {row.emoji && <span className="text-xl">{row.emoji}</span>}
+                            {row.emoji && !isWatchLater(row) && (
+                                <span className="text-xl">{row.emoji}</span>
+                            )}
                             <h3 className="text-base font-semibold text-white truncate">
                                 {row.name}
                             </h3>

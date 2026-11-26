@@ -1,7 +1,13 @@
 'use client'
 
 import React from 'react'
-import { HandThumbUpIcon, HandThumbDownIcon, PlusIcon, EyeIcon } from '@heroicons/react/24/solid'
+import {
+    HandThumbUpIcon,
+    HandThumbDownIcon,
+    PlusIcon,
+    EyeIcon,
+    BookmarkIcon,
+} from '@heroicons/react/24/solid'
 import { Content, getTitle } from '../../../typings'
 import useUserData from '../../../hooks/useUserData'
 import { useToast } from '../../../hooks/useToast'
@@ -49,7 +55,6 @@ function InlineWatchlistDropdown({
             id: 'default-watchlist',
             name: 'Watch Later',
             items: defaultWatchlist,
-            emoji: '📺',
             color: '#e50914',
             isPublic: false,
             createdAt: Date.now(),
@@ -84,7 +89,7 @@ function InlineWatchlistDropdown({
                         } else if (list.name === 'Not For Me') {
                             return <HandThumbDownIcon className="w-5 h-5 text-brand-300" />
                         } else if (list.id === 'default-watchlist') {
-                            return <EyeIcon className="w-5 h-5 text-blue-400" />
+                            return <BookmarkIcon className="w-5 h-5 text-blue-400" />
                         }
                         return <EyeIcon className="w-5 h-5 text-white" />
                     }

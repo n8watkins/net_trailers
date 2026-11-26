@@ -6,6 +6,7 @@ import SubPageLayout from '@/components/layout/SubPageLayout'
 import RankingsContent from '@/components/community/RankingsContent'
 import ThreadsContent from '@/components/community/ThreadsContent'
 import PollsContent from '@/components/community/PollsContent'
+import { COMMUNITY_TITLES } from '@/lib/communityTitles'
 import {
     TrophyIcon,
     UsersIcon,
@@ -57,6 +58,13 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
         // Scroll to top when switching tabs
         window.scrollTo({ top: 0, behavior: 'instant' })
     }
+
+    // The tabs switch without navigating, so the route's title would go stale: keep the tab title
+    // in step with the visible tab (each route also sets it for the first load).
+    useEffect(() => {
+        if (isDetailPage) return
+        document.title = COMMUNITY_TITLES[activeTab]
+    }, [activeTab, isDetailPage])
 
     // Scroll to top when navigating to community pages
     useEffect(() => {
