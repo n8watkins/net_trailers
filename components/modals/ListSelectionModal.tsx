@@ -7,7 +7,7 @@ import { UserList } from '../../types/collections'
 import { useToast } from '../../hooks/useToast'
 import { listNameSchema, validateListNameUnique } from '../../schemas/listSchema'
 import { z } from 'zod'
-import { EyeIcon } from '@heroicons/react/24/solid'
+import { BookmarkIcon, EyeIcon } from '@heroicons/react/24/solid'
 import CollectionEditorModal from './CollectionEditorModal'
 import ListModalHeader from './list-selection/ListModalHeader'
 import ContentInfoCard from './list-selection/ContentInfoCard'
@@ -79,14 +79,14 @@ function ListSelectionModal() {
     const getListIcon = (list: UserList) => {
         const iconClass = 'w-6 h-6 text-white'
 
+        // Watch Later always shows the bookmark, whatever emoji an account stored for it
+        if (list.id === 'default-watchlist') {
+            return <BookmarkIcon className={iconClass} />
+        }
+
         // Return emoji if the list has one (custom lists)
         if (list.emoji) {
             return <span className="text-xl">{list.emoji}</span>
-        }
-
-        // Default icons for system lists
-        if (list.id === 'default-watchlist') {
-            return <EyeIcon className={iconClass} />
         }
 
         return <EyeIcon className={iconClass} />

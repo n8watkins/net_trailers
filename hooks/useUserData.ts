@@ -12,7 +12,6 @@ const createDefaultWatchlistVirtual = (items: Content[]): UserList => ({
     id: 'default-watchlist',
     name: 'Watch Later',
     items,
-    emoji: '📺',
     color: '#e50914',
     collectionType: 'manual',
     displayAsRow: true,
