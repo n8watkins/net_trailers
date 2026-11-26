@@ -1,6 +1,6 @@
-import { FilmIcon, RectangleStackIcon, SparklesIcon } from '@heroicons/react/24/solid'
+import { BookmarkIcon, FilmIcon, RectangleStackIcon, SparklesIcon } from '@heroicons/react/24/solid'
 import type { UserList } from '../../types/collections'
-import { hexToRgba } from './collectionMeta'
+import { hexToRgba, isWatchLater } from './collectionMeta'
 
 type IconSize = 'sm' | 'md' | 'lg'
 
@@ -16,14 +16,20 @@ const GLYPH: Record<IconSize, string> = {
     lg: 'h-7 w-7 sm:h-8 sm:w-8',
 }
 
-/** The one icon a collection has everywhere: its emoji if it has one, else an icon for its kind. */
+/**
+ * The one icon a collection has everywhere: the bookmark for Watch Later (whatever emoji an
+ * account may have stored for it), else its emoji if it has one, else an icon for its kind.
+ */
 export function CollectionGlyph({
     collection,
     className,
 }: {
-    collection: Pick<UserList, 'emoji' | 'collectionType'>
+    collection: Pick<UserList, 'emoji' | 'collectionType'> & Partial<Pick<UserList, 'id'>>
     className: string
 }) {
+    if (collection.id !== undefined && isWatchLater({ id: collection.id })) {
+        return <BookmarkIcon aria-hidden="true" className={`${className} text-gray-100`} />
+    }
     if (collection.emoji) {
         return (
             <span aria-hidden="true" className="leading-none">
@@ -46,7 +52,7 @@ export default function CollectionIcon({
     size = 'md',
     bare = false,
 }: {
-    collection: Pick<UserList, 'emoji' | 'collectionType' | 'color'>
+    collection: Pick<UserList, 'emoji' | 'collectionType' | 'color'> & Partial<Pick<UserList, 'id'>>
     size?: IconSize
     /** Without the tinted tile, for use inside chips. */
     bare?: boolean

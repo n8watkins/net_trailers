@@ -60,8 +60,6 @@ export const LIST_CONFIG = {
     DEFAULT_WATCHLIST_ID: 'default-watchlist',
     /** Default watchlist name */
     DEFAULT_WATCHLIST_NAME: 'Watchlist',
-    /** Default watchlist emoji */
-    DEFAULT_WATCHLIST_EMOJI: '📺',
     /** Default watchlist color */
     DEFAULT_WATCHLIST_COLOR: '#E50914',
 } as const
