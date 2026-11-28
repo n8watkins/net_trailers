@@ -104,7 +104,9 @@ export default function ChangelogView({ changelog, stats }: ChangelogViewProps) 
                                 id={entry.anchor}
                                 className="scroll-mt-40 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 sm:p-6"
                             >
-                                <header className="mb-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                                {/* A div, not a header: styles/globals.css pins every
+                                    header element to the top of the window. */}
+                                <div className="mb-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
                                     <h2 className="text-2xl font-bold text-white">
                                         v{entry.version}
                                     </h2>
@@ -116,7 +118,7 @@ export default function ChangelogView({ changelog, stats }: ChangelogViewProps) 
                                     <time dateTime={entry.date} className="text-sm text-gray-400">
                                         {formatChangelogDate(entry.date)}
                                     </time>
-                                </header>
+                                </div>
                                 <EntryBody entry={entry} />
                             </article>
                         ))}
