@@ -1,5 +1,107 @@
 # Changelog
 
+## 1.7.0 - 2026-11-27
+
+### New
+
+- Add social notification seeding functionality
+- Add Firestore cache health monitoring system (Week 1)
+- Add WSL2-compatible dev server management (Week 3)
+- Add storage quota & health monitoring system (Week 4)
+- Migrate from Tailwind v3 to Tailwind v4
+- Move Cache Health and Startup Health panels behind debug toggles
+- Add Turso + Drizzle foundation, scaffold Auth.js deps
+- Replace Firebase Auth with Auth.js GitHub (session-based)
+- Migrate user preferences to Turso (reference lane)
+- Migrate rankings, forum, polls, social, shares, notifications, interactions to Turso
+- Add passwordless email magic-link login (Resend) alongside GitHub
+- Upload to Vercel Blob instead of base64 data URLs
+- Dedicated delete-account endpoint (removes the user row)
+- Drizzle demo-seed script (db:seed) replacing the Firebase seeder
+- Selectable email provider — SendGrid (active) or Resend via EMAIL_PROVIDER
+- Use Brevo for magic-link email (SendGrid dropped its free tier)
+- Correct post-login redirect + in-app-browser caveat handling
+- NetTrailers runs on Cloudflare Workers, ready to leave Vercel ([#11](https://github.com/n8watkins/net_trailers/pull/11))
+- AI demo that never fails: example moods, a visible daily cap, /api/health/ai ([#22](https://github.com/n8watkins/net_trailers/pull/22))
+- Voice search hides where unsupported; signed-in e2e tests via the real email sign-in ([#23](https://github.com/n8watkins/net_trailers/pull/23))
+- For you page with AI-ranked picks and reasons; collection counts, lost adds, like+hide, Watch Later naming ([#27](https://github.com/n8watkins/net_trailers/pull/27))
+- First-visit welcome: one short pop-up, reopenable from Settings, Help and the profile menu ([#26](https://github.com/n8watkins/net_trailers/pull/26))
+- Run the three crons on the Worker now that Vercel is a redirect ([#38](https://github.com/n8watkins/net_trailers/pull/38))
+- Rebrand the emails on one dark layout, with one-click unsubscribe ([#40](https://github.com/n8watkins/net_trailers/pull/40))
+- One-screen About dialog and a welcome mood step that does not jump ([#41](https://github.com/n8watkins/net_trailers/pull/41))
+- Serve at net-trailers.n8builds.dev, send from net-trailers@, email-only sign-in ([#42](https://github.com/n8watkins/net_trailers/pull/42))
+- GitHub sign-in as an extra option for visitors ([#43](https://github.com/n8watkins/net_trailers/pull/43))
+- A sidebar admin with sections and tabs, and AdminStats for admin.n8builds.dev ([#46](https://github.com/n8watkins/net_trailers/pull/46))
+- Switch the accent back to Netflix red with a red play icon ([#57](https://github.com/n8watkins/net_trailers/pull/57))
+- N8builds and NetTrailers marks, TMDB credit in the footer ([#69](https://github.com/n8watkins/net_trailers/pull/69))
+- One-screen Help window with feature tiles under four headings ([#72](https://github.com/n8watkins/net_trailers/pull/72))
+- The server enforces Child Safety Mode on every content route ([#85](https://github.com/n8watkins/net_trailers/pull/85))
+
+### Fixed
+
+- Improve demo profile seeding infrastructure
+- Prevent duplicate Firestore initialization error
+- Npm audit fix for non-breaking transitive vulns
+- Bump isomorphic-dompurify v2 -> v3 (XSS bypass fixes)
+- Bump @sentry/nextjs and resend (uuid ReDoS chain)
+- Override transitive uuid and postcss -> 0 vulnerabilities
+- Make production build pass end-to-end
+- Respect PORT env var for internal API base URL
+- Change debug console hotkey from Alt+Shift+D to Alt+Shift+Q
+- Harden for Vercel — Auth.js trustHost + @libsql/client external
+- Drop isomorphic-dompurify from userListsService (jsdom ESM crash)
+- Serverless-safe HTML sanitizer (sanitize-html) — drop isomorphic-dompurify
+- Comment delete verifies ranking owner server-side; add review fix-list
+- Batch A — profile visibility gate + blob ownership
+- Batch B — polls, cron admin model, magic-link, account delete, signup cap
+- Batch C — race-safe like counters + publicProfile N+1
+- Return 400 (not 500) when a vote selects no valid option
+- Use plain hyphens instead of em dashes in copy and messages ([#4](https://github.com/n8watkins/net_trailers/pull/4))
+- Next.js 16.4.3 for critical security advisories ([#8](https://github.com/n8watkins/net_trailers/pull/8))
+- Update vulnerable dependencies for the open Dependabot alerts ([#17](https://github.com/n8watkins/net_trailers/pull/17))
+- Lift nested minimatch to 11 for its denial-of-service alert ([#19](https://github.com/n8watkins/net_trailers/pull/19))
+- Clutter fixes: search count in heading and phone filters, no repeated titles on home, light account headers, one menu definition ([#25](https://github.com/n8watkins/net_trailers/pull/25))
+- Gemini 3.5 Flash-Lite with 3.1 as backup, key sent in a header ([#30](https://github.com/n8watkins/net_trailers/pull/30))
+- Opt-out filter, fresh sign-in, audit log, real data, no stubs ([#44](https://github.com/n8watkins/net_trailers/pull/44))
+- Write-up and email footer links use the new portfolio page ([#45](https://github.com/n8watkins/net_trailers/pull/45))
+- The session read no longer sends the session token to the browser ([#53](https://github.com/n8watkins/net_trailers/pull/53))
+- Restore warning, danger and gold meaning after the red switch ([#58](https://github.com/n8watkins/net_trailers/pull/58))
+- Security page says only what is true, on brand ([#59](https://github.com/n8watkins/net_trailers/pull/59))
+- Release-kit writes the changelog, the page shows it with real numbers ([#60](https://github.com/n8watkins/net_trailers/pull/60))
+- Start the tour on the home page from anywhere, never strand a visitor ([#61](https://github.com/n8watkins/net_trailers/pull/61))
+- One saving model, one card and vocabulary, on-brand windows ([#62](https://github.com/n8watkins/net_trailers/pull/62))
+- N8builds.dev consent, cookie-free trailers, true Privacy and Terms ([#64](https://github.com/n8watkins/net_trailers/pull/64))
+- Never serve a cached page from the previous build after a deploy ([#68](https://github.com/n8watkins/net_trailers/pull/68))
+- One scroll bar, guest header and Profile, phone-width genre and person pages ([#71](https://github.com/n8watkins/net_trailers/pull/71))
+- Account images, built-in collection reset, child safety and body limits ([#70](https://github.com/n8watkins/net_trailers/pull/70))
+- Forums address, keyboard Surprise Me and phone search box ([#75](https://github.com/n8watkins/net_trailers/pull/75))
+- Title window is a real dialog, honest TMDB errors, drop unused CommunityHub ([#78](https://github.com/n8watkins/net_trailers/pull/78))
+- Align footer, header and Profile, page tab titles, Watch Later bookmark ([#80](https://github.com/n8watkins/net_trailers/pull/80))
+- Lists and title pages follow one rule, unrated films stay hidden ([#86](https://github.com/n8watkins/net_trailers/pull/86))
+- Release card heading and its test work once a release exists ([#88](https://github.com/n8watkins/net_trailers/pull/88))
+- Stop the home page re-rendering endlessly for guests ([#89](https://github.com/n8watkins/net_trailers/pull/89))
+
+### Safer
+
+- Remove two leftover debug pages from the public site ([#56](https://github.com/n8watkins/net_trailers/pull/56))
+
+### Faster
+
+- Home shows immediately, lighter hero images, lazy modals (mobile Lighthouse 44 -> 79) ([#24](https://github.com/n8watkins/net_trailers/pull/24))
+- The catalogue, posters and home page load from Cloudflare's edge cache ([#47](https://github.com/n8watkins/net_trailers/pull/47))
+- Answer a signed-out session read before Next starts ([#52](https://github.com/n8watkins/net_trailers/pull/52))
+- TMDB images load straight from image.tmdb.org at TMDB's sizes ([#49](https://github.com/n8watkins/net_trailers/pull/49))
+- Load each backdrop once and pause rotation in hidden tabs ([#50](https://github.com/n8watkins/net_trailers/pull/50))
+- Poll only in visible tabs with backoff, cache the poll a minute per session ([#51](https://github.com/n8watkins/net_trailers/pull/51))
+- Cache public page shells for signed-out visitors, 404 missing files before Next ([#54](https://github.com/n8watkins/net_trailers/pull/54))
+- Prefetch pages on hover, touch or focus instead of on sight ([#55](https://github.com/n8watkins/net_trailers/pull/55))
+- Show the settings frame at once and drop the session round trips ([#63](https://github.com/n8watkins/net_trailers/pull/63))
+
+### Reverted
+
+- Keep Google Analytics (per request)
+- Dependency updates from #74 that broke every request with a cookie ([#77](https://github.com/n8watkins/net_trailers/pull/77))
+
 All notable changes to NetTrailer will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
