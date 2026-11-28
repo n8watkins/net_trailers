@@ -2,8 +2,10 @@
 # workflow", it cuts a release when user-facing work (feat, fix, perf,
 # security, revert or a breaking change) has landed since the last tag, running .release.json train.checks on the release
 # commit before it moves main (with the RELEASE_TRAIN_KEY deploy key when main
-# is protected; see protect.mjs). The steps live in the release-kit repo, pinned
-# below; apply.mjs updates the pin and the schedule (.release.json).
+# is protected; see protect.mjs). The key's secret is in the "release-train"
+# environment, which only the default branch may use; the called job declares
+# it. The steps live in the release-kit repo, pinned below; apply.mjs updates
+# the pin and the schedule (.release.json).
 name: Release train
 
 on:
@@ -36,4 +38,6 @@ jobs:
       bump: ${{ inputs.bump || 'auto' }}
       dry-run: ${{ inputs.dry-run == true }}
     secrets:
+      # Only for a repo whose key an older protect kept as a repository secret;
+      # npx release-kit protect moves it into the environment, and then this is empty.
       RELEASE_TRAIN_KEY: ${{ secrets.RELEASE_TRAIN_KEY }}
