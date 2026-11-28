@@ -31,7 +31,7 @@ jobs:
     permissions:
       contents: write # push the release commit, the tag and the temporary check branch
       actions: write # start train.checks and the Release workflow
-    uses: n8watkins/release-kit/.github/workflows/release-train.yml@v2.10.1
+    uses: n8watkins/release-kit/.github/workflows/release-train.yml@v2.12.0
     with:
       bump: ${{ inputs.bump || 'auto' }}
       dry-run: ${{ inputs.dry-run == true }}
