@@ -64,7 +64,15 @@ export function HomeRowDedupeProvider({
 export function useHomeRowDedupe(key: string, content: Content[] | undefined): RowExclusion {
     const ctx = useContext(DedupeContext)
     const report = ctx?.report
-    const keys = useMemo(() => content?.map(contentKey), [content])
+    // Rows hand over a fresh array on every render (`[]` while hidden, a filtered copy once
+    // loaded). Keying on the titles themselves keeps `keys` the same array until they
+    // really change. Keyed on the array, the effect below reported on every render and the
+    // whole home page re-rendered about 60 times a second.
+    const signature = content?.map(contentKey).join('\n')
+    const keys = useMemo(
+        () => (signature === undefined ? undefined : signature === '' ? [] : signature.split('\n')),
+        [signature]
+    )
 
     useEffect(() => {
         if (!report) return
